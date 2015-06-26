@@ -7,6 +7,11 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonStructure;
+import javax.json.JsonWriter;
+
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -15,10 +20,10 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-abstract class BaseHandler implements HttpHandler {
+abstract class BaseJsonHandler implements HttpHandler {
 	protected Jedis jedis;
 	
-	public BaseHandler(Jedis j) {
+	public BaseJsonHandler(Jedis j) {
 		jedis = j;
 	}
 	
@@ -26,53 +31,53 @@ abstract class BaseHandler implements HttpHandler {
 	public void handle(HttpExchange exchange) throws IOException {
 		String requestMethod = exchange.getRequestMethod();
 		URI requestURI = exchange.getRequestURI();
-		
-		String response = getResponse(requestMethod, requestURI.getQuery());
-		exchange.sendResponseHeaders(200, response.getBytes().length);
+		JsonStructure responseJson = getResponseJson(requestMethod, requestURI.getQuery());
+		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
-		os.write(response.getBytes());
+		JsonWriter writer = Json.createWriter(os);
+		writer.write(responseJson);
 		os.close();
 	}
 	
-	abstract String getResponse(String requestMethod, String requestQuery);
+	abstract JsonStructure getResponseJson(String requestMethod, String requestQuery);
 	
 }
 
-class TestHandler extends BaseHandler {
-	public TestHandler(Jedis j) {
-		super(j);
-	}
-
-	@Override
-	String getResponse(String requestMethod, String requestQuery) {
-		System.out.println(requestQuery);
-
-		return "Default response";
-	}
-}
-
-class TestJedisHandler extends BaseHandler {
+class TestJedisHandler extends BaseJsonHandler {
 	public TestJedisHandler(Jedis j) {
 		super(j);
 	}
 
 	@Override
-	String getResponse(String requestMethod, String requestQuery) {
-		return jedis.get("global:uid");
+	JsonStructure getResponseJson(String requestMethod, String requestQuery) {
+		return Json.createObjectBuilder().add("global:uid", jedis.get("global:uid")).build();
 	}
 }
 
-/*class TestJsonHandler extends BaseHandler {
+class TestJsonHandler extends BaseJsonHandler {
 	public TestJsonHandler(Jedis j) {
 		super(j);
 	}
 
 	@Override
-	String getResponse(String requestMethod,
-			Map<String, List<String>> requestHeaders, InputStream requestBody) {
-		
+	JsonStructure getResponseJson(String requestMethod, String requestQuery) {
+		return Json.createObjectBuilder().add("testval", 1).build();
 	}
-}*/
+}
+
+class TestHandler implements HttpHandler {
+
+	@Override
+	public void handle(HttpExchange exchange) throws IOException {
+		String requestMethod = exchange.getRequestMethod();
+		URI requestURI = exchange.getRequestURI();
+		String response = "Test response";
+		exchange.sendResponseHeaders(200, 0);
+		OutputStream os = exchange.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
+	}
+}
 
 public class Main {
 	public static void main(String[] args) {
@@ -83,9 +88,9 @@ public class Main {
 		try {
 			jedis = pool.getResource();
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
-			server.createContext("/test", new TestHandler(jedis));
+			server.createContext("/test", new TestHandler());
 			server.createContext("/testjedis", new TestJedisHandler(jedis));
-			//server.createContext("/testjson", new TestJsonHandler(jedis));
+			server.createContext("/testjson", new TestJsonHandler(jedis));
 			server.setExecutor(null);
 			server.start();
 		}
