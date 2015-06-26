@@ -3,6 +3,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
@@ -24,19 +25,16 @@ abstract class BaseHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
 		String requestMethod = exchange.getRequestMethod();
-		Map<String, List<String>> requestHeaders = exchange.getRequestHeaders();
-		InputStream requestBody = exchange.getRequestBody();
+		URI requestURI = exchange.getRequestURI();
 		
-
-		String response = getResponse(requestMethod, requestHeaders, requestBody);
+		String response = getResponse(requestMethod, requestURI.getQuery());
 		exchange.sendResponseHeaders(200, response.getBytes().length);
 		OutputStream os = exchange.getResponseBody();
 		os.write(response.getBytes());
 		os.close();
 	}
 	
-	abstract String getResponse(String requestMethod,
-			Map<String, List<String>> requestHeaders, InputStream requestBody);
+	abstract String getResponse(String requestMethod, String requestQuery);
 	
 }
 
@@ -46,8 +44,9 @@ class TestHandler extends BaseHandler {
 	}
 
 	@Override
-	String getResponse(String requestMethod,
-			Map<String, List<String>> requestHeaders, InputStream requestBody) {
+	String getResponse(String requestMethod, String requestQuery) {
+		System.out.println(requestQuery);
+
 		return "Default response";
 	}
 }
@@ -58,11 +57,22 @@ class TestJedisHandler extends BaseHandler {
 	}
 
 	@Override
-	String getResponse(String requestMethod,
-			Map<String, List<String>> requestHeaders, InputStream requestBody) {
+	String getResponse(String requestMethod, String requestQuery) {
 		return jedis.get("global:uid");
 	}
 }
+
+/*class TestJsonHandler extends BaseHandler {
+	public TestJsonHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	String getResponse(String requestMethod,
+			Map<String, List<String>> requestHeaders, InputStream requestBody) {
+		
+	}
+}*/
 
 public class Main {
 	public static void main(String[] args) {
@@ -75,6 +85,7 @@ public class Main {
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
 			server.createContext("/test", new TestHandler(jedis));
 			server.createContext("/testjedis", new TestJedisHandler(jedis));
+			//server.createContext("/testjson", new TestJsonHandler(jedis));
 			server.setExecutor(null);
 			server.start();
 		}
