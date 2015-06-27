@@ -13,10 +13,10 @@ If you want to compile and run Diamond on OSX, then you need to install and set 
     $ hdiutil create -type SPARSE -fs 'Case-sensitive Journaled HFS+' -size 40g ~/android.dmg
     $ hdiutil attach ~/android.dmg.sparseimage -mountpoint android
     
-If you ever want to unmount your file system image:
+2. If you ever want to unmount your file system image:
     $ hdiutil detach android
 
-2. If you do not already have Xcode (> 4.5.2) and Command Line Tools installed, do that now.
-3. If you do not have MacPorts installed, install that as well. Then run:
+3. If you do not already have Xcode (> 4.5.2) and Command Line Tools installed, do that now.
+4. If you do not have MacPorts installed, install that as well. Then run:
 
-    $ $ POSIXLY_CORRECT=1 sudo port install gmake libsdl git gnupg
+    $ POSIXLY_CORRECT=1 sudo port install gmake libsdl git gnupg
