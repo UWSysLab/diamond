@@ -46,8 +46,17 @@ class TestHomeTimelineHandler extends BaseJsonHandler {
 	@Override
 	JsonElement getResponseJson(String requestMethod, String requestQuery) {
 		JsonArray result = new JsonArray();
+		JsonObject testUser = new JsonObject();
+		testUser.add("id", new JsonPrimitive(1));
+		testUser.add("id_str", new JsonPrimitive("1"));
+		testUser.add("screen_name", new JsonPrimitive("testuser"));
+		testUser.add("name", new JsonPrimitive("Test Name"));
 		JsonObject testTweet = new JsonObject();
 		testTweet.add("text", new JsonPrimitive("Test tweet"));
+		testTweet.add("id", new JsonPrimitive(1));
+		testTweet.add("id_str", new JsonPrimitive("1"));
+		testTweet.add("created_at", new JsonPrimitive("Wed Aug 27 13:08:45 +0000 2008"));
+		testTweet.add("user", testUser);
 		result.add(testTweet);
 		return result;
 	}
