@@ -4,6 +4,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -37,6 +38,21 @@ abstract class BaseJsonHandler implements HttpHandler {
 	
 }
 
+class TestHomeTimelineHandler extends BaseJsonHandler {
+	public TestHomeTimelineHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+		JsonArray result = new JsonArray();
+		JsonObject testTweet = new JsonObject();
+		testTweet.add("text", new JsonPrimitive("Test tweet"));
+		result.add(testTweet);
+		return result;
+	}
+}
+
 class TestJedisHandler extends BaseJsonHandler {
 	public TestJedisHandler(Jedis j) {
 		super(j);
@@ -67,7 +83,7 @@ class TestHandler implements HttpHandler {
 
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
-		String response = "Test response";
+		String response = "Test response\n";
 		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
 		os.write(response.getBytes());
@@ -87,6 +103,7 @@ public class Main {
 			server.createContext("/test", new TestHandler());
 			server.createContext("/testjedis.json", new TestJedisHandler(jedis));
 			server.createContext("/testjson.json", new TestJsonHandler(jedis));
+			server.createContext("/statuses/home_timeline.json", new TestHomeTimelineHandler(jedis));
 			server.setExecutor(null);
 			server.start();
 		}
