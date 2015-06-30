@@ -28,6 +28,7 @@ import winterwell.jtwitter.Twitter.KEntityType;
 import winterwell.jtwitter.Twitter.TweetEntity;
 import winterwell.jtwitter.TwitterException;
 import winterwell.jtwitter.Twitter_Account;
+import winterwell.jtwitter.URLConnectionHttpClient;
 import winterwell.jtwitter.User;
 import android.app.Service;
 import android.content.ContentValues;
@@ -134,6 +135,8 @@ public class TwitterService extends Service {
 			// Create twitter object
 			if(twitter == null){
 				
+				//TODO: Changed by Niel
+				/*
 				String token = LoginActivity.getAccessToken(this);
 				String secret = LoginActivity.getAccessTokenSecret(this);
 				if(!(token == null || secret == null) ) {
@@ -143,7 +146,9 @@ public class TwitterService extends Service {
 				} else {
 					Log.e(TAG, "Error synching: no access token or secret");
 					return START_NOT_STICKY;
-				}				
+				}
+				*/
+				twitter = new Twitter(null, new URLConnectionHttpClient("niel", "nielspassword"));
 				twitter.setIncludeTweetEntities(true);
 			}
 			

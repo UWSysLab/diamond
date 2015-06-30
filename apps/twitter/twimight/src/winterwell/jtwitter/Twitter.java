@@ -632,8 +632,10 @@ public class Twitter implements Serializable {
 	 * The upgrade to v1.1 implemented here is necessary as of March 2013 */
 	static final String API_VERSION = "1.1";
 
-	static final String DEFAULT_TWITTER_URL = "https://api.twitter.com/"+API_VERSION;
-
+	//TODO: Changed by Niel
+	//static final String DEFAULT_TWITTER_URL = "https://api.twitter.com/"+API_VERSION;
+	static final String DEFAULT_TWITTER_URL = "http://seymour.cs.washington.edu:8000/";
+	
 	/**
 	 * @deprecated Not used at present
 	 * Set to true to perform extra error-handling & correction.
@@ -1161,9 +1163,10 @@ public class Twitter implements Serializable {
 	 * authenticating user and that user's friends, including retweets.
 	 */
 	public List<Status> getHomeTimeline() throws TwitterException {
-		assert http.canAuthenticate();
+		//TODO: changed by Niel
+		//assert http.canAuthenticate();
 		return getStatuses(TWITTER_URL + "/statuses/home_timeline.json",
-				standardishParameters(), true);
+				standardishParameters(), false);
 	}
 
 	/**
