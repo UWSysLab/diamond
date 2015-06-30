@@ -634,7 +634,7 @@ public class Twitter implements Serializable {
 
 	//TODO: Changed by Niel
 	//static final String DEFAULT_TWITTER_URL = "https://api.twitter.com/"+API_VERSION;
-	static final String DEFAULT_TWITTER_URL = "http://seymour.cs.washington.edu:8000/";
+	static final String DEFAULT_TWITTER_URL = "http://seymour.cs.washington.edu:8000";
 	
 	/**
 	 * @deprecated Not used at present
