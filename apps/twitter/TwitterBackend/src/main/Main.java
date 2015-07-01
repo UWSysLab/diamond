@@ -12,10 +12,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import jsonjedisutils.JsonJedisUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
+import utils.JsonJedisUtils;
 
 abstract class BaseJsonHandler implements HttpHandler {
 	protected Jedis jedis;
@@ -41,6 +41,22 @@ abstract class BaseJsonHandler implements HttpHandler {
 
 class HomeTimelineHandler extends BaseJsonHandler {
 	public HomeTimelineHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+		JsonArray result = new JsonArray();
+		int numPosts = Integer.parseInt(jedis.get("global:pid"));
+		for (int i = 1; i <= numPosts; i++) {
+			result.add(JsonJedisUtils.getTweetJson(jedis, i));
+		}
+		return result;
+	}
+}
+
+class UpdateHandler extends BaseJsonHandler {
+	public UpdateHandler(Jedis j) {
 		super(j);
 	}
 
@@ -118,6 +134,24 @@ class TestHandler implements HttpHandler {
 }
 
 public class Main {
+	public static void writeTestData(Jedis jedis) {
+		jedis.flushDB();
+		jedis.incr("global:uid");
+		jedis.hset("uid:1", "name", "Sean Connery");
+		jedis.hset("uid:1", "screen_name", "sconnery");
+		jedis.incr("global:uid");
+		jedis.hset("uid:2", "name", "Daniel Craig");
+		jedis.hset("uid:2", "screen_name", "dcraig");
+		jedis.incr("global:pid");
+		jedis.hset("pid:1", "content", "Old James Bond movies are better");
+		jedis.hset("pid:1", "uid", "1");
+		jedis.hset("pid:1", "time", String.valueOf(System.currentTimeMillis()));
+		jedis.incr("global:pid");
+		jedis.hset("pid:2", "content", "No, newer James Bond movies are best");
+		jedis.hset("pid:2", "uid", "2");
+		jedis.hset("pid:2", "time", String.valueOf(System.currentTimeMillis()));
+	}
+	
 	public static void main(String[] args) {
 		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
 		Jedis jedis = null;
@@ -125,11 +159,15 @@ public class Main {
 		
 		try {
 			jedis = pool.getResource();
+			
+			writeTestData(jedis);
+			
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
 			server.createContext("/test", new TestHandler());
 			server.createContext("/testjedis.json", new TestJedisHandler(jedis));
 			server.createContext("/testjson.json", new TestJsonHandler(jedis));
-			server.createContext("/statuses/home_timeline.json", new TestHomeTimelineHandler(jedis));
+			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedis));
+			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
 			server.setExecutor(null);
 			server.start();
 		}
