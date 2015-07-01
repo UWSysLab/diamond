@@ -3,11 +3,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.Map;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -16,6 +18,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utils.JsonJedisUtils;
+import utils.Utils;
 
 abstract class BaseJsonHandler implements HttpHandler {
 	protected Jedis jedis;
@@ -27,15 +30,16 @@ abstract class BaseJsonHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
 		String requestMethod = exchange.getRequestMethod();
+		Headers requestHeaders = exchange.getRequestHeaders();
 		URI requestURI = exchange.getRequestURI();
-		JsonElement responseJson = getResponseJson(requestMethod, requestURI.getQuery());
+		JsonElement responseJson = getResponseJson(requestMethod, requestHeaders, requestURI);
 		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
 		os.write(responseJson.toString().getBytes());
 		os.close();
 	}
 	
-	abstract JsonElement getResponseJson(String requestMethod, String requestQuery);
+	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestUR);
 	
 }
 
@@ -45,7 +49,7 @@ class HomeTimelineHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
 		JsonArray result = new JsonArray();
 		int numPosts = Integer.parseInt(jedis.get("global:pid"));
 		for (int i = 1; i <= numPosts; i++) {
@@ -55,19 +59,21 @@ class HomeTimelineHandler extends BaseJsonHandler {
 	}
 }
 
+//TODO: Finish and debug this method
 class UpdateHandler extends BaseJsonHandler {
 	public UpdateHandler(Jedis j) {
 		super(j);
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, String requestQuery) {
-		JsonArray result = new JsonArray();
-		int numPosts = Integer.parseInt(jedis.get("global:pid"));
-		for (int i = 1; i <= numPosts; i++) {
-			result.add(JsonJedisUtils.getTweetJson(jedis, i));
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
+		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+		String status = queryParams.get("status");
+		for (String key : requestHeaders.keySet()) {
+			System.out.print(key + ": ");
+			System.out.println(requestHeaders.get(key).get(0));
 		}
-		return result;
+		return new JsonObject();
 	}
 }
 
@@ -77,7 +83,7 @@ class TestHomeTimelineHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
 		JsonArray result = new JsonArray();
 		JsonObject testUser = new JsonObject();
 		testUser.add("id", new JsonPrimitive(1));
@@ -101,7 +107,7 @@ class TestJedisHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
 		JsonObject result = new JsonObject();
 		result.add("global:uid", new JsonPrimitive(jedis.get("global:uid")));
 		return result;
@@ -114,7 +120,7 @@ class TestJsonHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
 		JsonObject result = new JsonObject();
 		result.add("testval", new JsonPrimitive(1));
 		return result;
