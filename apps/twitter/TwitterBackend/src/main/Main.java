@@ -12,6 +12,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import jsonjedisutils.JsonJedisUtils;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -36,6 +37,22 @@ abstract class BaseJsonHandler implements HttpHandler {
 	
 	abstract JsonElement getResponseJson(String requestMethod, String requestQuery);
 	
+}
+
+class HomeTimelineHandler extends BaseJsonHandler {
+	public HomeTimelineHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, String requestQuery) {
+		JsonArray result = new JsonArray();
+		int numPosts = Integer.parseInt(jedis.get("global:pid"));
+		for (int i = 1; i <= numPosts; i++) {
+			result.add(JsonJedisUtils.getTweetJson(jedis, i));
+		}
+		return result;
+	}
 }
 
 class TestHomeTimelineHandler extends BaseJsonHandler {
