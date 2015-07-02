@@ -49,6 +49,36 @@ abstract class BaseJsonHandler implements HttpHandler {
 	
 }
 
+class AddUserHandler extends BaseJsonHandler {
+	public AddUserHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		String screenName = bodyParams.get("screen_name");
+		String name = bodyParams.get("name");
+		String userBackrefKey = "user:" + screenName + ":uid";
+		long uid;
+		
+		if (jedis.get(userBackrefKey) == null) {
+			uid = jedis.incr("global:uid");
+			String userKey = "uid:" + uid;
+			jedis.set(userBackrefKey, String.valueOf(uid));
+			jedis.hset(userKey, "screen_name", screenName);
+			jedis.hset(userKey, "name", name);
+		}
+		else {
+			uid = Long.parseLong(jedis.get(userBackrefKey));
+		}
+		
+		return JsonJedisUtils.getUserJson(jedis, uid);
+	}
+}
+
 class HomeTimelineHandler extends BaseJsonHandler {
 	public HomeTimelineHandler(Jedis j) {
 		super(j);
@@ -76,13 +106,7 @@ class UpdateHandler extends BaseJsonHandler {
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
 			InputStream requestBody) {
 		
-		Map<String, String> bodyParams = null;
-		try {
-			bodyParams = Utils.getBodyParams(requestBody);
-		} catch (IOException e) {
-			System.out.println("Error: request body could not be read");
-			return new JsonObject();
-		}
+		Map<String, String> bodyParams =  Utils.getBodyParams(requestBody);
 		
 		String username = Utils.getUsername(requestHeaders);
 		String uidString = jedis.get("user:" + username + ":uid");
@@ -93,7 +117,7 @@ class UpdateHandler extends BaseJsonHandler {
 		
 		if (uidString == null) {
 			System.out.println("No user with this username");
-			uidString = "1";
+			return new JsonObject();
 		}
 		if (status == null) {
 			System.out.println("Error: update request with no status parameter");
@@ -210,6 +234,7 @@ public class Main {
 			server.createContext("/testjson.json", new TestJsonHandler(jedis));
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedis));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
+			server.createContext("/hack/adduser.json", new AddUserHandler(jedis));
 			server.setExecutor(null);
 			server.start();
 		}

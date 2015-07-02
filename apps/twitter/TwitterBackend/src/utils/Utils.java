@@ -30,15 +30,20 @@ public class Utils {
 		return StringUtils.newStringUtf8(Base64.decodeBase64(authString)).split(":")[0];
 	}
 
-	public static Map<String, String> getBodyParams(InputStream requestBody) throws IOException {
-		byte[] bodyArray = new byte[requestBody.available()];
-		requestBody.read(bodyArray);
-		String bodyString = new String(bodyArray, "UTF-8");
-		List<NameValuePair> queryParams = URLEncodedUtils.parse(bodyString, Charset.forName("UTF-8"));
-		Map<String, String> result = new HashMap<String, String>();
-		for (NameValuePair pair : queryParams) {
-			result.put(pair.getName(), pair.getValue());
+	public static Map<String, String> getBodyParams(InputStream requestBody) {
+		try {
+			byte[] bodyArray = new byte[requestBody.available()];
+			requestBody.read(bodyArray);
+			String bodyString = new String(bodyArray, "UTF-8");
+			List<NameValuePair> queryParams = URLEncodedUtils.parse(bodyString, Charset.forName("UTF-8"));
+			Map<String, String> result = new HashMap<String, String>();
+			for (NameValuePair pair : queryParams) {
+				result.put(pair.getName(), pair.getValue());
+			}
+			return result;
 		}
-		return result;
+		catch (IOException e) {
+			return null;
+		}
 	}
 }
