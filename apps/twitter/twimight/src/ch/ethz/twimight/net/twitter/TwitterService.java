@@ -104,7 +104,10 @@ public class TwitterService extends Service {
 	public static final String TASK_DIRECT_MESSAGES_IN = "direct_messages_in";	
 	public static final String OVERSCROLL_TYPE = "overscroll_type";		
 	public static final String URL = "url";	
-	
+
+	public static final String HACK_USER_NAME = "nieltestuser";
+	public static final String HACK_PASSWORD = "testpassword";
+
 	Twitter twitter;
 	NetworkInfo currentNetworkInfo;
 	
@@ -149,7 +152,7 @@ public class TwitterService extends Service {
 					return START_NOT_STICKY;
 				}
 				*/
-				twitter = new Twitter(null, new URLConnectionHttpClient("niel", "nielspassword"));
+				twitter = new Twitter(null, new URLConnectionHttpClient(HACK_USER_NAME, HACK_PASSWORD));
 				twitter.setIncludeTweetEntities(true);
 			}
 			
@@ -1353,7 +1356,7 @@ public class TwitterService extends Service {
 				//TODO: Niel begin changes
 				//Twitter_Account twitterAcc = new Twitter_Account(twitter);
 				//user = twitterAcc.verifyCredentials();
-				String json = "{\"id\":1337,\"screen_name\":\"nieltestuser\"}";
+				String json = "{\"id\":1337,\"screen_name\":\"" + HACK_USER_NAME + "\"}";
 				user = InternalUtils.user(json);
 				//TODO: Niel end changes
 
