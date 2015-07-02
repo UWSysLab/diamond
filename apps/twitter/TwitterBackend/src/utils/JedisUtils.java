@@ -6,7 +6,7 @@ import com.google.gson.JsonPrimitive;
 import redis.clients.jedis.Jedis;
 
 
-public class JsonJedisUtils {
+public class JedisUtils {
 	public static JsonElement getTweetJson(Jedis jedis, long pid) {
 		String postKey = "pid:" + pid;
 		String content = jedis.hget(postKey, "content");

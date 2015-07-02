@@ -18,7 +18,7 @@ import com.sun.net.httpserver.HttpServer;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
-import utils.JsonJedisUtils;
+import utils.JedisUtils;
 import utils.Utils;
 
 import org.apache.commons.codec.binary.Base64;
@@ -75,7 +75,7 @@ class AddUserHandler extends BaseJsonHandler {
 			uid = Long.parseLong(jedis.get(userBackrefKey));
 		}
 		
-		return JsonJedisUtils.getUserJson(jedis, uid);
+		return JedisUtils.getUserJson(jedis, uid);
 	}
 }
 
@@ -90,7 +90,7 @@ class HomeTimelineHandler extends BaseJsonHandler {
 		JsonArray result = new JsonArray();
 		int numPosts = Integer.parseInt(jedis.get("global:pid"));
 		for (int i = 1; i <= numPosts; i++) {
-			result.add(JsonJedisUtils.getTweetJson(jedis, i));
+			result.add(JedisUtils.getTweetJson(jedis, i));
 		}
 		return result;
 	}
@@ -130,7 +130,7 @@ class UpdateHandler extends BaseJsonHandler {
 		jedis.hset(postKey, "uid", uidString);
 		jedis.hset(postKey, "time", timeString);
 		
-		return JsonJedisUtils.getTweetJson(jedis, pid);
+		return JedisUtils.getTweetJson(jedis, pid);
 	}
 }
 
