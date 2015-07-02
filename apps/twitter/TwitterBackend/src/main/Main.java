@@ -1,5 +1,6 @@
 package main;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -35,14 +36,16 @@ abstract class BaseJsonHandler implements HttpHandler {
 		String requestMethod = exchange.getRequestMethod();
 		Headers requestHeaders = exchange.getRequestHeaders();
 		URI requestURI = exchange.getRequestURI();
-		JsonElement responseJson = getResponseJson(requestMethod, requestHeaders, requestURI);
+		InputStream requestBody = exchange.getRequestBody();
+		JsonElement responseJson = getResponseJson(requestMethod, requestHeaders, requestURI, requestBody);
 		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
 		os.write(responseJson.toString().getBytes());
 		os.close();
 	}
 	
-	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestUR);
+	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders,
+			URI requestURI, InputStream requestBody);
 	
 }
 
@@ -52,7 +55,8 @@ class HomeTimelineHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
 		JsonArray result = new JsonArray();
 		int numPosts = Integer.parseInt(jedis.get("global:pid"));
 		for (int i = 1; i <= numPosts; i++) {
@@ -69,24 +73,38 @@ class UpdateHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
-		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		
+		Map<String, String> bodyParams = null;
+		try {
+			bodyParams = Utils.getBodyParams(requestBody);
+		} catch (IOException e) {
+			System.out.println("Error: request body could not be read");
+			return new JsonObject();
+		}
+		
 		String username = Utils.getUsername(requestHeaders);
 		String uidString = jedis.get("user:" + username + ":uid");
+
+		String status = bodyParams.get("status");
+		String timeString = String.valueOf(System.currentTimeMillis());
+
+		
 		if (uidString == null) {
 			System.out.println("No user with this username");
 			uidString = "1";
 		}
-		String status = queryParams.get("status");
-		String timeString = String.valueOf(System.currentTimeMillis());
+		if (status == null) {
+			System.out.println("Error: update request with no status parameter");
+			return new JsonObject();
+		}
 		
 		long pid = jedis.incr("global:pid");
 		String postKey = "pid:" + pid;
-		System.out.println("Jedis start updating hash");
 		jedis.hset(postKey, "content", status);
 		jedis.hset(postKey, "uid", uidString);
 		jedis.hset(postKey, "time", timeString);
-		System.out.println("Jedis end updating hash");
 		
 		return JsonJedisUtils.getTweetJson(jedis, pid);
 	}
@@ -98,7 +116,8 @@ class TestHomeTimelineHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
 		JsonArray result = new JsonArray();
 		JsonObject testUser = new JsonObject();
 		testUser.add("id", new JsonPrimitive(1));
@@ -122,7 +141,8 @@ class TestJedisHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
 		JsonObject result = new JsonObject();
 		result.add("global:uid", new JsonPrimitive(jedis.get("global:uid")));
 		return result;
@@ -135,7 +155,8 @@ class TestJsonHandler extends BaseJsonHandler {
 	}
 
 	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
 		JsonObject result = new JsonObject();
 		result.add("testval", new JsonPrimitive(1));
 		return result;
