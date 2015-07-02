@@ -7,7 +7,7 @@ import redis.clients.jedis.Jedis;
 
 
 public class JsonJedisUtils {
-	public static JsonElement getTweetJson(Jedis jedis, int pid) {
+	public static JsonElement getTweetJson(Jedis jedis, long pid) {
 		String postKey = "pid:" + pid;
 		String content = jedis.hget(postKey, "content");
 		String time = jedis.hget(postKey, "time");
@@ -23,7 +23,7 @@ public class JsonJedisUtils {
 		return tweet;
 	}
 	
-	public static JsonElement getUserJson(Jedis jedis, int uid) {
+	public static JsonElement getUserJson(Jedis jedis, long uid) {
 		String userKey = "uid:" + uid;
 		String name = jedis.hget(userKey, "name");
 		String screenName = jedis.hget(userKey, "screen_name");

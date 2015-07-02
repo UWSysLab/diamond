@@ -20,6 +20,9 @@ import redis.clients.jedis.JedisPoolConfig;
 import utils.JsonJedisUtils;
 import utils.Utils;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.StringUtils;
+
 abstract class BaseJsonHandler implements HttpHandler {
 	protected Jedis jedis;
 	
@@ -68,12 +71,24 @@ class UpdateHandler extends BaseJsonHandler {
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI) {
 		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
-		String status = queryParams.get("status");
-		for (String key : requestHeaders.keySet()) {
-			System.out.print(key + ": ");
-			System.out.println(requestHeaders.get(key).get(0));
+		String username = Utils.getUsername(requestHeaders);
+		String uidString = jedis.get("user:" + username + ":uid");
+		if (uidString == null) {
+			System.out.println("No user with this username");
+			uidString = "1";
 		}
-		return new JsonObject();
+		String status = queryParams.get("status");
+		String timeString = String.valueOf(System.currentTimeMillis());
+		
+		long pid = jedis.incr("global:pid");
+		String postKey = "pid:" + pid;
+		System.out.println("Jedis start updating hash");
+		jedis.hset(postKey, "content", status);
+		jedis.hset(postKey, "uid", uidString);
+		jedis.hset(postKey, "time", timeString);
+		System.out.println("Jedis end updating hash");
+		
+		return JsonJedisUtils.getTweetJson(jedis, pid);
 	}
 }
 
