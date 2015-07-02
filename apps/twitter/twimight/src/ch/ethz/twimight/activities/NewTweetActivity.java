@@ -403,7 +403,7 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 			statsDBHelper.open();
 			timestamp = System.currentTimeMillis();
 
-			
+					
 			if(hasMedia){
 				try {
 					finalPhotoName = "twimight" + String.valueOf(timestamp) + ".jpg";
@@ -429,7 +429,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 				
 				if(PreferenceManager.getDefaultSharedPreferences(NewTweetActivity.this).getBoolean("prefDisasterMode", false) == true){				
 					
-					
 					// our own tweets go into the my disaster tweets buffer
 					cv.put(Tweets.COL_BUFFER, Tweets.BUFFER_TIMELINE|Tweets.BUFFER_MYDISASTER);
 
@@ -441,7 +440,7 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 					// our own tweets go into the timeline buffer
 					cv.put(Tweets.COL_BUFFER, Tweets.BUFFER_TIMELINE);
 					//we publish on twitter directly only normal tweets
-					cv.put(Tweets.COL_FLAGS, Tweets.FLAG_TO_INSERT);	
+					cv.put(Tweets.COL_FLAGS, Tweets.FLAG_TO_INSERT);
 					
 					insertUri = getContentResolver().insert(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/" + 
 																Tweets.TWEETS_TABLE_TIMELINE + "/" + Tweets.TWEETS_SOURCE_NORMAL), cv);

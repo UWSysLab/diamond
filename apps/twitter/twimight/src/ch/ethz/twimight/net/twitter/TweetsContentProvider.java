@@ -1193,7 +1193,7 @@ public class TweetsContentProvider extends ContentProvider {
 				//////////////////////////////////
 				
 				long rowId = database.insertOrThrow(DBOpenHelper.TABLE_TWEETS, null, values);						
-				if(rowId >= 0){							
+				if(rowId >= 0){
 					Uri insertUri = ContentUris.withAppendedId(Tweets.ALL_TWEETS_URI, rowId);
 					
 					// trigger twitter upload

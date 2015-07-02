@@ -23,10 +23,12 @@ import oauth.signpost.exception.OAuthCommunicationException;
 import oauth.signpost.exception.OAuthExpectationFailedException;
 import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
+import winterwell.jtwitter.User;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -51,6 +53,7 @@ import ch.ethz.twimight.net.tds.TDSAlarm;
 import ch.ethz.twimight.net.tds.TDSService;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
 import ch.ethz.twimight.net.twitter.TwitterService;
+import ch.ethz.twimight.net.twitter.TwitterUsers;
 import ch.ethz.twimight.security.CertificateManager;
 import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
@@ -114,7 +117,8 @@ public class LoginActivity extends Activity implements OnClickListener{
 			setRestartIntent(PendingIntent.getActivity(this.getBaseContext(), 0, 
 					new Intent(getIntent()), getIntent().getFlags()));
 			instance = this;
-			
+
+			//TODO: Niel begin changes
 			// which state are we in?
 			//if(hasAccessToken(this) && hasAccessTokenSecret(this) && getTwitterId(this)!=null){
 				// if we have token, secret and ID: launch the timeline activity
@@ -124,6 +128,10 @@ public class LoginActivity extends Activity implements OnClickListener{
 				if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 					Toast.makeText(this,getString(R.string.no_connection), Toast.LENGTH_LONG).show();
 				}
+				Intent i = new Intent(TwitterService.SYNCH_ACTION);
+				i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
+				registerLoginReceiver();
+				startService(i);
 				startTimeline(getApplicationContext());
 			/*	
 			} else if(hasAccessToken(this) && hasAccessTokenSecret(this)) {
@@ -156,6 +164,7 @@ public class LoginActivity extends Activity implements OnClickListener{
 					
 				setupLoginButton();
 			}*/
+			//TODO: Niel end changes
 			
 		}
 		

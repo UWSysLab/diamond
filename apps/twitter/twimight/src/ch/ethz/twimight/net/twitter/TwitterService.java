@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+import winterwell.jtwitter.InternalUtils;
 import winterwell.jtwitter.OAuthSignpostClient;
 import winterwell.jtwitter.Status;
 import winterwell.jtwitter.Twitter;
@@ -1349,8 +1350,12 @@ public class TwitterService extends Service {
 			User user = null;
 
 			try {
-				Twitter_Account twitterAcc = new Twitter_Account(twitter);
-				user = twitterAcc.verifyCredentials();
+				//TODO: Niel begin changes
+				//Twitter_Account twitterAcc = new Twitter_Account(twitter);
+				//user = twitterAcc.verifyCredentials();
+				String json = "{\"id\":1337,\"screen_name\":\"nieltestuser\"}";
+				user = InternalUtils.user(json);
+				//TODO: Niel end changes
 
 			} catch (Exception ex) {
 				// save the exception to handle it in onPostExecute

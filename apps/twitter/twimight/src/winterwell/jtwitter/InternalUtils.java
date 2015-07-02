@@ -483,7 +483,10 @@ public class InternalUtils {
 		}
 	}
 
-	static User user(String json) {
+	//TODO: Niel begin change
+	public static User user(String json) {
+	//static User user(String json) {
+	//TODO: Niel end change
 		try {
 			JSONObject obj = new JSONObject(json);
 			User u = new User(obj, null);
