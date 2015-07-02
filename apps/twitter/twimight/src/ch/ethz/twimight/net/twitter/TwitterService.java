@@ -107,6 +107,7 @@ public class TwitterService extends Service {
 
 	public static final String HACK_USER_NAME = "nieltestuser";
 	public static final String HACK_PASSWORD = "testpassword";
+	public static final String HACK_ID = "1337";
 
 	Twitter twitter;
 	NetworkInfo currentNetworkInfo;
@@ -1356,7 +1357,7 @@ public class TwitterService extends Service {
 				//TODO: Niel begin changes
 				//Twitter_Account twitterAcc = new Twitter_Account(twitter);
 				//user = twitterAcc.verifyCredentials();
-				String json = "{\"id\":1337,\"screen_name\":\"" + HACK_USER_NAME + "\"}";
+				String json = "{\"id\":" + HACK_ID + ",\"screen_name\":\"" + HACK_USER_NAME + "\"}";
 				user = InternalUtils.user(json);
 				//TODO: Niel end changes
 
