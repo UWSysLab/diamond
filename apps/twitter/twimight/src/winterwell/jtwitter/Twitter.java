@@ -2958,4 +2958,24 @@ public class Twitter implements Serializable {
 		return new Twitter_Users(this);
 	}
 
+	//TODO: added by Niel
+	/**
+	 * Add a user with the given screen name and name to the backend if a user with
+	 * that screenname is not already present.
+	 */
+	public User remoteAddUser(String screenName, String name)
+			throws TwitterException 
+	{		
+		Map<String, String> vars = new HashMap<String, String>();
+		vars.put("screen_name", screenName);
+		vars.put("name", name);
+		String result = http.post(TWITTER_URL + "/hack/adduser.json", vars,
+					true);
+		try {
+			User u = new User(new JSONObject(result), null);
+			return u;
+		} catch (JSONException e) {
+			throw new TwitterException.Parsing(result, e);
+		}
+	}
 }

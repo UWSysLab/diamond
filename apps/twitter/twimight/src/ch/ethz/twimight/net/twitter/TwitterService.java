@@ -382,6 +382,8 @@ public class TwitterService extends Service {
 		Log.i(TAG, "SYNCH_LOGIN");
 		Integer [] params = {Constants.LOGIN_ATTEMPTS, 1}; // nr of attempts, notify login activity about result
 		(new VerifyCredentialsTask()).execute(params);
+		//TODO: added by Niel
+		(new RemoteAddClientUserTask()).execute();
 	}
 
 	/**
@@ -1335,6 +1337,49 @@ public class TwitterService extends Service {
 		
 	}
 
+
+	//TODO: this class added by Niel
+	/**
+	 * A task that uses the remoteAddUser() method I wrote to add the client user
+	 * to the backend if a user with that screenname does not already exist.
+	 * 
+	 * @author nl35
+	 *
+	 */
+	private class RemoteAddClientUserTask extends AsyncTask<Void, Void, User> {
+
+		Exception ex;
+		
+		@Override
+		protected User doInBackground(Void... params) {
+			Log.d(TAG, "AsynchTask: RemoteAddClientUserTask");
+			
+			User user = null;
+			try {
+				user = twitter.remoteAddUser(HACK_USER_SCREEN_NAME, HACK_USER_NAME);
+
+			} catch (Exception ex) {
+				this.ex = ex;	
+			}
+
+			return user;
+		}
+
+		@Override
+		protected void onPostExecute(User result) {
+			if(ex != null){
+				Log.e(TAG, "exception while adding client user to backend: " + ex);
+			}			
+		}
+	}
+	
+	//TODO: added by Niel
+	private String getUserJsonString() {
+		String json = "{\"id\":" + HACK_ID + ",\"screen_name\":\"" + HACK_USER_SCREEN_NAME
+				 + "\",\"name\":\"" + HACK_USER_NAME + "\"}";
+		return json;
+	}
+	
 	/**
 	 * Logs in with Twitter and writes the local user into the DB.
 	 * @author thossmann
@@ -1358,9 +1403,7 @@ public class TwitterService extends Service {
 				//TODO: Niel begin changes
 				//Twitter_Account twitterAcc = new Twitter_Account(twitter);
 				//user = twitterAcc.verifyCredentials();
-				String json = "{\"id\":" + HACK_ID + ",\"screen_name\":\"" + HACK_USER_SCREEN_NAME
-						 + ",\"name\":\"" + HACK_USER_NAME + "\"}";
-				user = InternalUtils.user(json);
+				user = InternalUtils.user(getUserJsonString());
 				//TODO: Niel end changes
 
 			} catch (Exception ex) {
