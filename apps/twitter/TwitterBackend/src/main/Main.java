@@ -116,11 +116,11 @@ class UpdateHandler extends BaseJsonHandler {
 
 		
 		if (uidString == null) {
-			System.out.println("No user with this username");
+			System.out.println("UpdateHandler error: no user with username " + username);
 			return new JsonObject();
 		}
 		if (status == null) {
-			System.out.println("Error: update request with no status parameter");
+			System.out.println("UpdateHandler error: update request with no status parameter");
 			return new JsonObject();
 		}
 		
