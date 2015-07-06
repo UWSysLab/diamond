@@ -262,6 +262,7 @@ public class Main {
 			server.createContext("/testjedis.json", new TestJedisHandler(jedis));
 			server.createContext("/testjson.json", new TestJsonHandler(jedis));
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedis));
+			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedis));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedis));
 			server.setExecutor(null);
