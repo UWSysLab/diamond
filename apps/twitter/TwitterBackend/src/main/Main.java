@@ -80,6 +80,36 @@ class AddUserHandler extends BaseJsonHandler {
 	}
 }
 
+class VerifyCredentialsHandler extends BaseJsonHandler {
+
+	public VerifyCredentialsHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
+		String uidString = jedis.get("user:" + username + ":uid");
+		return JedisUtils.getUserJson(jedis, Long.parseLong(uidString));
+	}
+	
+}
+
+class ShowUserHandler extends BaseJsonHandler {
+
+	public ShowUserHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+		long uid = JedisUtils.getUid(jedis, queryParams);
+		return JedisUtils.getUserJson(jedis, uid);
+	}
+	
+}
+
 class CreateFriendshipHandler extends BaseJsonHandler {
 
 	public CreateFriendshipHandler(Jedis j) {
@@ -99,10 +129,37 @@ class CreateFriendshipHandler extends BaseJsonHandler {
 		String username = Utils.getUsername(requestHeaders);
 		String followerUidString = jedis.get("user:" + username + ":uid");
 		
-		jedis.rpush("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
-		jedis.rpush("uid:" + toFollowUid + ":followers", followerUidString);
+		jedis.sadd("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
+		jedis.sadd("uid:" + toFollowUid + ":followers", followerUidString);
 		
 		return JedisUtils.getUserJson(jedis, toFollowUid);
+	}
+	
+}
+
+class DestroyFriendshipHandler extends BaseJsonHandler {
+
+	public DestroyFriendshipHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		long toUnfollowUid = JedisUtils.getUid(jedis, bodyParams);
+		
+		if (toUnfollowUid == -1) {
+			System.out.println("DestroyFriendshipHandler error: must specify either screen name or user id to follow");
+			return new JsonObject();
+		}
+		
+		String username = Utils.getUsername(requestHeaders);
+		String unfollowerUidString = jedis.get("user:" + username + ":uid");
+		
+		jedis.srem("uid:" + unfollowerUidString + ":following", String.valueOf(toUnfollowUid));
+		jedis.srem("uid:" + toUnfollowUid + ":followers", unfollowerUidString);
+		
+		return JedisUtils.getUserJson(jedis, toUnfollowUid);
 	}
 	
 }
@@ -293,6 +350,9 @@ public class Main {
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedis));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
 			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedis));
+			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedis));
+			server.createContext("/users/show.json", new ShowUserHandler(jedis));
+			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedis));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedis));
 			server.setExecutor(null);
 			server.start();

@@ -36,6 +36,9 @@ public class JedisUtils {
 		user.add("id_str", new JsonPrimitive(String.valueOf(uid)));
 		user.add("screen_name", new JsonPrimitive(screenName));
 		user.add("name", new JsonPrimitive(name));
+		
+		user.add("friends_count", new JsonPrimitive(jedis.llen("uid:" + uid + ":following")));
+		user.add("followers_count", new JsonPrimitive(jedis.llen("uid:" + uid + ":followers")));
 		return user;
 	}
 	
