@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import com.google.gson.JsonArray;
@@ -79,6 +80,33 @@ class AddUserHandler extends BaseJsonHandler {
 	}
 }
 
+class UserTimelineHandler extends BaseJsonHandler {
+	public UserTimelineHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		
+		long uid = JedisUtils.getUidFromQuery(jedis, requestURI);
+		
+		if (uid == -1) {
+			System.out.println("UserTimelineHandler error: must specify either screen name or user id");
+			return new JsonObject();
+		}
+		
+		List<String> pids = jedis.lrange("uid:" + uid + ":posts", 0, -1);
+		
+		JsonArray result = new JsonArray();
+		for (int i = 0; i < pids.size(); i++) {
+			result.add(JedisUtils.getTweetJson(jedis, Long.parseLong(pids.get(i))));
+		}
+		
+		return result;
+	}
+}
+
 class HomeTimelineHandler extends BaseJsonHandler {
 	public HomeTimelineHandler(Jedis j) {
 		super(j);
@@ -96,7 +124,6 @@ class HomeTimelineHandler extends BaseJsonHandler {
 	}
 }
 
-//TODO: Finish and debug this method
 class UpdateHandler extends BaseJsonHandler {
 	public UpdateHandler(Jedis j) {
 		super(j);
@@ -129,6 +156,8 @@ class UpdateHandler extends BaseJsonHandler {
 		jedis.hset(postKey, "content", status);
 		jedis.hset(postKey, "uid", uidString);
 		jedis.hset(postKey, "time", timeString);
+		
+		jedis.rpush("uid:" + uidString + ":posts", String.valueOf(pid));
 		
 		return JedisUtils.getTweetJson(jedis, pid);
 	}

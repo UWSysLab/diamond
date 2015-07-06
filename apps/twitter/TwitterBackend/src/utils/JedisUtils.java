@@ -1,5 +1,8 @@
 package utils;
 
+import java.net.URI;
+import java.util.Map;
+
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -34,5 +37,29 @@ public class JedisUtils {
 		user.add("screen_name", new JsonPrimitive(screenName));
 		user.add("name", new JsonPrimitive(name));
 		return user;
+	}
+	
+	/**
+	 * If either user_id or screen_name is provided in the query string of requestURI,
+	 * return the corresponding uid. If neither is provided, return -1.
+	 */
+	public static long getUidFromQuery(Jedis jedis, URI requestURI) {
+		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+		String uidString = queryParams.get("user_id");
+		String screenNameString = queryParams.get("screen_name");
+		
+		if (screenNameString == null && uidString == null) {
+			return -1;
+		}
+		
+		long uid;
+		if (uidString == null) {
+			uid = Long.parseLong(jedis.get("user:" + screenNameString + ":uid"));
+		}
+		else {
+			uid = Long.parseLong(uidString);
+		}
+		
+		return uid;
 	}
 }
