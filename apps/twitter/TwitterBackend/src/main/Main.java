@@ -80,6 +80,33 @@ class AddUserHandler extends BaseJsonHandler {
 	}
 }
 
+class CreateFriendshipHandler extends BaseJsonHandler {
+
+	public CreateFriendshipHandler(Jedis j) {
+		super(j);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		long toFollowUid = JedisUtils.getUid(jedis, bodyParams);
+		
+		if (toFollowUid == -1) {
+			System.out.println("CreateFriendshipHandler error: must specify either screen name or user id to follow");
+			return new JsonObject();
+		}
+		
+		String username = Utils.getUsername(requestHeaders);
+		String followerUidString = jedis.get("user:" + username + ":uid");
+		
+		jedis.rpush("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
+		jedis.rpush("uid:" + toFollowUid + ":followers", followerUidString);
+		
+		return JedisUtils.getUserJson(jedis, toFollowUid);
+	}
+	
+}
+
 class UserTimelineHandler extends BaseJsonHandler {
 	public UserTimelineHandler(Jedis j) {
 		super(j);
@@ -89,7 +116,8 @@ class UserTimelineHandler extends BaseJsonHandler {
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
 			InputStream requestBody) {
 		
-		long uid = JedisUtils.getUidFromQuery(jedis, requestURI);
+		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+		long uid = JedisUtils.getUid(jedis, queryParams);
 		
 		if (uid == -1) {
 			System.out.println("UserTimelineHandler error: must specify either screen name or user id");
@@ -264,6 +292,7 @@ public class Main {
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedis));
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedis));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
+			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedis));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedis));
 			server.setExecutor(null);
 			server.start();

@@ -40,13 +40,12 @@ public class JedisUtils {
 	}
 	
 	/**
-	 * If either user_id or screen_name is provided in the query string of requestURI,
+	 * If either user_id or screen_name is provided in the parameter map,
 	 * return the corresponding uid. If neither is provided, return -1.
 	 */
-	public static long getUidFromQuery(Jedis jedis, URI requestURI) {
-		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
-		String uidString = queryParams.get("user_id");
-		String screenNameString = queryParams.get("screen_name");
+	public static long getUid(Jedis jedis, Map<String, String> params) {
+		String uidString = params.get("user_id");
+		String screenNameString = params.get("screen_name");
 		
 		if (screenNameString == null && uidString == null) {
 			return -1;
