@@ -137,14 +137,7 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 				
 				DialogFragment dialog = new LoginDialogFragment();
 				dialog.show(getFragmentManager(), "LoginDialogFragment");
-				//setupLoginButton();
-
-				/*
-				Intent i = new Intent(TwitterService.SYNCH_ACTION);
-				i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
-				registerLoginReceiver();
-				startService(i);
-				startTimeline(getApplicationContext());
+			/*
 			} else if(hasAccessToken(this) && hasAccessTokenSecret(this)) {
 				
 				// we verify the tokens and retrieve the twitter ID
