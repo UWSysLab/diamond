@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
+import ch.ethz.twimight.R;
 import winterwell.json.JSONArray;
 import winterwell.json.JSONException;
 import winterwell.json.JSONObject;
@@ -632,9 +633,7 @@ public class Twitter implements Serializable {
 	 * The upgrade to v1.1 implemented here is necessary as of March 2013 */
 	static final String API_VERSION = "1.1";
 
-	//TODO: Changed by Niel
-	//static final String DEFAULT_TWITTER_URL = "https://api.twitter.com/"+API_VERSION;
-	static final String DEFAULT_TWITTER_URL = "http://seymour.cs.washington.edu:8000";
+	static final String DEFAULT_TWITTER_URL = "https://api.twitter.com/"+API_VERSION;
 	
 	/**
 	 * @deprecated Not used at present
@@ -748,7 +747,8 @@ public class Twitter implements Serializable {
 	 * API, or to set which version of the API you want to use.<br>
 	 * Note: Does not include the final "/"
 	 */
-	String TWITTER_URL = DEFAULT_TWITTER_URL;
+	//TODO: changed by Niel
+	String TWITTER_URL = "http://seymour.cs.washington.edu:8000";
 
 	private Date untilDate;
 
