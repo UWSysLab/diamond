@@ -181,9 +181,6 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 		
 		//TODO: added by Niel
 		private void hackStartTimeline() {
-			setTwitterScreenname("testuser4", LoginActivity.this);
-			setTwitterUsername("Test User 4", LoginActivity.this);
-			
 			Intent i = new Intent(TwitterService.SYNCH_ACTION);
 			i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
 			registerLoginReceiver();

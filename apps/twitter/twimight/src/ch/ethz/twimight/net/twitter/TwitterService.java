@@ -139,9 +139,10 @@ public class TwitterService extends Service {
 			
 		} else {
 			// Create twitter object
-			if(twitter == null){
+			
+			//TODO: Changed by Niel
+			//if(twitter == null){
 				
-				//TODO: Changed by Niel
 				/*
 				String token = LoginActivity.getAccessToken(this);
 				String secret = LoginActivity.getAccessTokenSecret(this);
@@ -154,10 +155,11 @@ public class TwitterService extends Service {
 					return START_NOT_STICKY;
 				}
 				*/
+				Log.i(TAG, "Niel: Initializing Twitter object");
 				String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
 				twitter = new Twitter(null, new URLConnectionHttpClient(screenName, HACK_PASSWORD));
 				twitter.setIncludeTweetEntities(true);
-			}
+			//}
 			
 			twitter.setSinceId(null);
 			twitter.setUntilId(null);

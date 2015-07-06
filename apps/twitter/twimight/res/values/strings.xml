@@ -220,5 +220,7 @@
     <!--Added by Niel  -->
     <string name="hint_username">username</string>
     <string name="hint_screenname">screenname</string>
+    <string name="dialog_login_title">Login</string>
+    <string name="dialog_login_positive">Confirm</string>
     
 </resources>
