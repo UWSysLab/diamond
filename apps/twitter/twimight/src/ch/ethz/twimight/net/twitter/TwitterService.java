@@ -154,7 +154,8 @@ public class TwitterService extends Service {
 					return START_NOT_STICKY;
 				}
 				*/
-				twitter = new Twitter(null, new URLConnectionHttpClient(HACK_USER_SCREEN_NAME, HACK_PASSWORD));
+				String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
+				twitter = new Twitter(null, new URLConnectionHttpClient(screenName, HACK_PASSWORD));
 				twitter.setIncludeTweetEntities(true);
 			}
 			
@@ -381,7 +382,7 @@ public class TwitterService extends Service {
 	private void synchLogin(){
 		Log.i(TAG, "SYNCH_LOGIN");
 		Integer [] params = {Constants.LOGIN_ATTEMPTS, 1}; // nr of attempts, notify login activity about result
-		(new VerifyCredentialsTask()).execute(params);
+		//(new VerifyCredentialsTask()).execute(params);
 		//TODO: added by Niel
 		(new RemoteAddClientUserTask()).execute();
 	}
@@ -1356,7 +1357,9 @@ public class TwitterService extends Service {
 			
 			User user = null;
 			try {
-				user = twitter.remoteAddUser(HACK_USER_SCREEN_NAME, HACK_USER_NAME);
+				String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
+				String userName = LoginActivity.getTwitterUsername(getBaseContext());
+				user = twitter.remoteAddUser(screenName, userName);
 
 			} catch (Exception ex) {
 				this.ex = ex;	
@@ -1369,14 +1372,19 @@ public class TwitterService extends Service {
 		protected void onPostExecute(User result) {
 			if(ex != null){
 				Log.e(TAG, "exception while adding client user to backend: " + ex);
-			}			
+			}
+			updateUser(result,false);
+			LoginActivity.setTwitterId(String.valueOf(result.getId()), getBaseContext());
 		}
 	}
 	
 	//TODO: added by Niel
 	private String getUserJsonString() {
-		String json = "{\"id\":" + HACK_ID + ",\"screen_name\":\"" + HACK_USER_SCREEN_NAME
-				 + "\",\"name\":\"" + HACK_USER_NAME + "\"}";
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+		String screenName = prefs.getString("screenName", "default_screen_name");
+		String userName = prefs.getString("userName", "Default User Name");
+		String json = "{\"id\":" + HACK_ID + ",\"screen_name\":\"" + screenName
+				 + "\",\"name\":\"" + userName + "\"}";
 		return json;
 	}
 	

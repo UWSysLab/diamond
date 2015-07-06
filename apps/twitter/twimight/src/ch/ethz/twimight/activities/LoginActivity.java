@@ -75,7 +75,11 @@ public class LoginActivity extends Activity implements OnClickListener{
 	
 	// shared preferences
 		public static final String TWITTER_ID = "twitter_id"; /** Name of Twitter ID in shared preferences */
-		private static final String TWITTER_SCREENNAME = "twitter_screenname"; /** Name of Twitter screenname in shared preferences */
+
+		//TODO: changed/added by Niel
+		public static final String TWITTER_SCREENNAME = "twitter_screenname"; /** Name of Twitter screenname in shared preferences */
+		public static final String TWITTER_USERNAME = "twitter_username"; /** Name of Twitter username in shared preferences */
+		//TODO: end changes
 		
 		private static final String TWITTER_ACCESS_TOKEN = "twitter_access_token"; /** Name of access token in preference */
 		private static final String TWITTER_ACCESS_TOKEN_SECRET = "twitter_access_token_secret"; /** Name of secret in preferences */
@@ -128,6 +132,10 @@ public class LoginActivity extends Activity implements OnClickListener{
 				if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 					Toast.makeText(this,getString(R.string.no_connection), Toast.LENGTH_LONG).show();
 				}
+				
+				setTwitterScreenname("testuser4", LoginActivity.this);
+				setTwitterUsername("Test User 4", LoginActivity.this);
+				
 				Intent i = new Intent(TwitterService.SYNCH_ACTION);
 				i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
 				registerLoginReceiver();
@@ -716,6 +724,30 @@ public class LoginActivity extends Activity implements OnClickListener{
 			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 			return prefs.getString(TWITTER_SCREENNAME, null);
 		}
+		
+		//TODO: added by Niel
+		/**
+		 * Stores the local Twitter username in the shared preferences
+		 * @param username
+		 * @param context
+		 */
+		public static void setTwitterUsername(String username, Context context) {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			SharedPreferences.Editor prefEditor = prefs.edit();
+			prefEditor.putString(TWITTER_USERNAME, username);
+			prefEditor.commit();
+		}
+		
+		/**
+		 * Gets the Twitter username from shared preferences
+		 * @param context
+		 * @return
+		 */
+		public static String getTwitterUsername(Context context) {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			return prefs.getString(TWITTER_USERNAME, null);
+		}
+		//TODO: end Niel additions
 		
 		
 		
