@@ -217,4 +217,8 @@
     <string name="btstatus_connecting_to">connecting to %s</string>
     <string name="btstatus_connected_to">connected to %s</string>
     
+    <!--Added by Niel  -->
+    <string name="hint_username">username</string>
+    <string name="hint_screenname">screenname</string>
+    
 </resources>

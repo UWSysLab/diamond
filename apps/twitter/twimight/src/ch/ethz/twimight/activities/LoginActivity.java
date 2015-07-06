@@ -25,6 +25,7 @@ import oauth.signpost.exception.OAuthMessageSignerException;
 import oauth.signpost.exception.OAuthNotAuthorizedException;
 import winterwell.jtwitter.User;
 import android.app.Activity;
+import android.app.DialogFragment;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -48,6 +49,7 @@ import ch.ethz.bluetest.credentials.Obfuscator;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.data.DBOpenHelper;
 import ch.ethz.twimight.data.RevocationDBHelper;
+import ch.ethz.twimight.fragments.LoginDialogFragment;
 import ch.ethz.twimight.net.opportunistic.ScanningAlarm;
 import ch.ethz.twimight.net.tds.TDSAlarm;
 import ch.ethz.twimight.net.tds.TDSService;
@@ -69,7 +71,7 @@ import ch.ethz.twimight.util.TwimightSuggestionProvider;
  * @author thossmann
  *
  */
-public class LoginActivity extends Activity implements OnClickListener{
+public class LoginActivity extends Activity implements OnClickListener, LoginDialogFragment.LoginDialogListener {
 
 	private static final String TAG = "LoginActivity"; /** For logging */
 	
@@ -133,15 +135,16 @@ public class LoginActivity extends Activity implements OnClickListener{
 					Toast.makeText(this,getString(R.string.no_connection), Toast.LENGTH_LONG).show();
 				}
 				
-				setTwitterScreenname("testuser4", LoginActivity.this);
-				setTwitterUsername("Test User 4", LoginActivity.this);
-				
+				DialogFragment dialog = new LoginDialogFragment();
+				dialog.show(getFragmentManager(), "LoginDialogFragment");
+				//setupLoginButton();
+
+				/*
 				Intent i = new Intent(TwitterService.SYNCH_ACTION);
 				i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
 				registerLoginReceiver();
 				startService(i);
 				startTimeline(getApplicationContext());
-			/*	
 			} else if(hasAccessToken(this) && hasAccessTokenSecret(this)) {
 				
 				// we verify the tokens and retrieve the twitter ID
@@ -174,6 +177,23 @@ public class LoginActivity extends Activity implements OnClickListener{
 			}*/
 			//TODO: Niel end changes
 			
+		}
+		
+		//TODO: added by Niel
+		private void hackStartTimeline() {
+			setTwitterScreenname("testuser4", LoginActivity.this);
+			setTwitterUsername("Test User 4", LoginActivity.this);
+			
+			Intent i = new Intent(TwitterService.SYNCH_ACTION);
+			i.putExtra("synch_request", TwitterService.SYNCH_LOGIN);
+			registerLoginReceiver();
+			startService(i);
+			startTimeline(getApplicationContext());
+		}
+		
+		//TODO: added by Niel
+		public void onDialogPositiveClick(DialogFragment dialog) {
+			hackStartTimeline();
 		}
 		
 		private void removeLoginInterface(){
