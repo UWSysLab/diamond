@@ -66,9 +66,11 @@ public class JedisTwitter {
 	}
 
 	public JsonElement getHomeTimeline(String screenName) {
+		System.out.println("started getHomeTimeline()");
 		String uidString = jedis.get("user:" + screenName + ":uid");
 		JsonArray result = new JsonArray();
 		List<String> timelinePids = jedis.lrange("uid:" + uidString + ":timeline", 0, -1);
+		System.out.println(timelinePids.size());
 		for (int i = 0; i < timelinePids.size(); i++) {
 			result.add(getTweet(Long.parseLong(timelinePids.get(i))));
 		}

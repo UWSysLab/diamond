@@ -32,7 +32,13 @@ abstract class BaseJsonHandler implements HttpHandler {
 		Headers requestHeaders = exchange.getRequestHeaders();
 		URI requestURI = exchange.getRequestURI();
 		InputStream requestBody = exchange.getRequestBody();
-		JsonElement responseJson = getResponseJson(requestMethod, requestHeaders, requestURI, requestBody);
+		JsonElement responseJson = null;
+		try {
+			responseJson = getResponseJson(requestMethod, requestHeaders, requestURI, requestBody);
+		}
+		catch (Exception ex) {
+			ex.printStackTrace();
+		}
 		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
 		os.write(responseJson.toString().getBytes());
@@ -208,22 +214,11 @@ class TestHandler implements HttpHandler {
 }
 
 public class Main {
-	public static void writeTestData(Jedis jedis) {
-		jedis.flushDB();
-		jedis.incr("global:uid");
-		jedis.hset("uid:1", "name", "Sean Connery");
-		jedis.hset("uid:1", "screen_name", "sconnery");
-		jedis.incr("global:uid");
-		jedis.hset("uid:2", "name", "Daniel Craig");
-		jedis.hset("uid:2", "screen_name", "dcraig");
-		jedis.incr("global:pid");
-		jedis.hset("pid:1", "content", "Old James Bond movies are better");
-		jedis.hset("pid:1", "uid", "1");
-		jedis.hset("pid:1", "time", String.valueOf(System.currentTimeMillis()));
-		jedis.incr("global:pid");
-		jedis.hset("pid:2", "content", "No, newer James Bond movies are best");
-		jedis.hset("pid:2", "uid", "2");
-		jedis.hset("pid:2", "time", String.valueOf(System.currentTimeMillis()));
+	public static void writeTestData(JedisTwitter jedisTwitter) {
+		jedisTwitter.addUser("sconnery", "Sean Connery");
+		jedisTwitter.addUser("dcraig", "Daniel Craig");
+		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "No, newer James Bond movies are best", System.currentTimeMillis());
 	}
 	
 	public static void main(String[] args) {
@@ -235,6 +230,9 @@ public class Main {
 			jedis = pool.getResource();
 			
 			JedisTwitter jedisTwitter = new JedisTwitter(jedis);
+			
+			jedis.flushDB();
+			writeTestData(jedisTwitter);
 			
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
 			server.createContext("/test", new TestHandler());
