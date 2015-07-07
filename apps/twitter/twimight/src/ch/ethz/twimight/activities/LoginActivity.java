@@ -125,8 +125,16 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 			instance = this;
 
 			//TODO: Niel begin changes
+			if (hasTwitterId(this.getBaseContext())) {
+				hackStartTimeline();
+			}
+			else {
+				DialogFragment dialog = new LoginDialogFragment();
+				dialog.show(getFragmentManager(), "LoginDialogFragment");
+			}
+			
 			// which state are we in?
-			//if(hasAccessToken(this) && hasAccessTokenSecret(this) && getTwitterId(this)!=null){
+			/*if(hasAccessToken(this) && hasAccessTokenSecret(this) && getTwitterId(this)!=null){
 				// if we have token, secret and ID: launch the timeline activity
 				
 				// Do we have connectivity?
@@ -134,10 +142,7 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 				if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 					Toast.makeText(this,getString(R.string.no_connection), Toast.LENGTH_LONG).show();
 				}
-				
-				DialogFragment dialog = new LoginDialogFragment();
-				dialog.show(getFragmentManager(), "LoginDialogFragment");
-			/*
+				startTimeline(getApplicationContext());
 			} else if(hasAccessToken(this) && hasAccessTokenSecret(this)) {
 				
 				// we verify the tokens and retrieve the twitter ID
