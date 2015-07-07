@@ -201,6 +201,33 @@ class UpdateHandler extends BaseJsonHandler {
 	}
 }
 
+class HackSearchTweetsHandler extends BaseJsonHandler {
+	public HackSearchTweetsHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		JsonObject result = new JsonObject();
+		result.add("statuses", jedisTwitter.getAllTweets());
+		return result;
+	}
+}
+
+class HackSearchUsersHandler extends BaseJsonHandler {
+	public HackSearchUsersHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		return jedisTwitter.getAllUsers();
+	}
+}
+
+
 class TestHandler implements HttpHandler {
 
 	@Override
@@ -246,6 +273,8 @@ public class Main {
 			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
 			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));
 			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedisTwitter));
+			server.createContext("/search/tweets.json", new HackSearchTweetsHandler(jedisTwitter));
+			server.createContext("/users/search.json", new HackSearchUsersHandler(jedisTwitter));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedisTwitter));
 			server.setExecutor(null);
 			server.start();
