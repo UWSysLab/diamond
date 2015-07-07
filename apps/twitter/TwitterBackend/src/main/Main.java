@@ -257,6 +257,27 @@ class DestroyFavoritesHandler extends BaseJsonHandler {
 	}
 }
 
+class PostRetweetHandler extends BaseJsonHandler {
+	public PostRetweetHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		
+		String screenName = Utils.getUsername(requestHeaders);
+		
+		String[] uriSplit = requestURI.getPath().split("/");
+		String origPidString = uriSplit[uriSplit.length - 1].split("\\.")[0];
+		long origPid = Long.parseLong(origPidString);
+		
+		long time = System.currentTimeMillis();
+		
+		return jedisTwitter.createRetweet(screenName, origPid, time);
+	}
+}
+
 class HackSearchTweetsHandler extends BaseJsonHandler {
 	public HackSearchTweetsHandler(JedisTwitter jt) {
 		super(jt);
@@ -304,7 +325,7 @@ public class Main {
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
-		jedisTwitter.updateStatus("dcraig", "No, newer James Bond movies are best", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());
 	}
 	
 	public static void main(String[] args) {
@@ -325,6 +346,7 @@ public class Main {
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedisTwitter));
+			server.createContext("/statuses/retweet", new PostRetweetHandler(jedisTwitter));
 			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedisTwitter));
 			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
 			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));

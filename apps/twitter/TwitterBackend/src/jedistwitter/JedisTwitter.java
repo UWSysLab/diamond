@@ -47,8 +47,7 @@ public class JedisTwitter {
 			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
 		}
 		
-		
-		return getTweet(pid);
+		return getTweet(pid, screenName);
 	}
 
 	public JsonElement addUser(String screenName, String name) {
@@ -74,7 +73,7 @@ public class JedisTwitter {
 		JsonArray result = new JsonArray();
 		List<String> timelinePids = jedis.lrange("uid:" + uidString + ":timeline", 0, -1);
 		for (int i = 0; i < timelinePids.size(); i++) {
-			result.add(getTweet(Long.parseLong(timelinePids.get(i))));
+			result.add(getTweet(Long.parseLong(timelinePids.get(i)), screenName));
 		}
 		return result;
 	}
@@ -84,7 +83,7 @@ public class JedisTwitter {
 		
 		JsonArray result = new JsonArray();
 		for (int i = 0; i < pids.size(); i++) {
-			result.add(getTweet(Long.parseLong(pids.get(i))));
+			result.add(getTweet(Long.parseLong(pids.get(i)), null));
 		}
 		
 		return result;
@@ -125,7 +124,7 @@ public class JedisTwitter {
 		return user;
 	}
 	
-	public JsonElement getTweet(long pid) {
+	public JsonElement getTweet(long pid, String authScreenName) {
 		String postKey = "pid:" + pid;
 		String content = jedis.hget(postKey, "content");
 		String time = jedis.hget(postKey, "time");
@@ -153,6 +152,29 @@ public class JedisTwitter {
 			tweet.add("in_reply_to_user_id_str", new JsonPrimitive(replyUidString));
 		}
 		
+		String retweetIdString = jedis.hget(postKey, "retweet");
+		if (retweetIdString != null) {
+			tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
+		}
+		
+		String retweeterSetKey = "pid:" + pid + ":retweeters";	
+		long numRetweets = jedis.scard(retweeterSetKey);
+		tweet.add("retweet_count", new JsonPrimitive(numRetweets));
+		
+		String favoriterSetKey = "pid:" + pid + ":favoriters";
+		long numFavorites = jedis.scard(favoriterSetKey);
+		tweet.add("favorite_count", new JsonPrimitive(numFavorites));
+		
+		String authUidString = jedis.get("user:" + authScreenName + ":uid");
+		boolean retweeted = false;
+		boolean favorited = false;
+		if (authUidString != null) {
+			retweeted = jedis.sismember(retweeterSetKey, authUidString);
+			favorited = jedis.sismember(favoriterSetKey, authUidString);
+		}
+		tweet.add("retweeted", new JsonPrimitive(retweeted));
+		tweet.add("favorited", new JsonPrimitive(favorited));
+
 		return tweet;
 	}
 
@@ -164,7 +186,7 @@ public class JedisTwitter {
 	public JsonElement getAllTweets() {
 		JsonArray result = new JsonArray();
 		for (int i = 1; i <= Long.parseLong(jedis.get("global:pid")); i++) {
-			result.add(getTweet(i));
+			result.add(getTweet(i, null));
 		}
 		return result;
 	}
@@ -205,7 +227,7 @@ public class JedisTwitter {
 		
 		JsonArray result = new JsonArray();
 		for (String s : favorites) {
-			result.add(getTweet(Long.parseLong(s)));
+			result.add(getTweet(Long.parseLong(s), null));
 		}
 		
 		return result;
@@ -216,12 +238,54 @@ public class JedisTwitter {
 		String ssKey = "uid:" + uidString + ":favorites";
 		long score = jedis.zcard(ssKey);
 		jedis.zadd(ssKey, score, String.valueOf(pid));
-		return getTweet(pid);
+		
+		jedis.sadd("pid:" + pid + ":favoriters", uidString);
+		
+		return getTweet(pid, screenName);
 	}
 	
 	public JsonElement destroyFavorite(String screenName, long pid) {
 		String uidString = jedis.get("user:" + screenName + ":uid");
 		jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
-		return getTweet(pid);
+		return getTweet(pid, screenName);
+	}
+
+	//TODO: currently has duplicated code from updateStatus(): more elegant way to handle this?
+	public JsonElement createRetweet(String screenName, long origPid, long time) {
+		String retweeterUidString = jedis.get("user:" + screenName + ":uid");
+		
+		//update retweet details of original Tweet
+		jedis.sadd("pid:" + origPid + ":retweeters", retweeterUidString);
+		
+		//create new Tweet
+		String timeString = String.valueOf(time);
+		
+		if (retweeterUidString == null) {
+			System.out.println("updateStatus error: no user with screenname " + screenName);
+			return new JsonObject();
+		}
+		
+		//create post hash
+		long pid = jedis.incr("global:pid");
+		String postKey = "pid:" + pid;
+		String origPostKey = "pid:" + origPid;
+		String origUid = jedis.hget(origPostKey, "uid");
+		String origScreenName = jedis.hget("uid:" + origUid, "screen_name");
+		jedis.hset(postKey, "content", "RT @" + origScreenName + ": " + jedis.hget(origPostKey, "content"));
+		jedis.hset(postKey, "uid", retweeterUidString);
+		jedis.hset(postKey, "time", timeString);
+		jedis.hset(postKey, "retweet", String.valueOf(origPid));
+
+		//add to user timeline of poster
+		jedis.rpush("uid:" + retweeterUidString + ":posts", String.valueOf(pid));
+
+		//add to home timeline of poster and all of poster's followers
+		jedis.rpush("uid:" + retweeterUidString + ":timeline", String.valueOf(pid));
+		Set<String> followerUids = jedis.smembers("uid:" + retweeterUidString + ":followers");
+		for (String followerUidString : followerUids) {
+			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
+		}
+		
+		return getTweet(pid, screenName);
 	}
 }
