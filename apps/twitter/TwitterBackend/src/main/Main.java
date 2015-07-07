@@ -201,9 +201,18 @@ class HomeTimelineHandler extends BaseJsonHandler {
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
 			InputStream requestBody) {
 		JsonArray result = new JsonArray();
-		int numPosts = Integer.parseInt(jedis.get("global:pid"));
+		
+		/*int numPosts = Integer.parseInt(jedis.get("global:pid"));
 		for (int i = 1; i <= numPosts; i++) {
 			result.add(JedisUtils.getTweetJson(jedis, i));
+		}*/
+		
+		String username = Utils.getUsername(requestHeaders);
+		String uidString = jedis.get("user:" + username + ":uid");
+		
+		List<String> timelinePids = jedis.lrange("uid:" + uidString + ":timeline", 0, -1);
+		for (int i = 0; i < timelinePids.size(); i++) {
+			result.add(JedisUtils.getTweetJson(jedis, Long.parseLong(timelinePids.get(i))));
 		}
 		return result;
 	}
@@ -236,13 +245,23 @@ class UpdateHandler extends BaseJsonHandler {
 			return new JsonObject();
 		}
 		
+		//create post hash
 		long pid = jedis.incr("global:pid");
 		String postKey = "pid:" + pid;
 		jedis.hset(postKey, "content", status);
 		jedis.hset(postKey, "uid", uidString);
 		jedis.hset(postKey, "time", timeString);
-		
+
+		//add to user timeline of poster
 		jedis.rpush("uid:" + uidString + ":posts", String.valueOf(pid));
+
+		//add to home timeline of poster and all of poster's followers
+		jedis.rpush("uid:" + uidString + ":timeline", String.valueOf(pid));
+		List<String> followerUids = jedis.lrange("uid:" + uidString + ":followers", 0, -1);
+		for (String followerUidString : followerUids) {
+			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
+		}
+		
 		
 		return JedisUtils.getTweetJson(jedis, pid);
 	}
