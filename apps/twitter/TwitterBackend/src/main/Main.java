@@ -16,6 +16,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import jedistwitter.JedisTwitter;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -26,10 +27,10 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.StringUtils;
 
 abstract class BaseJsonHandler implements HttpHandler {
-	protected Jedis jedis;
+	protected JedisTwitter jedisTwitter;
 	
-	public BaseJsonHandler(Jedis j) {
-		jedis = j;
+	public BaseJsonHandler(JedisTwitter jt) {
+		jedisTwitter = jt;
 	}
 	
 	@Override
@@ -51,8 +52,8 @@ abstract class BaseJsonHandler implements HttpHandler {
 }
 
 class AddUserHandler extends BaseJsonHandler {
-	public AddUserHandler(Jedis j) {
-		super(j);
+	public AddUserHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
@@ -62,111 +63,89 @@ class AddUserHandler extends BaseJsonHandler {
 		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
 		String screenName = bodyParams.get("screen_name");
 		String name = bodyParams.get("name");
-		String userBackrefKey = "user:" + screenName + ":uid";
-		long uid;
 		
-		if (jedis.get(userBackrefKey) == null) {
-			uid = jedis.incr("global:uid");
-			String userKey = "uid:" + uid;
-			jedis.set(userBackrefKey, String.valueOf(uid));
-			jedis.hset(userKey, "screen_name", screenName);
-			jedis.hset(userKey, "name", name);
-		}
-		else {
-			uid = Long.parseLong(jedis.get(userBackrefKey));
-		}
-		
-		return JedisUtils.getUserJson(jedis, uid);
+		return jedisTwitter.addUser(screenName, name);
 	}
 }
 
 class VerifyCredentialsHandler extends BaseJsonHandler {
 
-	public VerifyCredentialsHandler(Jedis j) {
-		super(j);
+	public VerifyCredentialsHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
 		String username = Utils.getUsername(requestHeaders);
-		String uidString = jedis.get("user:" + username + ":uid");
-		return JedisUtils.getUserJson(jedis, Long.parseLong(uidString));
+		long uid = jedisTwitter.getUid(username);
+		return jedisTwitter.getUser(uid);
 	}
 	
 }
 
 class ShowUserHandler extends BaseJsonHandler {
 
-	public ShowUserHandler(Jedis j) {
-		super(j);
+	public ShowUserHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
 		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
-		long uid = JedisUtils.getUid(jedis, queryParams);
-		return JedisUtils.getUserJson(jedis, uid);
+		long uid = jedisTwitter.getUid(queryParams);
+		return jedisTwitter.getUser(uid);
 	}
 	
 }
 
 class CreateFriendshipHandler extends BaseJsonHandler {
 
-	public CreateFriendshipHandler(Jedis j) {
-		super(j);
+	public CreateFriendshipHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
 		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long toFollowUid = JedisUtils.getUid(jedis, bodyParams);
+		long toFollowUid = jedisTwitter.getUid(bodyParams);
 		
 		if (toFollowUid == -1) {
 			System.out.println("CreateFriendshipHandler error: must specify either screen name or user id to follow");
 			return new JsonObject();
 		}
 		
-		String username = Utils.getUsername(requestHeaders);
-		String followerUidString = jedis.get("user:" + username + ":uid");
-		
-		jedis.sadd("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
-		jedis.sadd("uid:" + toFollowUid + ":followers", followerUidString);
-		
-		return JedisUtils.getUserJson(jedis, toFollowUid);
+		return jedisTwitter.createFriendship(username, toFollowUid);
 	}
 	
 }
 
 class DestroyFriendshipHandler extends BaseJsonHandler {
 
-	public DestroyFriendshipHandler(Jedis j) {
-		super(j);
+	public DestroyFriendshipHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
 		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long toUnfollowUid = JedisUtils.getUid(jedis, bodyParams);
+		long toUnfollowUid = jedisTwitter.getUid(bodyParams);
 		
 		if (toUnfollowUid == -1) {
-			System.out.println("DestroyFriendshipHandler error: must specify either screen name or user id to follow");
+			System.out.println("DestroyFriendshipHandler error: must specify either screen name or user id to unfollow");
 			return new JsonObject();
 		}
 		
-		String username = Utils.getUsername(requestHeaders);
-		String unfollowerUidString = jedis.get("user:" + username + ":uid");
-		
-		jedis.srem("uid:" + unfollowerUidString + ":following", String.valueOf(toUnfollowUid));
-		jedis.srem("uid:" + toUnfollowUid + ":followers", unfollowerUidString);
-		
-		return JedisUtils.getUserJson(jedis, toUnfollowUid);
+		return jedisTwitter.destroyFriendship(username, toUnfollowUid);
+
 	}
 	
 }
 
 class UserTimelineHandler extends BaseJsonHandler {
-	public UserTimelineHandler(Jedis j) {
-		super(j);
+	public UserTimelineHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
@@ -174,53 +153,34 @@ class UserTimelineHandler extends BaseJsonHandler {
 			InputStream requestBody) {
 		
 		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
-		long uid = JedisUtils.getUid(jedis, queryParams);
+		long uid = jedisTwitter.getUid(queryParams);
 		
 		if (uid == -1) {
 			System.out.println("UserTimelineHandler error: must specify either screen name or user id");
 			return new JsonObject();
 		}
 		
-		List<String> pids = jedis.lrange("uid:" + uid + ":posts", 0, -1);
-		
-		JsonArray result = new JsonArray();
-		for (int i = 0; i < pids.size(); i++) {
-			result.add(JedisUtils.getTweetJson(jedis, Long.parseLong(pids.get(i))));
-		}
-		
-		return result;
+		return jedisTwitter.getUserTimeline(uid);
+
 	}
 }
 
 class HomeTimelineHandler extends BaseJsonHandler {
-	public HomeTimelineHandler(Jedis j) {
-		super(j);
+	public HomeTimelineHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
 			InputStream requestBody) {
-		JsonArray result = new JsonArray();
-		
-		/*int numPosts = Integer.parseInt(jedis.get("global:pid"));
-		for (int i = 1; i <= numPosts; i++) {
-			result.add(JedisUtils.getTweetJson(jedis, i));
-		}*/
-		
 		String username = Utils.getUsername(requestHeaders);
-		String uidString = jedis.get("user:" + username + ":uid");
-		
-		List<String> timelinePids = jedis.lrange("uid:" + uidString + ":timeline", 0, -1);
-		for (int i = 0; i < timelinePids.size(); i++) {
-			result.add(JedisUtils.getTweetJson(jedis, Long.parseLong(timelinePids.get(i))));
-		}
-		return result;
+		return jedisTwitter.getHomeTimeline(username);
 	}
 }
 
 class UpdateHandler extends BaseJsonHandler {
-	public UpdateHandler(Jedis j) {
-		super(j);
+	public UpdateHandler(JedisTwitter jt) {
+		super(jt);
 	}
 
 	@Override
@@ -230,93 +190,15 @@ class UpdateHandler extends BaseJsonHandler {
 		Map<String, String> bodyParams =  Utils.getBodyParams(requestBody);
 		
 		String username = Utils.getUsername(requestHeaders);
-		String uidString = jedis.get("user:" + username + ":uid");
-
 		String status = bodyParams.get("status");
-		String timeString = String.valueOf(System.currentTimeMillis());
+		long time = System.currentTimeMillis();
 
-		
-		if (uidString == null) {
-			System.out.println("UpdateHandler error: no user with username " + username);
-			return new JsonObject();
-		}
 		if (status == null) {
 			System.out.println("UpdateHandler error: update request with no status parameter");
 			return new JsonObject();
 		}
-		
-		//create post hash
-		long pid = jedis.incr("global:pid");
-		String postKey = "pid:" + pid;
-		jedis.hset(postKey, "content", status);
-		jedis.hset(postKey, "uid", uidString);
-		jedis.hset(postKey, "time", timeString);
-
-		//add to user timeline of poster
-		jedis.rpush("uid:" + uidString + ":posts", String.valueOf(pid));
-
-		//add to home timeline of poster and all of poster's followers
-		jedis.rpush("uid:" + uidString + ":timeline", String.valueOf(pid));
-		List<String> followerUids = jedis.lrange("uid:" + uidString + ":followers", 0, -1);
-		for (String followerUidString : followerUids) {
-			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
-		}
-		
-		
-		return JedisUtils.getTweetJson(jedis, pid);
-	}
-}
-
-class TestHomeTimelineHandler extends BaseJsonHandler {
-	public TestHomeTimelineHandler(Jedis j) {
-		super(j);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		JsonArray result = new JsonArray();
-		JsonObject testUser = new JsonObject();
-		testUser.add("id", new JsonPrimitive(1));
-		testUser.add("id_str", new JsonPrimitive("1"));
-		testUser.add("screen_name", new JsonPrimitive("testuser"));
-		testUser.add("name", new JsonPrimitive("Test Name"));
-		JsonObject testTweet = new JsonObject();
-		testTweet.add("text", new JsonPrimitive("Test tweet"));
-		testTweet.add("id", new JsonPrimitive(1));
-		testTweet.add("id_str", new JsonPrimitive("1"));
-		testTweet.add("created_at", new JsonPrimitive("Wed Aug 27 13:08:45 +0000 2008"));
-		testTweet.add("user", testUser);
-		result.add(testTweet);
-		return result;
-	}
-}
-
-class TestJedisHandler extends BaseJsonHandler {
-	public TestJedisHandler(Jedis j) {
-		super(j);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		JsonObject result = new JsonObject();
-		result.add("global:uid", new JsonPrimitive(jedis.get("global:uid")));
-		return result;
-	}
-}
-
-class TestJsonHandler extends BaseJsonHandler {
-	public TestJsonHandler(Jedis j) {
-		super(j);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		JsonObject result = new JsonObject();
-		result.add("testval", new JsonPrimitive(1));
-		return result;
+				
+		return jedisTwitter.updateStatus(username, status, time);
 	}
 }
 
@@ -359,20 +241,18 @@ public class Main {
 		try {
 			jedis = pool.getResource();
 			
-			writeTestData(jedis);
+			JedisTwitter jedisTwitter = new JedisTwitter(jedis);
 			
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
 			server.createContext("/test", new TestHandler());
-			server.createContext("/testjedis.json", new TestJedisHandler(jedis));
-			server.createContext("/testjson.json", new TestJsonHandler(jedis));
-			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedis));
-			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedis));
-			server.createContext("/statuses/update.json", new UpdateHandler(jedis));
-			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedis));
-			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedis));
-			server.createContext("/users/show.json", new ShowUserHandler(jedis));
-			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedis));
-			server.createContext("/hack/adduser.json", new AddUserHandler(jedis));
+			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedisTwitter));
+			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedisTwitter));
+			server.createContext("/statuses/update.json", new UpdateHandler(jedisTwitter));
+			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedisTwitter));
+			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
+			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));
+			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedisTwitter));
+			server.createContext("/hack/adduser.json", new AddUserHandler(jedisTwitter));
 			server.setExecutor(null);
 			server.start();
 		}
