@@ -257,24 +257,34 @@ class DestroyFavoritesHandler extends BaseJsonHandler {
 	}
 }
 
-class PostRetweetHandler extends BaseJsonHandler {
-	public PostRetweetHandler(JedisTwitter jt) {
+class RetweetHandler extends BaseJsonHandler {
+	public RetweetHandler(JedisTwitter jt) {
 		super(jt);
 	}
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
 			InputStream requestBody) {
-		
-		String screenName = Utils.getUsername(requestHeaders);
-		
+
 		String[] uriSplit = requestURI.getPath().split("/");
 		String origPidString = uriSplit[uriSplit.length - 1].split("\\.")[0];
 		long origPid = Long.parseLong(origPidString);
 		
 		long time = System.currentTimeMillis();
 		
-		return jedisTwitter.createRetweet(screenName, origPid, time);
+		if (requestMethod.equalsIgnoreCase("POST")) {
+			String screenName = Utils.getUsername(requestHeaders);
+			
+			return jedisTwitter.createRetweet(screenName, origPid, time);
+		}
+		else if (requestMethod.equalsIgnoreCase("GET")) {
+			return jedisTwitter.getRetweets(origPid);
+		}
+		else {
+			System.out.println("RetweetHandler error: unhandled request type: " + requestMethod);
+			return new JsonObject();
+		}
+
 	}
 }
 
@@ -346,7 +356,7 @@ public class Main {
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedisTwitter));
-			server.createContext("/statuses/retweet", new PostRetweetHandler(jedisTwitter));
+			server.createContext("/statuses/retweet", new RetweetHandler(jedisTwitter));
 			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedisTwitter));
 			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
 			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));

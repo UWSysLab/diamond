@@ -157,9 +157,7 @@ public class JedisTwitter {
 		
 		String retweetIdString = jedis.hget(postKey, "retweet");
 		if (retweetIdString != null) {
-		//	tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
-			tweet.add("retweeted_status", getTweet(1, authScreenName));
-
+			tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
 		}
 		
 		String retweeterSetKey = "pid:" + pid + ":retweeters";	
@@ -258,10 +256,7 @@ public class JedisTwitter {
 	//TODO: currently has duplicated code from updateStatus(): more elegant way to handle this?
 	public JsonElement createRetweet(String screenName, long origPid, long time) {
 		String retweeterUidString = jedis.get("user:" + screenName + ":uid");
-		
-		//update retweet details of original Tweet
-		jedis.sadd("pid:" + origPid + ":retweeters", retweeterUidString);
-		
+
 		//create new Tweet
 		String timeString = String.valueOf(time);
 		
@@ -272,6 +267,7 @@ public class JedisTwitter {
 		
 		//create post hash
 		long pid = jedis.incr("global:pid");
+		String pidString = String.valueOf(pid);
 		String postKey = "pid:" + pid;
 		String origPostKey = "pid:" + origPid;
 		String origUid = jedis.hget(origPostKey, "uid");
@@ -282,15 +278,28 @@ public class JedisTwitter {
 		jedis.hset(postKey, "retweet", String.valueOf(origPid));
 
 		//add to user timeline of poster
-		jedis.rpush("uid:" + retweeterUidString + ":posts", String.valueOf(pid));
+		jedis.rpush("uid:" + retweeterUidString + ":posts", pidString);
 
 		//add to home timeline of poster and all of poster's followers
-		jedis.rpush("uid:" + retweeterUidString + ":timeline", String.valueOf(pid));
+		jedis.rpush("uid:" + retweeterUidString + ":timeline", pidString);
 		Set<String> followerUids = jedis.smembers("uid:" + retweeterUidString + ":followers");
 		for (String followerUidString : followerUids) {
-			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
+			jedis.rpush("uid:" + followerUidString + ":timeline", pidString);
 		}
 		
+		//update retweet details of original Tweet
+		jedis.sadd("pid:" + origPid + ":retweeters", retweeterUidString);
+		jedis.sadd("pid:" + origPid + ":retweets", pidString);
+		
 		return getTweet(pid, screenName);
+	}
+	
+	public JsonElement getRetweets(long pid) {
+		Set<String> retweetPidStrings = jedis.smembers("pid:" + pid + ":retweets");
+		JsonArray result = new JsonArray();
+		for (String pidString : retweetPidStrings) {
+			result.add(getTweet(Long.parseLong(pidString), null));
+		}
+		return result;
 	}
 }
