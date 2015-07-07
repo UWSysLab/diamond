@@ -142,6 +142,14 @@ public class JedisTwitter {
 		return Long.parseLong(uidString);
 	}
 	
+	public JsonElement getAllTweets() {
+		JsonArray result = new JsonArray();
+		for (int i = 1; i <= Long.parseLong(jedis.get("global:pid")); i++) {
+			result.add(getTweet(i));
+		}
+		return result;
+	}
+	
 	/**
 	 * If either user_id or screen_name is provided in the parameter map,
 	 * return the corresponding uid. If neither is provided, return -1.
