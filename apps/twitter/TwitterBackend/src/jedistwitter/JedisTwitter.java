@@ -181,4 +181,29 @@ public class JedisTwitter {
 		
 		return uid;
 	}
+	
+	public JsonElement getFavorites(long uid) {
+		Set<String> favorites = jedis.zrange("uid:" + uid + ":favorites", -1, -20);
+		
+		JsonArray result = new JsonArray();
+		for (String s : favorites) {
+			result.add(getTweet(Long.parseLong(s)));
+		}
+		
+		return result;
+	}
+	
+	public JsonElement createFavorite(String screenName, long pid) {
+		String uidString = jedis.get("user:" + screenName + ":uid");
+		String ssKey = "uid:" + uidString + ":favorites";
+		long score = jedis.zcard(ssKey);
+		jedis.zadd(ssKey, score, String.valueOf(pid));
+		return getTweet(pid);
+	}
+	
+	public JsonElement destroyFavorite(String screenName, long pid) {
+		String uidString = jedis.get("user:" + screenName + ":uid");
+		jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
+		return getTweet(pid);
+	}
 }

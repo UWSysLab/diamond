@@ -201,6 +201,61 @@ class UpdateHandler extends BaseJsonHandler {
 	}
 }
 
+class ListFavoritesHandler extends BaseJsonHandler {
+	public ListFavoritesHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
+		long uid = jedisTwitter.getUid(queryParams);
+		
+		//list favorites of authenticating user if no user is specified
+		if (uid == -1) {
+			String username = Utils.getUsername(requestHeaders);
+			uid = jedisTwitter.getUid(username);
+		}
+		
+		return jedisTwitter.getFavorites(uid);
+	}
+}
+
+class CreateFavoritesHandler extends BaseJsonHandler {
+	public CreateFavoritesHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
+		
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		long pid = Long.parseLong(bodyParams.get("id"));
+		
+		return jedisTwitter.createFavorite(username, pid);
+	}
+}
+
+class DestroyFavoritesHandler extends BaseJsonHandler {
+	public DestroyFavoritesHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
+		
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		long pid = Long.parseLong(bodyParams.get("id"));
+		
+		return jedisTwitter.destroyFavorite(username, pid);
+	}
+}
+
 class HackSearchTweetsHandler extends BaseJsonHandler {
 	public HackSearchTweetsHandler(JedisTwitter jt) {
 		super(jt);
@@ -272,6 +327,9 @@ public class Main {
 			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedisTwitter));
 			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
 			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));
+			server.createContext("/favorites/list.json", new ListFavoritesHandler(jedisTwitter));
+			server.createContext("/favorites/create.json", new CreateFavoritesHandler(jedisTwitter));
+			server.createContext("/favorites/destroy.json", new DestroyFavoritesHandler(jedisTwitter));
 			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedisTwitter));
 			server.createContext("/search/tweets.json", new HackSearchTweetsHandler(jedisTwitter));
 			server.createContext("/users/search.json", new HackSearchUsersHandler(jedisTwitter));
