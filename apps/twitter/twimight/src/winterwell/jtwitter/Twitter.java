@@ -1166,7 +1166,7 @@ public class Twitter implements Serializable {
 		//TODO: changed by Niel
 		//assert http.canAuthenticate();
 		return getStatuses(TWITTER_URL + "/statuses/home_timeline.json",
-				standardishParameters(), false);
+				standardishParameters(), http.canAuthenticate());
 	}
 
 	/**
