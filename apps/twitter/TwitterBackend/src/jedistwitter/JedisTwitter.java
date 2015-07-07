@@ -139,8 +139,11 @@ public class JedisTwitter {
 		tweet.add("user", user);
 		
 		String replyIdString = jedis.hget(postKey, "reply");
+		long replyPid = -1;
 		if (replyIdString != null) {
-			long replyPid = Long.parseLong(replyIdString);
+			replyPid = Long.parseLong(replyIdString);
+		}
+		if (replyPid >= 1) {
 			String replyUidString = jedis.hget("pid:" + replyIdString, "uid");
 			long replyUid = Long.parseLong(replyUidString);
 			String replyScreenName = jedis.hget("uid:" + replyUidString, "screen_name");
@@ -154,7 +157,9 @@ public class JedisTwitter {
 		
 		String retweetIdString = jedis.hget(postKey, "retweet");
 		if (retweetIdString != null) {
-			tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
+		//	tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
+			tweet.add("retweeted_status", getTweet(1, authScreenName));
+
 		}
 		
 		String retweeterSetKey = "pid:" + pid + ":retweeters";	
