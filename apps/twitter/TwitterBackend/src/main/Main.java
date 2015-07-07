@@ -217,6 +217,9 @@ public class Main {
 	public static void writeTestData(JedisTwitter jedisTwitter) {
 		jedisTwitter.addUser("sconnery", "Sean Connery");
 		jedisTwitter.addUser("dcraig", "Daniel Craig");
+		jedisTwitter.addUser("a", "a");
+		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
+		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", System.currentTimeMillis());
 		jedisTwitter.updateStatus("dcraig", "No, newer James Bond movies are best", System.currentTimeMillis());
 	}

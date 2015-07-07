@@ -2,6 +2,7 @@ package jedistwitter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -38,7 +39,7 @@ public class JedisTwitter {
 
 		//add to home timeline of poster and all of poster's followers
 		jedis.rpush("uid:" + uidString + ":timeline", String.valueOf(pid));
-		List<String> followerUids = jedis.lrange("uid:" + uidString + ":followers", 0, -1);
+		Set<String> followerUids = jedis.smembers("uid:" + uidString + ":followers");
 		for (String followerUidString : followerUids) {
 			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
 		}
