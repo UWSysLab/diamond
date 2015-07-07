@@ -190,6 +190,7 @@ class UpdateHandler extends BaseJsonHandler {
 		
 		String username = Utils.getUsername(requestHeaders);
 		String status = bodyParams.get("status");
+		String inReplyToIdString = bodyParams.get("in_reply_to_status_id");
 		long time = System.currentTimeMillis();
 
 		if (status == null) {
@@ -197,7 +198,7 @@ class UpdateHandler extends BaseJsonHandler {
 			return new JsonObject();
 		}
 				
-		return jedisTwitter.updateStatus(username, status, time);
+		return jedisTwitter.updateStatus(username, status, inReplyToIdString, time);
 	}
 }
 
@@ -302,8 +303,8 @@ public class Main {
 		jedisTwitter.addUser("a", "a");
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
-		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", System.currentTimeMillis());
-		jedisTwitter.updateStatus("dcraig", "No, newer James Bond movies are best", System.currentTimeMillis());
+		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "No, newer James Bond movies are best", null, System.currentTimeMillis());
 	}
 	
 	public static void main(String[] args) {

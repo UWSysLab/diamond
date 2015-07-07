@@ -18,7 +18,7 @@ public class JedisTwitter {
 		jedis = j;
 	}
 	
-	public JsonElement updateStatus(String screenName, String status, long time) {
+	public JsonElement updateStatus(String screenName, String status, String replyIdString, long time) {
 		String uidString = jedis.get("user:" + screenName + ":uid");
 		String timeString = String.valueOf(time);
 		
@@ -33,6 +33,9 @@ public class JedisTwitter {
 		jedis.hset(postKey, "content", status);
 		jedis.hset(postKey, "uid", uidString);
 		jedis.hset(postKey, "time", timeString);
+		if (replyIdString != null) {
+			jedis.hset(postKey, "reply", replyIdString);
+		}
 
 		//add to user timeline of poster
 		jedis.rpush("uid:" + uidString + ":posts", String.valueOf(pid));
@@ -128,13 +131,28 @@ public class JedisTwitter {
 		String time = jedis.hget(postKey, "time");
 		int uid = Integer.parseInt(jedis.hget(postKey, "uid"));
 		JsonElement user = getUser(uid);
-		
+
 		JsonObject tweet = new JsonObject();
 		tweet.add("text", new JsonPrimitive(content));
 		tweet.add("id", new JsonPrimitive(pid));
 		tweet.add("id_str", new JsonPrimitive(String.valueOf(pid)));
 		tweet.add("created_at", new JsonPrimitive(time));
 		tweet.add("user", user);
+		
+		String replyIdString = jedis.hget(postKey, "reply");
+		if (replyIdString != null) {
+			long replyPid = Long.parseLong(replyIdString);
+			String replyUidString = jedis.hget("pid:" + replyIdString, "uid");
+			long replyUid = Long.parseLong(replyUidString);
+			String replyScreenName = jedis.hget("uid:" + replyUidString, "screen_name");
+			
+			tweet.add("in_reply_to_screen_name", new JsonPrimitive(replyScreenName));
+			tweet.add("in_reply_to_status_id", new JsonPrimitive(replyPid));
+			tweet.add("in_reply_to_status_id_str", new JsonPrimitive(replyIdString));
+			tweet.add("in_reply_to_user_id", new JsonPrimitive(replyUid));
+			tweet.add("in_reply_to_user_id_str", new JsonPrimitive(replyUidString));
+		}
+		
 		return tweet;
 	}
 
