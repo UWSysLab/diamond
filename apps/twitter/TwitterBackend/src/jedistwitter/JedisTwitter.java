@@ -78,12 +78,15 @@ public class JedisTwitter {
 		return result;
 	}
 
-	public JsonElement getUserTimeline(long uid) {
+	public JsonElement getUserTimeline(long uid, boolean includeRetweets) {
 		List<String> pids = jedis.lrange("uid:" + uid + ":posts", 0, -1);
 		
 		JsonArray result = new JsonArray();
 		for (int i = 0; i < pids.size(); i++) {
-			result.add(getTweet(Long.parseLong(pids.get(i)), null));
+			boolean isRetweet = (jedis.hget("pid:" + i, "retweet") != null);
+			if (includeRetweets || !isRetweet) {
+				result.add(getTweet(Long.parseLong(pids.get(i)), null));
+			}
 		}
 		
 		return result;

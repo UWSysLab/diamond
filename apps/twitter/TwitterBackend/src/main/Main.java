@@ -154,12 +154,17 @@ class UserTimelineHandler extends BaseJsonHandler {
 		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
 		long uid = jedisTwitter.getUid(queryParams);
 		
+		boolean includeRetweets = true;
+		if (queryParams.containsKey("include_rts") && queryParams.get("include_rts").equals("false")) {
+			includeRetweets = false;
+		}
+		
 		if (uid == -1) {
 			System.out.println("UserTimelineHandler error: must specify either screen name or user id");
 			return new JsonObject();
 		}
 		
-		return jedisTwitter.getUserTimeline(uid);
+		return jedisTwitter.getUserTimeline(uid, includeRetweets);
 
 	}
 }
