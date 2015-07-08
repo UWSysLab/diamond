@@ -65,7 +65,7 @@ public class JedisTwitter {
 			uid = Long.parseLong(jedis.get(userBackrefKey));
 		}
 		
-		return getUser(uid);
+		return getUser(uid, null);
 	}
 
 	public JsonElement getHomeTimeline(String screenName) {
@@ -98,20 +98,20 @@ public class JedisTwitter {
 		jedis.srem("uid:" + unfollowerUidString + ":following", String.valueOf(toUnfollowUid));
 		jedis.srem("uid:" + toUnfollowUid + ":followers", unfollowerUidString);
 		
-		return getUser(toUnfollowUid);
+		return getUser(toUnfollowUid, screenName);
 	}
 
-	public JsonElement createFriendship(String username, long toFollowUid) {
+	public JsonElement createFriendship(String screenName, long toFollowUid) {
 		
-		String followerUidString = jedis.get("user:" + username + ":uid");
+		String followerUidString = jedis.get("user:" + screenName + ":uid");
 		
 		jedis.sadd("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
 		jedis.sadd("uid:" + toFollowUid + ":followers", followerUidString);
 		
-		return getUser(toFollowUid);
+		return getUser(toFollowUid, screenName);
 	}
 
-	public JsonElement getUser(long uid) {
+	public JsonElement getUser(long uid, String authScreenName) {
 		String userKey = "uid:" + uid;
 		String name = jedis.hget(userKey, "name");
 		String screenName = jedis.hget(userKey, "screen_name");
@@ -124,6 +124,16 @@ public class JedisTwitter {
 		
 		user.add("friends_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":following")));
 		user.add("followers_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":followers")));
+		
+		if (authScreenName != null) {
+			String authUidString = jedis.get("user:" + authScreenName + ":uid");
+			if (authUidString != null) {
+				if (jedis.sismember("uid:" + authUidString + ":following", String.valueOf(uid))) {
+					user.add("following", new JsonPrimitive(true));
+				}
+			}
+		}
+		
 		return user;
 	}
 	
@@ -132,7 +142,7 @@ public class JedisTwitter {
 		String content = jedis.hget(postKey, "content");
 		String time = jedis.hget(postKey, "time");
 		int uid = Integer.parseInt(jedis.hget(postKey, "uid"));
-		JsonElement user = getUser(uid);
+		JsonElement user = getUser(uid, authScreenName);
 
 		JsonObject tweet = new JsonObject();
 		tweet.add("text", new JsonPrimitive(content));
@@ -200,7 +210,7 @@ public class JedisTwitter {
 	public JsonElement getAllUsers() {
 		JsonArray result = new JsonArray();
 		for (int i = 1; i <= Long.parseLong(jedis.get("global:uid")); i++) {
-			result.add(getUser(i));
+			result.add(getUser(i, null));
 		}
 		return result;
 	}

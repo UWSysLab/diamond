@@ -43,6 +43,8 @@ abstract class BaseJsonHandler implements HttpHandler {
 		OutputStream os = exchange.getResponseBody();
 		os.write(responseJson.toString().getBytes());
 		os.close();
+		
+		System.out.println(requestURI);
 	}
 	
 	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders,
@@ -77,7 +79,7 @@ class VerifyCredentialsHandler extends BaseJsonHandler {
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
 		String username = Utils.getUsername(requestHeaders);
 		long uid = jedisTwitter.getUid(username);
-		return jedisTwitter.getUser(uid);
+		return jedisTwitter.getUser(uid, username);
 	}
 	
 }
@@ -90,9 +92,10 @@ class ShowUserHandler extends BaseJsonHandler {
 
 	@Override
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
+		String authScreenName = Utils.getUsername(requestHeaders);
 		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
 		long uid = jedisTwitter.getUid(queryParams);
-		return jedisTwitter.getUser(uid);
+		return jedisTwitter.getUser(uid, authScreenName);
 	}
 	
 }
