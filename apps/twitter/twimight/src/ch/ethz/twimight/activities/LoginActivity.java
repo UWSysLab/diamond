@@ -81,6 +81,7 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 		//TODO: changed/added by Niel
 		public static final String TWITTER_SCREENNAME = "twitter_screenname"; /** Name of Twitter screenname in shared preferences */
 		public static final String TWITTER_USERNAME = "twitter_username"; /** Name of Twitter username in shared preferences */
+		public static final String TWITTER_URL = "twitter_url"; /** Name of Twitter username in shared preferences */
 		//TODO: end changes
 		
 		private static final String TWITTER_ACCESS_TOKEN = "twitter_access_token"; /** Name of access token in preference */
@@ -761,6 +762,18 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 		public static String getTwitterUsername(Context context) {
 			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 			return prefs.getString(TWITTER_USERNAME, null);
+		}
+		
+		public static void setTwitterUrl(String username, Context context) {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			SharedPreferences.Editor prefEditor = prefs.edit();
+			prefEditor.putString(TWITTER_URL, username);
+			prefEditor.commit();
+		}
+		
+		public static String getTwitterUrl(Context context) {
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+			return prefs.getString(TWITTER_URL, null);
 		}
 		//TODO: end Niel additions
 		

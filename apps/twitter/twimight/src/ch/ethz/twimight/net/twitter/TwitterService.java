@@ -157,7 +157,8 @@ public class TwitterService extends Service {
 				*/
 				Log.i(TAG, "Niel: Initializing Twitter object");
 				String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
-				twitter = new Twitter(null, new URLConnectionHttpClient(screenName, HACK_PASSWORD));
+				String twitterUrl = LoginActivity.getTwitterUrl(getBaseContext());
+				twitter = new Twitter(null, new URLConnectionHttpClient(screenName, HACK_PASSWORD), twitterUrl);
 				twitter.setIncludeTweetEntities(true);
 			//}
 			

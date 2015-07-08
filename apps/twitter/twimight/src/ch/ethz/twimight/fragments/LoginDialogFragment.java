@@ -44,9 +44,12 @@ public class LoginDialogFragment extends DialogFragment {
 				   public void onClick(DialogInterface dialog, int id) {
 					   EditText screennameText = (EditText) mDialogView.findViewById(R.id.login_screenname);
 					   EditText usernameText = (EditText) mDialogView.findViewById(R.id.login_username);
+					   EditText twitterUrlText = (EditText) mDialogView.findViewById(R.id.login_twitter_url);
 					   LoginActivity.setTwitterScreenname(screennameText.getText().toString(),
 							   							  getActivity().getBaseContext());
 					   LoginActivity.setTwitterUsername(usernameText.getText().toString(),
+	   							getActivity().getBaseContext());
+					   LoginActivity.setTwitterUrl(twitterUrlText.getText().toString(),
 	   							getActivity().getBaseContext());
 					   mListener.onDialogPositiveClick(LoginDialogFragment.this);
 				   }

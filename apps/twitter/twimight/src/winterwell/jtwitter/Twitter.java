@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 
-import ch.ethz.twimight.R;
 import winterwell.json.JSONArray;
 import winterwell.json.JSONException;
 import winterwell.json.JSONObject;
@@ -748,7 +747,7 @@ public class Twitter implements Serializable {
 	 * Note: Does not include the final "/"
 	 */
 	//TODO: changed by Niel
-	String TWITTER_URL = "http://seymour.cs.washington.edu:8000";
+	String TWITTER_URL = DEFAULT_TWITTER_URL;
 
 	private Date untilDate;
 
@@ -787,6 +786,12 @@ public class Twitter implements Serializable {
 		this.name = name;
 		http = client;
 		assert client != null;
+	}
+	
+	//TODO: added by Niel
+	public Twitter(String name, IHttpClient client, String twitterUrl) {
+		this(name, client);
+		TWITTER_URL = twitterUrl;
 	}
 
 	/**
