@@ -111,7 +111,7 @@ public class JedisTwitter {
 		return getUser(toFollowUid, screenName);
 	}
 
-	public JsonElement getUser(long uid, String authScreenName) {
+	public JsonObject getUser(long uid, String authScreenName) {
 		String userKey = "uid:" + uid;
 		String name = jedis.hget(userKey, "name");
 		String screenName = jedis.hget(userKey, "screen_name");
@@ -137,7 +137,7 @@ public class JedisTwitter {
 		return user;
 	}
 	
-	public JsonElement getTweet(long pid, String authScreenName) {
+	public JsonObject getTweet(long pid, String authScreenName) {
 		String postKey = "pid:" + pid;
 		String content = jedis.hget(postKey, "content");
 		String time = jedis.hget(postKey, "time");
@@ -168,9 +168,18 @@ public class JedisTwitter {
 			tweet.add("in_reply_to_user_id_str", new JsonPrimitive(replyUidString));
 		}
 		
+		//TODO: Make sure this recursive logic is correct
+		// The idea is that if we make sure a second-level retweet grabs the original tweet
+		// from the first-level retweet, an nth-level retweet will always be able to grab
+		// the original tweet from the (n-1)th-level retweet
+		
 		String retweetIdString = jedis.hget(postKey, "retweet");
 		if (retweetIdString != null) {
-			tweet.add("retweeted_status", getTweet(Long.parseLong(retweetIdString), authScreenName));
+			JsonObject originalTweet = getTweet(Long.parseLong(retweetIdString), authScreenName);
+			if (originalTweet.get("retweeted_status") != null) {
+				originalTweet = originalTweet.get("retweeted_status").getAsJsonObject();
+			}
+			tweet.add("retweeted_status", originalTweet);
 		}
 		
 		String retweeterSetKey = "pid:" + pid + ":retweeters";	
