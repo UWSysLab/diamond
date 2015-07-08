@@ -47,6 +47,9 @@ public class JedisTwitter {
 			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
 		}
 		
+		//add to global timeline
+		jedis.rpush("timeline", String.valueOf(pid));
+		
 		return getTweet(pid, screenName);
 	}
 
@@ -60,6 +63,7 @@ public class JedisTwitter {
 			jedis.set(userBackrefKey, String.valueOf(uid));
 			jedis.hset(userKey, "screen_name", screenName);
 			jedis.hset(userKey, "name", name);
+			jedis.rpush("users", String.valueOf(uid));
 		}
 		else {
 			uid = Long.parseLong(jedis.get(userBackrefKey));
@@ -139,6 +143,7 @@ public class JedisTwitter {
 	
 	public JsonObject getTweet(long pid, String authScreenName) {
 		String postKey = "pid:" + pid;
+		
 		String content = jedis.hget(postKey, "content");
 		String time = jedis.hget(postKey, "time");
 		int uid = Integer.parseInt(jedis.hget(postKey, "uid"));
@@ -210,16 +215,18 @@ public class JedisTwitter {
 	
 	public JsonElement getAllTweets() {
 		JsonArray result = new JsonArray();
-		for (int i = 1; i <= Long.parseLong(jedis.get("global:pid")); i++) {
-			result.add(getTweet(i, null));
+		List<String> allPidStrings = jedis.lrange("timeline", 0, -1);
+		for (String pidString : allPidStrings) {
+			result.add(getTweet(Long.parseLong(pidString), null));
 		}
 		return result;
 	}
 	
 	public JsonElement getAllUsers() {
 		JsonArray result = new JsonArray();
-		for (int i = 1; i <= Long.parseLong(jedis.get("global:uid")); i++) {
-			result.add(getUser(i, null));
+		List<String> allUidStrings = jedis.lrange("users", 0, -1);
+		for (String uidString : allUidStrings) {
+			result.add(getUser(Long.parseLong(uidString), null));
 		}
 		return result;
 	}
@@ -323,5 +330,46 @@ public class JedisTwitter {
 			result.add(getTweet(Long.parseLong(pidString), null));
 		}
 		return result;
+	}
+
+	public JsonElement destroyStatus(String screenName, long pid) {
+		JsonObject deletedTweet = getTweet(pid, screenName);
+		String pidString = String.valueOf(pid);
+
+		String posterUidString = jedis.hget("pid:" + pid, "uid");
+
+		//only delete if the tweet belongs to the authenticating user
+		String posterScreenName = jedis.hget("uid:" + posterUidString, "screen_name");
+		if (!screenName.equals(posterScreenName)) {
+			return new JsonObject();
+		}
+		
+		//remove from post list (user timeline) and timeline list (home timeline) of poster
+		jedis.lrem("uid:" + posterUidString + ":posts", 0, pidString);
+		jedis.lrem("uid:" + posterUidString + ":timeline", 0, pidString);
+				
+		//remove from timeline list (home timeline) of all users following poster
+		Set<String> followerSet = jedis.smembers("uid:" + posterUidString + ":followers");
+		for (String followerUidString : followerSet) {
+			jedis.lrem("uid:" + followerUidString + ":timeline", 0, pidString);
+		}
+		
+		//remove from favorites list of all users who favorited this tweet
+		Set<String> favoriterSet = jedis.smembers("pid:" + pid + ":favoriters");
+		for (String favoriterUidString : favoriterSet) {
+			jedis.zrem("uid:" + favoriterUidString + ":favorites", pidString);
+		}
+		
+		//handle if this tweet is a retweet
+		String origPidString = jedis.hget("pid:" + pidString, "retweet");
+		if (origPidString != null) {
+			jedis.srem("pid:" + origPidString + ":retweets", pidString);
+			jedis.srem("pid:" + origPidString + ":retweeters", posterUidString);
+		}
+		
+		//delete the tweet hash itself
+		jedis.del("pid:" + pid);
+		
+		return deletedTweet;
 	}
 }
