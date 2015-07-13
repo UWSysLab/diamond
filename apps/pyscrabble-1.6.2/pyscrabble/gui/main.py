@@ -56,7 +56,7 @@ class MainWindow(gtk.Window):
         # Read options
         self.optionmanager = manager.OptionManager()
         
-        self.soundmanager = manager.SoundManager()
+        #self.soundmanager = manager.SoundManager()
         
         self.optionWindowShown = False
         vbox = gtk.VBox(False, 1)
@@ -240,8 +240,8 @@ class MainWindow(gtk.Window):
         if isCurrentTurn:
             label.set_markup("<b>%s</b>" % label.get_text())
             
-            if self.optionmanager.get_default_bool_option(OPTION_SOUND_TURN, True):
-                self.soundmanager.play(SOUND_GAME_OPTION)
+            #if self.optionmanager.get_default_bool_option(OPTION_SOUND_TURN, True):
+            #    self.soundmanager.play(SOUND_GAME_OPTION)
             if self.optionmanager.get_default_bool_option(OPTION_POPUP_TURN, True):
                 p = gtkutil.Popup( title=gameId, text=_("Its your turn"))
             
@@ -273,8 +273,8 @@ class MainWindow(gtk.Window):
             label.set_markup("<b>%s</b>" % label.get_text())
         
         if not self.is_active():
-            if self.optionmanager.get_default_bool_option(OPTION_SOUND_MSG, True):
-                self.soundmanager.play(SOUND_MSG_OPTION)
+            #if self.optionmanager.get_default_bool_option(OPTION_SOUND_MSG, True):
+            #    self.soundmanager.play(SOUND_MSG_OPTION)
             if self.optionmanager.get_default_bool_option(OPTION_POPUP_MSG, True):
                 p = gtkutil.Popup( title=username, text=_("You have a new private message.") )
 

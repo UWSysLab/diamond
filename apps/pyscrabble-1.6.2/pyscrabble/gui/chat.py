@@ -268,8 +268,8 @@ class ChatFrame(gtk.Frame):
         '''
         o = manager.OptionManager()
         if not self.mainwindow.is_active():
-            if o.get_default_bool_option(constants.OPTION_SOUND_NEW_USER, True):
-                self.mainwindow.soundmanager.play(constants.SOUND_MSG_OPTION)
+            #if o.get_default_bool_option(constants.OPTION_SOUND_NEW_USER, True):
+            #    self.mainwindow.soundmanager.play(constants.SOUND_MSG_OPTION)
             if o.get_default_bool_option(constants.OPTION_POPUP_NEW_USER, True):
                 p = gtkutil.Popup( title=user, text='%s %s' % (user, lookup.SERVER_MESSAGE_LOOKUP[lookup.LOGGED_IN]))
         
