@@ -1,0 +1,14 @@
+//
+// Prefix header for all source files of the 'Tweetter' target in the 'Tweetter' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+    #import <UIKit/UIKit.h>
+	#import <CoreLocation/CoreLocation.h>
+#endif
+
+#define MAX_SYMBOLS_COUNT_IN_TEXT_VIEW						140
+#define MAX_SYMBOLS_COUNT_IN_TEXT_VIEW_WITH_IMAGE			100
+
+#define	IMAGE_SCALING_SIZE		700
