@@ -163,7 +163,7 @@
 	[textField loadHTMLString:[self makeHTMLMessage] baseURL:nil];
 	textField.scalesPageToFit = NO;
 	//Set message date and time
-	NSCalendarUnit unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit;
+	/*NSCalendarUnit unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit;
 	NSDate *createdAt = [_message objectForKey:@"created_at"];
 	NSDateComponents *nowComponents = [calendar components:unitFlags fromDate:[NSDate date]];
 	NSDateComponents *yesterdayComponents = [calendar components:unitFlags fromDate:[NSDate dateWithTimeIntervalSinceNow:-60*60*24]];
@@ -190,7 +190,10 @@
 		[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
 		[dateFormatter setTimeStyle:NSDateFormatterShortStyle];
 		dateField.text = [dateFormatter stringFromDate:createdAt];
-	}
+	}*/
+    
+    //TODO: fix date parsing
+    dateField.text = @"Placeholder date";
 		
 	if(!_isDirectMessage && [[MGTwitterEngine username] isEqualToString:[userData objectForKey:@"screen_name"]])
 	{

@@ -268,7 +268,7 @@
 		//Set message date and time
 		NSCalendarUnit unitFlags = NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit;
 		label = (UILabel *)[cell viewWithTag:TIME_TAG];
-		NSDate *createdAt = [messageData objectForKey:@"created_at"];
+		/*NSDate *createdAt = [messageData objectForKey:@"created_at"];
 		NSDateComponents *nowComponents = [calendar components:unitFlags fromDate:[NSDate date]];
 		NSDateComponents *yesterdayComponents = [calendar components:unitFlags fromDate:[NSDate dateWithTimeIntervalSinceNow:-60*60*24]];
 		NSDateComponents *createdAtComponents = [calendar components:unitFlags fromDate:createdAt];
@@ -294,13 +294,18 @@
 			[dateFormatter setDateStyle:NSDateFormatterMediumStyle];
 			[dateFormatter setTimeStyle:NSDateFormatterShortStyle];
 			label.text = [dateFormatter stringFromDate:createdAt];
-		}
+		}*/
+        
+        //TODO: fix date parsing
+        label.text = @"Placeholder date";
 		
 				
 		//Set userpic
-		UIImageView *imageView = (UIImageView *)[cell viewWithTag:IMAGE_TAG];
+		/*UIImageView *imageView = (UIImageView *)[cell viewWithTag:IMAGE_TAG];
 		imageView.image = nil;
-		[[ImageLoader sharedLoader] setImageWithURL:[userData objectForKey:@"profile_image_url"] toView:imageView];
+		[[ImageLoader sharedLoader] setImageWithURL:[userData objectForKey:@"profile_image_url"] toView:imageView];*/
+        
+        //TODO: load default image
 		
 		//Set user name
 		label = (UILabel *)[cell viewWithTag:NAME_TAG];
