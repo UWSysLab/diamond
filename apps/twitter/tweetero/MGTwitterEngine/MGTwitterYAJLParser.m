@@ -43,7 +43,7 @@ int MGTwitterYAJLParser_processBoolean(void * ctx, int boolVal)
 int MGTwitterYAJLParser_processNumber(void *ctx, const char *numberVal, unsigned int numberLen)
 {
 	id self = ctx;
-	
+    
 	if (currentKey)
 	{
 		NSString *stringValue = [[NSString alloc] initWithBytesNoCopy:(void *)numberVal length:numberLen encoding:NSUTF8StringEncoding freeWhenDone:NO];
@@ -80,7 +80,8 @@ int MGTwitterYAJLParser_processString(void *ctx, const unsigned char * stringVal
 
 		if ([currentKey isEqualToString:@"created_at"])
 		{
-			// we have a priori knowledge that the value for created_at is a date, not a string
+			/*
+            // we have a priori knowledge that the value for created_at is a date, not a string
 			struct tm theTime;
 			if ([value hasSuffix:@"+0000"])
 			{
@@ -96,6 +97,11 @@ int MGTwitterYAJLParser_processString(void *ctx, const unsigned char * stringVal
 			// save the date as a long with the number of seconds since the epoch in 1970
 			[self addValue:[NSNumber numberWithLong:epochTime] forKey:currentKey];
 			// this value can be converted to a date with [NSDate dateWithTimeIntervalSince1970:epochTime]
+             */
+            
+            //Note from Niel: the value for created_at returned by my backend is the time in milliseconds, not a date.
+            NSNumber * timeLong = [[NSNumber alloc] initWithLongLong:(value.longLongValue / 1000)];
+            [self addValue:timeLong forKey:currentKey];
 		}
 		else
 		{
