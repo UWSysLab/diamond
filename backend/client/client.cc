@@ -12,32 +12,54 @@
 namespace diamond {
 
 using namespace std;
+using namespace redox;
 
-Client::Client(string configPath)
+Client::Client(string &host, int port)
 {
+    rdx.connect(host, port);
 }
 
 Client::~Client()
 {
+  rdx.disconnect();
+}
+
+int
+Client::Map(int *addr, string &key)
+{
+    string value;
+    try {
+        value = rdx.get(key);
+    } catch (exception &e) {
+        return -1;
+    }
+
+    cache[key] = value;
+    *addr = (uint64_t) atol(value.c_str());
+    return 0;
+}
+
+int
+Client::Read(string &key)
+{
+    string value;
+    try {
+        value = rdx.get(key);
+    } catch (exception &e) {
+        return 0;
+    }
+    cache[key] = value;
     
-}
-
-uint64_t*
-Client::Map(uint64_t key)
-{
-    return &store[key];
-}
-
-uint64_t
-Client::Read(uint64_t key)
-{
-    return store[key];
+    return (uint64_t) atol(value.c_str());
 }
 
 void
-Client::Write(uint64_t key, uint64_t value)
+Client::Write(string &key, int value)
 {
-    store[key] = value;
+    char buf[50];
+    sprintf(buf, "%i", value);
+    cache[key] = (string)buf;
+    rdx.set(key, cache[key]);
 }
 
 } // namespace diamond

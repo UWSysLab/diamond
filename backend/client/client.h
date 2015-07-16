@@ -12,19 +12,22 @@
 
 #include <unordered_map>
 #include <string>
+#include <redox.hpp>
+
 namespace diamond {
 
 class Client
 {
 public:
-    Client(std::string configPath);
+    Client(std::string &host, int port);
     virtual ~Client();
-    uint64_t* Map(uint64_t key);
-    uint64_t Read(uint64_t key);
-    void Write(uint64_t key, uint64_t value);
+    int Map(int *addr, std::string &key);
+    int Read(std::string &key);
+    void Write(std::string &key, int value);
 
 private:
-    std::unordered_map<uint64_t, uint64_t> store;
+    std::unordered_map<std::string, std::string> cache;
+    redox::Redox rdx;
 };
 
 } // namespace diamond
