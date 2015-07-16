@@ -678,8 +678,6 @@ static NSMutableDictionary *createBaseDictionary(NSString *server, NSString *acc
         [connection release];
     }
     
-    NSLog(@"Niel: HTTP debug");
-    NSLog(theRequest.URL.absoluteString);
     //NSURLResponse *derpResponse = [[NSURLResponse alloc] init];
     //NSError *derpError = [[NSError alloc] init];
     //NSData *derpData = [NSURLConnection sendSynchronousRequest:theRequest returningResponse:&derpResponse error:&derpError];
