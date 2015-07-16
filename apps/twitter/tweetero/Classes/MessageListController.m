@@ -306,6 +306,8 @@
 		[[ImageLoader sharedLoader] setImageWithURL:[userData objectForKey:@"profile_image_url"] toView:imageView];*/
         
         //TODO: load default image
+        UIImageView *imageView = (UIImageView *)[cell viewWithTag:IMAGE_TAG];
+        imageView.image = [UIImage imageNamed:@"yfrog.tiff"];
 		
 		//Set user name
 		label = (UILabel *)[cell viewWithTag:NAME_TAG];
