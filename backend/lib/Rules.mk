@@ -1,6 +1,8 @@
 d := $(dir $(lastword $(MAKEFILE_LIST)))
 
-$(d)libdiamond.so: $(patsubst %.o,%-pic.o, $(OBJS-client))
-LDFLAGS-$(d)libdiamond.so += -shared
+SRCS += $(addprefix $(d), \
+	lookup3.cc message.cc)
 
-BINS += $(d)libdiamond.so
+LIB-hash := $(o)lookup3.o
+
+LIB-message := $(o)message.o $(LIB-hash)
