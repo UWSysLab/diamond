@@ -10,6 +10,10 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
+#define RPC_OK 0
+#define RPC_UNCONNECTED 1
+#define RPC_ERR 2
+
 #include <unordered_map>
 #include <string>
 #include <redox.hpp>
@@ -19,15 +23,16 @@ namespace diamond {
 class Client
 {
 public:
-    Client(std::string &host, int port);
-    virtual ~Client();
-    int Map(int *addr, std::string &key);
-    int Read(std::string &key);
-    void Write(std::string &key, int value);
+    Client() {};
+    virtual ~Client(_connected = false;);
+    int Connect(const std::string &host);
+    bool IsConnected();
+    int Read(const std::string &key, std::string &value);
+    int Write(const std::string &key, const std::string &value);
 
 private:
-    std::unordered_map<std::string, std::string> cache;
-    redox::Redox rdx;
+    bool _connected;
+    redox::Redox _redis;
 };
 
 } // namespace diamond

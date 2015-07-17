@@ -68,8 +68,10 @@ define add-LDFLAGS
 $(foreach bin,$(1),$(eval LDFLAGS-$(bin) += $(2)))
 endef
 
-include client/Rules.mk
 include lib/Rules.mk
+include client/Rules.mk
+include data_types/Rules.mk
+include libdiamond/Rules.mk
 
 ##################################################################
 # General rules

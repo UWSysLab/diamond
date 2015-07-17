@@ -14,52 +14,60 @@ namespace diamond {
 using namespace std;
 using namespace redox;
 
-Client::Client(string &host, int port)
-{
-    rdx.connect(host, port);
-}
-
 Client::~Client()
 {
-  rdx.disconnect();
+    _redis.disconnect();
 }
-
-int
-Client::Map(int *addr, string &key)
-{
-    string value;
-    try {
-        value = rdx.get(key);
-    } catch (exception &e) {
-        return -1;
-    }
-
-    cache[key] = value;
-    *addr = (uint64_t) atol(value.c_str());
-    return 0;
-}
-
-int
-Client::Read(string &key)
-{
-    string value;
-    try {
-        value = rdx.get(key);
-    } catch (exception &e) {
-        return 0;
-    }
-    cache[key] = value;
     
-    return (uint64_t) atol(value.c_str());
+int
+Client::Connect(const std::string &host)
+{
+    if (_connected) {
+        return RPC_OK;
+    }
+    
+    if (_redis.connect(host)) {
+        _connected = true;
+        return RPC_OK;
+    } else {
+        return RPC_UNCONNECTED;
+    }
 }
 
-void
-Client::Write(string &key, int value)
+bool
+Client::IsConnected()
 {
-    char buf[50];
-    sprintf(buf, "%i", value);
-    cache[key] = (string)buf;
-    rdx.set(key, cache[key]);
+    return _connected;
+}
+    
+int
+Client::Read(const string &key, string &value)
+{
+    if (!_connected) {
+	return RPC_UNCONNECTED;
+    }
+
+    try {
+	value = redis.get(key);
+    } catch (exception &e) {
+	return RPC_ERR;
+    }
+
+    return RPC_OK;
+}
+
+int
+Client::Write(const string &key, const string &value)
+{
+    if (!_connected) {
+	return RPC_UNCONNECTED;
+    }
+
+    if (redis.set(key, value)) {
+	return RPC_OK;
+    } else {
+	return RPC_ERR;
+    }
 }
 
 } // namespace diamond
