@@ -16,15 +16,16 @@ namespace diamond {
 
 using namespace std;
 
-unordered_map<string, Counter *> cache;
+extern Client diamondclient;
+static unordered_map<string, DCounter *> cache;
 
-static int
-Counter::Map(const Counter *addr, const string &key) {
+int
+Map(const DCounter *addr, const string &key) {
 
    // take a look in the cache first
-   std::unordered_map<string,Counter*>::const_iterator find = cache.find(key);
+   std::unordered_map<string, DCounter*>::const_iterator find = cache.find(key);
    if (find != cache.end()) {
-      addr = find->second();
+      addr = find->second;
       return 0;
    }
    
@@ -40,27 +41,27 @@ Counter::Map(const Counter *addr, const string &key) {
       return ret;
    }
 
-   addr = new Counter(atol(value.c_str()), key);
+   addr = new DCounter(atol(value.c_str()), key);
    return 0;
 }
 
 void
-Counter::Increment()
+DCounter::Increment()
 {
    _counter++;
 
    char buf[50];
-   sprintf(buf, "%i", counter);
-   diamondclient.Write(key, string(buf));
+   sprintf(buf, "%i", _counter);
+   diamondclient.Write(_key, string(buf));
 }
 
 void
-Counter::Decrement()
+DCounter::Decrement()
 {
    _counter--;
    char buf[50];
-   sprintf(buf, "%i", counter);
-   diamondclient.Write(key, string(buf));
+   sprintf(buf, "%i", _counter);
+   diamondclient.Write(_key, string(buf));
 }
    
 } // namespace diamond

@@ -48,9 +48,9 @@ Client::Read(const string &key, string &value)
     }
 
     try {
-	value = redis.get(key);
+        value = _redis.get(key);
     } catch (exception &e) {
-	return RPC_ERR;
+        return RPC_ERR;
     }
 
     return RPC_OK;
@@ -60,14 +60,14 @@ int
 Client::Write(const string &key, const string &value)
 {
     if (!_connected) {
-	return RPC_UNCONNECTED;
+        return RPC_UNCONNECTED;
     }
 
-    if (redis.set(key, value)) {
-	return RPC_OK;
-    } else {
-	return RPC_ERR;
+    if (!_redis.set(key, value)) {
+        return RPC_ERR;
     }
+
+    return RPC_OK;
 }
 
 } // namespace diamond

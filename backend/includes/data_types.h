@@ -10,59 +10,63 @@
 #ifndef _DATA_TYPES_H_
 #define _DATA_TYPES_H_
 
+#include "client/client.h"
 #include <unordered_set>
 
 namespace diamond {
 
-Client _diamondclient;
-
-class String
+class DString
 {
 public:
-    String(std::string s) : s(s);
-    ~String();
-    static int Map(String* addr, std::string key);
-
+    DString(const std::string &s, const std::string &key) : _s(s) {};
+    ~DString() {};
+    static int Map(const DString* addr, const std::string &key);
+    
 private:
     std::string _s;
-}
+    std::string _key;
+};
     
-class Long
+class DLong
 {
 public:
-    Long(uint64_t l, std::string key) : _l(l), _key(key);
-    ~Long();
-    static int Map(const Long* addr, const std::string &key);
+    DLong(uint64_t l, const std::string &key) : _l(l), _key(key) {};
+    ~DLong() {};
+    static int Map(const DLong* addr, const std::string &key);
     
 private:
-    std::string _key;
     uint64_t _l;
+    std::string _key;
 };
 
-class Counter
+
+class DCounter
 {
 public:
-    Counter(uint64_t c, std::string key) : _counter(c), _key(key);
-    ~Counter();
-    static int Map(const Counter *addr, const std::string &key);
+    DCounter(uint64_t c, const std::string &key) : _counter(c), _key(key) {};
+    ~DCounter() {};
     void Increment();
     void Decrement();
+    static int Map(const DCounter *addr, const std::string &key);
+    
+private:
+    int _counter;
+    std::string _key;
+    
+};
+
+class DIDSet
+{
+public:
+    DIDSet(std::unordered_set<uint64_t> set) : _set(set) {};
+    ~DIDSet();
+    static int Map(const DIDSet *addr, const std::string &key);
+    
 private:
     std::string _key;
-    int _counter;
-}
+    std::unordered_set<uint64_t> _set;
+};
 
-// class Set
-// {
-// public:
-//     Set(std::unordered_set set) : _set(set);
-//     ~Set();
-//     static int Map(const Set *addr, const std::string &key);
-// private:
-//     std::string _key;
-//     std::unordered_set<std::string> _set;
-// }
-    
 } // namespace diamond
 
 #endif 

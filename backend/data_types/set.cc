@@ -16,13 +16,14 @@ namespace diamond {
 
 using namespace std;
 
-unordered_map<string, Set *> cache;
+extern Client diamondclient;
+static unordered_map<string, DIDSet *> cache;
    
-static int
-Set::Map(const Set *addr, const string &key) {
+int
+Set::Map(const DIDSet *addr, const string &key) {
 
    // take a look in the cache first
-   std::unordered_map<string,Set*>::const_iterator find = cache.find(key);
+   std::unordered_map<string, DIDSet*>::const_iterator find = cache.find(key);
    if (find != cache.end()) {
       addr = find->second();
       return 0;

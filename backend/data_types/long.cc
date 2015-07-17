@@ -16,15 +16,16 @@ namespace diamond {
 
 using namespace std;
 
-unordered_map<string, Long *> cache;
+extern Client diamondclient;
+static unordered_map<string, DLong*> cache;
 
-static int
-Long::Map(const Long *addr, const string &key) {
+int
+DLong::Map(const DLong *addr, const string &key) {
 
    // take a look in the cache first
-   std::unordered_map<string,Long*>::const_iterator find = cache.find(key);
+   std::unordered_map<string, DLong*>::const_iterator find = cache.find(key);
    if (find != cache.end()) {
-      addr = find->second();
+      addr = find->second;
       return 0;
    }
    
@@ -40,7 +41,7 @@ Long::Map(const Long *addr, const string &key) {
       return ret;
    }
 
-   addr = new Long(atol(value.c_str()));
+   addr = new DLong(atol(value.c_str()), key);
    return 0;
 }
    

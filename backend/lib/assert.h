@@ -40,7 +40,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "paxos-lib/lib/message.h"
+#include "lib/message.h"
 
 #define ASSERT(x) Assert(x)
 

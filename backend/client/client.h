@@ -24,14 +24,14 @@ class Client
 {
 public:
     Client() {};
-    virtual ~Client(_connected = false;);
+    virtual ~Client();
     int Connect(const std::string &host);
     bool IsConnected();
     int Read(const std::string &key, std::string &value);
     int Write(const std::string &key, const std::string &value);
 
 private:
-    bool _connected;
+    bool _connected = false;
     redox::Redox _redis;
 };
 
