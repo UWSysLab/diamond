@@ -33,7 +33,7 @@ public:
     DLong(uint64_t l, const std::string &key) : _l(l), _key(key) {};
     ~DLong() {};
     static int Map(const DLong* addr, const std::string &key);
-    
+
 private:
     uint64_t _l;
     std::string _key;
@@ -45,10 +45,10 @@ class DCounter
 public:
     DCounter(uint64_t c, const std::string &key) : _counter(c), _key(key) {};
     ~DCounter() {};
+    static int Map(const DCounter *addr, const std::string &key);
     void Increment();
     void Decrement();
-    static int Map(const DCounter *addr, const std::string &key);
-    
+
 private:
     int _counter;
     std::string _key;
