@@ -7,7 +7,7 @@ EXPAND = lib/tmpl/expand
 
 CFLAGS := -g -Wall -Wno-uninitialized
 CXXFLAGS := -std=c++0x
-LDFLAGS := 
+LDFLAGS := -Lredox/release
 
 # Make sure all is the default
 .DEFAULT_GOAL := all
