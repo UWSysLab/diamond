@@ -11,20 +11,23 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include <unordered_map>
+#include <boost/python.hpp>
 
 namespace diamond {
 
 using namespace std;
 
-extern Client diamondclient;
-static unordered_map<string, DString*> cache;
+Client diamondclient;    
+static unordered_map<string, DString> cache;
     
 int
-Map(const DString *addr, const string &key) {
+Map(DString *addr, const string &key) {
     // take a look in the cache first
-    std::unordered_map<string,DString*>::const_iterator find = cache.find(key);
+    addr->_key = key;
+    
+    std::unordered_map<string, DString>::const_iterator find = cache.find(key);
     if (find != cache.end()) {
-        addr = find->second;
+        addr->_s = find->second._s;
         return 0;
     }
 
@@ -40,8 +43,8 @@ Map(const DString *addr, const string &key) {
        return ret;
     }
 
-    addr = new DString(value, key);
-    return 0;
+    addr->_s = value;
+    return RPC_OK;
 }
 
 
@@ -62,6 +65,5 @@ DString::Set(const std::string &s)
     _s = s;
     diamondclient.Write(_key, _s);
 }
-
 
 } // namespace diamond

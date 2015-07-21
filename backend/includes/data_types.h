@@ -20,12 +20,12 @@ class DString
 public:
     DString(const std::string &s, const std::string &key) : _s(s) {};
     ~DString() {};
-    static int Map(const DString* addr, const std::string &key);
+    friend int Map(DString* addr, const std::string &key);
     std::string Value();
     void Set(const std::string &s);
-    //std::string operator=(const DString &s) { return Value(); };
-    //DString & operator=(const DString &s) { Set(s._s); return *this; };
-        
+    std::string operator=(const DString &s) { return Value(); };
+    DString & operator=(const std::string &s) { Set(s); return *this; };
+    
 private:
     std::string _s;
     std::string _key;

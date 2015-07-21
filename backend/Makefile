@@ -1,13 +1,53 @@
-# Top-level make file for Diamond library 
+#
+# Top-level makefile for OR-2PC
+#
 
-CC = gcc
-CXX = g++
-LD = g++
+CC = clang
+CXX = clang++
+LD = clang++
 EXPAND = lib/tmpl/expand
 
-CFLAGS := -g -Wall -Wno-uninitialized
-CXXFLAGS := -std=c++0x
-LDFLAGS := -Lredox/release
+#CFLAGS := -g -Wall -pthread -iquote.obj/gen -Wno-uninitialized -levent_pthreads -O2 -DNASSERT
+#CFLAGS := -g -Wall -pthread -iquote.obj/gen -Wno-uninitialized -levent_pthreads -lredox
+CFLAGS := -g -Wall -Wno-uninitialized -I/usr/include/python2.7
+CXXFLAGS := -std=c++0x #-levent_pthreads
+LDFLAGS := -L/usr/local/lib64/redox -lredox -lev -lhiredis -lpython2.7 -lboost_python #-levent_pthreads 
+## Debian package: check
+# CHECK_CFLAGS := $(shell pkg-config --cflags check)
+# CHECK_LDFLAGS := $(shell pkg-config --cflags --libs check)
+# Debian package: libprotobuf-dev
+PROTOBUF_CFLAGS := $(shell pkg-config --cflags protobuf)
+PROTOBUF_LDFLAGS := $(shell pkg-config --cflags --libs protobuf)
+CFLAGS += $(PROTOBUF_CFLAGS)
+LDFLAGS += $(PROTOBUF_LDFLAGS)
+PROTOC := protoc
+# Debian package: libevent-dev
+LIBEVENT_CFLAGS := $(shell pkg-config --cflags libevent)
+LIBEVENT_LDFLAGS := $(shell pkg-config --libs libevent)
+CFLAGS += $(LIBEVENT_CFLAGS)
+LDFLAGS += $(LIBEVENT_LDFLAGS)
+# Debian package: libssl-dev
+LIBSSL_CFLAGS := $(shell pkg-config --cflags libssl)
+LIBSSL_LDFLAGS := $(shell pkg-config --libs libssl)
+CFLAGS += $(LIBSSL_CFLAGS)
+LDFLAGS += $(LIBSSL_LDFLAGS)
+
+
+# Google test framework. This doesn't use pkgconfig
+GTEST_DIR := /usr/src/gtest
+
+# Additional flags
+PARANOID = 1
+ifneq ($(PARANOID),0)
+override CFLAGS += -DPARANOID=1
+$(info WARNING: Paranoid mode enabled)
+endif
+
+PERFTOOLS = 0
+ifneq ($(PERFTOOLS),0)
+override CFLAGS += -DPPROF=1
+override LDFLAGS += -lprofiler
+endif
 
 # Make sure all is the default
 .DEFAULT_GOAL := all
@@ -32,6 +72,8 @@ else
 trace = @printf "+ %-6s " $(1) ; echo $(2) ; $(3)
 Q = @
 endif
+GTEST := .obj/gtest/gtest.a
+GTEST_MAIN := .obj/gtest/gtest_main.a
 
 ##################################################################
 # Sub-directories
@@ -47,11 +89,23 @@ o = .obj/$(d)
 
 # SRCS is the list of all non-test-related source files.
 SRCS :=
+# TEST_SRCS is just like SRCS, but these source files will be compiled
+# with testing related flags.
+TEST_SRCS :=
+# GTEST_SRCS is tests that use Google's testing framework
+GTEST_SRCS :=
+
+# PROTOS is the list of protobuf *.proto files
+PROTOS :=
 
 # BINS is a list of target names for non-test binaries.  These targets
 # should depend on the appropriate object files, but should not
 # contain any commands.
 BINS :=
+# TEST_BINS is like BINS, but for test binaries.  They will be linked
+# using the appropriate flags.  This is also used as the list of tests
+# to run for the `test' target.
+TEST_BINS :=
 
 # add-CFLAGS is a utility macro that takes a space-separated list of
 # sources and a set of CFLAGS.  It sets the CFLAGS for each provided
@@ -68,14 +122,26 @@ define add-LDFLAGS
 $(foreach bin,$(1),$(eval LDFLAGS-$(bin) += $(2)))
 endef
 
-include lib/Rules.mk
 include client/Rules.mk
 include data_types/Rules.mk
+include lib/Rules.mk
 include libdiamond/Rules.mk
+include test/Rules.mk
 
 ##################################################################
 # General rules
 #
+
+#
+# Protocols
+# 
+PROTOOBJS := $(PROTOS:%.proto=.obj/%.o)
+PROTOSRCS := $(PROTOS:%.proto=.obj/gen/%.pb.cc)
+PROTOHEADERS := $(PROTOS:%.proto=%.pb.h)
+
+$(PROTOSRCS) : .obj/gen/%.pb.cc: %.proto
+	@mkdir -p .obj/gen
+	$(call trace,PROTOC,$^,$(PROTOC) --cpp_out=.obj/gen $^)
 
 #
 # Compilation
@@ -88,7 +154,7 @@ include libdiamond/Rules.mk
 DEPFLAGS = -M -MF ${@:.o=.d} -MP -MT $@ -MG
 
 # $(call add-CFLAGS,$(TEST_SRCS),$(CHECK_CFLAGS))
-OBJS := $(SRCS:%.cc=.obj/%.o)
+OBJS := $(SRCS:%.cc=.obj/%.o) $(TEST_SRCS:%.cc=.obj/%.o) $(GTEST_SRCS:%.cc=.obj/%.o)
 
 define compile
 	@mkdir -p $(dir $@)
@@ -113,10 +179,16 @@ endef
 # Slightly different rules for protobuf object files
 # because their source files have different locations.
 
-$(OBJS): .obj/%.o: %.cc
+$(OBJS): .obj/%.o: %.cc $(PROTOSRCS)
 	$(call compilecxx,CC,)
 
-$(OBJS:%.o=%-pic.o): .obj/%-pic.o: %.cc
+$(OBJS:%.o=%-pic.o): .obj/%-pic.o: %.cc $(PROTOSRCS)
+	$(call compilecxx,CCPIC,-fPIC)
+
+$(PROTOOBJS): .obj/%.o: .obj/gen/%.pb.cc
+	$(call compilecxx,CC,)
+
+$(PROTOOBJS:%.o=%-pic.o): .obj/%-pic.o: .obj/gen/%.pb.cc $(PROTOSRCS)
 	$(call compilecxx,CCPIC,-fPIC)
 
 #
@@ -137,14 +209,28 @@ DEPS := $(OBJS:.o=.d) $(OBJS:.o=-pic.d)
 -include $(DEPS)
 
 #
+# Testing
+#
+GTEST_INTERNAL_SRCS := $(wildcard $(GTEST_DIR)/src/*.cc)
+GTEST_OBJS := $(patsubst %.cc,.obj/gtest/%.o,$(notdir $(GTEST_INTERNAL_SRCS)))
+
+$(GTEST_OBJS): .obj/gtest/%.o: $(GTEST_DIR)/src/%.cc
+	$(call compilecxx,CC,-I$(GTEST_DIR) -Wno-missing-field-initializers)
+
+$(GTEST) : .obj/gtest/gtest-all.o
+	$(call trace,AR,$@,$(AR) $(ARFLAGS) $@ $^)
+
+$(GTEST_MAIN) : .obj/gtest/gtest-all.o .obj/gtest/gtest_main.o
+	$(call trace,AR,$@,$(AR) $(ARFLAGS) $@ $^)
+
+#
 # Cleaning
 #
 
 .PHONY: clean
 clean:
-	$(call trace,RM,binaries,rm -f $(BINS))
+	$(call trace,RM,binaries,rm -f $(BINS) $(TEST_BINS))
 	$(call trace,RM,objects,rm -rf .obj)
-
 
 ##################################################################
 # Targets
@@ -152,6 +238,17 @@ clean:
 
 .PHONY: all
 all: $(BINS)
+
+$(TEST_BINS:%=run-%): run-%: %
+	$(call trace,RUN,$<,$<)
+
+$(TEST_BINS:%=gdb-%): gdb-%: %
+	$(call trace,GDB,$<,CK_FORK=no gdb $<)
+
+.PHONY: test
+test: $(TEST_BINS:%=run-%)
+.PHONY: check
+check: test
 
 .PHONY: TAGS
 TAGS:
