@@ -44,5 +44,26 @@ DLong::Map(const DLong *addr, const string &key) {
    addr = new DLong(atol(value.c_str()), key);
    return 0;
 }
+
+uint64_t
+DLong::Value() {
+    string s;
+    int ret = diamondclient.Read(_key, s);
+
+    if (ret == RPC_OK) {
+        _l = atol(s.c_str());
+    }
+    return _l;
+}
+        
+void
+DLong::Set(uint64_t l)
+{
+    _l = l;
+    char buf[50];
+    sprintf(buf, "%lu", _l);
+    diamondclient.Write(_key, string(buf));
+}
+
    
 } // namespace diamond

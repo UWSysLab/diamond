@@ -21,8 +21,11 @@ public:
     DString(const std::string &s, const std::string &key) : _s(s) {};
     ~DString() {};
     static int Map(const DString* addr, const std::string &key);
-    std::string Value() { return _s;};
-    
+    std::string Value();
+    void Set(const std::string &s);
+    //std::string operator=(const DString &s) { return Value(); };
+    //DString & operator=(const DString &s) { Set(s._s); return *this; };
+        
 private:
     std::string _s;
     std::string _key;
@@ -34,7 +37,9 @@ public:
     DLong(uint64_t l, const std::string &key) : _l(l), _key(key) {};
     ~DLong() {};
     static int Map(const DLong* addr, const std::string &key);
-    uint64_t Value() { return _l; };
+    uint64_t Value();
+    void Set(uint64_t l);
+    
 private:
     uint64_t _l;
     std::string _key;
@@ -47,9 +52,10 @@ public:
     DCounter(uint64_t c, const std::string &key) : _counter(c), _key(key) {};
     ~DCounter() {};
     static int Map(const DCounter *addr, const std::string &key);
-    int Value() { return _counter; };
-    void Increment();
-    void Decrement();
+    int Value();
+    void Set(int val);
+    void Increment() { Set(_counter + 1);};
+    void Decrement() { Set(_counter - 1);};
 
 private:
     int _counter;
@@ -63,7 +69,9 @@ public:
     DIDSet(std::unordered_set<uint64_t> set) : _set(set) {};
     ~DIDSet();
     static int Map(const DIDSet *addr, const std::string &key);
-    std::unordered_set<uint64_t> Value() { return _set; };
+    std::unordered_set<uint64_t> Value();
+    void Add(uint64_t val);
+    
 private:
     std::string _key;
     std::unordered_set<uint64_t> _set;

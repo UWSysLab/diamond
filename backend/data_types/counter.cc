@@ -45,23 +45,24 @@ Map(const DCounter *addr, const string &key) {
    return 0;
 }
 
-void
-DCounter::Increment()
-{
-   _counter++;
+int
+DCounter::Value() {
+    string s;
+    int ret = diamondclient.Read(_key, s);
 
-   char buf[50];
-   sprintf(buf, "%i", _counter);
-   diamondclient.Write(_key, string(buf));
+    if (ret == RPC_OK) {
+        _counter = atoi(s.c_str());
+    }
+    return _counter;
 }
-
+        
 void
-DCounter::Decrement()
+DCounter::Set(int val)
 {
-   _counter--;
-   char buf[50];
-   sprintf(buf, "%i", _counter);
-   diamondclient.Write(_key, string(buf));
+    _counter = val;
+    char buf[50];
+    sprintf(buf, "%i", _counter);
+    diamondclient.Write(_key, string(buf));
 }
    
 } // namespace diamond
