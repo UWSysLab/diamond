@@ -44,7 +44,7 @@ ifeq ($(UNAME_S),Darwin)
     CFLAGS += -I$(GTEST_DIR)/include -Iredox/include -I/usr/local/include -I/usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Headers/
     LDFLAGS += -L/usr/local/lib -Lredox/release 
 else
-    CFLAGS += -rpath=redox/release 
+    LDFLAGS += -Wl,-rpath=redox/release 
 endif
 
 # Additional flags
