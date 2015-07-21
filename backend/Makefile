@@ -11,7 +11,7 @@ EXPAND = lib/tmpl/expand
 #CFLAGS := -g -Wall -pthread -iquote.obj/gen -Wno-uninitialized -levent_pthreads -lredox
 CFLAGS := -g -Wall -Wno-uninitialized -I/usr/include/python2.7
 CXXFLAGS := -std=c++0x #-levent_pthreads
-LDFLAGS := -lredox -lev -lhiredis -lpython2.7 -lboost_python #-levent_pthreads 
+LDFLAGS := -lredox -lev -lhiredis -lpython2.7 -lboost_python -Wl,-rpath=redox/release #-levent_pthreads 
 ## Debian package: check
 # CHECK_CFLAGS := $(shell pkg-config --cflags check)
 # CHECK_LDFLAGS := $(shell pkg-config --cflags --libs check)
