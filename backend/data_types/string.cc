@@ -21,13 +21,13 @@ Client diamondclient;
 static unordered_map<string, DString> cache;
     
 int
-Map(DString *addr, const string &key) {
+Map(DString &addr, const string &key) {
     // take a look in the cache first
-    addr->_key = key;
+    addr._key = key;
     
     std::unordered_map<string, DString>::const_iterator find = cache.find(key);
     if (find != cache.end()) {
-        addr->_s = find->second._s;
+        addr._s = find->second._s;
         return 0;
     }
 
@@ -43,7 +43,7 @@ Map(DString *addr, const string &key) {
        return ret;
     }
 
-    addr->_s = value;
+    addr._s = value;
     return RPC_OK;
 }
 

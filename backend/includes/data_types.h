@@ -18,9 +18,10 @@ namespace diamond {
 class DString
 {
 public:
+    DString() {};
     DString(const std::string &s, const std::string &key) : _s(s) {};
     ~DString() {};
-    friend int Map(DString* addr, const std::string &key);
+    friend int Map(DString &addr, const std::string &key);
     std::string Value();
     void Set(const std::string &s);
     std::string operator=(const DString &s) { return Value(); };
