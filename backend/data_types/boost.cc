@@ -15,7 +15,7 @@ namespace diamond {
     
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(diamond)
+BOOST_PYTHON_MODULE(libdiamond)
 {
     class_<DString>("DString", init<const std::string &, const std::string &>())
         .def("Value", &DString::Value)
