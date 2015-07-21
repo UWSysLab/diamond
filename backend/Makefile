@@ -7,11 +7,14 @@ CXX = clang++
 LD = clang++
 EXPAND = lib/tmpl/expand
 
+UNAME_S := $(shell uname -s)
+
 #CFLAGS := -g -Wall -pthread -iquote.obj/gen -Wno-uninitialized -levent_pthreads -O2 -DNASSERT
 #CFLAGS := -g -Wall -pthread -iquote.obj/gen -Wno-uninitialized -levent_pthreads -lredox
 CFLAGS := -g -Wall -Wno-uninitialized -I/usr/include/python2.7
 CXXFLAGS := -std=c++0x #-levent_pthreads
-LDFLAGS := -lredox -lev -lhiredis -lpython2.7 -lboost_python -Wl,-rpath=redox/release #-levent_pthreads 
+LDFLAGS := -lredox -lev -lhiredis -lpython2.7 -lboost_python #-levent_pthreads
+LDFLAGS := -lredox -lev -lhiredis -lpython2.7 -lboost_python #-levent_pthreads 
 ## Debian package: check
 # CHECK_CFLAGS := $(shell pkg-config --cflags check)
 # CHECK_LDFLAGS := $(shell pkg-config --cflags --libs check)
@@ -35,6 +38,14 @@ LDFLAGS += $(LIBSSL_LDFLAGS)
 
 # Google test framework. This doesn't use pkgconfig
 GTEST_DIR := /usr/src/gtest
+
+ifeq ($(UNAME_S),Darwin)
+    GTEST_DIR := /Users/Niel/systems/googletest-read-only
+    CFLAGS += -I$(GTEST_DIR)/include -Iredox/include -I/usr/local/include -I/usr/local/Cellar/python/2.7.9/Frameworks/Python.framework/Headers/
+    LDFLAGS += -L/usr/local/lib -Lredox/release 
+else
+    CFLAGS += -rpath=redox/release 
+endif
 
 # Additional flags
 PARANOID = 1
