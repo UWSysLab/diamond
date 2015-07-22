@@ -50,6 +50,10 @@ TEST(DString, Map)
 
     EXPECT_EQ(ret, RPC_OK);
     EXPECT_EQ(s1.Value(), s2.Value());
+
+    s2 = std::string("Goodbye");
+
+    EXPECT_EQ(s1.Value(), s2.Value());
 }
 
 TEST(DLong, Map) {
@@ -63,6 +67,10 @@ TEST(DLong, Map) {
 
     EXPECT_EQ(ret, RPC_OK);
     EXPECT_EQ(l1.Value(), l2.Value());
+
+    l2 = 0;
+
+    EXPECT_EQ(l1.Value(), l2.Value());
 }
 
 TEST(DCounter, Map) {
@@ -75,6 +83,10 @@ TEST(DCounter, Map) {
     ret = DCounter::Map(c2, std::string("12"));
 
     EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(c1.Value(), c2.Value());
+
+    ++c2;
+
     EXPECT_EQ(c1.Value(), c2.Value());
 }
 
@@ -90,4 +102,7 @@ TEST(DSet, Map) {
     EXPECT_EQ(ret, RPC_OK);
     EXPECT_EQ(set2.InSet(33), true);
 
+    set2.Add(7);
+
+    EXPECT_EQ(set1.InSet(7), true);
 }
