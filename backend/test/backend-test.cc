@@ -51,3 +51,29 @@ TEST(DString, Map)
     EXPECT_EQ(ret, RPC_OK);
     EXPECT_EQ(s1.Value(), s2.Value());
 }
+
+TEST(DLong, Map) {
+    DLong l1;
+    DLong l2;
+
+    int ret = DLong::Map(l1, std::string("20"));
+    l1 = 42;
+
+    ret = DLong::Map(l2, std::string("20"));
+
+    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(l1.Value(), l2.Value());
+}
+
+TEST(DCounter, Map) {
+    DCounter c1;
+    DCounter c2;
+
+    int ret = DCounter::Map(c1, std::string("30"));
+    ++c1;
+
+    ret = DCounter::Map(c2, std::string("30"));
+
+    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(c1.Value(), c2.Value());
+}
