@@ -17,17 +17,18 @@ namespace diamond {
 using namespace std;
 
 extern Client diamondclient;
-static unordered_map<string, DCounter *> cache;
+static unordered_map<string, DCounter> cache;
 
 int
-Map(const DCounter *addr, const string &key) {
+DCounter::Map(DCounter &addr, const string &key) {
 
-   // take a look in the cache first
-   std::unordered_map<string, DCounter*>::const_iterator find = cache.find(key);
-   if (find != cache.end()) {
-      addr = find->second;
-      return 0;
-   }
+    addr._key = key;
+    // take a look in the cache first
+    std::unordered_map<string, DCounter>::const_iterator find = cache.find(key);
+    if (find != cache.end()) {
+        addr._counter = find->second._counter;
+        return 0;
+    }
    
    if (!diamondclient.IsConnected()) {
       Panic("Cannot map objects before connecting to backing store server");
@@ -41,7 +42,8 @@ Map(const DCounter *addr, const string &key) {
       return ret;
    }
 
-   addr = new DCounter(atol(value.c_str()), key);
+   addr._counter = atol(value.c_str());
+   cache[key] = addr;
    return 0;
 }
 

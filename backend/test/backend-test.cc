@@ -43,10 +43,10 @@ TEST(DString, Map)
     DString s2;
 
     //diamondclient.Connect("seymour");
-    int ret = Map(s1, std::string("10"));
+    int ret = DString::Map(s1, std::string("10"));
     s1 = std::string("Hello");
     
-    ret = Map(s2, std::string("10"));
+    ret = DString::Map(s2, std::string("10"));
 
     EXPECT_EQ(ret, RPC_OK);
     EXPECT_EQ(s1.Value(), s2.Value());

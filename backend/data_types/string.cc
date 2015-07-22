@@ -21,7 +21,7 @@ Client diamondclient;
 static unordered_map<string, DString> cache;
     
 int
-Map(DString &addr, const string &key) {
+DString::Map(DString &addr, const string &key) {
     // take a look in the cache first
     addr._key = key;
     
@@ -44,6 +44,7 @@ Map(DString &addr, const string &key) {
     }
 
     addr._s = value;
+    cache[key] = addr;
     return RPC_OK;
 }
 

@@ -18,8 +18,10 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(libdiamond)
 {
     class_<DString>("DString", init<const std::string &, const std::string &>())
+        .def("Map", &DString::Map)
+        .staticmethod("Map")
         .def("Value", &DString::Value)
-        .def("Set", &DString::Value)
+        .def("Set", &DString::Set)
     ;
 }
 

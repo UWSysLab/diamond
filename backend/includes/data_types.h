@@ -21,12 +21,11 @@ public:
     DString() {};
     DString(const std::string &s, const std::string &key) : _s(s) {};
     ~DString() {};
-    friend int Map(DString &addr, const std::string &key);
+    static int Map(DString &addr, const std::string &key);
     std::string Value();
     void Set(const std::string &s);
-    std::string operator=(const DString &s) { return Value(); };
     DString & operator=(const std::string &s) { Set(s); return *this; };
-    
+        
 private:
     std::string _s;
     std::string _key;
@@ -35,12 +34,13 @@ private:
 class DLong
 {
 public:
+    DLong() {};
     DLong(uint64_t l, const std::string &key) : _l(l), _key(key) {};
     ~DLong() {};
-    static int Map(const DLong* addr, const std::string &key);
+    static int Map(DLong &addr, const std::string &key);
     uint64_t Value();
-    void Set(uint64_t l);
-    
+    void Set(const uint64_t l);
+    DLong & operator=(const uint64_t l) { Set(l); return *this; };
 private:
     uint64_t _l;
     std::string _key;
@@ -50,13 +50,15 @@ private:
 class DCounter
 {
 public:
+    DCounter() {};
     DCounter(uint64_t c, const std::string &key) : _counter(c), _key(key) {};
     ~DCounter() {};
-    static int Map(const DCounter *addr, const std::string &key);
+    static int Map(DCounter &addr, const std::string &key);
     int Value();
-    void Set(int val);
-    void Increment() { Set(_counter + 1);};
-    void Decrement() { Set(_counter - 1);};
+    void Set(const int val);
+    DCounter & operator=(const int val) { Set(val); return *this; };
+    DCounter operator++() { Set(_counter + 1); return *this; };
+    DCounter operator--() { Set(_counter - 1); return *this; };
 
 private:
     int _counter;
@@ -67,6 +69,7 @@ private:
 class DIDSet
 {
 public:
+    DIDSet() {};
     DIDSet(std::unordered_set<uint64_t> set) : _set(set) {};
     ~DIDSet();
     static int Map(const DIDSet *addr, const std::string &key);
