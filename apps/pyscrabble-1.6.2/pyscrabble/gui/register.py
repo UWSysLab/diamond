@@ -102,18 +102,18 @@ class RegisterWindow(gtk.Window):
         
         @return: Server config parser
         '''
-        try:
-            file, headers = urllib.urlretrieve(constants.SERVER_LISTING_LOCATION)
-        except:
-            self.error(util.ErrorMessage(_("Could not read server listing. Please try another time.")))
-            return None
+        #try:
+        #    file, headers = urllib.urlretrieve(constants.SERVER_LISTING_LOCATION)
+        #except:
+        #    self.error(util.ErrorMessage(_("Could not read server listing. Please try another time.")))
+        #    return None
             
-        parser = ConfigParser.ConfigParser()
-        parser.read(file)
+        #parser = ConfigParser.ConfigParser()
+        #parser.read(file)
         
         servers = []
-        for server in parser.sections():
-            servers.append( (server, parser.get(server, "g_port"), parser.get(server, "w_port"), parser.get(server, "location")) )
+        #for server in parser.sections():
+        #    servers.append( (server, parser.get(server, "g_port"), parser.get(server, "w_port"), parser.get(server, "location")) )
         
         servers.extend( util.getAdditionalHosts() )
         
