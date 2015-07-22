@@ -17,13 +17,27 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(libdiamond)
 {
-    class_<DString>("DString", init<const std::string &, const std::string &>())
+    class_<DString>("DString")
         .def("Map", &DString::Map)
         .staticmethod("Map")
         .def("Value", &DString::Value)
         .def("Set", &DString::Set)
     ;
+
+    class_<DLong>("DLong")         
+        .def("Map", &DLong::Map)
+        .staticmethod("Map")
+        .def("Value", &DLong::Value)
+        .def("Set", &DLong::Set)
+    ;
+    class_<DCounter>("DCounter")
+        .def("Map", &DCounter::Map)
+        .staticmethod("Map")
+        .def("Value", &DCounter::Value)
+        .def("Set", &DCounter::Set)
+    ;
 }
 
+    
     
 } // namespace diamond

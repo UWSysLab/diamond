@@ -24,7 +24,7 @@ DCounter::Map(DCounter &addr, const string &key) {
 
     addr._key = key;
     // take a look in the cache first
-    std::unordered_map<string, DCounter>::const_iterator find = cache.find(key);
+    auto find = cache.find(key);
     if (find != cache.end()) {
         addr._counter = find->second._counter;
         return 0;

@@ -20,11 +20,12 @@ extern Client diamondclient;
 static unordered_map<string, DLong> cache;
 
 int
-DLong::Map(DLong &addr, const string &key) {
+DLong::Map(DLong &addr, const string &key)
+{
 
     addr._key = key;
    // take a look in the cache first
-   std::unordered_map<string, DLong>::const_iterator find = cache.find(key);
+   auto find = cache.find(key);
    if (find != cache.end()) {
       addr._l = find->second._l;
       return 0;

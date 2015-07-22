@@ -25,7 +25,7 @@ DString::Map(DString &addr, const string &key) {
     // take a look in the cache first
     addr._key = key;
     
-    std::unordered_map<string, DString>::const_iterator find = cache.find(key);
+    auto find = cache.find(key);
     if (find != cache.end()) {
         addr._s = find->second._s;
         return 0;

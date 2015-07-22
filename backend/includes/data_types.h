@@ -35,12 +35,15 @@ class DLong
 {
 public:
     DLong() {};
-    DLong(uint64_t l, const std::string &key) : _l(l), _key(key) {};
+    DLong(const uint64_t l, const std::string &key) : _l(l), _key(key) {};
     ~DLong() {};
     static int Map(DLong &addr, const std::string &key);
     uint64_t Value();
     void Set(const uint64_t l);
     DLong & operator=(const uint64_t l) { Set(l); return *this; };
+    DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
+    DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };
+    
 private:
     uint64_t _l;
     std::string _key;
@@ -51,7 +54,7 @@ class DCounter
 {
 public:
     DCounter() {};
-    DCounter(uint64_t c, const std::string &key) : _counter(c), _key(key) {};
+    DCounter(const int c, const std::string &key) : _counter(c), _key(key) {};
     ~DCounter() {};
     static int Map(DCounter &addr, const std::string &key);
     int Value();
@@ -59,6 +62,8 @@ public:
     DCounter & operator=(const int val) { Set(val); return *this; };
     DCounter operator++() { Set(_counter + 1); return *this; };
     DCounter operator--() { Set(_counter - 1); return *this; };
+    DCounter & operator+=(const uint64_t i) { Set(_counter + i); return *this; };
+    DCounter & operator-=(const uint64_t i) { Set(_counter - i); return *this; };
 
 private:
     int _counter;
@@ -66,19 +71,26 @@ private:
     
 };
 
-class DIDSet
+class DSet
 {
 public:
-    DIDSet() {};
-    DIDSet(std::unordered_set<uint64_t> set) : _set(set) {};
-    ~DIDSet();
-    static int Map(const DIDSet *addr, const std::string &key);
-    std::unordered_set<uint64_t> Value();
-    void Add(uint64_t val);
+    DSet() {};
+    DSet(std::unordered_set<uint64_t> set, const std::string &key) : _key(key), _set(set) {};
+    ~DSet() {};
+    static int Map(DSet &addr, const std::string &key);
+    std::unordered_set<uint64_t> Members();
+    bool InSet(const uint64_t val);
+    void Add(const uint64_t val);
+    void Add(const std::unordered_set<uint64_t> &set);
+    void Remove(const uint64_t val);
+    DSet & operator=(const std::unordered_set<uint64_t> &set) { Add(set); return *this; };
     
 private:
     std::string _key;
     std::unordered_set<uint64_t> _set;
+
+    std::string Serialize();
+    void Deserialize(std::string &s);
 };
 
 } // namespace diamond
