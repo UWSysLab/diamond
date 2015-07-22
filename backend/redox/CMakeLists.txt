@@ -49,6 +49,11 @@ set(INC_REDOX_ALL ${INC_REDOX_CORE} ${INC_REDOX_UTILS} ${INC_REDOX_WRAPPER})
 include_directories(${INC_REDOX_DIR})
 include_directories(${INC_REDOX_DIR}/redox)
 
+if(APPLE)
+    include_directories("/usr/local/include")
+    link_directories("/usr/local/lib")
+endif()
+
 # Dependent libraries - you may have to change
 # pthread to whatever C++11 threads depends on
 # for your platform
