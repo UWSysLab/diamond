@@ -51,7 +51,7 @@
             <executable>java</executable>
             <arguments>
               <argument>-jar</argument>
-              <argument>javacpp/target/javacpp.jar</argument>
+              <argument>jars/javacpp.jar</argument>
               <argument>-classpath</argument>
               <argument>target/classes</argument>
               <argument>-d</argument>

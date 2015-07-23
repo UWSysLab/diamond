@@ -5,9 +5,9 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Unit test for simple App.
+ * Unit test for Diamond data structures
  */
-public class DStringTest 
+public class DiamondTest 
     extends TestCase
 {
     /**
@@ -15,7 +15,7 @@ public class DStringTest
      *
      * @param testName name of the test case
      */
-    public DStringTest( String testName )
+    public DiamondTest( String testName )
     {
         super( testName );
     }
@@ -25,13 +25,13 @@ public class DStringTest
      */
     public static Test suite()
     {
-        return new TestSuite( DStringTest.class );
+        return new TestSuite( DiamondTest.class );
     }
 
     /**
-     * Rigourous Test :-)
+     * Diamond string test
      */
-    public void testApp()
+    public void testDString()
     {
        Diamond.DString s1 = new Diamond.DString("", "a");
        Diamond.DString s2 = new Diamond.DString("", "a");
