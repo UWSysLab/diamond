@@ -10,7 +10,6 @@
 #ifndef _DATA_TYPES_H_
 #define _DATA_TYPES_H_
 
-#include "client/client.h"
 #include <unordered_set>
 
 namespace diamond {

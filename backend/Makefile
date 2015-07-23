@@ -136,6 +136,7 @@ endef
 include client/Rules.mk
 include data_types/Rules.mk
 include lib/Rules.mk
+include python/Rules.mk
 include libdiamond/Rules.mk
 include test/Rules.mk
 

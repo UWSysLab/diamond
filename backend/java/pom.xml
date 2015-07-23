@@ -1,0 +1,87 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.washington.cs.diamond</groupId>
+  <artifactId>diamond</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>diamond</name>
+  <url>http://maven.apache.org</url>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>3.8.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.bytedeco</groupId>
+      <artifactId>javacpp</artifactId>
+      <version>1.0</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-dependency-plugin</artifactId>
+      <version>2.3</version>
+      <executions>
+        <execution>
+          <goals>
+            <goal>properties</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+    <plugin>
+      <groupId>org.codehaus.mojo</groupId>
+      <artifactId>exec-maven-plugin</artifactId>
+      <version>1.2.1</version>
+      <executions>
+        <execution>
+          <id>javacpp</id>
+          <phase>process-classes</phase>
+          <goals>
+            <goal>exec</goal>
+          </goals>
+          <configuration>
+            <executable>java</executable>
+            <arguments>
+              <argument>-jar</argument>
+              <argument>javacpp/target/javacpp.jar</argument>
+              <argument>-classpath</argument>
+              <argument>target/classes</argument>
+              <argument>-d</argument>
+              <argument>target/classes/lib/</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-std=c++0x</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-iquote../includes</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-L../libdiamond</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-ldiamond</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-Wl,-rpath,../libdiamond</argument>
+              <!-- <argument>-jarprefix</argument> -->
+              <!-- <argument>diamond</argument> -->
+            </arguments>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-plugin</artifactId>
+      <version>2.18.1</version>
+      <configuration>
+        <forkMode>once</forkMode>
+        <argLine>-Djava.library.path=target/classes/lib:../libdiamond</argLine>
+      </configuration>
+    </plugin>
+    </plugins>
+  </build>
+</project>
