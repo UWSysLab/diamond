@@ -1,0 +1,129 @@
+1.6.2
+===
+- Fixed server to properly delete games
+- Fixed a variable namespace issue on the server
+- Fixed an issue on the server that permitted users to login more than once
+
+1.6.1
+===
+- Fixed some minor server bugs
+- Changed the server stats to send minimal information to speed up communication
+
+1.6
+===
+- Reworked communication protocol
+- Improved unicode support.
+- Fixed issue with running scripts in *nix systems.
+- Fixed path issues when running 'python setup.py install'
+- Fixed signal handling for the server
+- Fixed path issues for the server console and service
+- Removed custom logger and migrated to standard logging facility
+- Added user history.
+- You now have the option to be notified when new players login to the game
+- Individual player records.  The game now keeps track of your record against individual players.
+- Fixed About dialog
+- Fix for 1601637.  The values for DEFAULT_HEIGHT and DEFAULT_WIDTH were reversed
+- Fix for RESOURCE_PREFIX in __installed__.py
+- Finnish translation
+
+1.5.1
+===
+- Fix for server on windows.  This is only a temporary fix for some path issues with nevow.
+
+1.5
+===
+- The server now uses (and requires) ZODB as a backend for storing user/stat/game information.  This should 
+vastly improve the integrity and portability of the data.  Run the db_upgrade script to upgrade the old database
+to the new one.
+- Added server version to server info
+- Improved logging
+- HTTP Proxy Support
+- Support for adding additional hosts to list when registering
+- Improved locale handling
+- Renamed pyscrabble.py to pyscrabble-main.py to avoid naming conflicts
+- Fix for 1564444.  Improved unicode support
+- New german words
+- Serbian translation
+
+1.4.1
+===
+- 'Tiles not connected' bugfix
+- Updated the german dictionary
+
+1.4
+===
+- Fixed the webbrowser to open in a new window instead of stealing the current one
+- New option to allow/ban spectators from a game
+- Fixed continuous word bug
+- Modified the letter distribution to be more generic.
+- New game option to show letter distribution
+- You can now double click on a game to join it
+
+1.3.3
+===
+- Fixes for latest nevow
+- Fixed update user (admin)
+- Modified 'find public servers' and 'server information' screen to refresh faster
+
+1.3.2
+===
+- Fixed change password bug
+- Fixed timer bug
+- Fixed drag bug that resulted in funky letter behavior
+
+1.3.1
+===
+- Moved time control to server
+- German translation
+
+1.3
+===
+- "Toaster" style popup windows!
+- Timed games!
+- Configuration now stored in $APPDATA/pyscrabble
+- Fixed bug with hanging sessions.  You won't get 'you are already logged in' messages anymore
+- When creating a game, the language of the game defaults to the locale of the creator
+- Dictionary lookups are now done by the language setting of the game
+- Added user preference to bold text on tiles
+- Added user preference to show timestamps in 24-hour format
+- Status messages now show what a player is doing on the server
+- Server now says 'You have messages' if you have already viewed your offline messages
+- Fixed URL bug
+- Changed dictionary to point to www.answers.com
+- Moved 'Allow Spectator Chat' button to Option Panel
+- Players can now 'type' a word onto the board (click on a tile and try it out!)
+- All timestamps should now be in local time
+- Fixed 'double click' bug for multiple buttons
+- Added option to save username/password/host when you login
+- Players are no longer penalized a loss in an official game if they disconnect in an unclean fashion (crash, internet goes down etc.)
+- Press 'Ctrl-A' to select/de-select all Letters in your rack.  This makes it easier to trade all your letters at once
+- Thanks to Jonathan Jacobs for the cool new icons!
+- New color preferences available
+- You can now press enter to submit a blank tile
+- Added 'Add Server to Host' button in Find Public Server window in case you forget a host entry
+- Misc bugfixes
+
+1.2
+===
+- Now uses ENABLE (Enhanced North American Bench LExicon) for the dictionary
+- En Francais! French translation/rules/dictionary
+- Removed "cannot add the same word twice restriction"
+- Offline messages.  You can now send private messages to users while they are offline
+- Misc fixes to the "rack." You can now drag letters around the board and into/out of your rack.
+- Added "shuffle" button to randomly shuffle letters in your rack
+- Fullscreen mode for you folks that want to use a resolution less than 1024x768
+- Reworked the network protocol to make the program run faster
+- Game actions (start/save/resume) are now restricted to the creator of the game
+- Fixes for Python 2.3 compatibility (Thanks Mark Lee)
+- When there are less than 7 letters left in the game bag, it now shows how many letters each player has remaining
+- Trade now shows how many letters a user traded
+- Letter score deductions are taken at the end of the game
+- Auto "linkification" of chat text
+- Server bulletins
+- Right click on a word on the board to get its definition
+- Fixed a nasty bug that allowed users to make illegal moves (Thanks Jan!)
+- Misc new gameplay preferences
+- Colors!
+--- User-specified color for when new moves are put on the board
+--- User-specified color for when new moves are applied to the board
+--- User-specified color for blank tile text
