@@ -15,14 +15,15 @@ different things.
 
 ### Building the source and language bindings
 To compile a shared object library and both the C++ and Python
-bindings, just type make in the root directory.
+bindings, just type make in the root directory:
+    $ make
 
 To run tests for the C++ bindings type:
-''' $ make test
+    $ make test
 
 To compile the Java bindings, cd to the Java directory and type:
-''' $ mvn package
+    $ mvn package
 
 To test the Java bindings, cd to the Java directory and type:
-''' $ mvn test
+    $ mvn test
 
