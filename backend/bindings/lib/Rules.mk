@@ -1,6 +1,6 @@
 d := $(dir $(lastword $(MAKEFILE_LIST)))
 
-$(d)libdiamond.so: $(patsubst %.o,%-pic.o, $(LIB-message) $(OBJS-client) $(OBJS-data-types) $(OBJS-python))
+$(d)libdiamond.so: $(patsubst %.o,%-pic.o, $(LIB-message) $(OBJS-client) $(OBJS-data-types))
 LDFLAGS-$(d)libdiamond.so += -shared -lredox -lhiredis -lpython2.7 -lboost_python
 
 UNAME_S := $(shell uname -s)

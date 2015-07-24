@@ -1,9 +1,9 @@
-### Downloading source
+## Downloading source
 Now you can download the source from gitlab:
 
     $ git clone git@gitlab.cs.washington.edu:syslab/diamond-src.git
 
-### Set up the build environment
+## Set up the build environment
 Diamond has language binding for Java, Android, Python and C++. In
 order to build the bindings in each case, you'll need to set up
 different things.
@@ -13,7 +13,7 @@ different things.
 * Java
   - Install Maven for compiling the Java bindings
 
-### Building the source and language bindings
+## Building the source and language bindings
 To compile a shared object library and both the C++ and Python
 bindings, just type make in the root directory:
 

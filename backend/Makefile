@@ -133,12 +133,19 @@ define add-LDFLAGS
 $(foreach bin,$(1),$(eval LDFLAGS-$(bin) += $(2)))
 endef
 
+# backend code
 include client/Rules.mk
 include data_types/Rules.mk
 include lib/Rules.mk
-include python/Rules.mk
-include libdiamond/Rules.mk
+
+# C++ tests
 include test/Rules.mk
+
+# C++ shared object library
+include bindings/lib/Rules.mk
+
+# Python bindings
+include bindings/python/Rules.mk
 
 ##################################################################
 # General rules

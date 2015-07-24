@@ -59,13 +59,13 @@
               <argument>-Xcompiler</argument>
               <argument>-std=c++0x</argument>
               <argument>-Xcompiler</argument>
-              <argument>-iquote../includes</argument>
+              <argument>-iquote../../includes</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../libdiamond</argument>
+              <argument>-L../lib</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../libdiamond:../redox/release</argument>
+              <argument>-Wl,-rpath,../lib:../../redox/release</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
@@ -79,7 +79,7 @@
       <version>2.18.1</version>
       <configuration>
         <forkMode>once</forkMode>
-        <argLine>-Djava.library.path=target/classes/lib:../libdiamond</argLine>
+        <argLine>-Djava.library.path=target/classes/lib:../lib</argLine>
       </configuration>
     </plugin>
     </plugins>
