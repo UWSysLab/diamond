@@ -36,13 +36,26 @@ public class DiamondTest
        Diamond.DString s1 = new Diamond.DString("", "a");
        Diamond.DString s2 = new Diamond.DString("", "a");
 
-       System.out.println(s1.Value());
-       System.out.println(s2.Value());
-       
-       s2.Set("13");
+       s2.Assign("13");
        
        assert(s2.Value().equals("13"));
        assert(s1.Value().equals("13"));
-       
+       //System.out.println("DString test ok!");
     }
+
+   /**
+     * Diamond long test
+     */
+    public void testDLong()
+    {
+       Diamond.DLong s1 = new Diamond.DLong(0, "b");
+       Diamond.DLong s2 = new Diamond.DLong(0, "b");
+
+       s2.Set(13);
+       
+       assert(s2.Value() == 13);
+       assert(s1.Value() == 13);
+       //System.out.println("DLong test ok!");
+    }
+
 }

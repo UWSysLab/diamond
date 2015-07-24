@@ -65,7 +65,7 @@
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../libdiamond</argument>
+              <argument>-Wl,-rpath,../libdiamond:../redox/release</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
