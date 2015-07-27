@@ -3,8 +3,68 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (DIAMOND)
 
+# ----------------------------------------------------
+# C Flags
+# ----------------------------------------------------
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
+
+# ---------------------------------------------------------
+# Download dependencies
+# ---------------------------------------------------------
+
+# Download redox dependencies
+find_package(hiredis)
+find_package(ev)
+find_package(pthread)
+
+# Set up Redox Redis client for accessing backend storage
+INCLUDE(ExternalProject)
+
+if (APPLE)
+ExternalProject_Add(
+    redox-redisclient    
+    PREFIX ${PROJECT_SOURCE_DIR}/redox
+    GIT_REPOSITORY git@github.com:hmartiro/redox.git
+    INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
+    CMAKE_CACHE_ARGS CMAKE_INCLUDE_PATH=/opt/local/include:/usr/local/include
+    BINARY_DIR ${PROJECT_SOURCE_DIR}/redox/build
+    LOG_DOWNLOAD ON
+    LOG_CONFIGURE ON
+    LOG_BUILD ON)
+else()
+# Set default ExternalProject root directory
+ExternalProject_Add(
+    redox-redisclient
+    DEPENDS hiredis
+    PREFIX ${PROJECT_SOURCE_DIR}/redox
+    GIT_REPOSITORY git@github.com:hmartiro/redox.git
+    INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
+    BINARY_DIR ${PROJECT_SOURCE_DIR}/redox/build
+    LOG_DOWNLOAD ON
+    LOG_CONFIGURE ON
+    LOG_BUILD ON)
+endif()
+# ---------------------------------------------------------
+# Include and link directories
+# ---------------------------------------------------------
+
+# Diamond include directory
+include_directories(${PROJECT_SOURCE_DIR})
+
+# Redox Redis client includes
+ExternalProject_Get_Property(redox-redisclient source_dir)
+include_directories(${source_dir}/includes)
+link_directories(${source_dir}/build)
+
+if(APPLE)
+    include_directories("/usr/local/include" "/usr/local/Frameworks")
+    link_directories("/usr/local/lib")
+    cmake_policy(SET CMP0042 NEW)
+endif()
 
 # ---------------------------------------------------------
 # Source files
@@ -24,43 +84,10 @@ set(SRC_DIAMOND_DATA_TYPES
     ${PROJECT_SOURCE_DIR}/data_types/counter.cc
     ${PROJECT_SOURCE_DIR}/data_types/long.cc
     ${PROJECT_SOURCE_DIR}/data_types/set.cc)
-    
-if(APPLE)
-    include_directories("/usr/local/include" "/usr/local/Frameworks")
-    link_directories("/usr/local/lib")
-endif()
 
-# Diamond include directory
-include_directories(${PROJECT_SOURCE_DIR})
-
-# Dependent libraries for Diamond
-# find_package(Protobuf REQUIRED)
-# include_directories(${PROTOBUF_INCLUDE_DIRS})
-
-# include_directories(${CMAKE_CURRENT_BINARY_DIR})
-# PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS foo.proto)
-# add_executable(bar bar.cc ${PROTO_SRCS} ${PROTO_HDRS})
-# target_link_libraries(bar ${PROTOBUF_LIBRARIES})
-
-# Set up Redox Redis client for accessing backend storage
-INCLUDE(ExternalProject)
-
-# Set default ExternalProject root directory
-ExternalProject_Add(
-    redox-redisclient
-    PREFIX ${PROJECT_SOURCE_DIR}/redox
-    GIT_REPOSITORY git@github.com:hmartiro/redox.git
-    INSTALL_COMMAND ""
-    UPDATE_COMMAND ""
-    BINARY_DIR ${PROJECT_SOURCE_DIR}/redox/build
-    LOG_DOWNLOAD ON
-    LOG_CONFIGURE ON
-    LOG_BUILD ON)
-
-# Specify library dir
-ExternalProject_Get_Property(redox-redisclient source_dir)
-set(REDOX_RELEASE_DIR ${source_dir}/build)
-link_directories(${REDOX_RELEASE_DIR})
+# ---------------------------------------------------------
+# Build targets
+# ---------------------------------------------------------
 
 # Set up library dependencies for linking into the Diamond library
 set(DIAMOND_LIB_DEPS ev pthread hiredis redox)
@@ -69,6 +96,7 @@ add_library (diamond SHARED
             ${SRC_DIAMOND_CLIENT}
             ${SRC_DIAMOND_DATA_TYPES})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
+add_dependencies(diamond redox-redisclient)
 
 # Adding Diamond tests
 add_subdirectory(test)

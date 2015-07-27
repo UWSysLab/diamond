@@ -1,7 +1,7 @@
 # Set up testing infrastructure
 enable_testing()
 set(GTEST_ROOT /usr/src/gtest)
-find_package(GTest REQUIRED)
+find_package(GTest)
 
 if (NOT GTEST_FOUND)
    INCLUDE(ExternalProject)
@@ -28,7 +28,7 @@ if (NOT GTEST_FOUND)
    add_library(${GTEST_LIBRARY} UNKNOWN IMPORTED)
    set_property(TARGET ${GTEST_LIBRARY} PROPERTY IMPORTED_LOCATION
                 ${GTEST_LIBRARY_PATH} )
-                add_dependencies(${GTEST_LIBRARY} googletest)
+   add_dependencies(${GTEST_LIBRARY} googletest)
 endif()
 
 # add gtest include directory
