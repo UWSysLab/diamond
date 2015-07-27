@@ -23,7 +23,7 @@ namespace diamond {
 class Client
 {
 public:
-    Client() {Connect("seymour");};
+    Client() {Connect("seymour.cs.washington.edu");};
     virtual ~Client();
     int Connect(const std::string &host);
     bool IsConnected();
