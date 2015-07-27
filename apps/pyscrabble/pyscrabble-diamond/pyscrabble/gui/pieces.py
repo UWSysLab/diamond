@@ -640,7 +640,7 @@ class GameTile(gtk.Button):
 
 
 # Class representing a Letter tile
-class GameLetter(gtk.ToggleButton, Letter):
+class GameLetter(gtk.ToggleButton):
     '''
     The GameLetter represents the Letters that are used to make words.
     
@@ -656,7 +656,11 @@ class GameLetter(gtk.ToggleButton, Letter):
         @param letter: Letter
         '''
         gtk.ToggleButton.__init__(self)
-        Letter.__init__(self, letter.getLetter(), letter.getScore())
+        
+        self.score = letter.getScore()
+        self.__isBlank = False
+        self.setLetter( letter.getLetter() )
+        
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         
         
@@ -846,7 +850,38 @@ class GameLetter(gtk.ToggleButton, Letter):
         
         self.add(widget)
         self.show_all()
+        
+    def setLetter(self, letter):
+        '''
+        Set the Letter string
+        
+        @param letter:
+        '''
+        if (letter == ""):
+            self.__isBlank = True
+        #else:
+        #    self.__isBlank = False
+        self.letter = letter
 
+    def clone(self):
+        '''
+        Clone the letter
+        
+        @return: Clone of this Letter
+        '''
+        l = Letter(self.letter)
+        l.__isBlank = self.isBlank()
+        l.score = self.score
+        return l
+    
+    def isBlank(self):
+        '''
+        Check if the Letter is a Blank.
+        
+        @return: True if the Letter is a blank letter.
+        '''
+        
+        return self.__isBlank
         
         
        
