@@ -46,8 +46,6 @@ class GameTile(gtk.Button, Tile):
         
         self.connect("button-release-event", self.buttonRelease_cb)
         self.connect("button-press-event", self.buttonPress_cb)
-
-        print "Creating tile" + repr(x) + " " + repr(y)
     
     def clone(self):
         '''
