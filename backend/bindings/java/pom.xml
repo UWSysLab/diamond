@@ -51,11 +51,45 @@
             <executable>java</executable>
             <arguments>
               <argument>-jar</argument>
-              <argument>jars/javacpp.jar</argument>
+              <argument>libs/javacpp.jar</argument>
               <argument>-classpath</argument>
               <argument>target/classes</argument>
               <argument>-d</argument>
-              <argument>target/classes/lib/</argument>
+              <argument>target/classes/x86-lib/</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-std=c++0x</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-iquote../../includes</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-L../build</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-ldiamond</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-Wl,-rpath,../build:../../redox/build</argument>
+              <!-- <argument>-jarprefix</argument> -->
+              <!-- <argument>diamond</argument> -->
+            </arguments>
+          </configuration>
+        </execution>
+        <execution>
+          <id>javacpp-android</id>
+          <phase>process-classes</phase>
+          <goals>
+            <goal>exec</goal>
+          </goals>
+          <configuration>
+            <executable>java</executable>
+            <arguments>
+              <argument>-jar</argument>
+              <argument>libs/javacpp.jar</argument>
+              <argument>-classpath</argument>
+              <argument>target/classes</argument>
+              <argument>-d</argument>
+              <argument>target/classes/arm-lib/</argument>
+              <argument>-properties</argument>
+              <argument>android-arm</argument>
+              <argument>-Dplatform.root=../toolchains/android-ndk</argument>
+              <argument>-Dplatform.compiler=../toolchains/android/bin/arm-linux-androideabi-g++</argument>
               <argument>-Xcompiler</argument>
               <argument>-std=c++0x</argument>
               <argument>-Xcompiler</argument>

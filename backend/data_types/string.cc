@@ -12,7 +12,6 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include <unordered_map>
-#include <boost/python.hpp>
 
 namespace diamond {
 
