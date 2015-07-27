@@ -512,8 +512,3 @@ class MainWindow(gtk.Window):
                     f = page.get_child().get_child()
                     if isinstance(f, GameFrame):
                         f.selectAllLetters()
-
-        #HACK to refresh tiles whenever a key is pressed
-        for window in self.games.itervalues():
-            window.get_child().get_child().refreshOptions()
-            print "Refresh"
