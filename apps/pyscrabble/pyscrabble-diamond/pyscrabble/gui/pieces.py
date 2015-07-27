@@ -7,6 +7,10 @@ from pyscrabble import manager
 from pyscrabble import gtkutil
 from pyscrabble import util
 
+import sys
+sys.path.append("/Users/Niel/systems/diamond-src/backend/libdiamond")
+from libdiamond import *
+
 # Class representing a Tile on the Gameboard            
 class GameTile(gtk.Button):
     '''
@@ -28,6 +32,16 @@ class GameTile(gtk.Button):
         self.board = parent #callback to the parent widget
         
         gtk.Button.__init__(self)
+        
+        #######
+        
+        self.letterStr = DString()
+        DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
+        
+        self.letterScore = DLong()
+        DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
+        
+        #######
         
         self.__style = TILE_NORMAL
         self.letter = None
@@ -195,7 +209,7 @@ class GameTile(gtk.Button):
         self.setStyle( TILE_LETTER, color )
         self.set_label( letter, showBlank )
         
-        self.letter = letter        
+        self.letter = letter
     
     def findStyle(self, x, y):
         '''
