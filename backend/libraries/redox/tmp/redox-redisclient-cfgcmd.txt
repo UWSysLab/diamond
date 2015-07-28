@@ -1,1 +1,0 @@
-cmd='/opt/local/bin/cmake;-GUnix Makefiles;/Users/irene/uw/diamond/src/backend/libraries/redox'

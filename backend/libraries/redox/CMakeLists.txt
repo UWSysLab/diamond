@@ -59,24 +59,24 @@ endif()
 
 # Download the hiredis client
 # set up the hiredis redis client that redox needs
-INCLUDE(ExternalProject)
+# INCLUDE(ExternalProject)
 
-ExternalProject_Add(
-   hiredis-redisclient
-   PREFIX ${PROJECT_SOURCE_DIR}/hiredis
-   GIT_REPOSITORY git@github.com:redis/hiredis.git
-   CONFIGURE_COMMAND "echo hello"
-   CMAKE_COMMAND "echo cmake"
-   UPDATE_COMMAND ""
-   INSTALL_COMMAND ""
-   SOURCE_DIR ${PROJECT_SOURCE_DIR}/hiredis/src
-   BINARY_DIR ${PROJECT_SOURCE_DIR}/hiredis/build
-   LOG_DOWNLOAD ON
-   LOG_CONFIGURE ON
-   LOG_BUILD ON)
+# ExternalProject_Add(
+#    hiredis-redisclient
+#    PREFIX ${PROJECT_SOURCE_DIR}/hiredis
+#    GIT_REPOSITORY git@github.com:redis/hiredis.git
+#    CONFIGURE_COMMAND "echo hello"
+#    CMAKE_COMMAND "echo cmake"
+#    UPDATE_COMMAND ""
+#    INSTALL_COMMAND ""
+#    SOURCE_DIR ${PROJECT_SOURCE_DIR}/hiredis/src
+#    BINARY_DIR ${PROJECT_SOURCE_DIR}/hiredis/build
+#    LOG_DOWNLOAD ON
+#    LOG_CONFIGURE ON
+#    LOG_BUILD ON)
  
-include_directories(${PROJECT_SOURCE_DIR}/hiredis)
-link_directories(${PROJECT_SOURCE_DIR}/hiredis) 
+# include_directories(${PROJECT_SOURCE_DIR}/hiredis)
+# link_directories(${PROJECT_SOURCE_DIR}/hiredis) 
 set(REDOX_LIB_DEPS ev pthread hiredis)
 
 # ---------------------------------------------------------
