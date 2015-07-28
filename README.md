@@ -22,13 +22,13 @@ Android or iOS abi.
 	1. To install the SDK, download and unpack it for your platform
 	2. Run:
 
-    $ tools/android update sdk --no-ui
+            $ tools/android update sdk --no-ui
 
   - Install the NDK
 	1. Download the NDK.
 	2. Unpack it by running:
 
-    $ chmod u+x <NDK>.bin
+            $ chmod u+x <NDK>.bin
 
 ## Building the source and language bindings
 To compile a shared object library and both the C++ and Python
@@ -57,3 +57,4 @@ To compile for Android:
 	$ cd android-build
 	$ cmake .. -DCMAKE_TOOLCHAIN_FILE=../Android.cmake
 	$ make
+	
