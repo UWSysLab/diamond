@@ -14,11 +14,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
 # Download dependencies
 # ---------------------------------------------------------
 
-# Download redox dependencies
-find_package(hiredis)
-find_package(ev)
-find_package(pthread)
-
 # Set up Redox Redis client for accessing backend storage
 INCLUDE(ExternalProject)
 
@@ -29,7 +24,7 @@ ExternalProject_Add(
     GIT_REPOSITORY git@github.com:hmartiro/redox.git
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
-    CMAKE_CACHE_ARGS CMAKE_INCLUDE_PATH=/opt/local/include:/usr/local/include
+    CMAKE_CACHE_ARGS -DCMAKE_INCLUDE_PATH:string="/opt/local/include:/usr/local/include"
     BINARY_DIR ${PROJECT_SOURCE_DIR}/redox/build
     LOG_DOWNLOAD ON
     LOG_CONFIGURE ON
@@ -38,7 +33,6 @@ else()
 # Set default ExternalProject root directory
 ExternalProject_Add(
     redox-redisclient
-    DEPENDS hiredis
     PREFIX ${PROJECT_SOURCE_DIR}/redox
     GIT_REPOSITORY git@github.com:hmartiro/redox.git
     INSTALL_COMMAND ""
