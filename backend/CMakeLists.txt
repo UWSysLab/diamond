@@ -40,8 +40,7 @@ include_directories(${PROJECT_SOURCE_DIR}/redox/include)
 link_directories(${PROJECT_SOURCE_DIR}/redox)
 
 if(APPLE)
-    include_directories("/opt/local/include" "/usr/local/include"
-    "/usr/local/Frameworks" "/System/Library/Frameworks")
+    include_directories("/opt/local/include" "/usr/local/include")
     link_directories("/usr/local/lib" "/opt/local/lib")
     cmake_policy(SET CMP0042 NEW)
 endif()
@@ -79,9 +78,9 @@ target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond redox-redisclient)
 
 # Add python bindings for Linux
-if (NOT APPLE)
+#if (NOT APPLE)
 add_subdirectory(bindings/python)
-endif()
+#endif()
 
 # Adding Diamond tests
 add_subdirectory(test)
