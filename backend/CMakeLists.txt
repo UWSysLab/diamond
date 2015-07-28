@@ -11,6 +11,24 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
 
 # ---------------------------------------------------------
+# Download dependencies
+# ---------------------------------------------------------
+
+# Set up Redox Redis client for accessing backend storage
+INCLUDE(ExternalProject)
+
+# Set default ExternalProject root directory
+ExternalProject_Add(
+    redox-redisclient
+    PREFIX ${PROJECT_SOURCE_DIR}/redox
+    DOWNLOAD_COMMAND ""
+    INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/redox
+    BINARY_DIR ${PROJECT_SOURCE_DIR}/redox
+    LOG_BUILD ON)
+    
+# ---------------------------------------------------------
 # Include and link directories
 # ---------------------------------------------------------
 
@@ -19,7 +37,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 # Redox Redis client includes
 include_directories(${PROJECT_SOURCE_DIR}/redox/include)
-link_directories(${PROJECT_SOURCE_DIR}/redox})
+link_directories(${PROJECT_SOURCE_DIR}/redox)
 
 if(APPLE)
     include_directories("/usr/local/include" "/usr/local/Frameworks")
@@ -57,6 +75,7 @@ add_library (diamond SHARED
             ${SRC_DIAMOND_CLIENT}
             ${SRC_DIAMOND_DATA_TYPES})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
+add_dependencies(diamond redox-redisclient)
 
 # Adding Diamond tests
 add_subdirectory(test)
