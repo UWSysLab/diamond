@@ -19,8 +19,16 @@ To build for Android and iOS, we need to cross compile for ARM and the
 Android or iOS abi.
 * Android
   - Install either Android Studio or the stand-alone SDK
-  - Install the NDK
+	1. To install the SDK, download and unpack it for your platform
+	2. Run:
 
+    $ tools/android update sdk --no-ui
+
+  - Install the NDK
+	1. Download the NDK.
+	2. Unpack it by running:
+
+    $ chmod u+x <NDK>.bin
 
 ## Building the source and language bindings
 To compile a shared object library and both the C++ and Python
