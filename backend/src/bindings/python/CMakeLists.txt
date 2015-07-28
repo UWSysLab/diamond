@@ -33,7 +33,7 @@ add_library (pydiamond MODULE
 
 target_link_libraries(pydiamond
 	diamond
-	python2.7
+	${PYTHON_LIBRARIES}
 	${Boost_LIBRARIES}
 	${DIAMOND_LIB_DEPS})
 	    
