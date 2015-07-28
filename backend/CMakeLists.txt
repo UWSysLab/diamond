@@ -26,8 +26,8 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
-    SOURCE_DIR ${PROJECT_LIBRARIES_DIR}/redox
-    BINARY_DIR ${PROJECT_LIBRARIES_DIR}/redox
+    SOURCE_DIR ${PROJECT_LIBRARIES_DIR}/redox/src
+    BINARY_DIR ${PROJECT_LIBRARIES_DIR}/redox/build
     LOG_BUILD ON)
   
 # ---------------------------------------------------------
