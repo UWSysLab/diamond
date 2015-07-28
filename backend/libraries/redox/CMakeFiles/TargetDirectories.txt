@@ -1,0 +1,2 @@
+/Users/irene/uw/diamond/src/backend/redox/CMakeFiles/redox.dir
+/Users/irene/uw/diamond/src/backend/redox/CMakeFiles/redox_static.dir
