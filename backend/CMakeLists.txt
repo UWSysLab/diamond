@@ -77,10 +77,10 @@ add_library (diamond SHARED
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond redox-redisclient)
 
-# Add python bindings for Linux
-#if (NOT APPLE)
-add_subdirectory(bindings/python)
-#endif()
+# Add python bindings for Linux and Mac OSX
+if (NOT CMAKE_SYSTEM_NAME MATCHES "Android")
+  add_subdirectory(bindings/python)
+endif()
 
 # Adding Diamond tests
 add_subdirectory(test)

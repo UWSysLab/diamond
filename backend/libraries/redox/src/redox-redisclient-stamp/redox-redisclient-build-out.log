@@ -1,0 +1,16 @@
+/opt/local/bin/cmake -H/Users/irene/uw/diamond/src/backend/redox -B/Users/irene/uw/diamond/src/backend/redox --check-build-system CMakeFiles/Makefile.cmake 0
+/opt/local/bin/cmake -E cmake_progress_start /Users/irene/uw/diamond/src/backend/redox/CMakeFiles /Users/irene/uw/diamond/src/backend/redox/CMakeFiles/progress.marks
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/Makefile2 all
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/redox.dir/build.make CMakeFiles/redox.dir/depend
+cd /Users/irene/uw/diamond/src/backend/redox && /opt/local/bin/cmake -E cmake_depends "Unix Makefiles" /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox/CMakeFiles/redox.dir/DependInfo.cmake --color=
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/redox.dir/build.make CMakeFiles/redox.dir/build
+make[5]: Nothing to be done for `CMakeFiles/redox.dir/build'.
+/opt/local/bin/cmake -E cmake_progress_report /Users/irene/uw/diamond/src/backend/redox/CMakeFiles  1 2 3 4
+[ 50%] Built target redox
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/redox_static.dir/build.make CMakeFiles/redox_static.dir/depend
+cd /Users/irene/uw/diamond/src/backend/redox && /opt/local/bin/cmake -E cmake_depends "Unix Makefiles" /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox /Users/irene/uw/diamond/src/backend/redox/CMakeFiles/redox_static.dir/DependInfo.cmake --color=
+/Applications/Xcode.app/Contents/Developer/usr/bin/make -f CMakeFiles/redox_static.dir/build.make CMakeFiles/redox_static.dir/build
+make[5]: Nothing to be done for `CMakeFiles/redox_static.dir/build'.
+/opt/local/bin/cmake -E cmake_progress_report /Users/irene/uw/diamond/src/backend/redox/CMakeFiles  5 6 7 8
+[100%] Built target redox_static
+/opt/local/bin/cmake -E cmake_progress_start /Users/irene/uw/diamond/src/backend/redox/CMakeFiles 0
