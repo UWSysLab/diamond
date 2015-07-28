@@ -56,6 +56,20 @@ if (APPLE)
    include_directories("/opt/local/include" "/usr/local/include")
    link_directories("/opt/local/lib" "/usr/local/lib")
 endif()
+
+# Download the hiredis client
+# set up the hiredis redis client that redox needs
+ExternalProject_Add(
+   hiredis-redisclient
+   PREFIX ${PROJECT_SOURCE_DIR}/hiredis
+   GIT_REPOSITORY git@github.com:redis/hiredis.git
+   INSTALL_COMMAND ""
+   LOG_DOWNLOAD ON
+   LOG_CONFIGURE ON
+   LOG_BUILD ON)
+
+include_directories(${PROJECT_SOURCE_DIR}/hiredis)
+link_directories(${PROJECT_SOURCE_DIR}/hiredis) 
 set(REDOX_LIB_DEPS ev pthread hiredis)
 
 # ---------------------------------------------------------
