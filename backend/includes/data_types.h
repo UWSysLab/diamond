@@ -11,6 +11,7 @@
 #define _DATA_TYPES_H_
 
 #include <unordered_set>
+#include <string>
 
 namespace diamond {
 

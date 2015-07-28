@@ -53,7 +53,8 @@ include_directories(${INC_REDOX_DIR}/redox)
 # pthread to whatever C++11 threads depends on
 # for your platform
 if (APPLE)
-   include_directories("/opt/local/includes" "/usr/local/includes")
+   include_directories("/opt/local/include" "/usr/local/include")
+   link_directories("/opt/local/lib" "/usr/local/lib")
 endif()
 set(REDOX_LIB_DEPS ev pthread hiredis)
 
