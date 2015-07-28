@@ -231,3 +231,6 @@ TRIPLE_LETTERS     = [(F,2), (J,2), (B,6), (F,6), (J,6), (N,6), (B,10), (F,10), 
 DOUBLE_WORDS       = [(B,2), (C,3), (D,4), (E,5), (K,5), (L,4), (M,3), (N,2), (B,14), (C,13), (D,12), (E,11), (K,11), (L,12), (M,13), (N,14)]
 TRIPLE_WORDS       = [(A,1), (H,1), (O,1), (A,8), (O,8), (A,15), (H,15), (O,15)]
 CENTER             = [(H, 8)]
+
+# New constants
+BOARD_WIDTH = 15

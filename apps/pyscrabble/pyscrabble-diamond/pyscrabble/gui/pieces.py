@@ -7,8 +7,12 @@ from pyscrabble import manager
 from pyscrabble import gtkutil
 from pyscrabble import util
 
+import sys
+sys.path.append("/Users/Niel/systems/diamond-src/backend/libdiamond")
+from libdiamond import *
+
 # Class representing a Tile on the Gameboard            
-class GameTile(gtk.Button, Tile):
+class GameTile(gtk.Button):
     '''
     GameTiles represent Tiles on the Game board.
     '''
@@ -28,7 +32,20 @@ class GameTile(gtk.Button, Tile):
         self.board = parent #callback to the parent widget
         
         gtk.Button.__init__(self)
-        Tile.__init__(self)
+        
+        #######
+        
+        self.letterStr = DString()
+        DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
+        
+        self.letterScore = DLong()
+        DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
+        
+        #######
+        
+        self.__style = TILE_NORMAL
+        self.letter = None
+        
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         self.findStyle(x,y)
         
@@ -191,8 +208,8 @@ class GameTile(gtk.Button, Tile):
         
         self.setStyle( TILE_LETTER, color )
         self.set_label( letter, showBlank )
-        Tile.setLetter(self, letter)
         
+        self.letter = letter
     
     def findStyle(self, x, y):
         '''
@@ -247,18 +264,18 @@ class GameTile(gtk.Button, Tile):
         @param color
         '''
         
-        Tile.setStyle(self,style)
+        self.__style = style
         
         self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(color) )
         self.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(color) )
 
     
-    def __repr__(self):
-        '''
-        Print the Letter on the Tile
-        '''
-        
-        return self.getLetter()
+    #def __repr__(self):
+    #    '''
+    #    Print the Letter on the Tile
+    #    '''
+    #    
+    #    return self.getLetter()
     
     def set_label(self, letter, showBlank=False):
         '''
@@ -554,6 +571,68 @@ class GameTile(gtk.Button, Tile):
             return True
         return False
             
+    
+    def getStyle(self):
+        '''
+        Return Tile Style
+        
+        @return: Tile style
+        @see: L{constants}
+        '''
+        
+        return self.__style
+        
+    
+    def getLetter(self):
+        '''
+        Return Letter on this Tile or None
+        
+        @return: Letter on this Tile or None
+        '''
+        
+        return self.letter
+    
+    def getTileScore(self):
+        '''
+        Get the score of this Tile.
+        
+        The score is the score of the Letter on the Tile * TILE_STYLE if TILE_STYLE is a Letter Modifier
+        
+        @return: Tile score
+        @see: L{constants}
+        '''
+        
+        
+        # If this Tile is a letter modifier, use the stle
+        # If its a word modifier, return the letter score
+        if (self.__style in LETTER_MODIFIERS):
+            return self.letter.getScore() * self.__style
+        else:
+            return self.letter.getScore() * TILE_NORMAL
+    
+    def getWordModifier(self):
+        '''
+        Return the word modifier on this tile if it has one.  If it doesn't, return TILE_NORMAL
+        
+        @return Word Modifier on this tile
+        @see: L{constants}
+        '''
+        
+        if (self.style in WORD_MODIFIERS):
+            # Word modifiers are stored as twice the necessary amount so as not to conflict with letter modifiers
+            return self.style / 2 
+        else:
+            return TILE_NORMAL
+    
+    def __repr__(self):
+        '''
+        Format Tile as a string::
+            Letter: LETTER_ON_TILE Modifier: TILE_MODIFIER
+        
+        @return: Formatted Tile string
+        '''
+        
+        return "Letter: "+self.letter+" Modifier: "+str(self.style)
         
         
 
@@ -561,7 +640,7 @@ class GameTile(gtk.Button, Tile):
 
 
 # Class representing a Letter tile
-class GameLetter(gtk.ToggleButton, Letter):
+class GameLetter(gtk.ToggleButton):
     '''
     The GameLetter represents the Letters that are used to make words.
     
@@ -577,7 +656,11 @@ class GameLetter(gtk.ToggleButton, Letter):
         @param letter: Letter
         '''
         gtk.ToggleButton.__init__(self)
-        Letter.__init__(self, letter.getLetter(), letter.getScore())
+        
+        self.score = letter.getScore()
+        self.__isBlank = False
+        self.setLetter( letter.getLetter() )
+        
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         
         
@@ -767,7 +850,38 @@ class GameLetter(gtk.ToggleButton, Letter):
         
         self.add(widget)
         self.show_all()
+        
+    def setLetter(self, letter):
+        '''
+        Set the Letter string
+        
+        @param letter:
+        '''
+        if (letter == ""):
+            self.__isBlank = True
+        #else:
+        #    self.__isBlank = False
+        self.letter = letter
 
+    def clone(self):
+        '''
+        Clone the letter
+        
+        @return: Clone of this Letter
+        '''
+        l = Letter(self.letter)
+        l.__isBlank = self.isBlank()
+        l.score = self.score
+        return l
+    
+    def isBlank(self):
+        '''
+        Check if the Letter is a Blank.
+        
+        @return: True if the Letter is a blank letter.
+        '''
+        
+        return self.__isBlank
         
         
        
@@ -1068,13 +1182,13 @@ class GameBoard(gtk.Table):
         else:
             return None,None,None
     
-    def isEmpty(self):
-        '''
-        Check whether the board has any moves on it
-        
-        @return True if the board has no moves
-        '''
-        return self.empty
+    #def isEmpty(self):
+    #    '''
+    #    Check whether the board has any moves on it
+    #    
+    #    @return True if the board has no moves
+    #    '''
+    #    return self.empty
     
     def getMovesAtXY(self, x, y):
         '''

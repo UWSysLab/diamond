@@ -144,104 +144,104 @@ class Letter(object):
 
         
 # Represents a tile on the gameboard
-class Tile:
-    '''
-    Tile class.
-    
-    Represents a Tile on the gameboard.
-    '''
-    
-    def __init__( self, style=TILE_NORMAL):
-        '''
-        Initialize a Tile.
-        
-        @param style: Tile Style
-        @see: L{constants}
-        '''
-        
-        self.__style = style
-        self.letter = None
-    
-    def getStyle(self):
-        '''
-        Return Tile Style
-        
-        @return: Tile style
-        @see: L{constants}
-        '''
-        
-        return self.__style
-    
-    def setStyle(self, style):
-        '''
-        Set Tile Style
-        
-        @param style: Tile Stype
-        @see: L{constants}
-        '''
-        
-        self.__style = style
-    
-    def setLetter(self, letter):
-        '''
-        Set the Letter on this tile
-        
-        @param letter: Letter to put on the Tile
-        @see: L{Letter}
-        '''
-        
-        self.letter = letter
-    
-    def getLetter(self):
-        '''
-        Return Letter on this Tile or None
-        
-        @return: Letter on this Tile or None
-        '''
-        
-        return self.letter
-    
-    def getTileScore(self):
-        '''
-        Get the score of this Tile.
-        
-        The score is the score of the Letter on the Tile * TILE_STYLE if TILE_STYLE is a Letter Modifier
-        
-        @return: Tile score
-        @see: L{constants}
-        '''
-        
-        
-        # If this Tile is a letter modifier, use the stle
-        # If its a word modifier, return the letter score
-        if (self.__style in LETTER_MODIFIERS):
-            return self.letter.getScore() * self.__style
-        else:
-            return self.letter.getScore() * TILE_NORMAL
-    
-    def getWordModifier(self):
-        '''
-        Return the word modifier on this tile if it has one.  If it doesn't, return TILE_NORMAL
-        
-        @return Word Modifier on this tile
-        @see: L{constants}
-        '''
-        
-        if (self.style in WORD_MODIFIERS):
-            # Word modifiers are stored as twice the necessary amount so as not to conflict with letter modifiers
-            return self.style / 2 
-        else:
-            return TILE_NORMAL
-    
-    def __repr__(self):
-        '''
-        Format Tile as a string::
-            Letter: LETTER_ON_TILE Modifier: TILE_MODIFIER
-        
-        @return: Formatted Tile string
-        '''
-        
-        return "Letter: "+self.letter+" Modifier: "+str(self.style)
+# class Tile:
+#     '''
+#     Tile class.
+#     
+#     Represents a Tile on the gameboard.
+#     '''
+#     
+#     def __init__( self, style=TILE_NORMAL):
+#         '''
+#         Initialize a Tile.
+#         
+#         @param style: Tile Style
+#         @see: L{constants}
+#         '''
+#         
+#         self.__style = style
+#         self.letter = None
+#     
+#     def getStyle(self):
+#         '''
+#         Return Tile Style
+#         
+#         @return: Tile style
+#         @see: L{constants}
+#         '''
+#         
+#         return self.__style
+#     
+#     #def setStyle(self, style):
+#     #    '''
+#     #    Set Tile Style
+#     #    
+#     #    @param style: Tile Stype
+#     #    @see: L{constants}
+#     #    '''
+#     #    
+#     #    self.__style = style
+#     
+#     def setLetter(self, letter):
+#         '''
+#         Set the Letter on this tile
+#         
+#         @param letter: Letter to put on the Tile
+#         @see: L{Letter}
+#         '''
+#         
+#         self.letter = letter
+#     
+#     def getLetter(self):
+#         '''
+#         Return Letter on this Tile or None
+#         
+#         @return: Letter on this Tile or None
+#         '''
+#         
+#         return self.letter
+#     
+#     def getTileScore(self):
+#         '''
+#         Get the score of this Tile.
+#         
+#         The score is the score of the Letter on the Tile * TILE_STYLE if TILE_STYLE is a Letter Modifier
+#         
+#         @return: Tile score
+#         @see: L{constants}
+#         '''
+#         
+#         
+#         # If this Tile is a letter modifier, use the stle
+#         # If its a word modifier, return the letter score
+#         if (self.__style in LETTER_MODIFIERS):
+#             return self.letter.getScore() * self.__style
+#         else:
+#             return self.letter.getScore() * TILE_NORMAL
+#     
+#     def getWordModifier(self):
+#         '''
+#         Return the word modifier on this tile if it has one.  If it doesn't, return TILE_NORMAL
+#         
+#         @return Word Modifier on this tile
+#         @see: L{constants}
+#         '''
+#         
+#         if (self.style in WORD_MODIFIERS):
+#             # Word modifiers are stored as twice the necessary amount so as not to conflict with letter modifiers
+#             return self.style / 2 
+#         else:
+#             return TILE_NORMAL
+#     
+#     def __repr__(self):
+#         '''
+#         Format Tile as a string::
+#             Letter: LETTER_ON_TILE Modifier: TILE_MODIFIER
+#         
+#         @return: Formatted Tile string
+#         '''
+#         
+#         return "Letter: "+self.letter+" Modifier: "+str(self.style)
 
 
 # Bag is the "bag" of letters
