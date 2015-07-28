@@ -17,10 +17,6 @@ class GameTile(gtk.Button):
     GameTiles represent Tiles on the Game board.
     '''
     
-    DIR_NONE = 0
-    DIR_HORIZ = 1
-    DIR_VERT = 2
-    
     def __init__(self, x, y, parent):
         '''
         Constructor.
