@@ -1,2 +1,0 @@
-/Users/irene/uw/diamond/src/backend/gtest/src/googletest-build/CMakeFiles/gtest.dir
-/Users/irene/uw/diamond/src/backend/gtest/src/googletest-build/CMakeFiles/gtest_main.dir
