@@ -15,7 +15,7 @@ namespace diamond {
     
 using namespace boost::python;
 
-BOOST_PYTHON_MODULE(libdiamond)
+BOOST_PYTHON_MODULE(libpydiamond)
 {
     class_<DString>("DString")
         .def("Map", &DString::Map)
