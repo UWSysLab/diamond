@@ -1,4 +1,4 @@
-# Install script for directory: /Users/irene/uw/diamond/src/backend/redox
+# Install script for directory: /Users/irene/uw/diamond/src/backend/libraries/redox
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -29,9 +29,9 @@ endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib64" TYPE SHARED_LIBRARY FILES
-    "/Users/irene/uw/diamond/src/backend/redox/libredox.0.2.3.dylib"
-    "/Users/irene/uw/diamond/src/backend/redox/libredox.0.dylib"
-    "/Users/irene/uw/diamond/src/backend/redox/libredox.dylib"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/libredox.0.2.3.dylib"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/libredox.0.dylib"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/libredox.dylib"
     )
   foreach(file
       "$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/lib64/libredox.0.2.3.dylib"
@@ -46,6 +46,9 @@ if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspeci
       execute_process(COMMAND /opt/local/bin/install_name_tool
         -delete_rpath "/opt/local/lib"
         "${file}")
+      execute_process(COMMAND /opt/local/bin/install_name_tool
+        -delete_rpath "/Users/irene/uw/diamond/src/backend/libraries/redox/hiredis"
+        "${file}")
       if(CMAKE_INSTALL_DO_STRIP)
         execute_process(COMMAND "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/strip" "${file}")
       endif()
@@ -55,18 +58,18 @@ endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
   file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/redox" TYPE FILE FILES
-    "/Users/irene/uw/diamond/src/backend/redox/include/redox/client.hpp"
-    "/Users/irene/uw/diamond/src/backend/redox/include/redox/subscriber.hpp"
-    "/Users/irene/uw/diamond/src/backend/redox/include/redox/command.hpp"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/include/redox/client.hpp"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/include/redox/subscriber.hpp"
+    "/Users/irene/uw/diamond/src/backend/libraries/redox/include/redox/command.hpp"
     )
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/redox/utils" TYPE FILE FILES "/Users/irene/uw/diamond/src/backend/redox/include/redox/utils/logger.hpp")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include/redox/utils" TYPE FILE FILES "/Users/irene/uw/diamond/src/backend/libraries/redox/include/redox/utils/logger.hpp")
 endif()
 
 if(NOT CMAKE_INSTALL_COMPONENT OR "${CMAKE_INSTALL_COMPONENT}" STREQUAL "Unspecified")
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/Users/irene/uw/diamond/src/backend/redox/include/redox.hpp")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/include" TYPE FILE FILES "/Users/irene/uw/diamond/src/backend/libraries/redox/include/redox.hpp")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT)
@@ -77,5 +80,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Users/irene/uw/diamond/src/backend/redox/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/irene/uw/diamond/src/backend/libraries/redox/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

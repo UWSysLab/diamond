@@ -7,7 +7,7 @@ if ((NOT GTEST_FOUND) OR APPLE)
    # Set default ExternalProject root directory
    ExternalProject_Add(
         googletest
-        PREFIX ${PROJECT_SOURCE_DIR}/gtest
+        PREFIX ${PROJECT_LIBRARIES_DIR}/gtest
         URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
 	UPDATE_COMMAND ""
         INSTALL_COMMAND ""
@@ -48,7 +48,7 @@ include_directories(${GTEST_INCLUDE_DIRS})
 
 # Diamond tests
 set(SRC_DIAMOND_GTEST
-    ${PROJECT_SOURCE_DIR}/test/backend-test.cc)
+    backend-test.cc)
 
 add_executable(diamondtest
     ${SRC_DIAMOND_GTEST})

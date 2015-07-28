@@ -42,10 +42,10 @@ RM = /opt/local/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/irene/uw/diamond/src/backend/redox
+CMAKE_SOURCE_DIR = /Users/irene/uw/diamond/src/backend/libraries/redox
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/irene/uw/diamond/src/backend/redox
+CMAKE_BINARY_DIR = /Users/irene/uw/diamond/src/backend/libraries/redox
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -114,7 +114,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/opt/local/bin/cpack --config ./CPackSourceConfig.cmake /Users/irene/uw/diamond/src/backend/redox/CPackSourceConfig.cmake
+	/opt/local/bin/cpack --config ./CPackSourceConfig.cmake /Users/irene/uw/diamond/src/backend/libraries/redox/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -133,9 +133,9 @@ install/local/fast: install/local
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/irene/uw/diamond/src/backend/redox/CMakeFiles /Users/irene/uw/diamond/src/backend/redox/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/irene/uw/diamond/src/backend/libraries/redox/CMakeFiles /Users/irene/uw/diamond/src/backend/libraries/redox/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/irene/uw/diamond/src/backend/redox/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/irene/uw/diamond/src/backend/libraries/redox/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -161,6 +161,19 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+#=============================================================================
+# Target rules for targets named hiredis-redisclient
+
+# Build rule for target.
+hiredis-redisclient: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 hiredis-redisclient
+.PHONY : hiredis-redisclient
+
+# fast build rule for target.
+hiredis-redisclient/fast:
+	$(MAKE) -f CMakeFiles/hiredis-redisclient.dir/build.make CMakeFiles/hiredis-redisclient.dir/build
+.PHONY : hiredis-redisclient/fast
 
 #=============================================================================
 # Target rules for targets named redox
@@ -309,6 +322,7 @@ help:
 	@echo "... install"
 	@echo "... redox_static"
 	@echo "... list_install_components"
+	@echo "... hiredis-redisclient"
 	@echo "... package"
 	@echo "... package_source"
 	@echo "... install/local"

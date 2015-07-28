@@ -1,2 +1,0 @@
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ar cq libredox_static.a  CMakeFiles/redox_static.dir/src/client.cpp.o CMakeFiles/redox_static.dir/src/command.cpp.o CMakeFiles/redox_static.dir/src/subscriber.cpp.o CMakeFiles/redox_static.dir/src/utils/logger.cpp.o
-/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ranlib libredox_static.a
