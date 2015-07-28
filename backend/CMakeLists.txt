@@ -26,7 +26,7 @@ ExternalProject_Add(
     DOWNLOAD_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
-    SOURCE_DIR ${PROJECT_LIBRARIES_DIR}/redox/src
+    SOURCE_DIR ${PROJECT_LIBRARIES_DIR}/redox/
     BINARY_DIR ${PROJECT_LIBRARIES_DIR}/redox/build
     LOG_BUILD ON)
   
@@ -41,7 +41,7 @@ include_directories(${DIAMOND_SOURCE_DIR})
 
 # Redox Redis client includes
 include_directories(${PROJECT_LIBRARIES_DIR}/redox/include)
-link_directories(${PROJECT_LIBRARIES_DIR}/redox)
+link_directories(${PROJECT_LIBRARIES_DIR}/redox/build)
 
 if(APPLE)
     include_directories("/opt/local/include" "/usr/local/include")
