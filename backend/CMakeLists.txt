@@ -83,7 +83,7 @@ target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond redox-redisclient)
 
 # Add python bindings for Linux and Mac OSX
-if (NOT CMAKE_SYSTEM_NAME MATCHES "Android")
+if (NOT ANDROID)
   add_subdirectory(${DIAMOND_SOURCE_DIR}/bindings/python)
 endif()
 
