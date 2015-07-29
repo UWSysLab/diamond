@@ -340,8 +340,10 @@ class Move(object):
     Move represents a move that is made on the board.
     
     The Move is a list of tuples containing (letter, x-position, y-position) for all Letters in the Move.
-    '''
     
+    NOTE: Move is now a list of tuples containing (letter-string, letter-score, x-position, y-position)
+    '''
+        
     def __init__(self, move = None):
         '''
         Initialize the Move.
@@ -354,8 +356,8 @@ class Move(object):
         self.move = []
         
         if (move != None): # The move is a list of (letter, x-position, y-position) tuples
-            for letter,x,y in move:
-                self.addMove(letter, x, y)
+            for letterStr,letterScore,x,y in move:
+                self.addMove(letterStr, letterScore, x, y)
     
     def setScore(self, score):
         '''
@@ -376,7 +378,7 @@ class Move(object):
         
                 
     
-    def addMove(self, letter, x, y):
+    def addMove(self, letterStr, letterScore, x, y):
         '''
         Add a Letter to the Move
         
@@ -386,12 +388,12 @@ class Move(object):
         @see: L{Letter}
         '''
         
-        if not self.hasBlank():
-            self.__hasBlank = letter.isBlank()
+        #if not self.hasBlank():
+        #    self.__hasBlank = letter.isBlank()
             
-        self.move.append( (letter, x, y) )
+        self.move.append( (letterStr, letterScore, x, y) )
     
-    def removeMove(self, letter, x, y):
+    def removeMove(self, letterStr, letterScore, x, y):
         '''
         Remove move
         
@@ -399,10 +401,10 @@ class Move(object):
         @param x:
         @param y:
         '''
-        self.move.remove( (letter,x,y) )
+        self.move.remove( (letterStr,letterScore,x,y) )
         
     
-    def prependMove(self, letter, x, y):
+    def prependMove(self, letterStr, letterScore, x, y):
         '''
         Insert a Letter at the beginning of the Move
         
@@ -412,10 +414,10 @@ class Move(object):
         @see: L{Letter}
         '''
         
-        if not self.hasBlank():
-            self.__hasBlank = letter.isBlank()
+        #if not self.hasBlank():
+        #    self.__hasBlank = letter.isBlank()
 
-        self.move.insert(0, (letter,x,y) )
+        self.move.insert(0, (letterStr,letterScore,x,y) )
     
     def isEmpty(self):
         '''
@@ -436,7 +438,7 @@ class Move(object):
         
         if self.isVertical():
             prevy = -1
-            for letter, x, y in self.move:
+            for letterStr, letterScore, x, y in self.move:
                 if prevy == -1:
                     prevy = y
                     continue
@@ -447,7 +449,7 @@ class Move(object):
         
         if self.isHorizontal():
             prevx = -1
-            for letter, x, y in self.move:
+            for letterStr, letterScore, x, y in self.move:
                 if prevx == -1:
                     prevx = x
                     continue
@@ -468,8 +470,8 @@ class Move(object):
         if (self.isEmpty()):
             return False
         
-        letter,x,y = self.move[0]
-        for _letter,_x,_y in self.move:
+        letterStr,letterScore,x,y = self.move[0]
+        for _letterStr,_letterScore,_x,_y in self.move:
             if x != _x:
                 return False
         
@@ -485,8 +487,8 @@ class Move(object):
         if (self.isEmpty()):
             return False
         
-        letter,x,y = self.move[0]
-        for _letter, _x, _y in self.move:
+        letterStr,letterScore,x,y = self.move[0]
+        for _letterStr, _letterScore, _x, _y in self.move:
             if y != _y:
                 return False
         
@@ -541,8 +543,8 @@ class Move(object):
         @param move: Move to check
         @return: True if this Move has a letter,x,y tile in common with C{move}
         '''
-        for letter, x, y in move.getTiles():
-            if (self.contains(letter,x,y)):
+        for letterStr, letterScore, x, y in move.getTiles():
+            if (self.contains(letterStr,letterScore,x,y)):
                 return True
         return False
         
@@ -553,13 +555,13 @@ class Move(object):
         
         @param move: Move
         '''
-        for letter, x, y in move.getTiles():
-            if not self.contains(letter, x, y):
+        for letterStr, letterScore, x, y in move.getTiles():
+            if not self.contains(letterStr, letterScore, x, y):
                 return False
         return True
         
     
-    def contains(self,letter,x,y):
+    def contains(self,letterStr,letterScore,x,y):
         '''
         Check to see if the Move contains C{letter} at C{x,y}
         
@@ -570,7 +572,7 @@ class Move(object):
         @see: L{Letter}
         '''
         
-        return (letter,x,y) in self.move
+        return (letterStr,letterScore,x,y) in self.move
     
     def hasLetterAt(self, x, y):
         '''
@@ -580,7 +582,7 @@ class Move(object):
         @param y: Y position
         @return: True if the Move has a Letter at C{x,y}
         '''
-        for letter, _x, _y in self.move:
+        for letterStr, _x, _y in self.move:
             if _x == x and _y == y:
                 return True
         return False
@@ -602,8 +604,8 @@ class Move(object):
         @param move: Move to append
         '''
         
-        for letter, x, y in move.getTiles():
-            self.addMove(letter,x,y)
+        for letterStr, letterScore, x, y in move.getTiles():
+            self.addMove(letterStr,letterScore,x,y)
     
     def length(self):
         '''
@@ -622,8 +624,8 @@ class Move(object):
         '''
         
         buf = ''
-        for letter,x,y in self.move:
-            buf += str(letter)
+        for letterStr,x,y in self.move:
+            buf += letterStr
             buf += ' | '
         
         return buf
@@ -638,8 +640,8 @@ class Move(object):
         self.sort()
         
         word = unicode('', 'utf-8')
-        for letter, x, y in self.move:
-            word += letter.getLetter()
+        for letterStr, x, y in self.move:
+            word += letterStr
         
         return word
     
@@ -653,10 +655,10 @@ class Move(object):
         
         
         if (self.isHorizontal()):
-            self.move.sort( lambda (t1, x1, y1), (t2, x2, y2):  x1 - x2 )
+            self.move.sort( lambda (t1, s1, x1, y1), (t2, s2, x2, y2):  x1 - x2 )
         
         elif (self.isVertical()):
-            self.move.sort( lambda (t1, x1, y1), (t2, x2, y2):  y1 - y2 )
+            self.move.sort( lambda (t1, s1, x1, y1), (t2, s2, x2, y2):  y1 - y2 )
     
     def hasBlank(self):
         '''
