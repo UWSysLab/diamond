@@ -1858,7 +1858,7 @@ class ScrabbleServer(NetstringReceiver):
         self.username = None
 
     def doDiamondRefresh(self, gameId):
-        command = self.command.createGameDiamondSyncCommand(gameId)
+        command = self.command.createGameDiamondRefreshCommand(gameId)
         self.writeCommand(command)
         
 
