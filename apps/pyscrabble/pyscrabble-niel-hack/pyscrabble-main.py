@@ -18,10 +18,6 @@ from twisted.internet import reactor
 from pyscrabble.gui.login import LoginWindow
 import gtk
 
-import sys
-sys.path.append("/Users/Niel/systems/diamond-src/backend/libdiamond")
-from libdiamond import *
-
 if __name__ == '__main__':
    
     dist.ensure_config_dir( dist.CONFIG_DIR )
