@@ -720,16 +720,16 @@ class GameBoard(gtk.Table):
         @param move: Move
         '''
         
-        for l, s, x, y in move.getElements():
+        for l, x, y in move.getTiles():
             if self.tiles.has_key( (x,y) ):
-                if (self.tiles[(x,y)].getLetterStr() != l):
+                if (self.tiles[(x,y)].getLetter() != l):
                     return False
             elif not self.tiles.has_key( (x,y) ):
                 return False
         
         return True
         
-    #TODO: figure out if we still need this method
+    
     def putLetter(self, letter, x, y, set_bg):
         '''
         Put a Letter on a Tile on the board
@@ -746,8 +746,6 @@ class GameBoard(gtk.Table):
         @see: L{pyscrabble.gui.pieces.GameTile}
         @see: L{pyscrabble.game.pieces.Letter}
         '''
-        
-        print "GameBoard.putLetter being called"
         
         self.empty = False
         self.tiles[(x,y)].putLetter(letter)
@@ -769,21 +767,21 @@ class GameBoard(gtk.Table):
         #if self.isEmpty():
         #    return True
         
-        for letterStr, letterScore, x, y in move.getElements():
+        for letter, x, y in move.getTiles():
             
-            _l, _s, _x, _y = self.getNextHorizontalLetter(x, y)
+            _l, _x, _y = self.getNextHorizontalLetter(x, y)
             if self.hasNextHorizontalLetter(x,y) and not onBoard.hasLetterAt(_x,_y):
                 return True
             
-            _l, _s, _x, _y = self.getNextVerticalLetter(x, y)
+            _l, _x, _y = self.getNextVerticalLetter(x, y)
             if self.hasNextVerticalLetter(x,y) and not onBoard.hasLetterAt(_x,_y):
                 return True
             
-            _l, _s, _x, _y = self.getPreviousHorizontalLetter(x, y)
+            _l, _x, _y = self.getPreviousHorizontalLetter(x, y)
             if self.hasPreviousHorizontalLetter(x,y) and not onBoard.hasLetterAt(_x,_y):
                 return True
             
-            _l, _s, _x, _y = self.getPreviousVerticalLetter(x, y)
+            _l, _x, _y = self.getPreviousVerticalLetter(x, y)
             if self.hasPreviousVerticalLetter(x,y) and not onBoard.hasLetterAt(_x,_y):
                 return True
         
@@ -810,7 +808,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if x == _x:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetterStr() != "":
+                    if self.tiles[(x, y)].getLetter() != None:
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -827,7 +825,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if y == _y:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetterStr() != "":
+                    if self.tiles[(x, y)].getLetter() != None:
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -857,7 +855,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x+1, y))):
-            if self.tiles[(x+1, y)].getLetterStr() != "":
+            if self.tiles[(x+1, y)].getLetter() != None:
                 return True
         return False
     
@@ -871,7 +869,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y+1))):
-            if self.tiles[(x, y+1)].getLetterStr() != "":
+            if self.tiles[(x, y+1)].getLetter() != None:
                 return True
         return False
     
@@ -978,20 +976,20 @@ class GameBoard(gtk.Table):
         
         h = Move()
         v = Move()
-        h.addMove( self.get(x,y).getLetterStr(), self.get(x,y).getLetterScore(), x, y)
-        v.addMove( self.get(x,y).getLetter(), self.get(x,y).getLetterScore(), x, y)
+        h.addMove( self.get(x,y).getLetter(), x, y)
+        v.addMove( self.get(x,y).getLetter(), x, y)
         
         _x = x
         _y = y
         while self.hasNextHorizontalLetter(_x, _y):
             item, _x, _y = self.getNextHorizontalLetter(_x, _y)
-            h.addMove(item.getLetterStr(), item.getLetterScore(), _x, _y)
+            h.addMove(item.getLetter(), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousHorizontalLetter(_x, _y):
             item, _x, _y = self.getPreviousHorizontalLetter(_x, _y)
-            h.addMove(item.getLetterStr(), item.getLetterScore(), _x, _y)
+            h.addMove(item.getLetter(), _x, _y)
         
         h.sort()
         if h.length() > 1:
@@ -1002,13 +1000,13 @@ class GameBoard(gtk.Table):
         _y = y
         while self.hasNextVerticalLetter(_x, _y):
             item, _x, _y = self.getNextVerticalLetter(_x, _y)
-            v.addMove(item.getLetterStr(), item.getLetterScore(), _x, _y)
+            v.addMove(item.getLetter(), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousVerticalLetter(_x, _y):
             item, _x, _y = self.getPreviousVerticalLetter(_x, _y)
-            v.addMove(item.getLetterStr(), item.getLetterScore(), _x, _y)
+            v.addMove(item.getLetter(), _x, _y)
         
         v.sort()
         if v.length() > 1:
@@ -1022,7 +1020,7 @@ class GameBoard(gtk.Table):
         
         @param move: Move tiles
         '''
-        for letterStr,letterScore,x,y in move.getTiles():
+        for letter,x,y in move.getTiles():
             self.tiles[(x,y)].refresh()
     
     def refresh(self):
