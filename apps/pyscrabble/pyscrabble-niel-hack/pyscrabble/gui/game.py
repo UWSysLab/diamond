@@ -79,6 +79,12 @@ class GameFrame(gtk.Frame):
         
         self.userView.columns_autosize()
     
+    def doDiamondRefresh(self):
+        print "Got Diamond refresh command!"
+        for tile in self.board.tiles.values():
+            tile.update_label()
+        self.show_all()
+    
     ### UI Creation ####
         
     def getLogWindow(self):
@@ -636,9 +642,13 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
-    
-    # Callback to send current move
     def sendCurrentMove(self, event = None):
+        print "Requesting Diamond refresh"
+        self.client.diamondRequestRefresh(self.currentGameId)
+    
+    #TODO: restore the name of this method
+    # Callback to send current move
+    def sendCurrentMoveRenamed(self, event = None):
         '''
         Send the current move on the board to the server
         
@@ -1128,7 +1138,8 @@ class GameFrame(gtk.Frame):
         # Highlight the name of the player who has control of the board
         self.currentTurn = False
         self.mainwindow.setCurrentTurn(self.currentGameId, False)
-        self.clearCurrentMove()
+        #self.clearCurrentMove()
+        #TODO: temp hack
         
         if player is not None:
             sel = self.userView.get_selection()

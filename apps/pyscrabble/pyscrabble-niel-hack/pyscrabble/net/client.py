@@ -169,6 +169,17 @@ class ScrabbleClient(object):
     
     
     # Game commands
+    
+    def diamondRequestRefresh(self, gameId):
+        '''
+        Current user joins game
+        
+        @param gameId: Game ID to join
+        '''
+        
+        command = self.command.createGameDiamondRequestRefreshCommand(gameId)
+        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
+    
     def getGameList(self):
         '''
         Get all games on the server
@@ -509,6 +520,9 @@ class ScrabbleClient(object):
         '''
         
         try:
+            if (command.getCommand() == GAME_DIAMOND_REFRESH):
+                self.gameWins[command.getGameId()].doDiamondRefresh()
+            
             if (command.getCommand() == GAME_GET_LETTERS):
                 self.gameWins[command.getGameId()].showLetters( command.getData() )
             

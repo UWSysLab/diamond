@@ -234,3 +234,5 @@ CENTER             = [(H, 8)]
 
 # New constants
 BOARD_WIDTH = 15
+GAME_DIAMOND_REFRESH = "game_diamond_refresh"
+GAME_DIAMOND_REQUEST_REFRESH = "game_diamond_request_refresh"
