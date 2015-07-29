@@ -8,9 +8,7 @@ from pyscrabble import gtkutil
 from pyscrabble import util
 
 import sys
-#sys.path.append("/Users/Niel/systems/diamond-src/backend/libdiamond")
 sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
-#from libdiamond import *
 from libpydiamond import *
 
 # Class representing a Tile on the Gameboard            
@@ -31,13 +29,12 @@ class GameTile(gtk.Button):
         
         gtk.Button.__init__(self)
                 
-        #self.letterStr = DString()
-        #DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
-        
-        #self.letterScore = DLong()
-        #DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
-        
+        self.letterStr = DString()
+        DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
         self.letterStr = ""
+        
+        self.letterScore = DLong()
+        DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
         self.letterScore = 0
                 
         self.__style = TILE_NORMAL
@@ -126,8 +123,12 @@ class GameTile(gtk.Button):
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        self.set_label( letter, score )
+        if widget is not None:
+            if isinstance(widget, GameTile):
+                widget.setLetterNew(None, self.letterStr, self.letterScore)
         
+        
+        self.set_label( letter, score )
         self.letterStr = letter
         self.letterScore = score
 
@@ -272,11 +273,13 @@ class GameTile(gtk.Button):
         s = str(letterScore)
         o = manager.OptionManager()
         if letterStr == "":
-            if showBlank:
-                l = ""
-            if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
+            #if showBlank:
+            #    l = ""
+            #if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
+            #    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
+            #    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
+            l = ""
+            s = ""
         else:
             if o.get_default_bool_option(USE_COLOR_TEXT, True):
                 l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
@@ -330,14 +333,11 @@ class GameTile(gtk.Button):
         return self.__style
         
     
-    def getLetter(self):
-        '''
-        Return Letter on this Tile or None
-        
-        @return: Letter on this Tile or None
-        '''
-        
-        return self.letter
+    def getLetterStr(self):
+        return self.letterStr
+    
+    def getLetterScore(self):
+        return self.letterScore
     
     def getTileScore(self):
         '''
@@ -487,7 +487,7 @@ class GameLetter(gtk.ToggleButton):
         '''
         print 'dragging GameLetter %s' % widget.getLetterStr()
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
-        selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
+        #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
 
     
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
