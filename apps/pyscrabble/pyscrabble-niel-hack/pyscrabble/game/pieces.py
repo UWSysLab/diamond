@@ -515,7 +515,7 @@ class Move(object):
         
         self.move = []
     
-    def getTiles(self):
+    def getMoveElements(self):
         '''
         Get the list of tuples in the move.
         
