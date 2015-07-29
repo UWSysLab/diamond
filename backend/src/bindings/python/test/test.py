@@ -1,6 +1,7 @@
-from libdiamond import *
+from libpydiamond import *
 import unittest
-
+import sys
+    
 class TestDiamond(unittest.TestCase):
 
     def test_DString(self):
