@@ -34,9 +34,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <hiredis/hiredis.h>
-#include <hiredis/async.h>
-#include <hiredis/adapters/libev.h>
+#include "hiredis/hiredis.h"
+#include "hiredis/async.h"
+#include "hiredis/adapters/libev.h"
 
 #include "utils/logger.hpp"
 #include "command.hpp"
