@@ -59,7 +59,6 @@ class GameTile(gtk.Button):
         self.deactivate()
         
         if (self.letterStr == ""):
-            print "Is this working?"
             self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
@@ -117,17 +116,27 @@ class GameTile(gtk.Button):
             return
         
         self.setLetterNew(c, c.getLetterStr(), c.getLetterScore())
-     
+    
+    #TODO: replace old setLetter with this one 
     def setLetterNew(self, widget, letter, score):
         #set up drag handler
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        if widget is not None:
+        if not self.letterStr == "":
             if isinstance(widget, GameTile):
+                #TODO: remove move (me)
+                #TODO: remove move (other GameTile)
                 widget.setLetterNew(None, self.letterStr, self.letterScore)
+            elif isinstance(widget, GameLetter):
+                #TODO: remove move (me)
+                widget.copyLetter(self.letterStr, self.letterScore)
+        else:
+            if isinstance(widget, GameTile):
+                #TODO: remove move (other GameTile)
+                dummyVariableThatWillNeverBeUsed = 1
         
-        
+        #TODO: register move (me)
         self.set_label( letter, score )
         self.letterStr = letter
         self.letterScore = score
@@ -279,7 +288,7 @@ class GameTile(gtk.Button):
             #    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
             #    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
             l = ""
-            s = ""
+            #s = ""
         else:
             if o.get_default_bool_option(USE_COLOR_TEXT, True):
                 l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
@@ -474,6 +483,11 @@ class GameLetter(gtk.ToggleButton):
 #         self.setScore( letter.getScore() )
 #         self.setIsBlank(letter.isBlank())
 #         self.set_label(letter)
+
+    def copyLetter(self, letterStr, letterScore):
+        self.letterStr = letterStr
+        self.letterScore = letterScore
+        self.set_label(letterStr, letterScore)
     
     def dragLetter(self, widget, context, selection, targetType, eventTime):
         '''
