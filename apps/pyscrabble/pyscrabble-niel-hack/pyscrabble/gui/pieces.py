@@ -139,7 +139,7 @@ class GameTile(gtk.Button):
         #TODO: register move (me)
         self.setLetterStr(letter)
         self.setLetterScore(score)
-        self.set_label( self.getLetterStr(), self.getLetterScore() )
+        self.update_label()
 
     
     def setLetter(self, widget, letter, score, isBlank, showBlank=True):
@@ -266,7 +266,7 @@ class GameTile(gtk.Button):
         self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(color) )
         self.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(color) )
     
-    def set_label(self, letterStr, letterScore, showBlank=False):
+    def update_label(self, showBlank=False):
         '''
         Set the Letter/score label on the Tile
         
@@ -278,17 +278,16 @@ class GameTile(gtk.Button):
             self.remove(widget)
         widget = gtk.Label()
             
-        l = letterStr
-        s = str(letterScore)
+        l = self.getLetterStr()
+        s = str(self.getLetterScore())
         o = manager.OptionManager()
-        if letterStr == "":
+        if l == "":
+            s = ""
             #if showBlank:
             #    l = ""
             #if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
             #    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
             #    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
-            l = ""
-            #s = ""
         else:
             if o.get_default_bool_option(USE_COLOR_TEXT, True):
                 l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
@@ -298,7 +297,7 @@ class GameTile(gtk.Button):
             l = """<span weight="bold">%s</span>""" % l
             s = """<span weight="bold">%s</span>""" % s
             
-        if len(str(letterScore)) == 2:
+        if len(str(self.getLetterScore())) == 2:
             widget.set_markup("""%s <sub><span size="xx-small">%s</span></sub>""" % (l, s))
         else:
             widget.set_markup("""%s <sub><span size="x-small">%s</span></sub>""" % (l, s))

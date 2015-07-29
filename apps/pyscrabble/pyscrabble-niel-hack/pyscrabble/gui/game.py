@@ -81,6 +81,8 @@ class GameFrame(gtk.Frame):
     
     def doDiamondRefresh(self):
         print "Got Diamond refresh command!"
+        for tile in self.board.tiles.values():
+            tile.update_label()
         self.show_all()
     
     ### UI Creation ####
