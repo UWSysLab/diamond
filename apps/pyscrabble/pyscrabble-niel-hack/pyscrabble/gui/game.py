@@ -1136,7 +1136,8 @@ class GameFrame(gtk.Frame):
         # Highlight the name of the player who has control of the board
         self.currentTurn = False
         self.mainwindow.setCurrentTurn(self.currentGameId, False)
-        self.clearCurrentMove()
+        #self.clearCurrentMove()
+        #TODO: temp hack
         
         if player is not None:
             sel = self.userView.get_selection()
