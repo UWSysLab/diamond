@@ -31,11 +31,11 @@ class GameTile(gtk.Button):
                 
         self.letterStr = DString()
         DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
-        self.letterStr = ""
+        self.letterStr.Set("")
         
         self.letterScore = DLong()
         DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
-        self.letterScore = 0
+        self.letterScore.Set(0)
                 
         self.__style = TILE_NORMAL
         
@@ -58,7 +58,7 @@ class GameTile(gtk.Button):
         '''
         self.deactivate()
         
-        if (self.letterStr == ""):
+        if (self.getLetterStr() == ""):
             self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
@@ -89,7 +89,7 @@ class GameTile(gtk.Button):
         @param targetType:
         @param eventTime:
         '''
-        return
+        pass
         #print 'dragging tile gameletter %s' % widget.getLetter().getLetter()
         #s = widget.getLetter().getLetter()
         #selection.set(selection.target, 8, '%s:%s:%s' % (s, str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
@@ -123,23 +123,23 @@ class GameTile(gtk.Button):
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        if not self.letterStr == "":
+        if not self.getLetterStr() == "":
             if isinstance(widget, GameTile):
                 #TODO: remove move (me)
                 #TODO: remove move (other GameTile)
-                widget.setLetterNew(None, self.letterStr, self.letterScore)
+                widget.setLetterNew(None, self.getLetterStr(), self.getLetterScore())
             elif isinstance(widget, GameLetter):
                 #TODO: remove move (me)
-                widget.copyLetter(self.letterStr, self.letterScore)
+                widget.copyLetter(self.getLetterStr(), self.getLetterScore())
         else:
             if isinstance(widget, GameTile):
                 #TODO: remove move (other GameTile)
                 dummyVariableThatWillNeverBeUsed = 1
         
         #TODO: register move (me)
-        self.set_label( letter, score )
-        self.letterStr = letter
-        self.letterScore = score
+        self.setLetterStr(letter)
+        self.setLetterScore(score)
+        self.set_label( self.getLetterStr(), self.getLetterScore() )
 
     
     def setLetter(self, widget, letter, score, isBlank, showBlank=True):
@@ -343,10 +343,17 @@ class GameTile(gtk.Button):
         
     
     def getLetterStr(self):
-        return self.letterStr
+        return self.letterStr.Value()
     
     def getLetterScore(self):
-        return self.letterScore
+        return self.letterScore.Value()
+    
+    def setLetterStr(self, inStr):
+        print "Hello: " + repr(type(inStr))
+        self.letterStr.Set(inStr)
+    
+    def setLetterScore(self, score):
+        self.letterScore.Set(score)
     
     def getTileScore(self):
         '''
@@ -448,7 +455,7 @@ class GameLetter(gtk.ToggleButton):
         self.modify_bg(gtk.STATE_PRELIGHT, color )
     
     def getLetterStr(self):
-        return self.letterStr
+        return self.letterStr.encode('utf-8')
     
     def getLetterScore(self):
         return self.letterScore
