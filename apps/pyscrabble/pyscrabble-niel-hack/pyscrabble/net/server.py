@@ -579,10 +579,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         client.sendPrivateMessage(recipient, msg)
         
 
-    def doDiamondRefresh(self, gameId):
-        command = self.command.createGameDiamondRefreshCommand(gameId)
+    def sendRefreshSignals(self, gameId):
         for client in self.clients.keys():
-            client.writeCommand(command)
+            client.doDiamondRefresh(gameId)
 
     def handleGameCommand(self, command, client):
         '''
@@ -594,7 +593,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         if (command.getCommand() == constants.GAME_DIAMOND_REQUEST_REFRESH):
             print "Server got a refresh request!"
-            self.doDiamondRefresh(command.getGameId())
+            self.sendRefreshSignals(command.getGameId())
         if (command.getCommand() == constants.GAME_GET_LETTERS):
             letters = self.game.getLetters( int(command.getData()) )
             client.sendLetters( letters )
@@ -1861,6 +1860,10 @@ class ScrabbleServer(NetstringReceiver):
         
         self.command = helper.CommandCreator()
         self.username = None
+
+    def doDiamondRefresh(self, gameId):
+        command = self.command.createGameDiamondRefreshCommand(gameId)
+        self.writeCommand(command)
 
     def stringReceived(self, data):
         '''
