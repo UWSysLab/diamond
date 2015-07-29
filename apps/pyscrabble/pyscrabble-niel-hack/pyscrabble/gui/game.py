@@ -79,6 +79,10 @@ class GameFrame(gtk.Frame):
         
         self.userView.columns_autosize()
     
+    def doDiamondRefresh(self):
+        print "Got Diamond refresh command!"
+        self.show_all()
+    
     ### UI Creation ####
         
     def getLogWindow(self):

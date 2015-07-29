@@ -520,6 +520,9 @@ class ScrabbleClient(object):
         '''
         
         try:
+            if (command.getCommand() == GAME_DIAMOND_REFRESH):
+                self.gameWins[command.getGameId()].doDiamondRefresh()
+            
             if (command.getCommand() == GAME_GET_LETTERS):
                 self.gameWins[command.getGameId()].showLetters( command.getData() )
             
