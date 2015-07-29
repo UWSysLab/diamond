@@ -722,14 +722,15 @@ class GameBoard(gtk.Table):
         
         for l, x, y in move.getTiles():
             if self.tiles.has_key( (x,y) ):
-                if (self.tiles[(x,y)].getLetter() != l):
+                if (self.tiles[(x,y)].getLetterStr() != l):
                     return False
             elif not self.tiles.has_key( (x,y) ):
                 return False
         
         return True
         
-    
+        
+    #TODO: figure out if this method is still used
     def putLetter(self, letter, x, y, set_bg):
         '''
         Put a Letter on a Tile on the board
@@ -808,7 +809,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if x == _x:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetter() != None:
+                    if self.tiles[(x, y)].getLetterStr() != None:
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -825,7 +826,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if y == _y:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetter() != None:
+                    if self.tiles[(x, y)].getLetterStr() != None:
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -855,7 +856,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x+1, y))):
-            if self.tiles[(x+1, y)].getLetter() != None:
+            if self.tiles[(x+1, y)].getLetterStr() != "":
                 return True
         return False
     
@@ -869,7 +870,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y+1))):
-            if self.tiles[(x, y+1)].getLetter() != None:
+            if self.tiles[(x, y+1)].getLetterStr() != "":
                 return True
         return False
     
@@ -911,7 +912,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x-1, y))):
-            if self.tiles[(x-1, y)].getLetter() != None:
+            if self.tiles[(x-1, y)].getLetterStr() != "":
                 return True
         return False
     
@@ -925,7 +926,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y-1))):
-            if self.tiles[(x, y-1)].getLetter() != None:
+            if self.tiles[(x, y-1)].getLetterStr() != "":
                 return True
         return False
     
@@ -976,20 +977,20 @@ class GameBoard(gtk.Table):
         
         h = Move()
         v = Move()
-        h.addMove( self.get(x,y).getLetter(), x, y)
-        v.addMove( self.get(x,y).getLetter(), x, y)
+        h.addMove( Letter(self.get(x,y).getLetterStr(), self.get(x,y).getLetterScore()), x, y)
+        v.addMove( Letter(self.get(x,y).getLetterStr(), self.get(x,y).getLetterScore()), x, y)
         
         _x = x
         _y = y
         while self.hasNextHorizontalLetter(_x, _y):
             item, _x, _y = self.getNextHorizontalLetter(_x, _y)
-            h.addMove(item.getLetter(), _x, _y)
+            h.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousHorizontalLetter(_x, _y):
             item, _x, _y = self.getPreviousHorizontalLetter(_x, _y)
-            h.addMove(item.getLetter(), _x, _y)
+            h.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
         
         h.sort()
         if h.length() > 1:
@@ -1000,13 +1001,13 @@ class GameBoard(gtk.Table):
         _y = y
         while self.hasNextVerticalLetter(_x, _y):
             item, _x, _y = self.getNextVerticalLetter(_x, _y)
-            v.addMove(item.getLetter(), _x, _y)
+            v.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousVerticalLetter(_x, _y):
             item, _x, _y = self.getPreviousVerticalLetter(_x, _y)
-            v.addMove(item.getLetter(), _x, _y)
+            v.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
         
         v.sort()
         if v.length() > 1:
