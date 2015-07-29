@@ -636,9 +636,13 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
-    
-    # Callback to send current move
     def sendCurrentMove(self, event = None):
+        print "Requesting Diamond refresh"
+        self.client.diamondRequestRefresh(self.currentGameId)
+    
+    #TODO: restore the name of this method
+    # Callback to send current move
+    def sendCurrentMoveRenamed(self, event = None):
         '''
         Send the current move on the board to the server
         
