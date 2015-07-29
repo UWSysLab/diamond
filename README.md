@@ -28,7 +28,9 @@ Android or iOS abi.
 	1. Download the NDK.
 	2. Unpack it by running:
 
-            $ chmod u+x <NDK>.bin
+			$ chmod u+x <NDK>.bin
+			$ mkdir -p toolchains/android
+			$ mv <NDK> toolchains/android
 
 ## Building the source and language bindings
 To compile a shared object library and both the C++ and Python
