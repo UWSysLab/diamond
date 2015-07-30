@@ -1040,6 +1040,7 @@ class GameBoard(gtk.Table):
         Remove arrows
         '''
         for tile in self.tiles.itervalues():
+            pass
             #tile.removeArrow()
         
         
