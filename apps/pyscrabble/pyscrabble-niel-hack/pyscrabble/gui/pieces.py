@@ -131,27 +131,38 @@ class GameTile(gtk.Button):
         
         if self.getLetterStr() == "":
             if isinstance(widget, GameTile):
-                self.board.removeMove(widget, widget.x, widget.y)
+                self.board.removeMoveNew(widget, widget.x, widget.y)
+                widget.clear()
             elif isinstance(widget, GameLetter):
                 self.board.removeLetterNew(widget)
         else:
             if isinstance(widget, GameTile):
-                self.board.removeMove(self, self.x, self.y)
-                self.board.removeMove(widget, widget.x, widget.y)
-                widget.setLetterNew(None, self.getLetterStr(), self.getLetterScore())
+                myOldLetterStr = self.getLetterStr()
+                myOldLetterScore = self.getLetterScore()
+                self.board.removeMoveNew(self, self.x, self.y)
+                self.board.removeMoveNew(widget, widget.x, widget.y)
+                widget.putLetterNew(myOldLetterStr, myOldLetterScore)
+                self.board.registerMoveNew(widget, widget.x, widget.y)
             elif isinstance(widget, GameLetter):
-                self.board.removeMove(self, self.x, self.y)
+                self.board.removeMoveNew(self, self.x, self.y)
                 widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
         
-        self.setLetterStr(letter)
-        self.setLetterScore(score)
-        self.update_label()
+        self.putLetterNew(letter, score)
         self.board.registerMoveNew(self, self.x, self.y)
         
         print "Debug: ending setLetterNew()"
         print self.board.onBoard
 
-
+    def putLetterNew(self, letter, score):
+        self.setLetterStr(letter)
+        self.setLetterScore(score)
+        self.update_label()
+    
+    def clear(self):
+        self.setLetterStr("")
+        self.setLetterScore(0)
+        self.update_label()
+        self.activate()
     
     def setLetter(self, widget, letter, score, isBlank, showBlank=True):
         '''
@@ -526,8 +537,10 @@ class GameLetter(gtk.ToggleButton):
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
 
-    
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
+        pass
+    
+    def letterDraggedOld(self, widget, context, x, y, selection, targetType, eventType):
         '''
         Callback when a widget is dragged onto this letter.
         
@@ -541,35 +554,35 @@ class GameLetter(gtk.ToggleButton):
         '''
         letter = context.get_source_widget()
         
-#         if isinstance(letter, GameTile): # Swap from Board to Tile
-#             tile = letter
-#             tmp = self.clone()
-#             tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
-#             self.copyLetter( tile.getLetter() )
-#             tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
-#             return
-#         
-#         if isinstance(letter, GameLetter):
-#             
-#             if id(letter) == id(self): # ignore if widget is dragged onto itself
-#                 return
-#             
-#             o = manager.OptionManager()
-#             opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
-#             
-#             if opt == OPTION_LETTER_INSERT:
-#                 letters = self.letterBox.get_children()
-#                 self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-#                 letters = [ l for l in letters if id(l) != id(letter) ]
-#                 for l in letters:
-#                     if id(l) == id(widget):
-#                         self.letterBox.pack_start(letter, False, False, 0)
-#                     self.letterBox.pack_start(l, False, False, 0)
-#             
-#             if opt == OPTION_LETTER_SWAP:
-#                 l = self.getLetter().clone()
-#                 self.copyLetter(letter.getLetter())
-#                 letter.copyLetter(l)
+        if isinstance(letter, GameTile): # Swap from Board to Tile
+            tile = letter
+            tmp = self.clone()
+            tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
+            self.copyLetter( tile.getLetter() )
+            tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
+            return
+         
+        if isinstance(letter, GameLetter):
+             
+            if id(letter) == id(self): # ignore if widget is dragged onto itself
+                return
+             
+            o = manager.OptionManager()
+            opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
+             
+            if opt == OPTION_LETTER_INSERT:
+                letters = self.letterBox.get_children()
+                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+                letters = [ l for l in letters if id(l) != id(letter) ]
+                for l in letters:
+                    if id(l) == id(widget):
+                        self.letterBox.pack_start(letter, False, False, 0)
+                    self.letterBox.pack_start(l, False, False, 0)
+             
+            if opt == OPTION_LETTER_SWAP:
+                l = self.getLetter().clone()
+                self.copyLetter(letter.getLetter())
+                letter.copyLetter(l)
     
     def activate(self):
         '''

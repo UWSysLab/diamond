@@ -540,6 +540,12 @@ class GameFrame(gtk.Frame):
         
         self.showLetters([])
     
+    def addLetterNew(self, letter):
+        '''
+        @param letter: Letter to create a corresponding GameLetter of and add to letter box
+        '''
+        self.letters.append(letter)
+    
     def removeLetterNew(self,gameLetter):
         '''
         @param gameLetter: GameLetter to remove from letter box
@@ -613,6 +619,11 @@ class GameFrame(gtk.Frame):
                 self.letterBox.show_all()
             
             self.onBoard.addMove( tile.getLetter() ,x,y )
+    
+    def removeMoveNew(self, tile, x, y):
+        self.onBoard.removeMove( tile.getLetter(), x, y )
+        #self.letters.append( tile.getLetter() )
+        self.board.show_all()
     
     def removeMove(self, tile, x, y, refresh=True):
         '''
