@@ -125,21 +125,21 @@ class GameTile(gtk.Button):
         
         if not self.getLetterStr() == "":
             if isinstance(widget, GameTile):
-                #TODO: remove move (me)
-                #TODO: remove move (other GameTile)
+                self.board.removeMove(self, self.x, self.y)
+                self.board.removeMove(widget, widget.x, widget.y)
                 widget.setLetterNew(None, self.getLetterStr(), self.getLetterScore())
             elif isinstance(widget, GameLetter):
-                #TODO: remove move (me)
+                self.board.removeMove(self, self.x, self.y)
                 widget.copyLetter(self.getLetterStr(), self.getLetterScore())
         else:
             if isinstance(widget, GameTile):
-                #TODO: remove move (other GameTile)
-                dummyVariableThatWillNeverBeUsed = 1
+                self.board.removeMove(widget, widget.x, widget.y)
         
-        #TODO: register move (me)
         self.setLetterStr(letter)
         self.setLetterScore(score)
         self.update_label()
+        self.board.registerMove(self, self.x, self.y, True, widget)
+
 
     
     def setLetter(self, widget, letter, score, isBlank, showBlank=True):
@@ -353,6 +353,9 @@ class GameTile(gtk.Button):
     
     def setLetterScore(self, score):
         self.letterScore.Set(score)
+    
+    def getLetter(self):
+        return Letter(self.getLetterStr(), self.getLetterScore())
     
     def getTileScore(self):
         '''
@@ -1037,7 +1040,7 @@ class GameBoard(gtk.Table):
         Remove arrows
         '''
         for tile in self.tiles.itervalues():
-            tile.removeArrow()
+            #tile.removeArrow()
         
         
         
