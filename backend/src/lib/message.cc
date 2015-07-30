@@ -40,7 +40,7 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#define BACKTRACE_ON_PANIC 1
+#define BACKTRACE_ON_PANIC 0
 #if BACKTRACE_ON_PANIC
 #include <execinfo.h>
 #endif

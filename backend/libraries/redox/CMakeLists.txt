@@ -63,20 +63,20 @@ INCLUDE(ExternalProject)
 
 ExternalProject_Add(
    hiredis-redisclient
-   PREFIX ${PROJECT_SOURCE_DIR}/..
+   PREFIX ${PROJECT_SOURCE_DIR}
    GIT_REPOSITORY git@github.com:redis/hiredis.git
    CONFIGURE_COMMAND ""
    UPDATE_COMMAND ""
    INSTALL_COMMAND ""
    BUILD_COMMAND "make"
-   SOURCE_DIR ${PROJECT_SOURCE_DIR}/../hiredis
-   BINARY_DIR ${PROJECT_SOURCE_DIR}/../hiredis
+   SOURCE_DIR ${PROJECT_SOURCE_DIR}/hiredis
+   BINARY_DIR ${PROJECT_SOURCE_DIR}/hiredis
    LOG_DOWNLOAD ON
    LOG_CONFIGURE ON
    LOG_BUILD ON)
  
-include_directories(${PROJECT_SOURCE_DIR}/hiredis)
-link_directories(${PROJECT_SOURCE_DIR}/hiredis) 
+include_directories(${PROJECT_SOURCE_DIR}/..)
+link_directories(${PROJECT_SOURCE_DIR/../hiredis}) 
 set(REDOX_LIB_DEPS ev pthread hiredis)
 
 # ---------------------------------------------------------

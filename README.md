@@ -29,8 +29,12 @@ Android or iOS abi.
 	2. Unpack it by running:
 
 			$ chmod u+x <NDK>.bin
+	3. Make the stand alone toolchain
+
 			$ mkdir -p toolchains/android
-			$ mv <NDK> toolchains/android
+			$ mv <NDK> toolchains/android/ndk
+			$ mkdir toolchains/android/toolchain
+			$ <NDK>/build/tools/make-standalone-toolchain.sh --toolchain=arm-linux-androideabi-4.9 --arch=arm --platform=android-21 --install-dir=toolchains/android/toolchain
 
 ## Building the source and language bindings
 To compile a shared object library and both the C++ and Python
