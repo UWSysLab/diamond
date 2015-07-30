@@ -257,10 +257,11 @@ class LetterPlaceHolder(gtk.Fixed):
         letter = context.get_source_widget()
         
         if isinstance(letter, gui.pieces.GameTile):
+            newLetter = gui.pieces.GameLetter(letter.getLetter(), self.letterBox)
             self.game_frame.removeMove(letter, letter.x, letter.y)
             if letter.getLetter().isBlank():
                 letter.getLetter().setLetter("")
-            letter = gui.pieces.GameLetter(letter.getLetter(), self.letterBox)
+            letter = newLetter
         
         if not isinstance(letter, gui.pieces.GameLetter):
             return
