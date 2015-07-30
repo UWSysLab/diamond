@@ -123,22 +123,33 @@ class GameTile(gtk.Button):
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        if not self.getLetterStr() == "":
+        print "Debug: beginning setLetterNew()"
+        print self.board.onBoard
+        print letter
+        print score
+        
+        
+        if self.getLetterStr() == "":
+            if isinstance(widget, GameTile):
+                self.board.removeMove(widget, widget.x, widget.y)
+            elif isinstance(widget, GameLetter):
+                self.board.removeLetterNew(widget)
+        else:
             if isinstance(widget, GameTile):
                 self.board.removeMove(self, self.x, self.y)
                 self.board.removeMove(widget, widget.x, widget.y)
                 widget.setLetterNew(None, self.getLetterStr(), self.getLetterScore())
             elif isinstance(widget, GameLetter):
                 self.board.removeMove(self, self.x, self.y)
-                widget.copyLetter(self.getLetterStr(), self.getLetterScore())
-        else:
-            if isinstance(widget, GameTile):
-                self.board.removeMove(widget, widget.x, widget.y)
+                widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
         
         self.setLetterStr(letter)
         self.setLetterScore(score)
         self.update_label()
-        self.board.registerMove(self, self.x, self.y, True, widget)
+        self.board.registerMoveNew(self, self.x, self.y)
+        
+        print "Debug: ending setLetterNew()"
+        print self.board.onBoard
 
 
     
@@ -461,6 +472,9 @@ class GameLetter(gtk.ToggleButton):
     
     def getLetterScore(self):
         return self.letterScore
+    
+    def getLetter(self):
+        return Letter(self.getLetterStr(), self.getLetterScore())
     
 #     def getLetter(self):
 #         '''
