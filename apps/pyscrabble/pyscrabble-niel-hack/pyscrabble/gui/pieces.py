@@ -538,7 +538,42 @@ class GameLetter(gtk.ToggleButton):
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
 
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
-        pass
+        sourceWidget = context.get_source_widget()
+        
+        if isinstance(sourceWidget, GameTile): # Swap from Board to Tile
+            sourceWidget.board.removeMoveNew(sourceWidget, sourceWidget.x, sourceWidget.y)
+            tmpLetterStr = self.getLetterStr()
+            tmpLetterScore = self.getLetterScore()
+            self.copyLetter(sourceWidget.getLetterStr(), sourceWidget.getLetterScore())
+            sourceWidget.putLetterNew(tmpLetterStr, tmpLetterScore)
+            sourceWidget.board.registerMoveNew(sourceWidget, sourceWidget.x, sourceWidget.y)
+            sourceWidget.update_label()
+            return
+        
+        if isinstance(sourceWidget, GameLetter):
+            if id(sourceWidget) == id(self):
+                return
+            
+            o = manager.OptionManager()
+            opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
+            
+            if opt == OPTION_LETTER_INSERT:
+                print "INSERT"
+                letters = self.letterBox.get_children()
+                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+                letters = [ l for l in letters if id(l) != id(sourceWidget) ]
+                for l in letters:
+                    if id(l) == id(widget):
+                        self.letterBox.pack_start(sourceWidget, False, False, 0)
+                    self.letterBox.pack_start(l, False, False, 0)
+             
+            if opt == OPTION_LETTER_SWAP:
+                print "SWAP"
+                tmpLetterStr = self.getLetterStr()
+                tmpLetterScore = self.getLetterScore()
+                self.copyLetter(sourceWidget.getLetterStr(), sourceWidget.getLetterScore())
+                sourceWidget.copyLetter(tmpLetterStr, tmpLetterScore)
+            
     
     def letterDraggedOld(self, widget, context, x, y, selection, targetType, eventType):
         '''
