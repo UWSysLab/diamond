@@ -540,6 +540,42 @@ class GameFrame(gtk.Frame):
         
         self.showLetters([])
     
+    def addLetterNew(self, letter):
+        '''
+        @param letter: Letter to create a corresponding GameLetter of and add to letter box
+        '''
+        self.letters.append(letter)
+    
+    def removeLetterNew(self,gameLetter):
+        '''
+        @param gameLetter: GameLetter to remove from letter box
+        '''
+        letters = []
+        found = False
+        for _letter in self.letters:
+            if gameLetter.getLetter() == _letter and gameLetter.getLetter().isBlank() == _letter.isBlank():
+                if not found:
+                    found = True
+                else:
+                    #print 'Adding', _letter
+                    letters.append( _letter )
+            else:
+                letters.append( _letter )
+               
+        self.letters = letters
+        
+        letters = self.letterBox.get_children()
+        self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+        for l in letters:
+            #print 'id(%s) == id(%s) %s == %s %s' % (str(l), str(letter), str(id(l)), str(id(letter)), str(id(l) == id(letter)))
+            if id(l) == id(gameLetter): #Compare memory values to make sure its actually the same widget
+                self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
+            else:
+                self.letterBox.pack_start(l, False, False, 0)
+        self.letterBox.show_all()
+    
+    def registerMoveNew(self, tile, x, y): 
+        self.onBoard.addMove( tile.getLetter() ,x,y )
     
     # Callback from GameTile, when a user moves a Letter from their list onto the Board
     def registerMove(self, tile, x, y, refresh, letter):
@@ -583,6 +619,11 @@ class GameFrame(gtk.Frame):
                 self.letterBox.show_all()
             
             self.onBoard.addMove( tile.getLetter() ,x,y )
+    
+    def removeMoveNew(self, tile, x, y):
+        self.onBoard.removeMove( tile.getLetter(), x, y )
+        #self.letters.append( tile.getLetter() )
+        self.board.show_all()
     
     def removeMove(self, tile, x, y, refresh=True):
         '''
