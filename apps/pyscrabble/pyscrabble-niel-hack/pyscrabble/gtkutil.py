@@ -258,8 +258,8 @@ class LetterPlaceHolder(gtk.Fixed):
         
         if isinstance(letter, gui.pieces.GameTile):
             newLetter = gui.pieces.GameLetter(letter.getLetter(), self.letterBox)
-            self.game_frame.removeMoveNew(letter, letter.x, letter.y)
-            self.game_frame.addLetterNew(letter.getLetter())
+            self.game_frame.removeMove(letter, letter.x, letter.y)
+            self.game_frame.addLetter(letter.getLetter())
             letter.clear();
             #self.game_frame.removeMove(letter, letter.x, letter.y)
             if letter.getLetter().isBlank():
