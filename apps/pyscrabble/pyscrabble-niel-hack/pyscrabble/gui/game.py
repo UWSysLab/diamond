@@ -541,6 +541,8 @@ class GameFrame(gtk.Frame):
         self.showLetters([])
     
     
+    # Game state management methods added by Niel
+    
     def addLetter(self, letter):
         '''
         @param letter: Letter to add to list of letters
@@ -565,6 +567,12 @@ class GameFrame(gtk.Frame):
         self.letters = letters
         self.showLetters(self.letters)
         
+    def registerMove(self, tile, x, y): 
+        self.onBoard.addMove( tile.getLetter() ,x,y )
+        
+    def removeMove(self, tile, x, y):
+        self.onBoard.removeMove( tile.getLetter(), x, y )
+        
     def swapTiles(self, gTileA, gTileB):
         letterStrA = gTileA.getLetterStr()
         letterScoreA = gTileA.getLetterScore()
@@ -581,6 +589,10 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterStrB, letterScoreB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
+                
+        print "Debug:"
+        print self.board.onBoard
+        print self.board.letters
     
     def swapTileAndLetter(self, gTile, gLetter):
         if gTile.getLetterStr() == "":
@@ -592,11 +604,21 @@ class GameFrame(gtk.Frame):
             
         gTile.putLetter(gLetter.getLetterStr(), gLetter.getLetterScore())
         self.registerMove(gTile, gTile.x, gTile.y)
+                
+        print "Debug:"
+        print self.board.onBoard
+        print self.board.letters
         
     def putTileOnPlaceholder(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
+        
+        print "Debug:"
+        print self.board.onBoard
+        print self.board.letters
+        
+    # End added methods
     
 #     def removeLetterNew(self,gameLetter):
 #         '''
@@ -625,9 +647,6 @@ class GameFrame(gtk.Frame):
 #             else:
 #                 self.letterBox.pack_start(l, False, False, 0)
 #         self.letterBox.show_all()
-    
-    def registerMove(self, tile, x, y): 
-        self.onBoard.addMove( tile.getLetter() ,x,y )
     
     # Callback from GameTile, when a user moves a Letter from their list onto the Board
 #     def registerMove(self, tile, x, y, refresh, letter):
@@ -671,9 +690,6 @@ class GameFrame(gtk.Frame):
 #                 self.letterBox.show_all()
 #             
 #             self.onBoard.addMove( tile.getLetter() ,x,y )
-    
-    def removeMove(self, tile, x, y):
-        self.onBoard.removeMove( tile.getLetter(), x, y )
     
 #     def removeMove(self, tile, x, y, refresh=True):
 #         '''

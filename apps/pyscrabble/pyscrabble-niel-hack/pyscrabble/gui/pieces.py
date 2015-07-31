@@ -117,7 +117,6 @@ class GameTile(gtk.Button):
         
         self.setLetter(c, c.getLetterStr(), c.getLetterScore())
     
-    #TODO: replace old setLetter with this one 
     def setLetter(self, widget, letter, score):
         #set up drag handler
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
@@ -127,32 +126,6 @@ class GameTile(gtk.Button):
             self.board.swapTiles(self, widget)
         elif isinstance(widget, GameLetter):
             self.board.swapTileAndLetter(self, widget)
-        
-#         if self.getLetterStr() == "":
-#             if isinstance(widget, GameTile):
-#                 self.board.removeMove(widget, widget.x, widget.y)
-#                 widget.clear()
-#             elif isinstance(widget, GameLetter):
-#                 self.board.removeLetter(widget.getLetter())
-#         else:
-#             if isinstance(widget, GameTile):
-#                 myOldLetterStr = self.getLetterStr()
-#                 myOldLetterScore = self.getLetterScore()
-#                 self.board.removeMove(self, self.x, self.y)
-#                 self.board.removeMove(widget, widget.x, widget.y)
-#                 widget.putLetter(myOldLetterStr, myOldLetterScore)
-#                 self.board.registerMove(widget, widget.x, widget.y)
-#             elif isinstance(widget, GameLetter):
-#                 self.board.removeMove(self, self.x, self.y)
-#                 self.board.removeLetter(widget.getLetter())
-#                 self.board.addLetter(self.getLetter())
-#         
-#         self.putLetter(letter, score)
-#         self.board.registerMove(self, self.x, self.y)
-        
-        print "Debug:"
-        print self.board.onBoard
-        print self.board.letters
 
     def putLetter(self, letter, score):
         self.setLetterStr(letter)
@@ -542,16 +515,7 @@ class GameLetter(gtk.ToggleButton):
         sourceWidget = context.get_source_widget()
         
         if isinstance(sourceWidget, GameTile): # Swap from Board to Tile
-#             sourceWidget.board.removeMove(sourceWidget, sourceWidget.x, sourceWidget.y)
-#             sourceWidget.board.removeLetter(self.getLetter())
-#             sourceWidget.board.addLetter(sourceWidget.getLetter())
-#             sourceWidget.putLetter(self.getLetterStr(), self.getLetterScore())
-#             sourceWidget.board.registerMove(sourceWidget, sourceWidget.x, sourceWidget.y)
             sourceWidget.board.swapTileAndLetter(sourceWidget, self)
-            
-            print "Debug:"
-            print sourceWidget.board.onBoard
-            print sourceWidget.board.letters
             
     
 #     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
