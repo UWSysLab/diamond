@@ -21,7 +21,7 @@ on Ubuntu/Debian or Macports/Homebrew on OSX):
 * Python bindings: Install the Python Boost modules
 * Java bindings: Install Maven for compiling the Java bindings
 
-## Building the source and language bindings
+### Building the source and language bindings
 To compile a shared object library and both the C++ and Python
 bindings:
 
@@ -46,14 +46,14 @@ To test the Java bindings, cd to the Java directory and type:
     $ mvn test
 
 
-### Cross-compiling Diamond for Android
+## Cross-compiling Diamond for Android
 
 In order to cross-compile for using Diamond on Android or iOS, you
 need to download the compile tools. Create a `toolchains` directory in
 the `backend` directory of the Diamond source code and keep everything
 that you downloaded there.
 
-#### Android
+### Android
 1. Install either Android Studio or the stand-alone SDK.
 2. Create a directory for the Android NDK tools:
 
