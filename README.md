@@ -1,5 +1,5 @@
 ## Downloading source
-Now you can download the source from gitlab:
+Install git if you do not have it. Download the source from gitlab:
 
     $ git clone git@gitlab.cs.washington.edu:syslab/diamond-src.git
 
