@@ -67,7 +67,7 @@ that you downloaded there.
         $ ./android-ndk-r10e-linux-x86_64.bin
 		$ mv android-ndk-r10e-linux-x86_64 backend/toolchains/android/ndk
 
-Be sure to use the appropriate '.bin' filename for OSX.
+    Be sure to use the appropriate '.bin' filename for OSX.
 
 4. Create a stand-alone toolchain for working with. On Linux:
 
