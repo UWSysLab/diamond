@@ -12,6 +12,7 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include <unordered_map>
+#include <inttypes.h>
 
 namespace diamond {
 
@@ -65,7 +66,7 @@ DLong::Set(const uint64_t l)
 {
     _l = l;
     char buf[50];
-    sprintf(buf, "%lu", _l);
+    sprintf(buf, "%" PRIu64 "", _l);
     diamondclient.Write(_key, string(buf));
 }
 

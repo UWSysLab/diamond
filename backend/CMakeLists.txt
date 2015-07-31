@@ -16,19 +16,34 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
 
 set(PROJECT_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/libraries")
 
-# Set up Redox Redis client for accessing backend storage
+# Download the hiredis client
+# set up the hiredis redis client that redox needs
 INCLUDE(ExternalProject)
 
-# set up redox client
+set(HIREDIS_MAKE "make")
+
+if (ANDROID)
+   set(HIREDIS_MAKE "CC=${CMAKE_C_COMPILER} ARCH=-DAndroid CFLAGS='${CMAKE_C_FLAGS}' LDFLAGS='${CMAKE_SHARED_LINKER_FLAGS}' ${HIREDIS_MAKE}")
+   message(${HIREDIS_MAKE})
+endif()
+
 ExternalProject_Add(
-    redox-redisclient
-    PREFIX ${PROJECT_LIBRARIES_DIR}/redox
-    DOWNLOAD_COMMAND ""
+    hiredis-redisclient
+    GIT_REPOSITORY git@github.com:redis/hiredis.git
+    PREFIX ${PROJECT_BINARY_DIR}/hiredis
+    DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
+    TMP_DIR temp
+    BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
-    UPDATE_COMMAND ""
-    SOURCE_DIR ${PROJECT_LIBRARIES_DIR}/redox/
-    BINARY_DIR ${PROJECT_LIBRARIES_DIR}/redox/build
+    LOG_DOWNLOAD ON
+    LOG_CONFIGURE ON
     LOG_BUILD ON)
+
+    include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
+    link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
   
 # ---------------------------------------------------------
 # Include and link directories
@@ -74,18 +89,24 @@ set(SRC_DIAMOND_DATA_TYPES
 
 # Set up library dependencies for linking into the Diamond library
 
-set(DIAMOND_LIB_DEPS ev pthread hiredis redox)
+if (ANDROID)
+   set(DIAMOND_LIB_DEPS hiredis)
+else()
+   set(DIAMOND_LIB_DEPS hiredis pthread)
+endif()
+
 add_library (diamond SHARED
             ${SRC_DIAMOND_LIB}
             ${SRC_DIAMOND_CLIENT}
             ${SRC_DIAMOND_DATA_TYPES})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
-add_dependencies(diamond redox-redisclient)
+add_dependencies(diamond hiredis-redisclient)
 
-# Add python bindings for Linux and Mac OSX
+# only create and test for x86
 if (NOT ANDROID)
+  # Add python bindings for Linux and Mac OSX
   add_subdirectory(${DIAMOND_SOURCE_DIR}/bindings/python)
-endif()
 
 # Adding Diamond tests
 add_subdirectory(${DIAMOND_SOURCE_DIR}/test)
+endif()
