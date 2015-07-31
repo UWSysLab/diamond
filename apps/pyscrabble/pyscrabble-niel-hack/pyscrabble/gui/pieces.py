@@ -123,18 +123,12 @@ class GameTile(gtk.Button):
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        print "Debug: beginning setLetterNew()"
-        print self.board.onBoard
-        print letter
-        print score
-        
-        
         if self.getLetterStr() == "":
             if isinstance(widget, GameTile):
                 self.board.removeMoveNew(widget, widget.x, widget.y)
                 widget.clear()
             elif isinstance(widget, GameLetter):
-                self.board.removeLetterNew(widget)
+                self.board.removeLetterNew(widget.getLetter())
         else:
             if isinstance(widget, GameTile):
                 myOldLetterStr = self.getLetterStr()
@@ -145,13 +139,16 @@ class GameTile(gtk.Button):
                 self.board.registerMoveNew(widget, widget.x, widget.y)
             elif isinstance(widget, GameLetter):
                 self.board.removeMoveNew(self, self.x, self.y)
+                self.board.removeLetterNew(widget.getLetter())
+                self.board.addLetterNew(self.getLetter())
                 widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
         
         self.putLetterNew(letter, score)
         self.board.registerMoveNew(self, self.x, self.y)
         
-        print "Debug: ending setLetterNew()"
+        print "Debug:"
         print self.board.onBoard
+        print self.board.letters
 
     def putLetterNew(self, letter, score):
         self.setLetterStr(letter)
@@ -533,7 +530,7 @@ class GameLetter(gtk.ToggleButton):
         @param targetType:
         @param eventTime:
         '''
-        print 'dragging GameLetter %s' % widget.getLetterStr()
+        #print 'dragging GameLetter %s' % widget.getLetterStr()
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
 
@@ -542,37 +539,16 @@ class GameLetter(gtk.ToggleButton):
         
         if isinstance(sourceWidget, GameTile): # Swap from Board to Tile
             sourceWidget.board.removeMoveNew(sourceWidget, sourceWidget.x, sourceWidget.y)
-            tmpLetterStr = self.getLetterStr()
-            tmpLetterScore = self.getLetterScore()
-            self.copyLetter(sourceWidget.getLetterStr(), sourceWidget.getLetterScore())
-            sourceWidget.putLetterNew(tmpLetterStr, tmpLetterScore)
+            sourceWidget.board.removeLetterNew(self.getLetter())
+            sourceWidget.board.addLetterNew(sourceWidget.getLetter())
+            sourceWidget.putLetterNew(self.getLetterStr(), self.getLetterScore())
             sourceWidget.board.registerMoveNew(sourceWidget, sourceWidget.x, sourceWidget.y)
             sourceWidget.update_label()
-            return
-        
-        if isinstance(sourceWidget, GameLetter):
-            if id(sourceWidget) == id(self):
-                return
+            sourceWidget.board.showLetters(sourceWidget.board.letters)
             
-            o = manager.OptionManager()
-            opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
-            
-            if opt == OPTION_LETTER_INSERT:
-                print "INSERT"
-                letters = self.letterBox.get_children()
-                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-                letters = [ l for l in letters if id(l) != id(sourceWidget) ]
-                for l in letters:
-                    if id(l) == id(widget):
-                        self.letterBox.pack_start(sourceWidget, False, False, 0)
-                    self.letterBox.pack_start(l, False, False, 0)
-             
-            if opt == OPTION_LETTER_SWAP:
-                print "SWAP"
-                tmpLetterStr = self.getLetterStr()
-                tmpLetterScore = self.getLetterScore()
-                self.copyLetter(sourceWidget.getLetterStr(), sourceWidget.getLetterScore())
-                sourceWidget.copyLetter(tmpLetterStr, tmpLetterScore)
+            print "Debug:"
+            print sourceWidget.board.onBoard
+            print sourceWidget.board.letters
             
     
     def letterDraggedOld(self, widget, context, x, y, selection, targetType, eventType):

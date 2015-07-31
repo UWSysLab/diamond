@@ -266,20 +266,20 @@ class LetterPlaceHolder(gtk.Fixed):
                 letter.getLetter().setLetter("")
             letter = newLetter
         
-        if not isinstance(letter, gui.pieces.GameLetter):
-            return
-        
-        letters = self.letterBox.get_children()
-        self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-        
-        for l in letters:
-            if id(l) == id(widget):
-                self.letterBox.pack_start(letter, False, False, 0)
-            elif id(l) == id(letter):
-                self.letterBox.pack_start(widget, False, False, 0)
-            else:
-                self.letterBox.pack_start(l, False, False, 0)
-        self.letterBox.show_all()
+#         if not isinstance(letter, gui.pieces.GameLetter):
+#             return
+#         
+#         letters = self.letterBox.get_children()
+#         self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+#         
+#         for l in letters:
+#             if id(l) == id(widget):
+#                 self.letterBox.pack_start(letter, False, False, 0)
+#             elif id(l) == id(letter):
+#                 self.letterBox.pack_start(widget, False, False, 0)
+#             else:
+#                 self.letterBox.pack_start(l, False, False, 0)
+#         self.letterBox.show_all()
         
     def activate(self):
         '''
