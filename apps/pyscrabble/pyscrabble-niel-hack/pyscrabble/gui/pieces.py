@@ -141,7 +141,7 @@ class GameTile(gtk.Button):
                 self.board.removeMove(self, self.x, self.y)
                 self.board.removeLetter(widget.getLetter())
                 self.board.addLetter(self.getLetter())
-                widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
+                #widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
         
         self.putLetter(letter, score)
         self.board.registerMove(self, self.x, self.y)
@@ -551,49 +551,49 @@ class GameLetter(gtk.ToggleButton):
             print sourceWidget.board.letters
             
     
-    def letterDraggedOld(self, widget, context, x, y, selection, targetType, eventType):
-        '''
-        Callback when a widget is dragged onto this letter.
-        
-        @param widget:
-        @param context:
-        @param x:
-        @param y:
-        @param selection:
-        @param targetType:
-        @param eventType:
-        '''
-        letter = context.get_source_widget()
-        
-        if isinstance(letter, GameTile): # Swap from Board to Tile
-            tile = letter
-            tmp = self.clone()
-            tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
-            self.copyLetter( tile.getLetter() )
-            tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
-            return
-         
-        if isinstance(letter, GameLetter):
-             
-            if id(letter) == id(self): # ignore if widget is dragged onto itself
-                return
-             
-            o = manager.OptionManager()
-            opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
-             
-            if opt == OPTION_LETTER_INSERT:
-                letters = self.letterBox.get_children()
-                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-                letters = [ l for l in letters if id(l) != id(letter) ]
-                for l in letters:
-                    if id(l) == id(widget):
-                        self.letterBox.pack_start(letter, False, False, 0)
-                    self.letterBox.pack_start(l, False, False, 0)
-             
-            if opt == OPTION_LETTER_SWAP:
-                l = self.getLetter().clone()
-                self.copyLetter(letter.getLetter())
-                letter.copyLetter(l)
+#     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
+#         '''
+#         Callback when a widget is dragged onto this letter.
+#         
+#         @param widget:
+#         @param context:
+#         @param x:
+#         @param y:
+#         @param selection:
+#         @param targetType:
+#         @param eventType:
+#         '''
+#         letter = context.get_source_widget()
+#         
+#         if isinstance(letter, GameTile): # Swap from Board to Tile
+#             tile = letter
+#             tmp = self.clone()
+#             tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
+#             self.copyLetter( tile.getLetter() )
+#             tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
+#             return
+#          
+#         if isinstance(letter, GameLetter):
+#              
+#             if id(letter) == id(self): # ignore if widget is dragged onto itself
+#                 return
+#              
+#             o = manager.OptionManager()
+#             opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
+#              
+#             if opt == OPTION_LETTER_INSERT:
+#                 letters = self.letterBox.get_children()
+#                 self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+#                 letters = [ l for l in letters if id(l) != id(letter) ]
+#                 for l in letters:
+#                     if id(l) == id(widget):
+#                         self.letterBox.pack_start(letter, False, False, 0)
+#                     self.letterBox.pack_start(l, False, False, 0)
+#              
+#             if opt == OPTION_LETTER_SWAP:
+#                 l = self.getLetter().clone()
+#                 self.copyLetter(letter.getLetter())
+#                 letter.copyLetter(l)
     
     def activate(self):
         '''
