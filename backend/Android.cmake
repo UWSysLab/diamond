@@ -1,12 +1,4 @@
-#
-# Android "Standalone Toolchain" toolchain file for CMake
-#
-# (c) Copyrights 2011 Hartmut Seichter
-# 
-# Note: this version only targets NDK r5 upwards using the standalone
-#
-
-# need to know where the NDK resides
+# need to know where the NDK should reside
 set(ANDROID_TOOLCHAIN_ROOT "${PROJECT_SOURCE_DIR}/toolchains/android/toolchain" CACHE PATH "Android Standalone Toolchain location")
 
 #set(ANDROID_NDK_TOOLCHAIN_DEBUG ON)
@@ -20,7 +12,7 @@ set(ANDROID 1)
 
 # set supported architecture
 set(ANDROID_NDK_ARCH_SUPPORTED "arm;armv7;x86")
-set(ANDROID_NDK_ARCH "arm" CACHE STRING "Android NDK CPU architecture (${ANDROID_NDK_ARCH_SUPPORTED})")
+set(ANDROID_NDK_ARCH "armv7" CACHE STRING "Android NDK CPU architecture (${ANDROID_NDK_ARCH_SUPPORTED})")
 set_property(CACHE ANDROID_NDK_ARCH PROPERTY STRINGS ${ANDROID_NDK_ARCH_SUPPORTED})
 
 # armeabi / armeabi-v7a / x86

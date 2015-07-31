@@ -61,11 +61,11 @@
               <argument>-Xcompiler</argument>
               <argument>-iquote../../includes</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../build</argument>
+              <argument>-L../../../build</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../build:../../redox/build</argument>
+              <argument>-Wl,-rpath,../../../build:../../../build/hiredis/src/</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
@@ -88,18 +88,34 @@
               <argument>target/classes/arm-lib/</argument>
               <argument>-properties</argument>
               <argument>android-arm</argument>
-              <argument>-Dplatform.root=../toolchains/android-ndk</argument>
-              <argument>-Dplatform.compiler=../toolchains/android/bin/arm-linux-androideabi-g++</argument>
+              <argument>-Dplatform.root=../../../toolchains/android/toolchain/sysroot</argument>
+              <argument>-Dplatform.compiler=../../../toolchains/android/toolchain/bin/arm-linux-androideabi-g++</argument>
               <argument>-Xcompiler</argument>
               <argument>-std=c++0x</argument>
               <argument>-Xcompiler</argument>
+              <argument>-lstdc++</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-lsupc++</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-march=armv7-a</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-mfloat-abi=softfp</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-mfpu=vfpv3-d16</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-Wl,--fix-cortex-a8</argument>
+              <argument>-Xcompiler</argument>
               <argument>-iquote../../includes</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../lib</argument>
+              <argument>-L../../../build-arm</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-L../../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../lib:../../redox/release</argument>
+              <argument>-Wl,-rpath,../../../build-arm:../../../build-arm/hiredis/src</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-Wl,-rpath,../../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
@@ -113,7 +129,7 @@
       <version>2.18.1</version>
       <configuration>
         <forkMode>once</forkMode>
-        <argLine>-Djava.library.path=target/classes/lib:../lib</argLine>
+        <argLine>-Djava.library.path=target/classes/x86-lib:target/classes/lib-arm</argLine>
       </configuration>
     </plugin>
     </plugins>

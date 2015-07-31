@@ -16,7 +16,7 @@
 
 #include <unordered_map>
 #include <string>
-#include "redox.hpp"
+#include "hiredis.h"
 
 namespace diamond {
 
@@ -32,7 +32,7 @@ public:
 
 private:
     bool _connected = false;
-    redox::Redox _redis;
+    redisContext *_redis;
 };
 
 } // namespace diamond

@@ -12,11 +12,10 @@
 namespace diamond {
 
 using namespace std;
-using namespace redox;
 
 Client::~Client()
 {
-    _redis.disconnect();
+ 
 }
     
 int
@@ -25,8 +24,8 @@ Client::Connect(const std::string &host)
     if (_connected) {
         return RPC_OK;
     }
-    
-    if (_redis.connect(host)) {
+    _redis = redisConnect(host.c_str(), 6379);
+    if (_redis != NULL && _redis->err == 0) {
         _connected = true;
         return RPC_OK;
     } else {
@@ -44,16 +43,21 @@ int
 Client::Read(const string &key, string &value)
 {
     if (!_connected) {
-	return RPC_UNCONNECTED;
+        return RPC_UNCONNECTED;
     }
 
-    try {
-        value = _redis.get(key);
-    } catch (exception &e) {
-        return RPC_ERR;
+    redisReply *reply = (redisReply *)redisCommand(_redis, "GET %s", key.c_str());
+
+    if (reply != NULL) {
+        if (reply->type == REDIS_REPLY_STRING) {
+            value = string(reply->str);
+            freeReplyObject(reply);
+            return RPC_OK;
+        }
     }
 
-    return RPC_OK;
+    freeReplyObject(reply);
+    return RPC_ERR;
 }
 
 int
@@ -63,10 +67,14 @@ Client::Write(const string &key, const string &value)
         return RPC_UNCONNECTED;
     }
 
-    if (!_redis.set(key, value)) {
-        return RPC_ERR;
+    redisReply *reply = (redisReply *)redisCommand(_redis, "SET %s %s", key.c_str(), value.c_str());
+
+    if (reply != NULL) {
+        freeReplyObject(reply);
+        return RPC_OK;
     }
 
+    freeReplyObject(reply);
     return RPC_OK;
 }
 

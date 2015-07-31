@@ -12,6 +12,7 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include <unordered_map>
+#include <inttypes.h>
 
 namespace diamond {
 
@@ -55,7 +56,7 @@ DSet::Serialize()
         
     for (auto i : _set) {
         char buf[50];
-        sprintf(buf, "%lu\n", i);
+        sprintf(buf, "%" PRIu64 "\n", i);
         ret += string(buf);
     }
     return ret;
