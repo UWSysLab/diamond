@@ -123,28 +123,32 @@ class GameTile(gtk.Button):
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        if self.getLetterStr() == "":
-            if isinstance(widget, GameTile):
-                self.board.removeMove(widget, widget.x, widget.y)
-                widget.clear()
-            elif isinstance(widget, GameLetter):
-                self.board.removeLetter(widget.getLetter())
-        else:
-            if isinstance(widget, GameTile):
-                myOldLetterStr = self.getLetterStr()
-                myOldLetterScore = self.getLetterScore()
-                self.board.removeMove(self, self.x, self.y)
-                self.board.removeMove(widget, widget.x, widget.y)
-                widget.putLetter(myOldLetterStr, myOldLetterScore)
-                self.board.registerMove(widget, widget.x, widget.y)
-            elif isinstance(widget, GameLetter):
-                self.board.removeMove(self, self.x, self.y)
-                self.board.removeLetter(widget.getLetter())
-                self.board.addLetter(self.getLetter())
-                #widget.copyLetter(self.getLetterStr(), self.getLetterScore()) #TODO: is this working?
+        if isinstance(widget, GameTile):
+            self.board.swapTiles(self, widget)
+        elif isinstance(widget, GameLetter):
+            self.board.swapTileAndLetter(self, widget)
         
-        self.putLetter(letter, score)
-        self.board.registerMove(self, self.x, self.y)
+#         if self.getLetterStr() == "":
+#             if isinstance(widget, GameTile):
+#                 self.board.removeMove(widget, widget.x, widget.y)
+#                 widget.clear()
+#             elif isinstance(widget, GameLetter):
+#                 self.board.removeLetter(widget.getLetter())
+#         else:
+#             if isinstance(widget, GameTile):
+#                 myOldLetterStr = self.getLetterStr()
+#                 myOldLetterScore = self.getLetterScore()
+#                 self.board.removeMove(self, self.x, self.y)
+#                 self.board.removeMove(widget, widget.x, widget.y)
+#                 widget.putLetter(myOldLetterStr, myOldLetterScore)
+#                 self.board.registerMove(widget, widget.x, widget.y)
+#             elif isinstance(widget, GameLetter):
+#                 self.board.removeMove(self, self.x, self.y)
+#                 self.board.removeLetter(widget.getLetter())
+#                 self.board.addLetter(self.getLetter())
+#         
+#         self.putLetter(letter, score)
+#         self.board.registerMove(self, self.x, self.y)
         
         print "Debug:"
         print self.board.onBoard
@@ -538,13 +542,12 @@ class GameLetter(gtk.ToggleButton):
         sourceWidget = context.get_source_widget()
         
         if isinstance(sourceWidget, GameTile): # Swap from Board to Tile
-            sourceWidget.board.removeMove(sourceWidget, sourceWidget.x, sourceWidget.y)
-            sourceWidget.board.removeLetter(self.getLetter())
-            sourceWidget.board.addLetter(sourceWidget.getLetter())
-            sourceWidget.putLetter(self.getLetterStr(), self.getLetterScore())
-            sourceWidget.board.registerMove(sourceWidget, sourceWidget.x, sourceWidget.y)
-            sourceWidget.update_label()
-            sourceWidget.board.showLetters(sourceWidget.board.letters)
+#             sourceWidget.board.removeMove(sourceWidget, sourceWidget.x, sourceWidget.y)
+#             sourceWidget.board.removeLetter(self.getLetter())
+#             sourceWidget.board.addLetter(sourceWidget.getLetter())
+#             sourceWidget.putLetter(self.getLetterStr(), self.getLetterScore())
+#             sourceWidget.board.registerMove(sourceWidget, sourceWidget.x, sourceWidget.y)
+            sourceWidget.board.swapTileAndLetter(sourceWidget, self)
             
             print "Debug:"
             print sourceWidget.board.onBoard

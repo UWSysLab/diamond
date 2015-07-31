@@ -564,6 +564,39 @@ class GameFrame(gtk.Frame):
                 letters.append( _letter )        
         self.letters = letters
         self.showLetters(self.letters)
+        
+    def swapTiles(self, gTileA, gTileB):
+        letterStrA = gTileA.getLetterStr()
+        letterScoreA = gTileA.getLetterScore()
+        letterStrB = gTileB.getLetterStr()
+        letterScoreB = gTileB.getLetterScore()
+        if letterStrA == "":
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.clear()
+        else:
+            self.removeMove(gTileA, gTileA.x, gTileA.y)
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.putLetter(letterStrA, letterScoreA)
+            self.registerMove(gTileB, gTileB.x, gTileB.y)
+
+        gTileA.putLetter(letterStrB, letterScoreB)
+        self.registerMove(gTileA, gTileA.x, gTileA.y)
+    
+    def swapTileAndLetter(self, gTile, gLetter):
+        if gTile.getLetterStr() == "":
+            self.removeLetter(gLetter.getLetter())
+        else:
+            self.removeLetter(gLetter.getLetter())
+            self.removeMove(gTile, gTile.x, gTile.y)
+            self.addLetter(gTile.getLetter())
+            
+        gTile.putLetter(gLetter.getLetterStr(), gLetter.getLetterScore())
+        self.registerMove(gTile, gTile.x, gTile.y)
+        
+    def putTileOnPlaceholder(self, gTile):
+        self.removeMove(gTile, gTile.x, gTile.y)
+        self.addLetter(gTile.getLetter())
+        gTile.clear()
     
 #     def removeLetterNew(self,gameLetter):
 #         '''
