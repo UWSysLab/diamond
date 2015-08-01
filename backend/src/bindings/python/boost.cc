@@ -9,7 +9,11 @@
 
 #include "includes/data_types.h"
 #include <string>
+#include <unordered_set>
 #include <boost/python.hpp>
+#include <boost/python/list.hpp>
+#include <boost/python/tuple.hpp>
+#include <boost/python/to_python_converter.hpp>
 
 namespace diamond {
     
@@ -35,6 +39,62 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .staticmethod("Map")
         .def("Value", &DCounter::Value)
         .def("Set", &DCounter::Set)
+    ;
+
+    // Note from Niel: I wrote these bindings for the DSet class, since I needed
+    // them for PyScrabble.
+
+    // In order to write a wrapper for Members() (and the set version of
+    // Add()), I needed a to-python converter for std::unordered_set. This
+    // code defines a converter that packs the elements of the unordered_set
+    // into a list. I wrote it by following this blog post:
+    //
+    //https://misspent.wordpress.com/2009/09/27/how-to-write-boost-python-converters/
+    //
+    // I made the converter return a tuple because there is no boost::python::set
+    // object (apparently because Boost.Python was developed before sets were
+    // added to Python).
+
+    struct unordered_set_to_tuple {
+        static PyObject * convert(const std::unordered_set<uint64_t> & orig_set) {
+            boost::python::list result;
+            for (std::unordered_set<uint64_t>::const_iterator it = orig_set.begin();
+                    it != orig_set.end(); it++) {
+                result.append(boost::python::object(*it));
+            }
+            return boost::python::incref(boost::python::tuple(result).ptr());
+        }
+    };
+
+    boost::python::to_python_converter<std::unordered_set<uint64_t>,
+            unordered_set_to_tuple>();
+
+    // About the bindings for Add(): binding an overloaded method does not work
+    // without some way of telling Boost.Python how to distinguish between
+    // them. I followed the Stack Overflow answer here:
+    //
+    //http://stackoverflow.com/questions/7577410/boost-python-select-between-overloaded-methods
+    //
+    // I have not yet implemented bindings for the other version of Add(),
+    // which takes an unordered_set as an argument. Using this approach, I
+    // would have to give the method a different name in the Python class.
+    // There are macros in Boost.Python that you can use to disambiguate
+    // overloaded methods and still maintain one name in the Python class, but
+    // I think they might require that the different overloaded versions of the
+    // method have different numbers of parameters.
+    //
+    // Also, in order to implement the other version of Add(), I think I need
+    // to write a from-python converter for unordered_set (the equivalent of
+    // the to_python converter above).
+
+    void (DSet::*Add)(const uint64_t) = &DSet::Add;
+    class_<DSet>("DSet")
+        .def("Map", &DSet::Map)
+        .staticmethod("Map")
+        .def("Members", &DSet::Members)
+        .def("InSet", &DSet::InSet)
+        .def("Add", Add)
+        .def("Remove", &DSet::Remove)
     ;
 }
 
