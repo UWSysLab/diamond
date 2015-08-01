@@ -1,4 +1,3 @@
-from libpydiamond import *
 import unittest
 import sys
     
@@ -27,6 +26,21 @@ class TestDiamond(unittest.TestCase):
         print c2.Value()
 
         self.assertEqual(c2.Value(), 12)
+
+    def test_DSet(self):
+        set1 = DSet()
+        set2 = DSet()
+
+        DSet.Map(set1, "c")
+        DSet.Map(set2, "c")
+
+        set1.Add(4)
+        set1.Add(5)
+        set1.Add(5)
+        set1.Add(6)
+
+        self.assertTrue(set2.InSet(4))
+        self.assertEquals(set(set2.Members()), set((4, 5, 6)))
 
 if __name__ == '__main__':
     unittest.main()
