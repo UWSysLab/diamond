@@ -105,4 +105,7 @@ TEST(DSet, Map) {
     set2.Add(7);
 
     EXPECT_EQ(set1.InSet(7), true);
+
+    set1.Remove(7);
+    EXPECT_EQ(set2.InSet(7), false);
 }

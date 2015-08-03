@@ -42,6 +42,10 @@ class TestDiamond(unittest.TestCase):
         self.assertTrue(set2.InSet(4))
         self.assertEquals(set(set2.Members()), set((4, 5, 6)))
 
+        set1.Remove(5)
+        self.assertFalse(set2.InSet(5))
+        self.assertEquals(set(set2.Members()), set((4, 6)))
+
 if __name__ == '__main__':
     unittest.main()
                                                                                 
