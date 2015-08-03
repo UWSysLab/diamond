@@ -354,6 +354,19 @@ class TestHandler implements HttpHandler {
 	}
 }
 
+class DebugHandler implements HttpHandler {
+
+	@Override
+	public void handle(HttpExchange exchange) throws IOException {
+		System.out.println(exchange.getRequestURI());
+		String response = "Test response\n";
+		exchange.sendResponseHeaders(200, 0);
+		OutputStream os = exchange.getResponseBody();
+		os.write(response.getBytes());
+		os.close();
+	}
+}
+
 public class Main {
 	public static void writeTestData(JedisTwitter jedisTwitter) {
 		jedisTwitter.addUser("sconnery", "Sean Connery");
@@ -379,6 +392,7 @@ public class Main {
 			writeTestData(jedisTwitter);
 			
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
+			//server.createContext("/", new DebugHandler());
 			server.createContext("/test", new TestHandler());
 			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedisTwitter));
