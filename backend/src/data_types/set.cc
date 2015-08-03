@@ -65,6 +65,8 @@ DSet::Serialize()
 void
 DSet::Deserialize(string &s)
 {
+    _set.clear();
+
     string::size_type lastPos = 0;
     
     string::size_type pos = s.find_first_of("\n", lastPos);
