@@ -127,9 +127,12 @@ class GameTile(gtk.Button):
         elif isinstance(widget, GameLetter):
             self.board.swapTileAndLetter(self, widget)
 
-    def putLetter(self, letter, score):
-        self.setLetterStr(letter)
-        self.setLetterScore(score)
+    def putLetter(self, letter):
+        '''
+        @param letter: Letter object to put on this GameTile
+        '''
+        self.setLetterStr(letter.letter)
+        self.setLetterScore(letter.score)
         self.update_label()
     
     def clear(self):
@@ -492,10 +495,13 @@ class GameLetter(gtk.ToggleButton):
 #         self.setIsBlank(letter.isBlank())
 #         self.set_label(letter)
 
-    def copyLetter(self, letterStr, letterScore):
-        self.letterStr = letterStr
-        self.letterScore = letterScore
-        self.set_label(letterStr, letterScore)
+    def copyLetter(self, letter):
+        '''
+        @letter: Letter object whose letter and score will be copied onto this GameLetter
+        '''
+        self.letterStr = letter.letter
+        self.letterScore = letter.score
+        self.set_label(letter.letter, letter.score)
     
     def dragLetter(self, widget, context, selection, targetType, eventTime):
         '''
