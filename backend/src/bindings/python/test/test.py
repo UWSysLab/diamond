@@ -46,6 +46,26 @@ class TestDiamond(unittest.TestCase):
         self.assertFalse(set2.InSet(5))
         self.assertEquals(set(set2.Members()), set((4, 6)))
 
+    def test_DList(self):
+        list1 = DList()
+        list2 = DList()
+
+        DList.Map(list1, "d")
+        DList.Map(list2, "d")
+
+        list1.Append(1)
+        list1.Append(2)
+        list1.Append(3)
+        list1.Append(2)
+
+        self.assertEquals(list2.Index(2), 1)
+        self.assertEquals(list2.Index(4), -1)
+        self.assertEquals(list2.Value(2), 3)
+
+        list1.Remove(2)
+        self.assertEquals(list2.Index(2), 2)
+        self.assertEquals(list2.Value(1), 3)
+
 if __name__ == '__main__':
     unittest.main()
                                                                                 
