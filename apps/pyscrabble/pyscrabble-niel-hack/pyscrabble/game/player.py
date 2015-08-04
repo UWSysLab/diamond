@@ -2,12 +2,6 @@ import datetime
 import time
 from pyscrabble import constants
 from pyscrabble import util
-from pyscrabble.game.pieces import Letter
-
-import sys
-sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
-sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
-from libpydiamond import *
 
 class User(object):
     '''
@@ -290,18 +284,10 @@ class Player(object):
         @param username: Username of Player
         '''
         
-        #self.username = username
-        #self.score = 0
-        #self.letters = []
-        #self.u_time = None
-        
-        self.letterStrs = DList()
-        self.letterScores = DList()
-        self.score = DLong()
-        
-        DList.Map(self.letterStrs, username + "letterslist")
-        DList.Map(self.letterScores, username + "scoreslist")
-        DLong.Map(self.score, username + "score")
+        self.username = username
+        self.score = 0
+        self.letters = []
+        self.u_time = None
     
     def setInitialTime(self, minutes):
         '''
@@ -344,10 +330,7 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #self.letters.extend( letters )
-        for letter in letters:
-            self.letterStrs.append(letter.getLetter())
-            self.letterScores.append(letter.getScore())
+        self.letters.extend( letters )
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -357,8 +340,7 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #return 7 - len(self.letters)
-        return 7 - len(self.letterStrs)
+        return 7 - len(self.letters)
     
     def removeLetters(self, list):
         '''
@@ -368,14 +350,10 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-#         for letter in list:
-#             if (letter.isBlank()):
-#                 letter.setLetter("")
-#             self.letters.remove( letter )
         for letter in list:
-            index = self.letterStrs.index(letter.getLetter())
-            del self.letterStrs[index]
-            del self.letterScores[index]
+            if (letter.isBlank()):
+                letter.setLetter("")
+            self.letters.remove( letter )
         
     def getLetters(self):
         '''
@@ -384,9 +362,6 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        letters = []
-        for i in range(0, len(self.letterStrs)):
-            letters.append(Letter(self.letterStrs[i], self.letterScores[i])) 
         return self.letters
     
     def reset(self):
@@ -398,9 +373,7 @@ class Player(object):
         '''
         
         self.score = 0
-        #self.letters = []
-        self.letterStrs = []
-        self.letterScores = []
+        self.letters = []
     
     def __eq__(self, other):
         '''
@@ -465,9 +438,7 @@ class Player(object):
         Clear the letters for this Player.
         '''
         
-        #self.letters = []
-        self.letterStrs = []
-        self.letterScores = []
+        self.letters = []
     
     def getTime(self):
         if hasattr(self, 'u_time') and self.u_time is not None:
