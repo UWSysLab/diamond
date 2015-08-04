@@ -92,6 +92,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("InSet", &DSet::InSet)
         .def("Add", Add)
         .def("Remove", &DSet::Remove)
+        .def("Clear", &DSet::Clear)
     ;
 
     struct vector_to_list {
@@ -118,6 +119,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Insert", &DList::Insert)
         .def("Erase", &DList::Erase)
         .def("Remove", &DList::Remove)
+        .def("Clear", &DList::Clear)
     ;
 }
 
