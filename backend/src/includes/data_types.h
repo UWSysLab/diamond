@@ -12,6 +12,7 @@
 
 #include <unordered_set>
 #include <string>
+#include <vector>
 
 namespace diamond {
 
@@ -88,6 +89,30 @@ public:
 private:
     std::string _key;
     std::unordered_set<uint64_t> _set;
+
+    std::string Serialize();
+    void Deserialize(std::string &s);
+};
+
+class DList
+{
+public:
+    DList() {};
+    DList(std::vector<uint64_t> vec, const std::string &key) : _key(key), _vec(vec) {};
+    ~DList() {};
+    static int Map(DList &addr, const std::string &key);
+    std::vector<uint64_t> Members();
+    int Index(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
+    void Append(const uint64_t val);
+    void Append(const std::vector<uint64_t> &vec);
+    void Insert(int index, const uint64_t val);
+    void Erase(int index);
+    void Remove(const uint64_t val); /* Removes the first copy of val, if present */
+    DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
+    
+private:
+    std::string _key;
+    std::vector<uint64_t> _vec;
 
     std::string Serialize();
     void Deserialize(std::string &s);
