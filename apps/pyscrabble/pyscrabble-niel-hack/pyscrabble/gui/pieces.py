@@ -9,6 +9,7 @@ from pyscrabble import util
 
 import sys
 sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
 from libpydiamond import *
 
 # Class representing a Tile on the Gameboard            
