@@ -574,40 +574,38 @@ class GameFrame(gtk.Frame):
         self.onBoard.removeMove( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
-        letterStrA = gTileA.getLetterStr()
-        letterScoreA = gTileA.getLetterScore()
-        letterStrB = gTileB.getLetterStr()
-        letterScoreB = gTileB.getLetterScore()
-        if letterStrA == "":
+        letterA = gTileA.getLetter()
+        letterB = gTileB.getLetter()
+        if letterA.letter == "":
             self.removeMove(gTileB, gTileB.x, gTileB.y)
             gTileB.clear()
         else:
             self.removeMove(gTileA, gTileA.x, gTileA.y)
             self.removeMove(gTileB, gTileB.x, gTileB.y)
-            gTileB.putLetter(letterStrA, letterScoreA)
+            gTileB.putLetter(letterA)
             self.registerMove(gTileB, gTileB.x, gTileB.y)
 
-        gTileA.putLetter(letterStrB, letterScoreB)
+        gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
                 
         print "Debug:"
-        print self.board.onBoard
-        print self.board.letters
+        print self.onBoard
+        print self.letters
     
     def swapTileAndLetter(self, gTile, gLetter):
-        if gTile.getLetterStr() == "":
+        if gTile.getLetter().letter == "":
             self.removeLetter(gLetter.getLetter())
         else:
             self.removeLetter(gLetter.getLetter())
             self.removeMove(gTile, gTile.x, gTile.y)
             self.addLetter(gTile.getLetter())
             
-        gTile.putLetter(gLetter.getLetterStr(), gLetter.getLetterScore())
+        gTile.putLetter(gLetter.getLetter())
         self.registerMove(gTile, gTile.x, gTile.y)
                 
         print "Debug:"
-        print self.board.onBoard
-        print self.board.letters
+        print self.onBoard
+        print self.letters
         
     def putTileOnPlaceholder(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
@@ -615,8 +613,8 @@ class GameFrame(gtk.Frame):
         gTile.clear()
         
         print "Debug:"
-        print self.board.onBoard
-        print self.board.letters
+        print self.onBoard
+        print self.letters
         
     # End added methods
     
@@ -753,59 +751,58 @@ class GameFrame(gtk.Frame):
         print "Requesting Diamond refresh"
         self.client.diamondRequestRefresh(self.currentGameId)
     
-    #TODO: restore the name of this method
     # Callback to send current move
-    def sendCurrentMoveRenamed(self, event = None):
-        '''
-        Send the current move on the board to the server
-        
-        @param event:
-        '''
-        
-        if (self.currentTurn == False):
-            self.error(util.ErrorMessage(_("Its not your turn")))
-            return
-        
-        if (not self.onBoard.isValid()):
-            self.error(util.ErrorMessage(_("Move is invalid")))
-            return
-        
-        # Make sure the board has a letter in the center or one of the tiles in this move does
-        if (self.board.isEmpty()):
-            center = False
-            for letter, x, y in self.onBoard.getTiles():
-                if (x+1,y+1) in CENTER:
-                    center = True
-            if not center:
-                self.error(util.ErrorMessage(_("Move must cover center tile.")))
-                return
-            
-        # Check for blanks
-        for letter,x,y in self.onBoard.getTiles():
-            if (letter.isBlank() and letter.getLetter() ==""):
-                new = self.showBlankLetterDialog()
-                if (new == ""): # new will be blank if the user cancels the dialog
-                    return
-                else:
-                    #print 'Blank set on %s' % str(id(letter))
-                    letter.setLetter( new )
-                    
-                    # We need to check if the board is empty
-                    # If it is, putting a Letter on the board will cause it not to be empty.
-                    # If the board is set as not empty, and its the players firsrt move, the
-                    # game will reject the move because it wont be touching any other tiles
-                    #if self.board.isEmpty():
-                        #self.board.putLetter(letter, x, y)
-                        #self.board.empty = True
-                    #else:
-                        #self.board.putLetter(letter, x, y)
-    
-        try:
-            moves = self.getMoves()
-            self.client.sendMoves( self.currentGameId, moves, self.onBoard )
-            self.okButton.set_sensitive(False)
-        except exceptions.MoveException, inst:
-            self.error(util.ErrorMessage(inst.message))
+#     def sendCurrentMove(self, event = None):
+#         '''
+#         Send the current move on the board to the server
+#         
+#         @param event:
+#         '''
+#         
+#         if (self.currentTurn == False):
+#             self.error(util.ErrorMessage(_("Its not your turn")))
+#             return
+#         
+#         if (not self.onBoard.isValid()):
+#             self.error(util.ErrorMessage(_("Move is invalid")))
+#             return
+#         
+#         # Make sure the board has a letter in the center or one of the tiles in this move does
+#         if (self.board.isEmpty()):
+#             center = False
+#             for letter, x, y in self.onBoard.getTiles():
+#                 if (x+1,y+1) in CENTER:
+#                     center = True
+#             if not center:
+#                 self.error(util.ErrorMessage(_("Move must cover center tile.")))
+#                 return
+#             
+#         # Check for blanks
+#         for letter,x,y in self.onBoard.getTiles():
+#             if (letter.isBlank() and letter.getLetter() ==""):
+#                 new = self.showBlankLetterDialog()
+#                 if (new == ""): # new will be blank if the user cancels the dialog
+#                     return
+#                 else:
+#                     #print 'Blank set on %s' % str(id(letter))
+#                     letter.setLetter( new )
+#                     
+#                     # We need to check if the board is empty
+#                     # If it is, putting a Letter on the board will cause it not to be empty.
+#                     # If the board is set as not empty, and its the players firsrt move, the
+#                     # game will reject the move because it wont be touching any other tiles
+#                     #if self.board.isEmpty():
+#                         #self.board.putLetter(letter, x, y)
+#                         #self.board.empty = True
+#                     #else:
+#                         #self.board.putLetter(letter, x, y)
+#     
+#         try:
+#             moves = self.getMoves()
+#             self.client.sendMoves( self.currentGameId, moves, self.onBoard )
+#             self.okButton.set_sensitive(False)
+#         except exceptions.MoveException, inst:
+#             self.error(util.ErrorMessage(inst.message))
     
     # Button click to pass the move
     def passMove(self, event = None):
