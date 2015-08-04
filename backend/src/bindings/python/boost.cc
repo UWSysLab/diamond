@@ -11,9 +11,6 @@
 #include <string>
 #include <unordered_set>
 #include <boost/python.hpp>
-#include <boost/python/list.hpp>
-#include <boost/python/tuple.hpp>
-#include <boost/python/to_python_converter.hpp>
 
 namespace diamond {
     
@@ -95,6 +92,32 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("InSet", &DSet::InSet)
         .def("Add", Add)
         .def("Remove", &DSet::Remove)
+    ;
+
+    struct vector_to_list {
+        static PyObject * convert(const std::vector<uint64_t> & orig_vec) {
+            boost::python::list result;
+            for (std::vector<uint64_t>::const_iterator it = orig_vec.begin();
+                    it != orig_vec.end(); it++) {
+                result.append(boost::python::object(*it));
+            }
+            return boost::python::incref(result.ptr());
+        }
+    };
+
+    boost::python::to_python_converter<std::vector<uint64_t>, vector_to_list>();
+
+    void (DList::*Append)(const uint64_t) = &DList::Append;
+    class_<DList>("DList")
+        .def("Map", &DList::Map)
+        .staticmethod("Map")
+        .def("Members", &DList::Members)
+        .def("Value", &DList::Value)
+        .def("Index", &DList::Index)
+        .def("Append", Append)
+        .def("Insert", &DList::Insert)
+        .def("Erase", &DList::Erase)
+        .def("Remove", &DList::Remove)
     ;
 }
 
