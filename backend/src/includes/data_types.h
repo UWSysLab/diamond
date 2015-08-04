@@ -102,11 +102,12 @@ public:
     ~DList() {};
     static int Map(DList &addr, const std::string &key);
     std::vector<uint64_t> Members();
+    uint64_t Value(const int index);
     int Index(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
     void Append(const uint64_t val);
     void Append(const std::vector<uint64_t> &vec);
-    void Insert(int index, const uint64_t val);
-    void Erase(int index);
+    void Insert(const int index, const uint64_t val);
+    void Erase(const int index);
     void Remove(const uint64_t val); /* Removes the first copy of val, if present */
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
     

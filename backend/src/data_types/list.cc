@@ -105,6 +105,15 @@ DList::Index(const uint64_t val)
     return -1;
 }
 
+uint64_t
+DList::Value(const int index)
+{
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
+    return _vec.at(index);
+}
+
 void
 DList::Append(const uint64_t val)
 {
@@ -122,13 +131,13 @@ DList::Append(const vector<uint64_t> &vec)
 }
 
 void
-DList::Insert(int index, const uint64_t val) {
+DList::Insert(const int index, const uint64_t val) {
     _vec.insert(index + _vec.begin(), val);
     diamondclient.Write(_key, Serialize());
 }
 
 void
-DList::Erase(int index) {
+DList::Erase(const int index) {
     _vec.erase(index + _vec.begin());
     diamondclient.Write(_key, Serialize());
 }
