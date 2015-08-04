@@ -94,6 +94,8 @@ class GameTile(gtk.Button):
         #print 'dragging tile gameletter %s' % widget.getLetter().getLetter()
         #s = widget.getLetter().getLetter()
         #selection.set(selection.target, 8, '%s:%s:%s' % (s, str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        selection.set(selection.target, 8, '%s:%s:%s' % ("", str(0), "False"))
+
     
     # Callback when a GameLetter is dragged onto this GameTile
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
@@ -511,6 +513,8 @@ class GameLetter(gtk.ToggleButton):
         #print 'dragging GameLetter %s' % widget.getLetterStr()
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
         #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
+        selection.set(selection.target, 8, '%s:%s:%s' % ("", str(0), "False"))
+
 
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
         sourceWidget = context.get_source_widget()
