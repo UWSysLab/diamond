@@ -1,5 +1,6 @@
 import unittest
 import sys
+from libpydiamond import *
     
 class TestDiamond(unittest.TestCase):
 
