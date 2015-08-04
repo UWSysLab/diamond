@@ -109,3 +109,27 @@ TEST(DSet, Map) {
     set1.Remove(7);
     EXPECT_EQ(set2.InSet(7), false);
 }
+
+TEST(DList, Map) {
+    DList list1;
+    DList list2;
+
+    int ret = DList::Map(list1, std::string("14"));
+    list1.Append(4);
+    list1.Append(9);
+
+    ret = DList::Map(list2, std::string("14"));
+
+    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(list2.Index(9), 1);
+    EXPECT_EQ(list2.Value(0), 4);
+
+    list2.Append(9);
+    list2.Append(25);
+
+    EXPECT_EQ(list1.Index(25), 3);
+    EXPECT_EQ(list1.Index(9), 1);
+
+    list1.Remove(9);
+    EXPECT_EQ(list2.Index(25), 2);
+}
