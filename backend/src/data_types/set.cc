@@ -71,7 +71,7 @@ DSet::Deserialize(string &s)
     
     string::size_type pos = s.find_first_of("\n", lastPos);
 
-    while (lastPos != pos) {
+    while (lastPos != pos && pos != std::string::npos) {
         uint64_t i = atol(s.substr(lastPos, pos - lastPos).c_str());
         _set.insert(i);
         
