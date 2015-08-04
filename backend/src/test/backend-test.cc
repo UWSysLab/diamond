@@ -95,6 +95,7 @@ TEST(DSet, Map) {
     DSet set2;
 
     int ret = DSet::Map(set1, std::string("13"));
+    set1.Clear();
     set1.Add(33);
 
     ret = DSet::Map(set2, std::string("13"));
@@ -108,6 +109,9 @@ TEST(DSet, Map) {
 
     set1.Remove(7);
     EXPECT_EQ(set2.InSet(7), false);
+
+    set1.Clear();
+    EXPECT_EQ(set2.Members().size(), 0);
 }
 
 TEST(DList, Map) {
@@ -115,6 +119,7 @@ TEST(DList, Map) {
     DList list2;
 
     int ret = DList::Map(list1, std::string("14"));
+    list1.Clear();
     list1.Append(4);
     list1.Append(9);
 
@@ -132,4 +137,7 @@ TEST(DList, Map) {
 
     list1.Remove(9);
     EXPECT_EQ(list2.Index(25), 2);
+
+    list1.Clear();
+    EXPECT_EQ(list2.Members().size(), 0);
 }
