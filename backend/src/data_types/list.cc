@@ -63,7 +63,7 @@ DList::Serialize()
 }
 
 void
-DSet::Deserialize(string &s)
+DList::Deserialize(string &s)
 {
     _vec.clear();
 
@@ -73,7 +73,7 @@ DSet::Deserialize(string &s)
 
     while (lastPos != pos) {
         uint64_t i = atol(s.substr(lastPos, pos - lastPos).c_str());
-        _vec.insert(i);
+        _vec.push_back(i);
         
         lastPos = s.find_first_not_of("\n", pos);
         // Find next "non-delimiter"
@@ -82,7 +82,7 @@ DSet::Deserialize(string &s)
 
 }
 
-list <uint64_t>
+vector<uint64_t>
 DList::Members()
 {
     string s;
@@ -99,7 +99,7 @@ DList::Index(const uint64_t val)
     Deserialize(s);
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
-            return (it - vec.begin());
+            return (it - _vec.begin());
         }
     }
     return -1;
@@ -144,7 +144,7 @@ DList::Erase(const int index) {
 
 void
 DList::Remove(const uint64_t val) {
-    _vec.erase(Index(val));
+    _vec.erase(Index(val) + _vec.begin());
     diamondclient.Write(_key, Serialize());
 }
 
