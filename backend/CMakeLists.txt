@@ -81,7 +81,8 @@ set(SRC_DIAMOND_DATA_TYPES
     ${DIAMOND_SOURCE_DIR}/data_types/string.cc
     ${DIAMOND_SOURCE_DIR}/data_types/counter.cc
     ${DIAMOND_SOURCE_DIR}/data_types/long.cc
-    ${DIAMOND_SOURCE_DIR}/data_types/set.cc)
+    ${DIAMOND_SOURCE_DIR}/data_types/set.cc
+    ${DIAMOND_SOURCE_DIR}/data_types/list.cc)
 
 # ---------------------------------------------------------
 # Build targets
