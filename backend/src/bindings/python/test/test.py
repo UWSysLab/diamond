@@ -65,7 +65,6 @@ class TestDiamond(unittest.TestCase):
         list1.Append(3)
         list1.Append(2)
 
-        print list2.Members()
         self.assertEquals(list2.Index(2), 1)
         self.assertEquals(list2.Index(4), -1)
         self.assertEquals(list2.Value(2), 3)
