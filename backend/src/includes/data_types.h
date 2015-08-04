@@ -84,6 +84,7 @@ public:
     void Add(const uint64_t val);
     void Add(const std::unordered_set<uint64_t> &set);
     void Remove(const uint64_t val);
+    void Clear();
     DSet & operator=(const std::unordered_set<uint64_t> &set) { Add(set); return *this; };
     
 private:
@@ -109,6 +110,7 @@ public:
     void Insert(const int index, const uint64_t val);
     void Erase(const int index);
     void Remove(const uint64_t val); /* Removes the first copy of val, if present */
+    void Clear();
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
     
 private:

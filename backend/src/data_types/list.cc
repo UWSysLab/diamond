@@ -148,4 +148,10 @@ DList::Remove(const uint64_t val) {
     diamondclient.Write(_key, Serialize());
 }
 
+void
+DList::Clear() {
+    _vec.clear();
+    diamondclient.Write(_key, Serialize());
+}
+
 } // namespace diamond

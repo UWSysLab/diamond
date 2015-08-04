@@ -122,5 +122,12 @@ DSet::Remove(const uint64_t val)
     _set.erase(val);
     diamondclient.Write(_key, Serialize());
 }
+
+void
+DSet::Clear()
+{
+    _set.clear();
+    diamondclient.Write(_key, Serialize());
+}
     
 } // namespace diamond
