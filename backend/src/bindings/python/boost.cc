@@ -95,7 +95,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Clear", &DSet::Clear)
     ;
 
-    struct vector_to_list {
+    struct uint64_vector_to_list {
         static PyObject * convert(const std::vector<uint64_t> & orig_vec) {
             boost::python::list result;
             for (std::vector<uint64_t>::const_iterator it = orig_vec.begin();
@@ -106,7 +106,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         }
     };
 
-    boost::python::to_python_converter<std::vector<uint64_t>, vector_to_list>();
+    boost::python::to_python_converter<std::vector<uint64_t>, uint64_vector_to_list>();
 
     void (DList::*Append)(const uint64_t) = &DList::Append;
     class_<DList>("DList")
@@ -120,6 +120,33 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Erase", &DList::Erase)
         .def("Remove", &DList::Remove)
         .def("Clear", &DList::Clear)
+    ;
+
+    struct string_vector_to_list {
+        static PyObject * convert(const std::vector<std::string> & orig_vec) {
+            boost::python::list result;
+            for (std::vector<std::string>::const_iterator it = orig_vec.begin();
+                    it != orig_vec.end(); it++) {
+                result.append(boost::python::object(*it));
+            }
+            return boost::python::incref(result.ptr());
+        }
+    };
+
+    boost::python::to_python_converter<std::vector<std::string>, string_vector_to_list>();
+
+    void (DStringList::*StringAppend)(const std::string) = &DStringList::Append;
+    class_<DStringList>("DStringList")
+        .def("Map", &DStringList::Map)
+        .staticmethod("Map")
+        .def("Members", &DStringList::Members)
+        .def("Value", &DStringList::Value)
+        .def("Index", &DStringList::Index)
+        .def("Append", StringAppend)
+        .def("Insert", &DStringList::Insert)
+        .def("Erase", &DStringList::Erase)
+        .def("Remove", &DStringList::Remove)
+        .def("Clear", &DStringList::Clear)
     ;
 }
 

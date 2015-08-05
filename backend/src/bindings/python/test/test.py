@@ -77,6 +77,31 @@ class TestDiamond(unittest.TestCase):
         list1.Clear()
         self.assertEquals(len(list2.Members()), 0)
 
+    def test_DStringList(self):
+        list1 = DStringList()
+        list2 = DStringList()
+
+        DStringList.Map(list1, "d")
+        DStringList.Map(list2, "d")
+
+        list1.Clear()
+
+        list1.Append("a")
+        list1.Append("b")
+        list1.Append("c")
+        list1.Append("b")
+
+        self.assertEquals(list2.Index("b"), 1)
+        self.assertEquals(list2.Index("d"), -1)
+        self.assertEquals(list2.Value(2), "c")
+
+        list1.Remove("b")
+        self.assertEquals(list2.Index("b"), 2)
+        self.assertEquals(list2.Value(1), "c")
+
+        list1.Clear()
+        self.assertEquals(len(list2.Members()), 0)
+
 if __name__ == '__main__':
     unittest.main()
                                                                                 
