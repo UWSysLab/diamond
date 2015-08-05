@@ -75,6 +75,7 @@ class GameFrame(gtk.Frame):
         self.username = username
         self.dgame = DScrabbleGame(gameId)
         self.dgame.addPlayer(self.username)
+        print "Debug: " + repr(len(self.dgame.getPlayers()))
         for player in self.dgame.getPlayers():
             print player.getUsername()
         

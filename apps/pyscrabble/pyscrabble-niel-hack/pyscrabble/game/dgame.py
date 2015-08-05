@@ -49,6 +49,8 @@ class DScrabbleGame:
         self.players = DStringList() #Holds username strings
         DStringList.Map(self.players, "game:" + self.name + ":players")
         
+    def resetGame(self):
+        self.players.Clear()
      
     def getDistribution(self):
         '''

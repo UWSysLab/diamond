@@ -354,6 +354,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             game.creator = self.clients[client].getUsername()
             self.gameList[ gameId ] = game
             self.refreshGameList()
+            
+            dgame = DScrabbleGame(gameId)
+            dgame.resetGame()
         else:
             client.showError( ServerMessage([GAME_ALREADY_EXISTS]) )
 
@@ -1049,8 +1052,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.refreshGameList()
         
         dgame = DScrabbleGame(gameId)
-        for player in game.getPlayers():
-            dgame.addPlayer(player.username)
         dgame.start()
         dgame.getNextPlayer()
         self.sendRefreshSignals(gameId)
