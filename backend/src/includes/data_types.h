@@ -121,6 +121,36 @@ private:
     void Deserialize(std::string &s);
 };
 
+//Niel: I needed a List that could hold strings for PyScrabble, so I opted to just copy/paste
+//DList as a quick hack. What is our permanent solution to this problem? A template DList class,
+//or multiple classes for different primitive types?
+
+class DStringList
+{
+public:
+    DStringList() {};
+    DStringList(std::vector<std::string> vec, const std::string &key) : _key(key), _vec(vec) {};
+    ~DStringList() {};
+    static int Map(DStringList &addr, const std::string &key);
+    std::vector<std::string> Members();
+    std::string Value(const int index);
+    int Index(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
+    void Append(const std::string val);
+    void Append(const std::vector<std::string> &vec);
+    void Insert(const int index, const std::string val);
+    void Erase(const int index);
+    void Remove(const std::string val); /* Removes the first copy of val, if present */
+    void Clear();
+    DStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+    
+private:
+    std::string _key;
+    std::vector<std::string> _vec;
+
+    std::string Serialize();
+    void Deserialize(std::string &s);
+};
+
 } // namespace diamond
 
 #endif 
