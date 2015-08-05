@@ -34,10 +34,10 @@ class DPlayer(object):
         self.username = DString()
         
         username = username.encode("utf-8")
-        DList.Map(self.letterStrs, username + "letterslist")
-        DList.Map(self.letterScores, username + "scoreslist")
-        DLong.Map(self.score, username + "score")
-        DString.Map(self.username, username + "username")
+        DList.Map(self.letterStrs, "player:" + username + ":letterslist")
+        DList.Map(self.letterScores, "player:" + username + ":scoreslist")
+        DLong.Map(self.score, "player:" + username + ":score")
+        DString.Map(self.username, "player:" + username + ":username")
         
         self.username.Set(username)
 

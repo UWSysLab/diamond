@@ -1,10 +1,14 @@
 from pyscrabble.game.pieces import Bag
-from pyscrabble.game.dplayer import DPlayer
 from pyscrabble.exceptions import GameOverException, BagEmptyException
 from pyscrabble.constants import *
 from pyscrabble.lookup import *
 from random import shuffle
+from pyscrabble.game.dplayer import DPlayer
 
+import sys
+sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+from libpydiamond import *
 
 class DScrabbleGame:
     '''
@@ -21,7 +25,7 @@ class DScrabbleGame:
         if not options:
             options = {}
          
-        self.players = [] #Now holds Username strings
+        #self.players = []
         self.name = name
         self.started = False
         self.paused = False
@@ -30,17 +34,21 @@ class DScrabbleGame:
         self.words = []
         self.usedModifiers = []
         self.passedMoves = 0
-        self.currentPlayer = "" #Now holds Username string
+        self.currentPlayer = "" #Now holds username string
         self.spectators = []
         self.spectatorChatEnabled = True
         self.log = []
-        self.pending = [] #Now holds Username strings
+        self.pending = [] #Now holds username strings
         self.stats = {}
         self.options = options
         self.bag = Bag( "en" )
         self.creator = None
         self.timer = None
         self.spectatorsAllowed = True
+        
+        self.players = DStringList() #Holds username strings
+        DStringList.Map(self.players, "game:" + self.name + ":players")
+        
      
     def getDistribution(self):
         '''
@@ -102,7 +110,7 @@ class DScrabbleGame:
         @param username: Username of player to add to the game
         '''
         
-        self.players.append( username )
+        self.players.Append( username )
     
     def getGameId(self):
         '''
@@ -120,7 +128,7 @@ class DScrabbleGame:
         @return: Number of players in the game
         '''
         
-        return len(self.players)
+        return len(self.players.Members())
     
     def isStarted(self):
         '''
@@ -150,7 +158,8 @@ class DScrabbleGame:
         
         self.started = True
         
-        shuffle(self.players)
+        #TODO: figure out how to shuffle DList
+        #shuffle(self.players)
     
     def getCurrentPlayer(self):
         '''
@@ -170,11 +179,12 @@ class DScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        if (len(self.players) == 0):
+        if (len(self.players.Members()) == 0):
             return None
         
-        self.currentPlayer = self.players.pop(0)
-        self.players.append(self.currentPlayer)
+        self.currentPlayer = self.players.Value(0)
+        self.players.Erase(0)
+        self.players.Append(self.currentPlayer)
         return DPlayer(self.currentPlayer)
     
     def getPlayers(self):
@@ -187,7 +197,7 @@ class DScrabbleGame:
         
         #return self.players[:]
         result = []
-        for username in self.players:
+        for username in self.players.Members():
             result.append(DPlayer(username))
         return result
     
@@ -199,7 +209,7 @@ class DScrabbleGame:
         @return: True if player with the given username is in the game
         '''
         
-        return username in self.players
+        return (self.players.Index(username) >= 0)
     
     def playerLeave(self, username):
         '''
@@ -209,7 +219,7 @@ class DScrabbleGame:
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        self.players.remove(username)
+        self.players.Remove(username)
         self.returnLetters( DPlayer(username).getLetters() )
     
     def addMoves(self, moves, player):
@@ -308,7 +318,7 @@ class DScrabbleGame:
         '''
         
         self.passedMoves = self.passedMoves + 1
-        if (self.passedMoves == len(self.players)):
+        if (self.passedMoves == len(self.players.Members())):
             raise GameOverException
     
     def getWinners(self, exclude=None):
@@ -320,7 +330,7 @@ class DScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        tmp = self.players[:]
+        tmp = self.players.Members()[:]
         
         if exclude is not None:
             tmp.remove(exclude)
@@ -343,12 +353,12 @@ class DScrabbleGame:
         
         self.paused = True
         
-        self.players.remove( self.currentPlayer )
-        self.players.insert(0, self.currentPlayer )
+        self.players.Remove( self.currentPlayer )
+        self.players.Insert(0, self.currentPlayer )
         
-        for player in self.players:
+        for player in self.players.Members():
             if player not in self.pending:
-                self.pending.append( player )
+                self.pending.Append( player )
         
     
     def unPause(self):
