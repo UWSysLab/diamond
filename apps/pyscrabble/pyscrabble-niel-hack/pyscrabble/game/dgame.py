@@ -20,7 +20,7 @@ class DScrabbleGame:
         
         if not options:
             options = {}
-        
+         
         self.players = [] #Now holds Username strings
         self.name = name
         self.started = False
@@ -37,11 +37,11 @@ class DScrabbleGame:
         self.pending = [] #Now holds Username strings
         self.stats = {}
         self.options = options
-        self.bag = Bag( rules=options[OPTION_RULES] )
+        self.bag = Bag( "en" )
         self.creator = None
         self.timer = None
         self.spectatorsAllowed = True
-    
+     
     def getDistribution(self):
         '''
         Get Letter distribution

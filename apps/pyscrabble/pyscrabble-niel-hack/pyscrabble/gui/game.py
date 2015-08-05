@@ -13,6 +13,8 @@ try:
     set
 except NameError:
     from sets import Set as set
+    
+from pyscrabble.game.dgame import *
 
 
 class GameFrame(gtk.Frame):
@@ -29,7 +31,7 @@ class GameFrame(gtk.Frame):
     '''
     
     
-    def __init__(self, client, main, gameId, spectating, options):
+    def __init__(self, client, main, gameId, spectating, options, username):
         '''
         Initialize the game frame
         
@@ -38,6 +40,7 @@ class GameFrame(gtk.Frame):
         @param gameId: Game ID
         @param spectating: True if the user is spectating
         @param options: Game options
+        @param username: client user name
         '''
         
         gtk.Frame.__init__(self)
@@ -69,6 +72,12 @@ class GameFrame(gtk.Frame):
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
         
+        self.username = username
+        self.dgame = DScrabbleGame(gameId)
+        self.dgame.addPlayer(self.username)
+        for player in self.dgame.getPlayers():
+            print player.getUsername()
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -81,6 +90,10 @@ class GameFrame(gtk.Frame):
     
     def doDiamondRefresh(self):
         print "Got Diamond refresh command!"
+        
+        # Update current turn
+        
+        # Refresh tile values
         for tile in self.board.tiles.values():
             tile.update_label()
         self.show_all()

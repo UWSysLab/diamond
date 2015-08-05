@@ -23,6 +23,8 @@ try:
     set
 except NameError:
     from sets import Set as set
+    
+from pyscrabble.game.dgame import *
 
 logger = logging.getLogger("pyscrabble.net.server")
 
@@ -1045,6 +1047,13 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         self.doGameTurn( gameId )
         self.refreshGameList()
+        
+        dgame = DScrabbleGame(gameId)
+        for player in game.getPlayers():
+            dgame.addPlayer(player.username)
+        dgame.start()
+        dgame.getNextPlayer()
+        self.sendRefreshSignals(gameId)
 
     # Turn gameplayer over to the next player and notify other players of whose turn it is
     def doGameTurn(self, gameId, wasUnpaused=False ):
