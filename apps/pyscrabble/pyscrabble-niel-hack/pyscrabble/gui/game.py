@@ -75,9 +75,6 @@ class GameFrame(gtk.Frame):
         self.username = username
         self.dgame = DScrabbleGame(gameId)
         self.dgame.addPlayer(self.username)
-        print "Debug: " + repr(len(self.dgame.getPlayers()))
-        for player in self.dgame.getPlayers():
-            print player.getUsername()
         
         self.set_border_width( 10 )
         self.add( main )
@@ -93,6 +90,13 @@ class GameFrame(gtk.Frame):
         print "Got Diamond refresh command!"
         
         # Update current turn
+        currentPlayer = self.dgame.getCurrentPlayer()
+        print "current player: " + currentPlayer.getUsername()
+        print "me: " + self.username
+        if currentPlayer.getUsername() == self.username:
+            self.setCurrentTurn(1000000)
+        else:
+            self.otherTurn(currentPlayer)
         
         # Refresh tile values
         for tile in self.board.tiles.values():
@@ -763,6 +767,7 @@ class GameFrame(gtk.Frame):
     
     def sendCurrentMove(self, event = None):
         print "Requesting Diamond refresh"
+        self.dgame.getNextPlayer()
         self.client.diamondRequestRefresh(self.currentGameId)
     
     # Callback to send current move
@@ -1259,20 +1264,20 @@ class GameFrame(gtk.Frame):
         #self.clearCurrentMove()
         #TODO: temp hack
         
-        if player is not None:
-            sel = self.userView.get_selection()
-            model = self.userView.get_model()
-            
-            it = model.get_iter_first()
-            while ( it != None ):
-                name = model.get_value(it, 0)
-                if (name == player.name):
-                    if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
-                        path = model.get_path(it)
-                        self.gameTimer = reactor.callLater(0, self.decreaseTime, player.time, model,path)
-                    #sel.select_iter(it)
-                    break
-                it = model.iter_next(it)
+#         if player is not None:
+#             sel = self.userView.get_selection()
+#             model = self.userView.get_model()
+#             
+#             it = model.get_iter_first()
+#             while ( it != None ):
+#                 name = model.get_value(it, 0)
+#                 if (name == player.name):
+#                     if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
+#                         path = model.get_path(it)
+#                         self.gameTimer = reactor.callLater(0, self.decreaseTime, player.time, model,path)
+#                     #sel.select_iter(it)
+#                     break
+#                 it = model.iter_next(it)
     
     # Apply moves to board
     def applyMoves(self, moves):

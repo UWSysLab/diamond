@@ -149,7 +149,7 @@ class DPlayer(object):
         @return: True if this Player equals C{other}
         '''
         
-        if (isinstance(other, Player)):
+        if (isinstance(other, DPlayer)):
             return self.username.Value() == other.username.Value()
         return False
     
@@ -161,7 +161,7 @@ class DPlayer(object):
         @return: True if this Player < C{Other}
         '''
         
-        if (isinstance(other, Player)):
+        if (isinstance(other, DPlayer)):
             return self.score.Value() < other.score.Value()
         return False
     
@@ -173,7 +173,7 @@ class DPlayer(object):
         @return: True if this Player > C{Other}
         '''
         
-        if (isinstance(other, Player)):
+        if (isinstance(other, DPlayer)):
             return self.score.Value() > other.score.Value()
         return False
     
@@ -197,7 +197,7 @@ class DPlayer(object):
         @return: Cloned Player.
         '''
         
-        return Player(username=self.username.Value())
+        return DPlayer(username=self.username.Value())
     
     def clearLetters(self):
         '''

@@ -34,7 +34,7 @@ class DScrabbleGame:
         self.words = []
         self.usedModifiers = []
         self.passedMoves = 0
-        self.currentPlayer = "" #Now holds username string
+        #self.currentPlayer = ""
         self.spectators = []
         self.spectatorChatEnabled = True
         self.log = []
@@ -46,8 +46,11 @@ class DScrabbleGame:
         self.timer = None
         self.spectatorsAllowed = True
         
-        self.players = DStringList() #Holds username strings
+        self.players = DStringList()
+        self.currentPlayer = DString()
+        
         DStringList.Map(self.players, "game:" + self.name + ":players")
+        DString.Map(self.currentPlayer, "game:" + self.name + ":currentplayer")
         
     def resetGame(self):
         self.players.Clear()
@@ -170,7 +173,7 @@ class DScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return DPlayer(self.currentPlayer)
+        return DPlayer(self.currentPlayer.Value())
         
     
     def getNextPlayer(self):
@@ -184,10 +187,10 @@ class DScrabbleGame:
         if (len(self.players.Members()) == 0):
             return None
         
-        self.currentPlayer = self.players.Value(0)
+        self.currentPlayer.Set(self.players.Value(0))
         self.players.Erase(0)
-        self.players.Append(self.currentPlayer)
-        return DPlayer(self.currentPlayer)
+        self.players.Append(self.currentPlayer.Value())
+        return DPlayer(self.currentPlayer.Value())
     
     def getPlayers(self):
         '''
@@ -355,8 +358,8 @@ class DScrabbleGame:
         
         self.paused = True
         
-        self.players.Remove( self.currentPlayer )
-        self.players.Insert(0, self.currentPlayer )
+        self.players.Remove( self.currentPlayer.Value() )
+        self.players.Insert(0, self.currentPlayer.Value() )
         
         for player in self.players.Members():
             if player not in self.pending:
@@ -414,14 +417,14 @@ class DScrabbleGame:
                 return DPlayer(_username)
         return None
     
-    def isCurrentPlayer(self, player):
-        '''
-        Check to see if C{player} is the current player
-        
-        @param player: Player to checl
-        @return: True if C{player} is the current player.
-        '''
-        return self.currentPlayer == player
+#     def isCurrentPlayer(self, player):
+#         '''
+#         Check to see if C{player} is the current player
+#         
+#         @param player: Player to checl
+#         @return: True if C{player} is the current player.
+#         '''
+#         return self.currentPlayer == player
     
     def addSpectator(self, spectator):
         '''
