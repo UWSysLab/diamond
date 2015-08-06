@@ -34,7 +34,7 @@ class DScrabbleGame:
         self.complete = False
         self.moves = []
         self.words = []
-        self.usedModifiers = []
+        #self.usedModifiers = []
         self.passedMoves = 0
         #self.currentPlayer = ""
         self.spectators = []
@@ -51,11 +51,16 @@ class DScrabbleGame:
         self.players = DStringList()
         self.currentPlayer = DString()
         self.turnNumber = DCounter()
+        self.usedModifiersX = DList()
+        self.usedModifiersY = DList()
         
         keyPrefix = "game:" + self.name
         DStringList.Map(self.players, keyPrefix + ":players")
         DString.Map(self.currentPlayer, keyPrefix + ":currentplayer")
         DCounter.Map(self.turnNumber, keyPrefix + ":turnnumber")
+        DList.Map(self.usedModifiersX, keyPrefix + ":usedmodifiersx")
+        DList.Map(self.usedModifiersY, keyPrefix + ":usedmodifiersy")
+
         
     def resetGame(self):
         self.players.Clear()
@@ -91,7 +96,8 @@ class DScrabbleGame:
         
         @param pos: (x,y) position
         '''
-        self.usedModifiers.append(pos)
+        self.usedModifiersX.Append(pos[0])
+        self.usedModifiersY.Append(pos[1])
     
     def hasUsedModifier(self, pos):
         '''
@@ -99,8 +105,10 @@ class DScrabbleGame:
         
         @param pos: (x,y) position
         '''
-        
-        return pos in self.usedModifiers;
+        for i in range(0, len(self.usedModifiersX.Members())):
+            if pos[0] == self.usedModifiersX[i] and pos[1] == self.usedModifiersY[i]:
+                return True
+        return False
         
     
     def getLetters(self, numLetters):
@@ -637,8 +645,9 @@ class DScrabbleGame:
             if modifier in constants.WORD_MODIFIERS and not self.hasUsedModifier((m_x,m_y)):
                 
                 if util.isCenter(m_x, m_y):
-                    if self.options[OPTION_CENTER_TILE]:
-                        score = score * (modifier/2)
+#                     if self.options[OPTION_CENTER_TILE]:
+#                         score = score * (modifier/2)
+                    score = score * (modifier/2)
                 else:
                     score = score * ((modifier/2) ** apply)
                 

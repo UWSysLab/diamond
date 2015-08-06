@@ -834,7 +834,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if x == _x:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetterStr() != None:
+                    if self.tiles[(x, y)].getLetter().letter != "":
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -851,7 +851,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if y == _y:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetterStr() != None:
+                    if self.tiles[(x, y)].getLetter().letter != "":
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -881,7 +881,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x+1, y))):
-            if self.tiles[(x+1, y)].getLetterStr() != "":
+            if self.tiles[(x+1, y)].getLetter().letter != "":
                 return True
         return False
     
@@ -895,7 +895,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y+1))):
-            if self.tiles[(x, y+1)].getLetterStr() != "":
+            if self.tiles[(x, y+1)].getLetter().letter != "":
                 return True
         return False
     
@@ -937,7 +937,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x-1, y))):
-            if self.tiles[(x-1, y)].getLetterStr() != "":
+            if self.tiles[(x-1, y)].getLetter().letter != "":
                 return True
         return False
     
@@ -951,7 +951,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y-1))):
-            if self.tiles[(x, y-1)].getLetterStr() != "":
+            if self.tiles[(x, y-1)].getLetter().letter != "":
                 return True
         return False
     
@@ -1002,20 +1002,20 @@ class GameBoard(gtk.Table):
         
         h = Move()
         v = Move()
-        h.addMove( Letter(self.get(x,y).getLetterStr(), self.get(x,y).getLetterScore()), x, y)
-        v.addMove( Letter(self.get(x,y).getLetterStr(), self.get(x,y).getLetterScore()), x, y)
+        h.addMove( self.get(x,y).getLetter(), x, y)
+        v.addMove( self.get(x,y).getLetter(), x, y)
         
         _x = x
         _y = y
         while self.hasNextHorizontalLetter(_x, _y):
             item, _x, _y = self.getNextHorizontalLetter(_x, _y)
-            h.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
+            h.addMove(item.getLetter(), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousHorizontalLetter(_x, _y):
             item, _x, _y = self.getPreviousHorizontalLetter(_x, _y)
-            h.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
+            h.addMove(item.getLetter(), _x, _y)
         
         h.sort()
         if h.length() > 1:
@@ -1026,13 +1026,13 @@ class GameBoard(gtk.Table):
         _y = y
         while self.hasNextVerticalLetter(_x, _y):
             item, _x, _y = self.getNextVerticalLetter(_x, _y)
-            v.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
+            v.addMove(item.getLetter(), _x, _y)
         
         _x = x
         _y = y
         while self.hasPreviousVerticalLetter(_x, _y):
             item, _x, _y = self.getPreviousVerticalLetter(_x, _y)
-            v.addMove(Letter(item.getLetterStr(), item.getLetterScore()), _x, _y)
+            v.addMove(item.getLetter(), _x, _y)
         
         v.sort()
         if v.length() > 1:
