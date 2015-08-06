@@ -116,6 +116,8 @@ class DScrabbleGame:
         '''
         
         self.players.Append( username )
+        player = DPlayer(username)
+        player.reset()
     
     def getGameId(self):
         '''

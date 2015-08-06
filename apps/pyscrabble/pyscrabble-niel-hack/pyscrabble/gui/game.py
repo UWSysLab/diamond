@@ -97,6 +97,9 @@ class GameFrame(gtk.Frame):
             self.setCurrentTurn(1000000)
         else:
             self.otherTurn(currentPlayer)
+            
+        # Update scores
+        self.refreshUserList()
         
         # Refresh tile values
         for tile in self.board.tiles.values():
@@ -1081,19 +1084,28 @@ class GameFrame(gtk.Frame):
             self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
             self.letterBox.show_all()
     
-    def refreshUserList(self, users):
+#     def refreshUserList(self, users):
+#         '''
+#         Show users in the User Window
+#         
+#         @param users: List of Players
+#         '''
+#         
+#         if self.gameTimer is not None and self.gameTimer.active():
+#             self.gameTimer.cancel()
+#         
+#         self.userList.clear()
+#         for player in users:
+#             self.userList.append( (player.name, str(player.score), player.time, str(player.numLetters) ) )
+            
+    def refreshUserList(self, users=None):
         '''
         Show users in the User Window
-        
-        @param users: List of Players
         '''
-        
-        if self.gameTimer is not None and self.gameTimer.active():
-            self.gameTimer.cancel()
-        
+
         self.userList.clear()
-        for player in users:
-            self.userList.append( (player.name, str(player.score), player.time, str(player.numLetters) ) )
+        for player in self.dgame.getPlayers():
+            self.userList.append( (player.getUsername(), str(player.getScore()), 1000000, str(len(player.getLetters())) ) )
     
     def refreshStats(self, stats):
         '''

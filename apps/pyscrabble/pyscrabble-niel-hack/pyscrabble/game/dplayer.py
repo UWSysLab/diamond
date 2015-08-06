@@ -85,8 +85,8 @@ class DPlayer(object):
         
         #self.letters.extend( letters )
         for letter in letters:
-            self.letterStrs.append(letter.getLetter())
-            self.letterScores.append(letter.getScore())
+            self.letterStrs.Append(letter.getLetter())
+            self.letterScores.Append(letter.getScore())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -97,7 +97,7 @@ class DPlayer(object):
         '''
         
         #return 7 - len(self.letters)
-        return 7 - len(self.letterStrs)
+        return 7 - len(self.letterStrs.Members())
     
     def removeLetters(self, list):
         '''
@@ -112,9 +112,9 @@ class DPlayer(object):
 #                 letter.setLetter("")
 #             self.letters.remove( letter )
         for letter in list:
-            index = self.letterStrs.index(letter.getLetter())
-            del self.letterStrs[index]
-            del self.letterScores[index]
+            index = self.letterStrs.Index(letter.getLetter())
+            self.letterStrs.Erase(index)
+            self.letterScores.Erase(index)
         
     def getLetters(self):
         '''
@@ -124,9 +124,9 @@ class DPlayer(object):
         '''
         
         letters = []
-        for i in range(0, len(self.letterStrs)):
-            letters.append(Letter(self.letterStrs[i], self.letterScores[i])) 
-        return self.letters
+        for i in range(0, len(self.letterStrs.Members())):
+            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
+        return letters
     
     def reset(self):
         '''
