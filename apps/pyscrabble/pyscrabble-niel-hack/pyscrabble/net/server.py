@@ -1053,6 +1053,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         dgame = DScrabbleGame(gameId)
         dgame.start()
+        for player in dgame.getPlayers():
+            letters = dgame.getLetters(player.getNumberOfLettersNeeded())
+            player.addLetters(letters)
         dgame.getNextPlayer()
         self.sendRefreshSignals(gameId)
 

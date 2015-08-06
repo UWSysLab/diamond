@@ -1,4 +1,4 @@
-from pyscrabble.game.pieces import Bag
+from pyscrabble.game.pieces import Bag, Letter
 from pyscrabble.exceptions import GameOverException, BagEmptyException
 from pyscrabble.constants import *
 from pyscrabble.lookup import *
@@ -123,7 +123,8 @@ class DScrabbleGame:
         '''
         
         try:
-            return self.bag.getLetters( numLetters )
+            #return self.bag.getLetters( numLetters )
+            return [Letter("A", 10), Letter("B", 2)]
         except BagEmptyException: pass
         
         return []

@@ -105,6 +105,11 @@ class GameFrame(gtk.Frame):
         for tile in self.board.tiles.values():
             tile.update_label()
         self.show_all()
+        
+        # Refresh letters in letter box
+        clientPlayer = DPlayer(self.username)
+        self.letters = clientPlayer.getLetters()
+        self.showLetters(self.letters)
     
     ### UI Creation ####
         
@@ -769,13 +774,19 @@ class GameFrame(gtk.Frame):
         self.board.show_all()
     
     def sendCurrentMove(self, event = None):
-        print "Requesting Diamond refresh"
         moves = self.getMoves()     
         score = self.dgame.getMovesScore(moves)
         self.dgame.removeModifiers(moves)
         currentPlayer = self.dgame.getCurrentPlayer()
         currentPlayer.addScore(score)
         
+        letters = self.getLettersFromMove(self.onBoard)
+        currentPlayer.removeLetters(letters)
+        
+        newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
+        if (len(newLetters) > 0):
+            currentPlayer.addLetters(newLetters)
+                
         self.onBoard.clear()
         
         self.dgame.getNextPlayer()
@@ -1614,3 +1625,17 @@ class GameFrame(gtk.Frame):
         '''
         return self.gameOptions[opt]
         
+    def getLettersFromMove(self, move):
+        '''
+        Get the letters in a move
+        
+        @param move: Move
+        @return: List of letters in C{move}
+        '''
+        
+        letters = []
+        
+        for letter, x, y in move.getTiles():
+            letters.append( letter.clone() )
+
+        return letters

@@ -28,13 +28,13 @@ class DPlayer(object):
         #self.letters = []
         #self.u_time = None
         
-        self.letterStrs = DList()
+        self.letterStrs = DStringList()
         self.letterScores = DList()
         self.score = DLong()
         self.username = DString()
         
         username = username.encode("utf-8")
-        DList.Map(self.letterStrs, "player:" + username + ":letterslist")
+        DStringList.Map(self.letterStrs, "player:" + username + ":letterslist")
         DList.Map(self.letterScores, "player:" + username + ":scoreslist")
         DLong.Map(self.score, "player:" + username + ":score")
         DString.Map(self.username, "player:" + username + ":username")
