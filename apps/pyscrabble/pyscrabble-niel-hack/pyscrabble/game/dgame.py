@@ -4,6 +4,8 @@ from pyscrabble.constants import *
 from pyscrabble.lookup import *
 from random import shuffle
 from pyscrabble.game.dplayer import DPlayer
+from pyscrabble import util
+from pyscrabble import constants
 
 import sys
 sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
@@ -48,12 +50,20 @@ class DScrabbleGame:
         
         self.players = DStringList()
         self.currentPlayer = DString()
+        self.turnNumber = DCounter()
         
-        DStringList.Map(self.players, "game:" + self.name + ":players")
-        DString.Map(self.currentPlayer, "game:" + self.name + ":currentplayer")
+        keyPrefix = "game:" + self.name
+        DStringList.Map(self.players, keyPrefix + ":players")
+        DString.Map(self.currentPlayer, keyPrefix + ":currentplayer")
+        DCounter.Map(self.turnNumber, keyPrefix + ":turnnumber")
         
     def resetGame(self):
         self.players.Clear()
+        self.currentPlayer.Set("")
+        self.turnNumber.Set(0)
+        
+    def getTurnNumber(self):
+        return self.turnNumber.Value()
      
     def getDistribution(self):
         '''
@@ -192,6 +202,7 @@ class DScrabbleGame:
         self.currentPlayer.Set(self.players.Value(0))
         self.players.Erase(0)
         self.players.Append(self.currentPlayer.Value())
+        self.turnNumber.Set(self.turnNumber.Value() + 1)
         return DPlayer(self.currentPlayer.Value())
     
     def getPlayers(self):
@@ -589,4 +600,49 @@ class DScrabbleGame:
         
         @return: Count of letters left in bag
         '''
-        return self.bag.getCount()    
+        return self.bag.getCount()
+   
+    
+    def getMovesScore(self, moves):
+        '''
+        Get the total score for a list of Moves
+        
+        @param game: ScrabbleGame
+        @param moves: List of Moves
+        @return: Total score for the list of Moves
+        '''
+        
+        total = 0
+        
+        for move in moves:
+            score = 0
+            apply = 0
+            modifier = constants.TILE_NORMAL
+            m_x = -1
+            m_y = -1
+            for letter,x,y in move.getTiles():
+                m = util.getTileModifier(x,y)
+                if m in constants.LETTER_MODIFIERS and not self.hasUsedModifier((x,y)):
+                    score = score + (m * letter.getScore())
+                else:
+                    score = score + letter.getScore()
+    
+                if (m >= modifier and not self.hasUsedModifier((x,y))):
+                    modifier = m
+                    if m in constants.WORD_MODIFIERS:
+                        apply = apply + 1
+                    m_x = x
+                    m_y = y
+
+            if modifier in constants.WORD_MODIFIERS and not self.hasUsedModifier((m_x,m_y)):
+                
+                if util.isCenter(m_x, m_y):
+                    if self.options[OPTION_CENTER_TILE]:
+                        score = score * (modifier/2)
+                else:
+                    score = score * ((modifier/2) ** apply)
+                
+            move.setScore( score )
+            total = total + score
+        
+        return total

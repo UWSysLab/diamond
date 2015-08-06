@@ -770,6 +770,13 @@ class GameFrame(gtk.Frame):
     
     def sendCurrentMove(self, event = None):
         print "Requesting Diamond refresh"
+        moves = self.getMoves()
+        score = self.dgame.getMovesScore(moves)
+        currentPlayer = self.dgame.getCurrentPlayer()
+        currentPlayer.addScore(score)
+        
+        self.onBoard.clear()
+        
         self.dgame.getNextPlayer()
         self.client.diamondRequestRefresh(self.currentGameId)
     
@@ -925,7 +932,7 @@ class GameFrame(gtk.Frame):
                 raise exceptions.TilesNotConnectedException
         
         # Make sure that every move is touching the board
-        if not self.board.isEmpty():
+        if not self.board.isEmpty() and self.dgame.getTurnNumber() > 1:
             for m in moves:
                 if not self.board.moveTouching(m, self.onBoard):
                     raise exceptions.MoveNotTouchingException

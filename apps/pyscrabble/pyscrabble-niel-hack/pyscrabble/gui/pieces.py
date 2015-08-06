@@ -814,7 +814,13 @@ class GameBoard(gtk.Table):
         
         @return: True if the board is empty
         '''
-        return self.empty
+#        return self.empty
+        for gTile in self.tiles.values():
+            if gTile.getLetter().letter != "":
+                return False
+            else:
+                print gTile.getLetter().letter
+        return True
     
     def getTilesAtX(self, _x):
         '''
