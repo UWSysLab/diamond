@@ -770,14 +770,9 @@ class GameFrame(gtk.Frame):
     
     def sendCurrentMove(self, event = None):
         print "Requesting Diamond refresh"
-        moves = self.getMoves()
-        
-        print "Debug: " + repr(len(moves))
-        for m in moves:
-            print "Move: " + repr(len(m.getTiles()))
-            print m
-        
+        moves = self.getMoves()     
         score = self.dgame.getMovesScore(moves)
+        self.dgame.removeModifiers(moves)
         currentPlayer = self.dgame.getCurrentPlayer()
         currentPlayer.addScore(score)
         

@@ -66,6 +66,8 @@ class DScrabbleGame:
         self.players.Clear()
         self.currentPlayer.Set("")
         self.turnNumber.Set(0)
+        self.usedModifiersX.Clear()
+        self.usedModifiersY.Clear()
         
     def getTurnNumber(self):
         return self.turnNumber.Value()
@@ -106,7 +108,7 @@ class DScrabbleGame:
         @param pos: (x,y) position
         '''
         for i in range(0, len(self.usedModifiersX.Members())):
-            if pos[0] == self.usedModifiersX[i] and pos[1] == self.usedModifiersY[i]:
+            if pos[0] == self.usedModifiersX.Value(i) and pos[1] == self.usedModifiersY.Value(i):
                 return True
         return False
         
@@ -655,3 +657,17 @@ class DScrabbleGame:
             total = total + score
         
         return total
+
+    def removeModifiers(self, moves):
+        '''
+        Mark off modifiers that are used in this move
+        
+        @param moves: List of moves
+        '''
+        for move in moves:
+            for letter,x,y in move.getTiles():
+                m = util.getTileModifier(x,y)
+                if m in constants.LETTER_MODIFIERS and not self.hasUsedModifier((x,y)):
+                    self.addUsedModifier( (x,y) )
+                if m in constants.WORD_MODIFIERS and not self.hasUsedModifier((x,y)):
+                    self.addUsedModifier( (x,y) )
