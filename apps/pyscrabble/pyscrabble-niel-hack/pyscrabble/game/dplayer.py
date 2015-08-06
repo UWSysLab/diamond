@@ -31,16 +31,13 @@ class DPlayer(object):
         self.letterStrs = DStringList()
         self.letterScores = DList()
         self.score = DLong()
-        self.username = DString()
         
         username = username.encode("utf-8")
+        self.username = username
+        
         DStringList.Map(self.letterStrs, "player:" + username + ":letterslist")
         DList.Map(self.letterScores, "player:" + username + ":scoreslist")
         DLong.Map(self.score, "player:" + username + ":score")
-        DString.Map(self.username, "player:" + username + ":username")
-        
-        self.username.Set(username)
-
     
     def setInitialTime(self, minutes):
         '''
@@ -73,7 +70,7 @@ class DPlayer(object):
         @return: Player's username
         '''
         
-        return util.getUnicode(self.username.Value())
+        return util.getUnicode(self.username)
         
     def addLetters(self, letters):
         '''
