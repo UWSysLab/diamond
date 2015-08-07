@@ -112,7 +112,7 @@ class GameTile(gtk.Button):
         @param targetType:
         @param eventType:
         '''
-        print 'letterDragged called in tile %d,%d' % (self.x,self.y)      
+        #print 'letterDragged called in tile %d,%d' % (self.x,self.y)      
         
         c = context.get_source_widget()
         if c == self: # Ignore if we drag onto ourselves

@@ -645,10 +645,6 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
-                
-        print "Debug:"
-        print self.onBoard
-        print self.letters
     
     def swapTileAndLetter(self, gTile, gLetter):
         if gTile.getLetter().letter == "":
@@ -660,19 +656,11 @@ class GameFrame(gtk.Frame):
             
         gTile.putLetter(gLetter.getLetter())
         self.registerMove(gTile, gTile.x, gTile.y)
-                
-        print "Debug:"
-        print self.onBoard
-        print self.letters
         
     def putTileOnPlaceholder(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
-        
-        print "Debug:"
-        print self.onBoard
-        print self.letters
         
     # End added methods
     
