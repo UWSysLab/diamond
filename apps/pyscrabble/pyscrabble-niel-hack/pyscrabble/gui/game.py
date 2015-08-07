@@ -108,7 +108,7 @@ class GameFrame(gtk.Frame):
         self.show_all()
         
         # Refresh letters in letter box
-        clientPlayer = DPlayer(self.username)
+        clientPlayer = self.dgame.getPlayer(self.username)
         self.letters = clientPlayer.getLetters()
         self.showLetters(self.letters)
     

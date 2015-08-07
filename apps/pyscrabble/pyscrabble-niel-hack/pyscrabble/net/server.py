@@ -1053,7 +1053,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         dgame = DScrabbleGame(gameId)
         dgame.start()
         for player in dgame.getPlayers():
-            player.reset()
             letters = dgame.getLetters(player.getNumberOfLettersNeeded())
             player.addLetters(letters)
         dgame.getNextPlayer()
