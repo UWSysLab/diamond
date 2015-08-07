@@ -132,8 +132,6 @@ class GameFrame(gtk.Frame):
             x = set( l )
             
             self.dict = self.dict.union(x)
-        
-        print "Debug: dict has " + repr(len(self.dict)) + " members!"
     
     ### UI Creation ####
         
