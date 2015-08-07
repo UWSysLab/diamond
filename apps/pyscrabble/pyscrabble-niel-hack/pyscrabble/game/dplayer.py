@@ -16,7 +16,7 @@ class DPlayer(object):
     A Player in the game.
     '''
     
-    def __init__(self, username=''):
+    def __init__(self, username='', gameId = ''):
         '''
         Initialize the player
         
@@ -34,10 +34,12 @@ class DPlayer(object):
         
         username = username.encode("utf-8")
         self.username = username
+        self.gameId = gameId
         
-        DStringList.Map(self.letterStrs, "player:" + username + ":letterslist")
-        DList.Map(self.letterScores, "player:" + username + ":scoreslist")
-        DLong.Map(self.score, "player:" + username + ":score")
+        keyPrefix = "game:" + self.gameId + ":player:" + self.username
+        DStringList.Map(self.letterStrs, keyPrefix + ":letterslist")
+        DList.Map(self.letterScores, keyPrefix + ":scoreslist")
+        DLong.Map(self.score, keyPrefix + ":score")
     
     def setInitialTime(self, minutes):
         '''

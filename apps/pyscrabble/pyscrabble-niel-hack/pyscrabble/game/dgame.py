@@ -141,7 +141,7 @@ class DScrabbleGame:
         '''
         
         self.players.Append( username )
-        player = DPlayer(username)
+        player = DPlayer(username, self.name)
         player.reset()
     
     def getGameId(self):
@@ -200,7 +200,7 @@ class DScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return DPlayer(self.currentPlayer.Value())
+        return DPlayer(self.currentPlayer.Value(), self.name)
         
     
     def getNextPlayer(self):
@@ -218,7 +218,7 @@ class DScrabbleGame:
         self.players.Erase(0)
         self.players.Append(self.currentPlayer.Value())
         self.turnNumber.Set(self.turnNumber.Value() + 1)
-        return DPlayer(self.currentPlayer.Value())
+        return DPlayer(self.currentPlayer.Value(), self.name)
     
     def getPlayers(self):
         '''
@@ -231,7 +231,7 @@ class DScrabbleGame:
         #return self.players[:]
         result = []
         for username in self.players.Members():
-            result.append(DPlayer(username))
+            result.append(DPlayer(username, self.name))
         return result
     
     def hasPlayer(self, username):
@@ -253,7 +253,7 @@ class DScrabbleGame:
         '''
         
         self.players.Remove(username)
-        self.returnLetters( DPlayer(username).getLetters() )
+        self.returnLetters( DPlayer(username, self.name).getLetters() )
     
     def addMoves(self, moves, player):
         '''
@@ -370,11 +370,11 @@ class DScrabbleGame:
         
         maxScore = None
         for username in tmp:
-            maxScore = max(maxScore, DPlayer(username).getScore())
+            maxScore = max(maxScore, DPlayer(username, self.name).getScore())
         
         winners = []
         for username in tmp:
-            player = DPlayer(username)
+            player = DPlayer(username, self.name)
             if player.getScore() == maxScore:
                 winners.append( player )
         return winners
@@ -440,9 +440,9 @@ class DScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        for _username in self.players:
+        for _username in self.players.Members():
             if username == _username:
-                return DPlayer(_username)
+                return DPlayer(_username, self.name)
         return None
     
 #     def isCurrentPlayer(self, player):
