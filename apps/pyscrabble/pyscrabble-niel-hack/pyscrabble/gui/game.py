@@ -506,12 +506,22 @@ class GameFrame(gtk.Frame):
                 if letter.get_active():
                     l.append(letter.getLetter())
                 
+#         if len(l) > 0:
+#             self.client.tradeLetters( self.currentGameId, l )
+#         else:
+#             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
+#         
+#         self.clearCurrentMove()
+
         if len(l) > 0:
-            self.client.tradeLetters( self.currentGameId, l )
-        else:
-            self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-        
-        self.clearCurrentMove()
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.removeLetters(l)
+            newLetters = self.dgame.getLetters(currentPlayer.getNumberOfLettersNeeded())
+            currentPlayer.addLetters(newLetters)
+            
+            self.clearCurrentMove()
+            self.endTurn()
+            
     
     # Pause the game
     def doPauseGame(self, button):
@@ -797,6 +807,10 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
+    def endTurn(self):
+        self.dgame.getNextPlayer()
+        self.client.diamondRequestRefresh(self.currentGameId)
+    
     def checkLegality(self, moves):
         for move in moves:
             word = util.getUnicode( move.getWord() )
@@ -822,9 +836,7 @@ class GameFrame(gtk.Frame):
                 currentPlayer.addLetters(newLetters)
             
             self.onBoard.clear()
-            
-            self.dgame.getNextPlayer()
-            self.client.diamondRequestRefresh(self.currentGameId)
+            self.endTurn()
     
     # Callback to send current move
 #     def sendCurrentMove(self, event = None):
