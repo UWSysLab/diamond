@@ -350,7 +350,6 @@ class GameTile(gtk.Button):
         return self.letterScore.Value()
     
     def setLetterStr(self, inStr):
-        print "Hello: " + repr(type(inStr))
         self.letterStr.Set(inStr)
     
     def setLetterScore(self, score):
@@ -818,8 +817,6 @@ class GameBoard(gtk.Table):
         for gTile in self.tiles.values():
             if gTile.getLetter().letter != "":
                 return False
-            else:
-                print gTile.getLetter().letter
         return True
     
     def getTilesAtX(self, _x):

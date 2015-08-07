@@ -597,7 +597,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         '''
         
         if (command.getCommand() == constants.GAME_DIAMOND_REQUEST_REFRESH):
-            print "Server got a refresh request!"
             self.sendRefreshSignals(command.getGameId())
         if (command.getCommand() == constants.GAME_GET_LETTERS):
             letters = self.game.getLetters( int(command.getData()) )
@@ -1054,6 +1053,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         dgame = DScrabbleGame(gameId)
         dgame.start()
         for player in dgame.getPlayers():
+            player.reset()
             letters = dgame.getLetters(player.getNumberOfLettersNeeded())
             player.addLetters(letters)
         dgame.getNextPlayer()

@@ -80,7 +80,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #self.letters.extend( letters )
         for letter in letters:
             self.letterStrs.Append(letter.getLetter())
             self.letterScores.Append(letter.getScore())
@@ -93,7 +92,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #return 7 - len(self.letters)
         return 7 - len(self.letterStrs.Members())
     
     def removeLetters(self, list):
@@ -104,10 +102,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-#         for letter in list:
-#             if (letter.isBlank()):
-#                 letter.setLetter("")
-#             self.letters.remove( letter )
         for letter in list:
             index = self.letterStrs.Index(letter.getLetter())
             self.letterStrs.Erase(index)

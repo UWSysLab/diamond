@@ -86,13 +86,9 @@ class GameFrame(gtk.Frame):
         
         self.userView.columns_autosize()
     
-    def doDiamondRefresh(self):
-        print "Got Diamond refresh command!"
-        
+    def doDiamondRefresh(self):        
         # Update current turn
         currentPlayer = self.dgame.getCurrentPlayer()
-        print "current player: " + currentPlayer.getUsername()
-        print "me: " + self.username
         if currentPlayer.getUsername() == self.username:
             self.setCurrentTurn(1000000)
         else:
@@ -786,7 +782,7 @@ class GameFrame(gtk.Frame):
         newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
         if (len(newLetters) > 0):
             currentPlayer.addLetters(newLetters)
-                
+        
         self.onBoard.clear()
         
         self.dgame.getNextPlayer()
