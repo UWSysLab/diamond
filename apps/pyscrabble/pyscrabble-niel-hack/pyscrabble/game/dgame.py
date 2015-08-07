@@ -9,6 +9,7 @@ from pyscrabble import constants
 from pyscrabble import manager
 
 import sys
+from __builtin__ import True
 sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
 sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
 from libpydiamond import *
@@ -36,7 +37,7 @@ class DScrabbleGame:
         self.moves = []
         self.words = []
         #self.usedModifiers = []
-        self.passedMoves = 0
+        #self.passedMoves = 0
         #self.currentPlayer = ""
         self.spectators = []
         self.spectatorChatEnabled = True
@@ -54,6 +55,8 @@ class DScrabbleGame:
         self.turnNumber = DCounter()
         self.usedModifiersX = DList()
         self.usedModifiersY = DList()
+        self.passedMoves = DCounter()
+        self.gameOver = DLong()
         
         keyPrefix = "game:" + self.name
         DStringList.Map(self.players, keyPrefix + ":players")
@@ -61,6 +64,9 @@ class DScrabbleGame:
         DCounter.Map(self.turnNumber, keyPrefix + ":turnnumber")
         DList.Map(self.usedModifiersX, keyPrefix + ":usedmodifiersx")
         DList.Map(self.usedModifiersY, keyPrefix + ":usedmodifiersy")
+        DCounter.Map(self.passedMoves, keyPrefix + ":passedmoves")
+        DLong.Map(self.gameOver, keyPrefix + ":gameover")
+
         
         self.bag = DBag(self.name)
 
@@ -71,12 +77,59 @@ class DScrabbleGame:
         self.turnNumber.Set(0)
         self.usedModifiersX.Clear()
         self.usedModifiersY.Clear()
+        self.passedMoves.Set(0)
+        self.gameOver.Set(0)
         
         self.bag.reset()
         
     def getTurnNumber(self):
         return self.turnNumber.Value()
-     
+    
+    def markPassedMove(self):
+        self.passedMoves.Set(self.passedMoves.Value() + 1)
+    
+    def clearPassedMoves(self):
+        self.passedMoves.Set(0)
+        
+    def isGameOver(self):
+        return self.gameOver.Value() != 0
+    
+    def checkGameOver(self):
+        winner = None
+        players = self.getPlayers()
+
+        if self.turnNumber.Value() > 0:
+            if self.passedMoves.Value() == len(players):
+                self.gameOver.Set(1)
+            for player in players:
+                if len(player.getLetters()) == 0:
+                    winner = player
+                    self.gameOver.Set(1)
+                    
+            if self.isGameOver():
+                for player in players:
+                    if player != winner:
+                        letters = player.getLetters()
+                        
+                        # Not subtracting letter scores from losing players right now
+                        # because the only available numeric Diamond primitive right now
+                        # is an unsigned long, so it can't handle negative values
+                        
+#                         for letter in letters:
+#                             player.addScore(letter.getScore() * -1)
+#                             if winner != None:
+#                                 winner.addScore(letter.getScore())
+                                
+    def moveToNextTurn(self):
+        self.checkGameOver()
+        
+        self.currentPlayer.Set(self.players.Value(0))
+        self.players.Erase(0)
+        self.players.Append(self.currentPlayer.Value())
+        
+        self.turnNumber.Set(self.turnNumber.Value() + 1)
+        
+    
     def getDistribution(self):
         '''
         Get Letter distribution
@@ -200,24 +253,6 @@ class DScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return DPlayer(self.currentPlayer.Value(), self.name)
-        
-    
-    def getNextPlayer(self):
-        '''
-        Get the next player who has control of the board.
-        
-        @return: Next Player who has control of the board.
-        @see: L{pyscrabble.game.player.Player}
-        '''
-        
-        if (len(self.players.Members()) == 0):
-            return None
-        
-        self.currentPlayer.Set(self.players.Value(0))
-        self.players.Erase(0)
-        self.players.Append(self.currentPlayer.Value())
-        self.turnNumber.Set(self.turnNumber.Value() + 1)
         return DPlayer(self.currentPlayer.Value(), self.name)
     
     def getPlayers(self):

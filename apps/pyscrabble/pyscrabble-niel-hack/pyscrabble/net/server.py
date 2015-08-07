@@ -1055,7 +1055,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         for player in dgame.getPlayers():
             letters = dgame.getLetters(player.getNumberOfLettersNeeded())
             player.addLetters(letters)
-        dgame.getNextPlayer()
+        dgame.moveToNextTurn()
         self.sendRefreshSignals(gameId)
 
     # Turn gameplayer over to the next player and notify other players of whose turn it is

@@ -111,7 +111,14 @@ class GameFrame(gtk.Frame):
         clientPlayer = self.dgame.getPlayer(self.username)
         self.letters = clientPlayer.getLetters()
         self.showLetters(self.letters)
-    
+        
+        # Check for game over
+        self.dgame.checkGameOver()
+        if self.dgame.isGameOver():
+            self.gameOver()
+        
+
+                        
     def populateDict(self, dict):
         resources = manager.ResourceManager()
         dir = resources["resources"][constants.DICT_DIR].path
@@ -794,7 +801,7 @@ class GameFrame(gtk.Frame):
         self.board.show_all()
     
     def endTurn(self):
-        self.dgame.getNextPlayer()
+        self.dgame.moveToNextTurn()
         self.client.diamondRequestRefresh(self.currentGameId)
     
     def checkLegality(self, moves):
@@ -811,6 +818,7 @@ class GameFrame(gtk.Frame):
         if movesLegal:
             score = self.dgame.getMovesScore(moves)
             self.dgame.removeModifiers(moves)
+            self.dgame.clearPassedMoves()
             currentPlayer = self.dgame.getCurrentPlayer()
             currentPlayer.addScore(score)
             
@@ -886,7 +894,10 @@ class GameFrame(gtk.Frame):
         '''
         
         self.clearCurrentMove()    
-        self.client.passMove( self.currentGameId )
+#         self.client.passMove( self.currentGameId )
+
+        self.dgame.markPassedMove()
+        self.endTurn()
     
     def getMoves(self):
         '''
