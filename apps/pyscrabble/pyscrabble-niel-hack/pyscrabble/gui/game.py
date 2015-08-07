@@ -15,6 +15,8 @@ except NameError:
     from sets import Set as set
     
 from pyscrabble.game.dgame import *
+import codecs
+import os
 
 
 class GameFrame(gtk.Frame):
@@ -72,6 +74,9 @@ class GameFrame(gtk.Frame):
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
         
+        self.dict = set()
+        self.populateDict(self.dict)
+        
         self.username = username
         self.dgame = DScrabbleGame(gameId)
         self.dgame.addPlayer(self.username)
@@ -106,6 +111,29 @@ class GameFrame(gtk.Frame):
         clientPlayer = DPlayer(self.username)
         self.letters = clientPlayer.getLetters()
         self.showLetters(self.letters)
+    
+    def populateDict(self, dict):
+        resources = manager.ResourceManager()
+        dir = resources["resources"][constants.DICT_DIR].path
+
+        self.dict = set()
+        lang = "en"
+        for file in os.listdir( os.path.join(dir, lang) ):
+            if not file.islower(): continue # Avoids CVS directories
+            path = os.path.join(dir, lang, file)
+            
+            f = codecs.open(path, encoding='utf-8', mode='rb')
+            lines = f.read().split()
+            f.close()
+            
+            l = []
+            for line in lines:
+                l.append( line.upper() )
+            x = set( l )
+            
+            self.dict = self.dict.union(x)
+        
+        print "Debug: dict has " + repr(len(self.dict)) + " members!"
     
     ### UI Creation ####
         
@@ -769,24 +797,34 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
+    def checkLegality(self, moves):
+        for move in moves:
+            word = util.getUnicode( move.getWord() )
+            if word not in self.dict:
+                self.error(util.ErrorMessage(word + " not in dictionary"))
+                return False
+        return True
+    
     def sendCurrentMove(self, event = None):
-        moves = self.getMoves()     
-        score = self.dgame.getMovesScore(moves)
-        self.dgame.removeModifiers(moves)
-        currentPlayer = self.dgame.getCurrentPlayer()
-        currentPlayer.addScore(score)
-        
-        letters = self.getLettersFromMove(self.onBoard)
-        currentPlayer.removeLetters(letters)
-        
-        newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
-        if (len(newLetters) > 0):
-            currentPlayer.addLetters(newLetters)
-        
-        self.onBoard.clear()
-        
-        self.dgame.getNextPlayer()
-        self.client.diamondRequestRefresh(self.currentGameId)
+        moves = self.getMoves()
+        movesLegal = self.checkLegality(moves)
+        if movesLegal:
+            score = self.dgame.getMovesScore(moves)
+            self.dgame.removeModifiers(moves)
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.addScore(score)
+            
+            letters = self.getLettersFromMove(self.onBoard)
+            currentPlayer.removeLetters(letters)
+            
+            newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
+            if (len(newLetters) > 0):
+                currentPlayer.addLetters(newLetters)
+            
+            self.onBoard.clear()
+            
+            self.dgame.getNextPlayer()
+            self.client.diamondRequestRefresh(self.currentGameId)
     
     # Callback to send current move
 #     def sendCurrentMove(self, event = None):
