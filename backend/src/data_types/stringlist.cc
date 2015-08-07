@@ -117,6 +117,9 @@ DStringList::Value(const int index)
 void
 DStringList::Append(const string val)
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _vec.push_back(val);
     diamondclient.Write(_key, Serialize());
 }
@@ -124,6 +127,9 @@ DStringList::Append(const string val)
 void
 DStringList::Append(const vector<string> &vec)
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     for (auto e : vec) {
         _vec.push_back(e);
     }
@@ -132,24 +138,36 @@ DStringList::Append(const vector<string> &vec)
 
 void
 DStringList::Insert(const int index, const string val) {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _vec.insert(index + _vec.begin(), val);
     diamondclient.Write(_key, Serialize());
 }
 
 void
 DStringList::Erase(const int index) {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _vec.erase(index + _vec.begin());
     diamondclient.Write(_key, Serialize());
 }
 
 void
 DStringList::Remove(const string val) {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _vec.erase(Index(val) + _vec.begin());
     diamondclient.Write(_key, Serialize());
 }
 
 void
 DStringList::Clear() {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _vec.clear();
     diamondclient.Write(_key, Serialize());
 }
