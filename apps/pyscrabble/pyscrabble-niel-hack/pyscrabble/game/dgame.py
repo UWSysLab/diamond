@@ -1,4 +1,4 @@
-from pyscrabble.game.pieces import Bag
+from pyscrabble.game.pieces import Bag, Letter
 from pyscrabble.exceptions import GameOverException, BagEmptyException
 from pyscrabble.constants import *
 from pyscrabble.lookup import *
@@ -6,8 +6,10 @@ from random import shuffle
 from pyscrabble.game.dplayer import DPlayer
 from pyscrabble import util
 from pyscrabble import constants
+from pyscrabble import manager
 
 import sys
+from __builtin__ import True
 sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
 sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
 from libpydiamond import *
@@ -35,7 +37,7 @@ class DScrabbleGame:
         self.moves = []
         self.words = []
         #self.usedModifiers = []
-        self.passedMoves = 0
+        #self.passedMoves = 0
         #self.currentPlayer = ""
         self.spectators = []
         self.spectatorChatEnabled = True
@@ -43,7 +45,7 @@ class DScrabbleGame:
         self.pending = [] #Now holds username strings
         self.stats = {}
         self.options = options
-        self.bag = Bag( "en" )
+        #self.bag = Bag( "en" )
         self.creator = None
         self.timer = None
         self.spectatorsAllowed = True
@@ -53,6 +55,8 @@ class DScrabbleGame:
         self.turnNumber = DCounter()
         self.usedModifiersX = DList()
         self.usedModifiersY = DList()
+        self.passedMoves = DCounter()
+        self.gameOver = DLong()
         
         keyPrefix = "game:" + self.name
         DStringList.Map(self.players, keyPrefix + ":players")
@@ -60,16 +64,72 @@ class DScrabbleGame:
         DCounter.Map(self.turnNumber, keyPrefix + ":turnnumber")
         DList.Map(self.usedModifiersX, keyPrefix + ":usedmodifiersx")
         DList.Map(self.usedModifiersY, keyPrefix + ":usedmodifiersy")
+        DCounter.Map(self.passedMoves, keyPrefix + ":passedmoves")
+        DLong.Map(self.gameOver, keyPrefix + ":gameover")
+
+        
+        self.bag = DBag(self.name)
 
         
     def resetGame(self):
         self.players.Clear()
         self.currentPlayer.Set("")
         self.turnNumber.Set(0)
+        self.usedModifiersX.Clear()
+        self.usedModifiersY.Clear()
+        self.passedMoves.Set(0)
+        self.gameOver.Set(0)
+        
+        self.bag.reset()
         
     def getTurnNumber(self):
         return self.turnNumber.Value()
-     
+    
+    def markPassedMove(self):
+        self.passedMoves.Set(self.passedMoves.Value() + 1)
+    
+    def clearPassedMoves(self):
+        self.passedMoves.Set(0)
+        
+    def isGameOver(self):
+        return self.gameOver.Value() != 0
+    
+    def checkGameOver(self):
+        winner = None
+        players = self.getPlayers()
+
+        if self.turnNumber.Value() > 0:
+            if self.passedMoves.Value() == len(players):
+                self.gameOver.Set(1)
+            for player in players:
+                if len(player.getLetters()) == 0:
+                    winner = player
+                    self.gameOver.Set(1)
+                    
+            if self.isGameOver():
+                for player in players:
+                    if player != winner:
+                        letters = player.getLetters()
+                        
+                        # Not subtracting letter scores from losing players right now
+                        # because the only available numeric Diamond primitive right now
+                        # is an unsigned long, so it can't handle negative values
+                        
+#                         for letter in letters:
+#                             player.addScore(letter.getScore() * -1)
+#                             if winner != None:
+#                                 winner.addScore(letter.getScore())
+                                
+    def moveToNextTurn(self):
+        self.checkGameOver()
+        
+        self.currentPlayer.Set(self.players.Value(0))
+        self.players.Erase(0)
+        self.players.Append(self.currentPlayer.Value())
+        
+        self.turnNumber.Set(self.turnNumber.Value() + 1)
+        
+    
     def getDistribution(self):
         '''
         Get Letter distribution
@@ -106,7 +166,7 @@ class DScrabbleGame:
         @param pos: (x,y) position
         '''
         for i in range(0, len(self.usedModifiersX.Members())):
-            if pos[0] == self.usedModifiersX[i] and pos[1] == self.usedModifiersY[i]:
+            if pos[0] == self.usedModifiersX.Value(i) and pos[1] == self.usedModifiersY.Value(i):
                 return True
         return False
         
@@ -134,7 +194,7 @@ class DScrabbleGame:
         '''
         
         self.players.Append( username )
-        player = DPlayer(username)
+        player = DPlayer(username, self.name)
         player.reset()
     
     def getGameId(self):
@@ -193,25 +253,7 @@ class DScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return DPlayer(self.currentPlayer.Value())
-        
-    
-    def getNextPlayer(self):
-        '''
-        Get the next player who has control of the board.
-        
-        @return: Next Player who has control of the board.
-        @see: L{pyscrabble.game.player.Player}
-        '''
-        
-        if (len(self.players.Members()) == 0):
-            return None
-        
-        self.currentPlayer.Set(self.players.Value(0))
-        self.players.Erase(0)
-        self.players.Append(self.currentPlayer.Value())
-        self.turnNumber.Set(self.turnNumber.Value() + 1)
-        return DPlayer(self.currentPlayer.Value())
+        return DPlayer(self.currentPlayer.Value(), self.name)
     
     def getPlayers(self):
         '''
@@ -224,7 +266,7 @@ class DScrabbleGame:
         #return self.players[:]
         result = []
         for username in self.players.Members():
-            result.append(DPlayer(username))
+            result.append(DPlayer(username, self.name))
         return result
     
     def hasPlayer(self, username):
@@ -246,7 +288,7 @@ class DScrabbleGame:
         '''
         
         self.players.Remove(username)
-        self.returnLetters( DPlayer(username).getLetters() )
+        self.returnLetters( DPlayer(username, self.name).getLetters() )
     
     def addMoves(self, moves, player):
         '''
@@ -363,11 +405,11 @@ class DScrabbleGame:
         
         maxScore = None
         for username in tmp:
-            maxScore = max(maxScore, DPlayer(username).getScore())
+            maxScore = max(maxScore, DPlayer(username, self.name).getScore())
         
         winners = []
         for username in tmp:
-            player = DPlayer(username)
+            player = DPlayer(username, self.name)
             if player.getScore() == maxScore:
                 winners.append( player )
         return winners
@@ -433,9 +475,9 @@ class DScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        for _username in self.players:
+        for _username in self.players.Members():
             if username == _username:
-                return DPlayer(_username)
+                return DPlayer(_username, self.name)
         return None
     
 #     def isCurrentPlayer(self, player):
@@ -655,3 +697,119 @@ class DScrabbleGame:
             total = total + score
         
         return total
+
+    def removeModifiers(self, moves):
+        '''
+        Mark off modifiers that are used in this move
+        
+        @param moves: List of moves
+        '''
+        for move in moves:
+            for letter,x,y in move.getTiles():
+                m = util.getTileModifier(x,y)
+                if m in constants.LETTER_MODIFIERS and not self.hasUsedModifier((x,y)):
+                    self.addUsedModifier( (x,y) )
+                if m in constants.WORD_MODIFIERS and not self.hasUsedModifier((x,y)):
+                    self.addUsedModifier( (x,y) )
+
+                    
+class DBag:
+    
+    def __init__(self, gameId, rules="en"):
+        '''
+        Initialize the Letter bag
+        
+        @see: L{Letter}
+        '''
+        self.rules = rules
+        
+        self.letterStrs = DStringList()
+        self.letterScores = DList()
+        self.gameId = gameId
+        
+        keyPrefix = self.gameId + ":bag"
+        DStringList.Map(self.letterStrs, keyPrefix + ":letterstrs")
+        DList.Map(self.letterScores, keyPrefix + ":letterscores")
+
+    def reset(self):
+        self.letterStrs.Clear()
+        self.letterScores.Clear()
+        
+        letters = []
+        l = manager.LettersManager()
+        for letter,count,score in l.getLetters(self.rules):
+            for x in range(count):
+                letters.append( Letter(letter, score) )
+        
+        # Shuffle the letters in the bag
+        shuffle(letters)
+        
+        for letter in letters:
+            self.letterStrs.Append(letter.getLetter().encode("utf-8"))
+            self.letterScores.Append(letter.getScore())
+    
+    def getDistribution(self):
+        return []
+    
+    def getLetters(self, count = 7):
+        '''
+        Get C{count} number of letters from the bag. If C{count} is greater than the number of Letters
+        left in the Bag, the remaining number of Letters are returned
+        
+        @param count: Number of letters to get
+        @raise BagEmptyException: If the Bag is empty.
+        @see: L{Letter}
+        '''
+        
+        if self.isEmpty():
+            raise BagEmptyException()
+        
+        # Take "count" number letters from bag, or remaining number of letters
+        if (self.getCount() < count):
+            count = self.getCount()
+            
+        result = []
+        for x in range(count):
+            letter = Letter(self.letterStrs.Value(0), self.letterScores.Value(0))
+            self.letterStrs.Erase(0)
+            self.letterScores.Erase(0)
+            result.append(letter)
+        return result
+            
+    def isEmpty(self):
+        '''
+        Check to see if the Bag is empty
+        
+        @return: True if the Bag is empty
+        '''
+        
+        return (self.getCount() == 0)
+    
+    def getCount(self):
+        '''
+        Get the number of Letters in the Bag
+        
+        @return: Number of letters in the Bag
+        '''
+        
+        return len( self.letterStrs.Members() )
+    
+    def returnLetters(self, letters):
+        '''
+        Return a list of Letters to the Bag.
+        
+        @param letters: List of Letters to return to the Bag
+        @see: L{Letter}
+        '''
+        
+        for i in range(0, len(self.letterStrs.Members())):
+            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i)))
+        
+        shuffle(self.letters)
+        
+        self.letterStrs.Clear()
+        self.letterScores.Clear()
+        
+        for letter in letters:
+            self.letterStrs.Append( letter.getLetter() )
+            self.letterScores.Append( letter.getScore())

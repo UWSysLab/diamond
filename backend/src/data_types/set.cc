@@ -103,6 +103,9 @@ DSet::InSet(const uint64_t val)
 void
 DSet::Add(const uint64_t val)
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _set.insert(val);
     diamondclient.Write(_key, Serialize());
 }
@@ -110,6 +113,9 @@ DSet::Add(const uint64_t val)
 void
 DSet::Add(const unordered_set<uint64_t> &set)
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     for (auto e : set) {
         _set.insert(e);
     }
@@ -119,6 +125,9 @@ DSet::Add(const unordered_set<uint64_t> &set)
 void
 DSet::Remove(const uint64_t val)
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _set.erase(val);
     diamondclient.Write(_key, Serialize());
 }
@@ -126,6 +135,9 @@ DSet::Remove(const uint64_t val)
 void
 DSet::Clear()
 {
+    string s;
+    diamondclient.Read(_key, s);
+    Deserialize(s);
     _set.clear();
     diamondclient.Write(_key, Serialize());
 }

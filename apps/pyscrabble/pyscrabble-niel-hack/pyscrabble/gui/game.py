@@ -15,6 +15,8 @@ except NameError:
     from sets import Set as set
     
 from pyscrabble.game.dgame import *
+import codecs
+import os
 
 
 class GameFrame(gtk.Frame):
@@ -72,6 +74,9 @@ class GameFrame(gtk.Frame):
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
         
+        self.dict = set()
+        self.populateDict(self.dict)
+        
         self.username = username
         self.dgame = DScrabbleGame(gameId)
         self.dgame.addPlayer(self.username)
@@ -86,13 +91,9 @@ class GameFrame(gtk.Frame):
         
         self.userView.columns_autosize()
     
-    def doDiamondRefresh(self):
-        print "Got Diamond refresh command!"
-        
+    def doDiamondRefresh(self):        
         # Update current turn
         currentPlayer = self.dgame.getCurrentPlayer()
-        print "current player: " + currentPlayer.getUsername()
-        print "me: " + self.username
         if currentPlayer.getUsername() == self.username:
             self.setCurrentTurn(1000000)
         else:
@@ -105,6 +106,39 @@ class GameFrame(gtk.Frame):
         for tile in self.board.tiles.values():
             tile.update_label()
         self.show_all()
+        
+        # Refresh letters in letter box
+        clientPlayer = self.dgame.getPlayer(self.username)
+        self.letters = clientPlayer.getLetters()
+        self.showLetters(self.letters)
+        
+        # Check for game over
+        self.dgame.checkGameOver()
+        if self.dgame.isGameOver():
+            self.gameOver()
+        
+
+                        
+    def populateDict(self, dict):
+        resources = manager.ResourceManager()
+        dir = resources["resources"][constants.DICT_DIR].path
+
+        self.dict = set()
+        lang = "en"
+        for file in os.listdir( os.path.join(dir, lang) ):
+            if not file.islower(): continue # Avoids CVS directories
+            path = os.path.join(dir, lang, file)
+            
+            f = codecs.open(path, encoding='utf-8', mode='rb')
+            lines = f.read().split()
+            f.close()
+            
+            l = []
+            for line in lines:
+                l.append( line.upper() )
+            x = set( l )
+            
+            self.dict = self.dict.union(x)
     
     ### UI Creation ####
         
@@ -477,12 +511,22 @@ class GameFrame(gtk.Frame):
                 if letter.get_active():
                     l.append(letter.getLetter())
                 
+#         if len(l) > 0:
+#             self.client.tradeLetters( self.currentGameId, l )
+#         else:
+#             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
+#         
+#         self.clearCurrentMove()
+
         if len(l) > 0:
-            self.client.tradeLetters( self.currentGameId, l )
-        else:
-            self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-        
-        self.clearCurrentMove()
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.removeLetters(l)
+            newLetters = self.dgame.getLetters(currentPlayer.getNumberOfLettersNeeded())
+            currentPlayer.addLetters(newLetters)
+            
+            self.clearCurrentMove()
+            self.endTurn()
+            
     
     # Pause the game
     def doPauseGame(self, button):
@@ -608,10 +652,6 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
-                
-        print "Debug:"
-        print self.onBoard
-        print self.letters
     
     def swapTileAndLetter(self, gTile, gLetter):
         if gTile.getLetter().letter == "":
@@ -623,19 +663,11 @@ class GameFrame(gtk.Frame):
             
         gTile.putLetter(gLetter.getLetter())
         self.registerMove(gTile, gTile.x, gTile.y)
-                
-        print "Debug:"
-        print self.onBoard
-        print self.letters
         
     def putTileOnPlaceholder(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
-        
-        print "Debug:"
-        print self.onBoard
-        print self.letters
         
     # End added methods
     
@@ -768,23 +800,37 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
-    def sendCurrentMove(self, event = None):
-        print "Requesting Diamond refresh"
-        moves = self.getMoves()
-        
-        print "Debug: " + repr(len(moves))
-        for m in moves:
-            print "Move: " + repr(len(m.getTiles()))
-            print m
-        
-        score = self.dgame.getMovesScore(moves)
-        currentPlayer = self.dgame.getCurrentPlayer()
-        currentPlayer.addScore(score)
-        
-        self.onBoard.clear()
-        
-        self.dgame.getNextPlayer()
+    def endTurn(self):
+        self.dgame.moveToNextTurn()
         self.client.diamondRequestRefresh(self.currentGameId)
+    
+    def checkLegality(self, moves):
+        for move in moves:
+            word = util.getUnicode( move.getWord() )
+            if word not in self.dict:
+                self.error(util.ErrorMessage(word + " not in dictionary"))
+                return False
+        return True
+    
+    def sendCurrentMove(self, event = None):
+        moves = self.getMoves()
+        movesLegal = self.checkLegality(moves)
+        if movesLegal:
+            score = self.dgame.getMovesScore(moves)
+            self.dgame.removeModifiers(moves)
+            self.dgame.clearPassedMoves()
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.addScore(score)
+            
+            letters = self.getLettersFromMove(self.onBoard)
+            currentPlayer.removeLetters(letters)
+            
+            newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
+            if (len(newLetters) > 0):
+                currentPlayer.addLetters(newLetters)
+            
+            self.onBoard.clear()
+            self.endTurn()
     
     # Callback to send current move
 #     def sendCurrentMove(self, event = None):
@@ -848,7 +894,10 @@ class GameFrame(gtk.Frame):
         '''
         
         self.clearCurrentMove()    
-        self.client.passMove( self.currentGameId )
+#         self.client.passMove( self.currentGameId )
+
+        self.dgame.markPassedMove()
+        self.endTurn()
     
     def getMoves(self):
         '''
@@ -1619,3 +1668,17 @@ class GameFrame(gtk.Frame):
         '''
         return self.gameOptions[opt]
         
+    def getLettersFromMove(self, move):
+        '''
+        Get the letters in a move
+        
+        @param move: Move
+        @return: List of letters in C{move}
+        '''
+        
+        letters = []
+        
+        for letter, x, y in move.getTiles():
+            letters.append( letter.clone() )
+
+        return letters
