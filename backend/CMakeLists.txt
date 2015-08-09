@@ -20,6 +20,13 @@ set(PROJECT_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/libraries")
 # set up the hiredis redis client that redox needs
 INCLUDE(ExternalProject)
 
+set(STDLIBNAME "libhiredis.a")
+if(APPLE)
+  set(DYLIBNAME "libhiredis.dylib")
+else()
+  set(DYLIBNAME "libhiredis.so")
+endif()
+
 ExternalProject_Add(
     hiredis-redisclient
     GIT_REPOSITORY git@github.com:redis/hiredis.git
@@ -29,7 +36,7 @@ ExternalProject_Add(
     BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
     TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
-    BUILD_COMMAND "\"${PROJECT_SOURCE_DIR}/setup_env.sh\" \" ${CMAKE_C_COMPILER}\" \"\\\"${CMAKE_C_FLAGS}\\\"\""
+    BUILD_COMMAND make "CC=${CMAKE_C_COMPILER}" "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}" "STLIB_MAKE_CMD=${CMAKE_AR} rcsv ${STDLIBNAME}" "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}"
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
