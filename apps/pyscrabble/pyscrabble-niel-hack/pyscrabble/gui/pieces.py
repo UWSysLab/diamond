@@ -112,7 +112,7 @@ class GameTile(gtk.Button):
         @param targetType:
         @param eventType:
         '''
-        print 'letterDragged called in tile %d,%d' % (self.x,self.y)      
+        #print 'letterDragged called in tile %d,%d' % (self.x,self.y)      
         
         c = context.get_source_widget()
         if c == self: # Ignore if we drag onto ourselves
@@ -350,7 +350,6 @@ class GameTile(gtk.Button):
         return self.letterScore.Value()
     
     def setLetterStr(self, inStr):
-        print "Hello: " + repr(type(inStr))
         self.letterStr.Set(inStr)
     
     def setLetterScore(self, score):
@@ -818,8 +817,6 @@ class GameBoard(gtk.Table):
         for gTile in self.tiles.values():
             if gTile.getLetter().letter != "":
                 return False
-            else:
-                print gTile.getLetter().letter
         return True
     
     def getTilesAtX(self, _x):

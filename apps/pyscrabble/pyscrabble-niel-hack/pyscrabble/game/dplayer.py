@@ -16,7 +16,7 @@ class DPlayer(object):
     A Player in the game.
     '''
     
-    def __init__(self, username=''):
+    def __init__(self, username='', gameId = ''):
         '''
         Initialize the player
         
@@ -28,19 +28,18 @@ class DPlayer(object):
         #self.letters = []
         #self.u_time = None
         
-        self.letterStrs = DList()
+        self.letterStrs = DStringList()
         self.letterScores = DList()
         self.score = DLong()
-        self.username = DString()
         
         username = username.encode("utf-8")
-        DList.Map(self.letterStrs, "player:" + username + ":letterslist")
-        DList.Map(self.letterScores, "player:" + username + ":scoreslist")
-        DLong.Map(self.score, "player:" + username + ":score")
-        DString.Map(self.username, "player:" + username + ":username")
+        self.username = username
+        self.gameId = gameId
         
-        self.username.Set(username)
-
+        keyPrefix = "game:" + self.gameId + ":player:" + self.username
+        DStringList.Map(self.letterStrs, keyPrefix + ":letterslist")
+        DList.Map(self.letterScores, keyPrefix + ":scoreslist")
+        DLong.Map(self.score, keyPrefix + ":score")
     
     def setInitialTime(self, minutes):
         '''
@@ -73,7 +72,7 @@ class DPlayer(object):
         @return: Player's username
         '''
         
-        return util.getUnicode(self.username.Value())
+        return util.getUnicode(self.username)
         
     def addLetters(self, letters):
         '''
@@ -83,7 +82,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #self.letters.extend( letters )
         for letter in letters:
             self.letterStrs.Append(letter.getLetter())
             self.letterScores.Append(letter.getScore())
@@ -96,7 +94,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        #return 7 - len(self.letters)
         return 7 - len(self.letterStrs.Members())
     
     def removeLetters(self, list):
@@ -107,10 +104,6 @@ class DPlayer(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-#         for letter in list:
-#             if (letter.isBlank()):
-#                 letter.setLetter("")
-#             self.letters.remove( letter )
         for letter in list:
             index = self.letterStrs.Index(letter.getLetter())
             self.letterStrs.Erase(index)

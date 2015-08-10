@@ -20,24 +20,35 @@ set(PROJECT_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/libraries")
 # set up the hiredis redis client that redox needs
 INCLUDE(ExternalProject)
 
-set(HIREDIS_MAKE "make")
+set(STDLIBNAME "libhiredis.a")
+if(APPLE)
+  set(DYLIBNAME "libhiredis.dylib")
+else()
+  set(DYLIBNAME "libhiredis.so")
+endif()
 
-if (ANDROID)
-   set(HIREDIS_MAKE "CC=${CMAKE_C_COMPILER} ARCH=-DAndroid CFLAGS='${CMAKE_C_FLAGS}' LDFLAGS='${CMAKE_SHARED_LINKER_FLAGS}' ${HIREDIS_MAKE}")
-   message(${HIREDIS_MAKE})
+set(HIREDIS_MAKE make)
+    
+if(ANDROID)
+    set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}"
+    "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}"
+    "STLIB_MAKE_CMD=${CMAKE_AR} rcs ${STDLIBNAME}"
+    "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}")
 endif()
 
 ExternalProject_Add(
     hiredis-redisclient
-    GIT_REPOSITORY git@github.com:redis/hiredis.git
+    URL https://github.com/redis/hiredis/archive/v0.13.1.tar.gz
     PREFIX ${PROJECT_BINARY_DIR}/hiredis
     DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
-    STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
-    TMP_DIR temp
     BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
+    TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
+    BUILD_COMMAND ${HIREDIS_MAKE}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
     LOG_DOWNLOAD ON
     LOG_CONFIGURE ON
     LOG_BUILD ON)
@@ -53,10 +64,6 @@ ExternalProject_Add(
 set(DIAMOND_SOURCE_DIR "${PROJECT_SOURCE_DIR}/src")
 
 include_directories(${DIAMOND_SOURCE_DIR})
-
-# Redox Redis client includes
-include_directories(${PROJECT_LIBRARIES_DIR}/redox/include)
-link_directories(${PROJECT_LIBRARIES_DIR}/redox/build)
 
 if(APPLE)
     include_directories("/opt/local/include" "/usr/local/include")
