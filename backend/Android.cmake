@@ -66,7 +66,7 @@ set(ANDROID_NDK_GCC_VERSION "4.9")
 
 # global linker flags
 #  -Wl,-z,noexecstack -Wl,--gc-sections -Wl,-z,nocopyreloc
-set(ANDROID_NDK_GLOBAL_LDFLAGS "-Wl,--no-undefined -Wl,-z,noexecstack -Wl,--fix-cortex-a8 ")
+set(ANDROID_NDK_GLOBAL_LDFLAGS "-Wl,--no-undefined -Wl,-z,noexecstack -Wl,--fix-cortex-a8")
 
 
 # linker flags (here only one thing missing here is lstdc++ - in Android the actual STL implementation is user dependent!)
@@ -81,6 +81,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} ${ANDROID_NDK_GLOBAL_CXXFLAGS}" CACHE STRI
 # specify compiler
 set(CMAKE_C_COMPILER   "${ANDROID_TOOLCHAIN_ROOT}/bin/${ANDROID_NDK_GCC_PREFIX}-gcc" CACHE PATH "C compiler" FORCE)
 set(CMAKE_CXX_COMPILER "${ANDROID_TOOLCHAIN_ROOT}/bin/${ANDROID_NDK_GCC_PREFIX}-g++" CACHE PATH "C++ compiler" FORCE)
+
+set(CMAKE_AR "${ANDROID_TOOLCHAIN_ROOT}/bin/${ANDROID_NDK_GCC_PREFIX}-ar" CACHE PATH "Archiver" FORCE)
 
 if(ANDROID_NDK_TOOLCHAIN_DEBUG)
 	message(STATUS "c compiler: ${CMAKE_C_COMPILER}")
