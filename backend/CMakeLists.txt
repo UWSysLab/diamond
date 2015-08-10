@@ -27,16 +27,26 @@ else()
   set(DYLIBNAME "libhiredis.so")
 endif()
 
+set(HIREDIS_MAKE make)
+    
+if(ANDROID)
+    set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}"
+    "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER}
+    -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}"
+    "STLIB_MAKE_CMD=${CMAKE_AR} rcs ${STDLIBNAME}"
+    "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}")
+endif()
+
 ExternalProject_Add(
     hiredis-redisclient
-    GIT_REPOSITORY git@github.com:redis/hiredis.git
+    URL https://github.com/redis/hiredis/archive/v0.13.1.tar.gz
     PREFIX ${PROJECT_BINARY_DIR}/hiredis
     DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
     TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
-    BUILD_COMMAND make "CC=${CMAKE_C_COMPILER}" "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}" "STLIB_MAKE_CMD=${CMAKE_AR} rcsv ${STDLIBNAME}" "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}"
+    BUILD_COMMAND ${HIREDIS_MAKE}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
