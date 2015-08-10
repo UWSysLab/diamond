@@ -21,6 +21,9 @@ on Ubuntu/Debian or Macports/Homebrew on OSX):
 * Python bindings: Install the Python Boost modules
 * Java bindings: Install Maven for compiling the Java bindings
 
+For Ubuntu 14.04, installing the following packages are sufficient:
+   $ apt-get install build-essential cmake maven libpython-dev libboost-dev
+
 ### Building the source and language bindings
 To compile a shared object library and both the C++ and Python
 bindings:
