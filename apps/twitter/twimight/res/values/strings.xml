@@ -223,6 +223,6 @@
     <string name="hint_twitter_url">Backend URL</string>
     <string name="dialog_login_title">Login</string>
     <string name="dialog_login_positive">Confirm</string>
-    <string name="default_twitter_url">http://seymour.cs.washington.edu:8000</string>
+    <string name="default_twitter_url">http://coldwater.cs.washington.edu:8000</string>
     
 </resources>
