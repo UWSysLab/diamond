@@ -7,8 +7,10 @@ project (DIAMOND)
 # C Flags
 # ----------------------------------------------------
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
+if (NOT ANDROID)
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall -pthread")
+endif()
 
 # ---------------------------------------------------------
 # Download dependencies
@@ -27,16 +29,25 @@ else()
   set(DYLIBNAME "libhiredis.so")
 endif()
 
+set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}")
+    
+if(ANDROID)
+    set(HIREDIS_MAKE make 
+    "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}"
+    "STLIB_MAKE_CMD=${CMAKE_AR} rcs ${STDLIBNAME}"
+    "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}")
+endif()
+
 ExternalProject_Add(
     hiredis-redisclient
-    GIT_REPOSITORY git@github.com:redis/hiredis.git
+    URL https://github.com/redis/hiredis/archive/v0.13.1.tar.gz
     PREFIX ${PROJECT_BINARY_DIR}/hiredis
     DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
     STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
     TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
-    BUILD_COMMAND make "CC=${CMAKE_C_COMPILER}" "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}" "STLIB_MAKE_CMD=${CMAKE_AR} rcsv ${STDLIBNAME}" "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}"
+    BUILD_COMMAND ${HIREDIS_MAKE}
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
@@ -89,11 +100,7 @@ set(SRC_DIAMOND_DATA_TYPES
 
 # Set up library dependencies for linking into the Diamond library
 
-if (ANDROID)
-   set(DIAMOND_LIB_DEPS hiredis)
-else()
-   set(DIAMOND_LIB_DEPS hiredis pthread)
-endif()
+set(DIAMOND_LIB_DEPS hiredis)
 
 add_library (diamond SHARED
             ${SRC_DIAMOND_LIB}
