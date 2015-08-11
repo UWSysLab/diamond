@@ -11,6 +11,7 @@ if ((NOT GTEST_FOUND) OR APPLE)
         URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
 	UPDATE_COMMAND ""
         INSTALL_COMMAND ""
+#        CMAKE_ARGS BUILD_SHARED_LIBS=ON
         LOG_DOWNLOAD ON
         LOG_CONFIGURE ON
         LOG_BUILD ON)
