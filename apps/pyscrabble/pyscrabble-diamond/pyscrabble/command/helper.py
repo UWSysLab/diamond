@@ -127,6 +127,26 @@ class CommandCreator(object):
         
         return self.parser.parseChatCommand( ['', CHAT_USERS, users] )
     
+    def createGameDiamondRefreshCommand(self, gameId, data=''):
+        '''
+        
+        @param gameId:
+        @param data:
+        @return: GameCommand
+        '''
+        
+        return self.parser.parseGameCommand( [GAME_DIAMOND_REFRESH, gameId, data] )
+    
+    def createGameDiamondRequestRefreshCommand(self, gameId, data=''):
+        '''
+        
+        @param gameId:
+        @param data:
+        @return: GameCommand
+        '''
+        
+        return self.parser.parseGameCommand( [GAME_DIAMOND_REQUEST_REFRESH, gameId, data] )
+    
     def createGetLettersCommand(self, gameId, numLetters):
         '''
         

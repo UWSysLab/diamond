@@ -23,6 +23,8 @@ try:
     set
 except NameError:
     from sets import Set as set
+    
+from pyscrabble.game.dgame import *
 
 logger = logging.getLogger("pyscrabble.net.server")
 
@@ -352,6 +354,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             game.creator = self.clients[client].getUsername()
             self.gameList[ gameId ] = game
             self.refreshGameList()
+            
+            dgame = DScrabbleGame(gameId)
+            dgame.resetGame()
         else:
             client.showError( ServerMessage([GAME_ALREADY_EXISTS]) )
 
@@ -579,6 +584,10 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         client.sendPrivateMessage(recipient, msg)
         
 
+    def sendRefreshSignals(self, gameId):
+        for client in self.clients.keys():
+            client.doDiamondRefresh(gameId)
+
     def handleGameCommand(self, command, client):
         '''
         Handle a game command
@@ -587,7 +596,8 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         @param client: ScrabbleServer Protocol
         '''
         
-        
+        if (command.getCommand() == constants.GAME_DIAMOND_REQUEST_REFRESH):
+            self.sendRefreshSignals(command.getGameId())
         if (command.getCommand() == constants.GAME_GET_LETTERS):
             letters = self.game.getLetters( int(command.getData()) )
             client.sendLetters( letters )
@@ -1039,6 +1049,14 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         self.doGameTurn( gameId )
         self.refreshGameList()
+        
+        dgame = DScrabbleGame(gameId)
+        dgame.start()
+        for player in dgame.getPlayers():
+            letters = dgame.getLetters(player.getNumberOfLettersNeeded())
+            player.addLetters(letters)
+        dgame.moveToNextTurn()
+        self.sendRefreshSignals(gameId)
 
     # Turn gameplayer over to the next player and notify other players of whose turn it is
     def doGameTurn(self, gameId, wasUnpaused=False ):
@@ -1854,6 +1872,10 @@ class ScrabbleServer(NetstringReceiver):
         
         self.command = helper.CommandCreator()
         self.username = None
+
+    def doDiamondRefresh(self, gameId):
+        command = self.command.createGameDiamondRefreshCommand(gameId)
+        self.writeCommand(command)
 
     def stringReceived(self, data):
         '''

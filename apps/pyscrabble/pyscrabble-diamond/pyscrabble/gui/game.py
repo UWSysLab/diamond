@@ -13,6 +13,10 @@ try:
     set
 except NameError:
     from sets import Set as set
+    
+from pyscrabble.game.dgame import *
+import codecs
+import os
 
 
 class GameFrame(gtk.Frame):
@@ -29,7 +33,7 @@ class GameFrame(gtk.Frame):
     '''
     
     
-    def __init__(self, client, main, gameId, spectating, options):
+    def __init__(self, client, main, gameId, spectating, options, username):
         '''
         Initialize the game frame
         
@@ -38,6 +42,7 @@ class GameFrame(gtk.Frame):
         @param gameId: Game ID
         @param spectating: True if the user is spectating
         @param options: Game options
+        @param username: client user name
         '''
         
         gtk.Frame.__init__(self)
@@ -69,6 +74,13 @@ class GameFrame(gtk.Frame):
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
         
+        self.dict = set()
+        self.populateDict(self.dict)
+        
+        self.username = username
+        self.dgame = DScrabbleGame(gameId)
+        self.dgame.addPlayer(self.username)
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -78,6 +90,55 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
+    
+    def doDiamondRefresh(self):        
+        # Update current turn
+        currentPlayer = self.dgame.getCurrentPlayer()
+        if currentPlayer.getUsername() == self.username:
+            self.setCurrentTurn(1000000)
+        else:
+            self.otherTurn(currentPlayer)
+            
+        # Update scores
+        self.refreshUserList()
+        
+        # Refresh tile values
+        for tile in self.board.tiles.values():
+            tile.update_label()
+        self.show_all()
+        
+        # Refresh letters in letter box
+        clientPlayer = self.dgame.getPlayer(self.username)
+        self.letters = clientPlayer.getLetters()
+        self.showLetters(self.letters)
+        
+        # Check for game over
+        self.dgame.checkGameOver()
+        if self.dgame.isGameOver():
+            self.gameOver()
+        
+
+                        
+    def populateDict(self, dict):
+        resources = manager.ResourceManager()
+        dir = resources["resources"][constants.DICT_DIR].path
+
+        self.dict = set()
+        lang = "en"
+        for file in os.listdir( os.path.join(dir, lang) ):
+            if not file.islower(): continue # Avoids CVS directories
+            path = os.path.join(dir, lang, file)
+            
+            f = codecs.open(path, encoding='utf-8', mode='rb')
+            lines = f.read().split()
+            f.close()
+            
+            l = []
+            for line in lines:
+                l.append( line.upper() )
+            x = set( l )
+            
+            self.dict = self.dict.union(x)
     
     ### UI Creation ####
         
@@ -450,12 +511,22 @@ class GameFrame(gtk.Frame):
                 if letter.get_active():
                     l.append(letter.getLetter())
                 
+#         if len(l) > 0:
+#             self.client.tradeLetters( self.currentGameId, l )
+#         else:
+#             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
+#         
+#         self.clearCurrentMove()
+
         if len(l) > 0:
-            self.client.tradeLetters( self.currentGameId, l )
-        else:
-            self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-        
-        self.clearCurrentMove()
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.removeLetters(l)
+            newLetters = self.dgame.getLetters(currentPlayer.getNumberOfLettersNeeded())
+            currentPlayer.addLetters(newLetters)
+            
+            self.clearCurrentMove()
+            self.endTurn()
+            
     
     # Pause the game
     def doPauseGame(self, button):
@@ -535,65 +606,158 @@ class GameFrame(gtk.Frame):
         self.showLetters([])
     
     
-    # Callback from GameTile, when a user moves a Letter from their list onto the Board
-    def registerMove(self, tile, x, y, refresh, letter):
+    # Game state management methods added by Niel
+    
+    def addLetter(self, letter):
         '''
-        Callback from GameTile.  When a Letter is dropped on a Tile, it callsback here to let the Game know the location of the Letter.
-        
-        @param tile: Tile
-        @param x: X position
-        @param y: Y position
-        @param refresh: True to refresh letter box
-        @param letter: GameLetter to remove from letter box
+        @param letter: Letter to add to list of letters
         '''
+        self.letters.append(letter)
+        self.showLetters(self.letters)
         
-        #print 'Registering %s %s %d,%d' % ( str(id(tile)), str(tile.getLetter()), x,y )
-        #print tile.getLetter() in self.letters, self.letters
-        if tile.getLetter() in self.letters: # If we're moving a tile around on the board, we dont want to remove it
-        
-            letters = []
-            found = False
-            for _letter in self.letters:
-                if tile.getLetter() == _letter and tile.getLetter().isBlank() == _letter.isBlank():
-                    if not found:
-                        found = True
-                    else:
-                        #print 'Adding', _letter
-                        letters.append( _letter )
+    def removeLetter(self, letter):
+        '''
+        @param letter: Letter to remove from list of letters
+        '''
+        letters = []
+        found = False
+        for _letter in self.letters:
+            if letter == _letter and letter.isBlank() == _letter.isBlank():
+                if not found:
+                    found = True
                 else:
                     letters.append( _letter )
-                   
-            self.letters = letters
-            
-            if refresh:
-                letters = self.letterBox.get_children()
-                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-                for l in letters:
-                    #print 'id(%s) == id(%s) %s == %s %s' % (str(l), str(letter), str(id(l)), str(id(letter)), str(id(l) == id(letter)))
-                    if id(l) == id(letter): #Compare memory values to make sure its actually the same widget
-                        self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
-                    else:
-                        self.letterBox.pack_start(l, False, False, 0)
-                self.letterBox.show_all()
-            
-            self.onBoard.addMove( tile.getLetter() ,x,y )
-    
-    def removeMove(self, tile, x, y, refresh=True):
-        '''
-        Remove onboard move
+            else:
+                letters.append( _letter )        
+        self.letters = letters
+        self.showLetters(self.letters)
         
-        @param tile:
-        @param x:
-        @param y:
-        '''
-        #print 'Removing %s %s %d,%d' % ( str(tile.getLetter()), str(tile.getLetter().isBlank()), x,y )
+    def registerMove(self, tile, x, y): 
+        self.onBoard.addMove( tile.getLetter() ,x,y )
+        
+    def removeMove(self, tile, x, y):
         self.onBoard.removeMove( tile.getLetter(), x, y )
-        if refresh:
-            t = GameTile(x,y,self)
-            t.activate()
-            self.board.put(t,x,y)
-        self.letters.append( tile.getLetter() )
-        self.board.show_all()
+        
+    def swapTiles(self, gTileA, gTileB):
+        letterA = gTileA.getLetter()
+        letterB = gTileB.getLetter()
+        if letterA.letter == "":
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.clear()
+        else:
+            self.removeMove(gTileA, gTileA.x, gTileA.y)
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.putLetter(letterA)
+            self.registerMove(gTileB, gTileB.x, gTileB.y)
+
+        gTileA.putLetter(letterB)
+        self.registerMove(gTileA, gTileA.x, gTileA.y)
+    
+    def swapTileAndLetter(self, gTile, gLetter):
+        if gTile.getLetter().letter == "":
+            self.removeLetter(gLetter.getLetter())
+        else:
+            self.removeLetter(gLetter.getLetter())
+            self.removeMove(gTile, gTile.x, gTile.y)
+            self.addLetter(gTile.getLetter())
+            
+        gTile.putLetter(gLetter.getLetter())
+        self.registerMove(gTile, gTile.x, gTile.y)
+        
+    def putTileOnPlaceholder(self, gTile):
+        self.removeMove(gTile, gTile.x, gTile.y)
+        self.addLetter(gTile.getLetter())
+        gTile.clear()
+        
+    # End added methods
+    
+#     def removeLetterNew(self,gameLetter):
+#         '''
+#         @param gameLetter: GameLetter to remove from letter box
+#         '''
+#         letters = []
+#         found = False
+#         for _letter in self.letters:
+#             if gameLetter.getLetter() == _letter and gameLetter.getLetter().isBlank() == _letter.isBlank():
+#                 if not found:
+#                     found = True
+#                 else:
+#                     #print 'Adding', _letter
+#                     letters.append( _letter )
+#             else:
+#                 letters.append( _letter )
+#                
+#         self.letters = letters
+#         
+#         letters = self.letterBox.get_children()
+#         self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+#         for l in letters:
+#             #print 'id(%s) == id(%s) %s == %s %s' % (str(l), str(letter), str(id(l)), str(id(letter)), str(id(l) == id(letter)))
+#             if id(l) == id(gameLetter): #Compare memory values to make sure its actually the same widget
+#                 self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
+#             else:
+#                 self.letterBox.pack_start(l, False, False, 0)
+#         self.letterBox.show_all()
+    
+    # Callback from GameTile, when a user moves a Letter from their list onto the Board
+#     def registerMove(self, tile, x, y, refresh, letter):
+#         '''
+#         Callback from GameTile.  When a Letter is dropped on a Tile, it callsback here to let the Game know the location of the Letter.
+#         
+#         @param tile: Tile
+#         @param x: X position
+#         @param y: Y position
+#         @param refresh: True to refresh letter box
+#         @param letter: GameLetter to remove from letter box
+#         '''
+#         
+#         #print 'Registering %s %s %d,%d' % ( str(id(tile)), str(tile.getLetter()), x,y )
+#         #print tile.getLetter() in self.letters, self.letters
+#         if tile.getLetter() in self.letters: # If we're moving a tile around on the board, we dont want to remove it
+#         
+#             letters = []
+#             found = False
+#             for _letter in self.letters:
+#                 if tile.getLetter() == _letter and tile.getLetter().isBlank() == _letter.isBlank():
+#                     if not found:
+#                         found = True
+#                     else:
+#                         #print 'Adding', _letter
+#                         letters.append( _letter )
+#                 else:
+#                     letters.append( _letter )
+#                    
+#             self.letters = letters
+#             
+#             if refresh:
+#                 letters = self.letterBox.get_children()
+#                 self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+#                 for l in letters:
+#                     #print 'id(%s) == id(%s) %s == %s %s' % (str(l), str(letter), str(id(l)), str(id(letter)), str(id(l) == id(letter)))
+#                     if id(l) == id(letter): #Compare memory values to make sure its actually the same widget
+#                         self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
+#                     else:
+#                         self.letterBox.pack_start(l, False, False, 0)
+#                 self.letterBox.show_all()
+#             
+#             self.onBoard.addMove( tile.getLetter() ,x,y )
+    
+#     def removeMove(self, tile, x, y, refresh=True):
+#         '''
+#         Remove onboard move
+#         
+#         @param tile:
+#         @param x:
+#         @param y:
+#         '''
+#         #print 'Removing %s %s %d,%d' % ( str(tile.getLetter()), str(tile.getLetter().isBlank()), x,y )
+#         self.onBoard.removeMove( tile.getLetter(), x, y )
+#         if refresh:
+#             t = GameTile(x,y,self)
+#             t.activate()
+#             self.board.put(t,x,y)
+#         self.letters.append( tile.getLetter() )
+#         self.board.show_all()
     
     def getNumOnBoardMoves(self):
         '''
@@ -636,59 +800,90 @@ class GameFrame(gtk.Frame):
         self.board.clearArrows()
         self.board.show_all()
     
+    def endTurn(self):
+        self.dgame.moveToNextTurn()
+        self.client.diamondRequestRefresh(self.currentGameId)
+    
+    def checkLegality(self, moves):
+        for move in moves:
+            word = util.getUnicode( move.getWord() )
+            if word not in self.dict:
+                self.error(util.ErrorMessage(word + " not in dictionary"))
+                return False
+        return True
+    
+    def sendCurrentMove(self, event = None):
+        moves = self.getMoves()
+        movesLegal = self.checkLegality(moves)
+        if movesLegal:
+            score = self.dgame.getMovesScore(moves)
+            self.dgame.removeModifiers(moves)
+            self.dgame.clearPassedMoves()
+            currentPlayer = self.dgame.getCurrentPlayer()
+            currentPlayer.addScore(score)
+            
+            letters = self.getLettersFromMove(self.onBoard)
+            currentPlayer.removeLetters(letters)
+            
+            newLetters = self.dgame.getLetters( currentPlayer.getNumberOfLettersNeeded() )
+            if (len(newLetters) > 0):
+                currentPlayer.addLetters(newLetters)
+            
+            self.onBoard.clear()
+            self.endTurn()
     
     # Callback to send current move
-    def sendCurrentMove(self, event = None):
-        '''
-        Send the current move on the board to the server
-        
-        @param event:
-        '''
-        
-        if (self.currentTurn == False):
-            self.error(util.ErrorMessage(_("Its not your turn")))
-            return
-        
-        if (not self.onBoard.isValid()):
-            self.error(util.ErrorMessage(_("Move is invalid")))
-            return
-        
-        # Make sure the board has a letter in the center or one of the tiles in this move does
-        if (self.board.isEmpty()):
-            center = False
-            for letter, x, y in self.onBoard.getTiles():
-                if (x+1,y+1) in CENTER:
-                    center = True
-            if not center:
-                self.error(util.ErrorMessage(_("Move must cover center tile.")))
-                return
-            
-        # Check for blanks
-        for letter,x,y in self.onBoard.getTiles():
-            if (letter.isBlank() and letter.getLetter() ==""):
-                new = self.showBlankLetterDialog()
-                if (new == ""): # new will be blank if the user cancels the dialog
-                    return
-                else:
-                    #print 'Blank set on %s' % str(id(letter))
-                    letter.setLetter( new )
-                    
-                    # We need to check if the board is empty
-                    # If it is, putting a Letter on the board will cause it not to be empty.
-                    # If the board is set as not empty, and its the players firsrt move, the
-                    # game will reject the move because it wont be touching any other tiles
-                    #if self.board.isEmpty():
-                        #self.board.putLetter(letter, x, y)
-                        #self.board.empty = True
-                    #else:
-                        #self.board.putLetter(letter, x, y)
-    
-        try:
-            moves = self.getMoves()
-            self.client.sendMoves( self.currentGameId, moves, self.onBoard )
-            self.okButton.set_sensitive(False)
-        except exceptions.MoveException, inst:
-            self.error(util.ErrorMessage(inst.message))
+#     def sendCurrentMove(self, event = None):
+#         '''
+#         Send the current move on the board to the server
+#         
+#         @param event:
+#         '''
+#         
+#         if (self.currentTurn == False):
+#             self.error(util.ErrorMessage(_("Its not your turn")))
+#             return
+#         
+#         if (not self.onBoard.isValid()):
+#             self.error(util.ErrorMessage(_("Move is invalid")))
+#             return
+#         
+#         # Make sure the board has a letter in the center or one of the tiles in this move does
+#         if (self.board.isEmpty()):
+#             center = False
+#             for letter, x, y in self.onBoard.getTiles():
+#                 if (x+1,y+1) in CENTER:
+#                     center = True
+#             if not center:
+#                 self.error(util.ErrorMessage(_("Move must cover center tile.")))
+#                 return
+#             
+#         # Check for blanks
+#         for letter,x,y in self.onBoard.getTiles():
+#             if (letter.isBlank() and letter.getLetter() ==""):
+#                 new = self.showBlankLetterDialog()
+#                 if (new == ""): # new will be blank if the user cancels the dialog
+#                     return
+#                 else:
+#                     #print 'Blank set on %s' % str(id(letter))
+#                     letter.setLetter( new )
+#                     
+#                     # We need to check if the board is empty
+#                     # If it is, putting a Letter on the board will cause it not to be empty.
+#                     # If the board is set as not empty, and its the players firsrt move, the
+#                     # game will reject the move because it wont be touching any other tiles
+#                     #if self.board.isEmpty():
+#                         #self.board.putLetter(letter, x, y)
+#                         #self.board.empty = True
+#                     #else:
+#                         #self.board.putLetter(letter, x, y)
+#     
+#         try:
+#             moves = self.getMoves()
+#             self.client.sendMoves( self.currentGameId, moves, self.onBoard )
+#             self.okButton.set_sensitive(False)
+#         except exceptions.MoveException, inst:
+#             self.error(util.ErrorMessage(inst.message))
     
     # Button click to pass the move
     def passMove(self, event = None):
@@ -699,7 +894,10 @@ class GameFrame(gtk.Frame):
         '''
         
         self.clearCurrentMove()    
-        self.client.passMove( self.currentGameId )
+#         self.client.passMove( self.currentGameId )
+
+        self.dgame.markPassedMove()
+        self.endTurn()
     
     def getMoves(self):
         '''
@@ -789,7 +987,7 @@ class GameFrame(gtk.Frame):
                 raise exceptions.TilesNotConnectedException
         
         # Make sure that every move is touching the board
-        if not self.board.isEmpty():
+        if (not self.board.isEmpty()) and self.dgame.getTurnNumber() > 1:
             for m in moves:
                 if not self.board.moveTouching(m, self.onBoard):
                     raise exceptions.MoveNotTouchingException
@@ -948,19 +1146,28 @@ class GameFrame(gtk.Frame):
             self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
             self.letterBox.show_all()
     
-    def refreshUserList(self, users):
+#     def refreshUserList(self, users):
+#         '''
+#         Show users in the User Window
+#         
+#         @param users: List of Players
+#         '''
+#         
+#         if self.gameTimer is not None and self.gameTimer.active():
+#             self.gameTimer.cancel()
+#         
+#         self.userList.clear()
+#         for player in users:
+#             self.userList.append( (player.name, str(player.score), player.time, str(player.numLetters) ) )
+            
+    def refreshUserList(self, users=None):
         '''
         Show users in the User Window
-        
-        @param users: List of Players
         '''
-        
-        if self.gameTimer is not None and self.gameTimer.active():
-            self.gameTimer.cancel()
-        
+
         self.userList.clear()
-        for player in users:
-            self.userList.append( (player.name, str(player.score), player.time, str(player.numLetters) ) )
+        for player in self.dgame.getPlayers():
+            self.userList.append( (player.getUsername(), str(player.getScore()), 1000000, str(len(player.getLetters())) ) )
     
     def refreshStats(self, stats):
         '''
@@ -1035,7 +1242,8 @@ class GameFrame(gtk.Frame):
         #Activate dragging on the letters
         #self.letterBox.foreach(lambda letter: letter.activate())
         self.board.activate()
-        self.clearCurrentMove()
+        #TODO
+        #self.clearCurrentMove()
         
         self.currentTurn = True
 
@@ -1127,22 +1335,23 @@ class GameFrame(gtk.Frame):
         # Highlight the name of the player who has control of the board
         self.currentTurn = False
         self.mainwindow.setCurrentTurn(self.currentGameId, False)
-        self.clearCurrentMove()
+        #self.clearCurrentMove()
+        #TODO: temp hack
         
-        if player is not None:
-            sel = self.userView.get_selection()
-            model = self.userView.get_model()
-            
-            it = model.get_iter_first()
-            while ( it != None ):
-                name = model.get_value(it, 0)
-                if (name == player.name):
-                    if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
-                        path = model.get_path(it)
-                        self.gameTimer = reactor.callLater(0, self.decreaseTime, player.time, model,path)
-                    #sel.select_iter(it)
-                    break
-                it = model.iter_next(it)
+#         if player is not None:
+#             sel = self.userView.get_selection()
+#             model = self.userView.get_model()
+#             
+#             it = model.get_iter_first()
+#             while ( it != None ):
+#                 name = model.get_value(it, 0)
+#                 if (name == player.name):
+#                     if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
+#                         path = model.get_path(it)
+#                         self.gameTimer = reactor.callLater(0, self.decreaseTime, player.time, model,path)
+#                     #sel.select_iter(it)
+#                     break
+#                 it = model.iter_next(it)
     
     # Apply moves to board
     def applyMoves(self, moves):
@@ -1378,15 +1587,15 @@ class GameFrame(gtk.Frame):
             if isinstance(c, GameLetter):
                 c.refresh()
     
-    def removeLetter(self, x, y):
-        '''
-        Remove a letter from the board
-        
-        @param x:
-        @param y:
-        '''
-        self.removeMove(self.board.get(x,y), x, y, refresh=True)
-        self.showLetters( self.letters )
+#     def removeLetter(self, x, y):
+#         '''
+#         Remove a letter from the board
+#         
+#         @param x:
+#         @param y:
+#         '''
+#         self.removeMove(self.board.get(x,y), x, y, refresh=True)
+#         self.showLetters( self.letters )
         
     
     def placeLetter(self, letter, x, y):
@@ -1459,3 +1668,17 @@ class GameFrame(gtk.Frame):
         '''
         return self.gameOptions[opt]
         
+    def getLettersFromMove(self, move):
+        '''
+        Get the letters in a move
+        
+        @param move: Move
+        @return: List of letters in C{move}
+        '''
+        
+        letters = []
+        
+        for letter, x, y in move.getTiles():
+            letters.append( letter.clone() )
+
+        return letters

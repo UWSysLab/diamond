@@ -8,18 +8,15 @@ from pyscrabble import gtkutil
 from pyscrabble import util
 
 import sys
-sys.path.append("/Users/Niel/systems/diamond-src/backend/libdiamond")
-from libdiamond import *
+sys.path.append("/Users/Niel/systems/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+from libpydiamond import *
 
 # Class representing a Tile on the Gameboard            
 class GameTile(gtk.Button):
     '''
     GameTiles represent Tiles on the Game board.
     '''
-    
-    DIR_NONE = 0
-    DIR_HORIZ = 1
-    DIR_VERT = 2
     
     def __init__(self, x, y, parent):
         '''
@@ -32,48 +29,27 @@ class GameTile(gtk.Button):
         self.board = parent #callback to the parent widget
         
         gtk.Button.__init__(self)
-        
-        #######
-        
+                
         self.letterStr = DString()
         DString.Map(self.letterStr, "tileletter" + repr(y * BOARD_WIDTH + x))
+        self.letterStr.Set("")
         
         self.letterScore = DLong()
         DLong.Map(self.letterScore, "tilescore" + repr(y * BOARD_WIDTH + x))
-        
-        #######
-        
+        self.letterScore.Set(0)
+                
         self.__style = TILE_NORMAL
-        self.letter = None
         
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         self.findStyle(x,y)
         
         self.x = x
         self.y = y
-        self.direction = GameTile.DIR_NONE
-        self.fixed = False
-        self.start = False
         
         self.handler_id = 0
         self.source_handler_id = 0
-        self.key_press_handler = 0
         self.active = False
         self.deactivate()
-        
-        self.connect("button-release-event", self.buttonRelease_cb)
-        self.connect("button-press-event", self.buttonPress_cb)
-    
-    def clone(self):
-        '''
-        Clone this Tile
-        
-        @return: Cloned Tile
-        '''
-        
-        g = GameTile(self.x,self.y,self.parent)
-        g.putLetter( self.getLetter() )
-        return g
     
     def activate(self):
         '''
@@ -82,8 +58,8 @@ class GameTile(gtk.Button):
         Allow letters to be dragged onto it.
         '''
         self.deactivate()
-            
-        if (self.getLetter() == None):
+        
+        if (self.getLetterStr() == ""):
             self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
@@ -114,9 +90,12 @@ class GameTile(gtk.Button):
         @param targetType:
         @param eventTime:
         '''
+        pass
         #print 'dragging tile gameletter %s' % widget.getLetter().getLetter()
-        s = widget.getLetter().getLetter()
-        selection.set(selection.target, 8, '%s:%s:%s' % (s, str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        #s = widget.getLetter().getLetter()
+        #selection.set(selection.target, 8, '%s:%s:%s' % (s, str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        selection.set(selection.target, 8, '%s:%s:%s' % ("", str(0), "False"))
+
     
     # Callback when a GameLetter is dragged onto this GameTile
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
@@ -133,83 +112,103 @@ class GameTile(gtk.Button):
         @param targetType:
         @param eventType:
         '''
-        #print 'set letter called in tile %d,%d' % (self.x,self.y)
-        
-        # Kill typing
-        self.get_parent().clearArrows()
-        
+        #print 'letterDragged called in tile %d,%d' % (self.x,self.y)      
         
         c = context.get_source_widget()
         if c == self: # Ignore if we drag onto ourselves
             return
         
-        self.setLetter(c, c.getLetter().getLetter(), c.getLetter().getScore(), c.getLetter().isBlank())
+        self.setLetter(c, c.getLetterStr(), c.getLetterScore())
     
-    def setLetter(self, widget, letter, score, isBlank, showBlank=True):
-        '''
-        Set letter on this Tile
-        
-        @param widget: Widget that was dragged
-        @param letter: Letter value
-        @param score: Score value
-        '''
-        refresh = True
-        
-        # If we have a letter on here there are two cases
-        # 1.) A GameTile is being dragged.  If so, we need to remove the old game tile (widget) and put its letter here
-        # 2.) A Letter is being dragged.  If so, we need to remove the old letter and put it back in the rack and put the letter here
-        #print 'SetLetter called on %s %s %d,%d with %s %s' % ( str(id(self)), str(self),self.x,self.y, str(widget.__class__), str(widget) )
-        #print 'SetLetter %s %s %s %s' % ( str(letter), str(score), str(isBlank), str(showBlank) )
-        if self.getLetter() is not None and widget is not None:
-            if isinstance(widget, GameTile):
-                refresh = False
-                self.board.removeMove(widget, widget.x, widget.y, refresh=False)
-                self.board.removeMove(self, self.x, self.y, refresh=False)
-                letter,score = widget.getLetter().getLetter(), widget.getLetter().getScore()
-                widget.setLetter( self.getLetter(), self.getLetter().getLetter(), self.getLetter().getScore(), self.getLetter().isBlank() )
-            if isinstance(widget, GameLetter):
-                self.board.removeMove(self, self.x, self.y, refresh=False)
-                widget.copyLetter( self.getLetter() )
-                refresh = False
-        
-        else:
-            if isinstance(widget, GameTile):
-                self.board.removeMove(widget,widget.x,widget.y)
-                refresh = False
-        
-        l = Letter(letter,score)    
-        l.setIsBlank( isBlank )
-        if l.isBlank() and showBlank:
-            l.setLetter("")
-        self.putLetter( l, showBlank )
-        #print '%s %s %s put on %s %d,%d' % (str(l.getLetter()), str(l.getScore()), str(l.isBlank()), str(id(self)), self.x,self.y)
-        self.board.registerMove(self, self.x, self.y, refresh, widget)
-        
+    def setLetter(self, widget, letter, score):
+        #set up drag handler
         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         
-        o = manager.OptionManager()
-        if o.get_default_bool_option(USE_COLOR_NEW_TILE, True):
-            self.setBackground(o.get_default_option(COLOR_NEW_TILE, DEFAULT_NEW_TILE))
-        
-    def putLetter(self, letter, showBlank=False):
+        if isinstance(widget, GameTile):
+            self.board.swapTiles(self, widget)
+        elif isinstance(widget, GameLetter):
+            self.board.swapTileAndLetter(self, widget)
+
+    def putLetter(self, letter):
         '''
-        Put a Letter on the tie.
-        
-        @param letter:
-        @param showBlank: True to show blank value
+        @param letter: Letter object to put on this GameTile
         '''
-        o = manager.OptionManager()
-        color = None
-        if o.get_default_bool_option(USE_COLOR_LETTER, True):
-            color = o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER])
-        else:
-            color = TILE_COLORS[TILE_LETTER]
+        self.setLetterStr(letter.letter)
+        self.setLetterScore(letter.score)
+        self.update_label()
+    
+    def clear(self):
+        self.setLetterStr("")
+        self.setLetterScore(0)
+        self.update_label()
+        self.activate()
+    
+#     def setLetter(self, widget, letter, score, isBlank, showBlank=True):
+#         '''
+#         Set letter on this Tile
+#         
+#         @param widget: Widget that was dragged
+#         @param letter: Letter value
+#         @param score: Score value
+#         '''
+#         refresh = True
+#         
+#         # If we have a letter on here there are two cases
+#         # 1.) A GameTile is being dragged.  If so, we need to remove the old game tile (widget) and put its letter here
+#         # 2.) A Letter is being dragged.  If so, we need to remove the old letter and put it back in the rack and put the letter here
+#         #print 'SetLetter called on %s %s %d,%d with %s %s' % ( str(id(self)), str(self),self.x,self.y, str(widget.__class__), str(widget) )
+#         #print 'SetLetter %s %s %s %s' % ( str(letter), str(score), str(isBlank), str(showBlank) )
+#         if self.getLetter() is not None and widget is not None:
+#             if isinstance(widget, GameTile):
+#                 refresh = False
+#                 self.board.removeMove(widget, widget.x, widget.y, refresh=False)
+#                 self.board.removeMove(self, self.x, self.y, refresh=False)
+#                 letter,score = widget.getLetter().getLetter(), widget.getLetter().getScore()
+#                 widget.setLetter( self.getLetter(), self.getLetter().getLetter(), self.getLetter().getScore(), self.getLetter().isBlank() )
+#             if isinstance(widget, GameLetter):
+#                 self.board.removeMove(self, self.x, self.y, refresh=False)
+#                 widget.copyLetter( self.getLetter() )
+#                 refresh = False
+#         
+#         else:
+#             if isinstance(widget, GameTile):
+#                 self.board.removeMove(widget,widget.x,widget.y)
+#                 refresh = False
+#         
+#         l = Letter(letter,score)    
+#         l.setIsBlank( isBlank )
+#         if l.isBlank() and showBlank:
+#             l.setLetter("")
+#         self.putLetter( l, showBlank )
+#         #print '%s %s %s put on %s %d,%d' % (str(l.getLetter()), str(l.getScore()), str(l.isBlank()), str(id(self)), self.x,self.y)
+#         self.board.registerMove(self, self.x, self.y, refresh, widget)
+#         
+#         self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
+#         self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
+#         
+#         o = manager.OptionManager()
+#         if o.get_default_bool_option(USE_COLOR_NEW_TILE, True):
+#             self.setBackground(o.get_default_option(COLOR_NEW_TILE, DEFAULT_NEW_TILE))
         
-        self.setStyle( TILE_LETTER, color )
-        self.set_label( letter, showBlank )
-        
-        self.letter = letter
+#     def putLetter(self, letter, showBlank=False):
+#         '''
+#         Put a Letter on the tie.
+#         
+#         @param letter:
+#         @param showBlank: True to show blank value
+#         '''
+#         o = manager.OptionManager()
+#         color = None
+#         if o.get_default_bool_option(USE_COLOR_LETTER, True):
+#             color = o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER])
+#         else:
+#             color = TILE_COLORS[TILE_LETTER]
+#         
+#         self.setStyle( TILE_LETTER, color )
+#         self.set_label( letter, showBlank )
+#         
+#         self.letter = letter
     
     def findStyle(self, x, y):
         '''
@@ -268,16 +267,8 @@ class GameTile(gtk.Button):
         
         self.modify_bg(gtk.STATE_NORMAL, gtk.gdk.color_parse(color) )
         self.modify_bg(gtk.STATE_PRELIGHT, gtk.gdk.color_parse(color) )
-
     
-    #def __repr__(self):
-    #    '''
-    #    Print the Letter on the Tile
-    #    '''
-    #    
-    #    return self.getLetter()
-    
-    def set_label(self, letter, showBlank=False):
+    def update_label(self, showBlank=False):
         '''
         Set the Letter/score label on the Tile
         
@@ -289,15 +280,16 @@ class GameTile(gtk.Button):
             self.remove(widget)
         widget = gtk.Label()
             
-        l = letter.getLetter()
-        s = str(letter.getScore())
+        l = self.getLetterStr()
+        s = str(self.getLetterScore())
         o = manager.OptionManager()
-        if letter.isBlank():
-            if showBlank:
-                l = ""
-            if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
+        if l == "":
+            s = ""
+            #if showBlank:
+            #    l = ""
+            #if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
+            #    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
+            #    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
         else:
             if o.get_default_bool_option(USE_COLOR_TEXT, True):
                 l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
@@ -307,7 +299,7 @@ class GameTile(gtk.Button):
             l = """<span weight="bold">%s</span>""" % l
             s = """<span weight="bold">%s</span>""" % s
             
-        if len(str(letter.getScore())) == 2:
+        if len(str(self.getLetterScore())) == 2:
             widget.set_markup("""%s <sub><span size="xx-small">%s</span></sub>""" % (l, s))
         else:
             widget.set_markup("""%s <sub><span size="x-small">%s</span></sub>""" % (l, s))
@@ -338,239 +330,7 @@ class GameTile(gtk.Button):
                 if o.get_default_bool_option(USE_COLOR_NORMAL_TILE, True):
                     self.setBackground( o.get_default_option(COLOR_NORMAL_TILE, TILE_COLORS[TILE_NORMAL]) )
                 else:
-                    self.setBackground( TILE_COLORS[TILE_NORMAL] )
-        
-    
-    def buttonPress_cb(self, widget, event):
-        '''
-        Button press event
-        
-        @param widget: widget
-        @param event: event info
-        '''
-        if event.type == gtk.gdk._2BUTTON_PRESS:
-            if self.getLetter() is not None:
-                if self.handler_is_connected(self.handler_id):
-                    self.board.removeMove(self, self.x, self.y)
-                    self.board.refreshLetterBox()
-            return True
-            
-        if event.button == 1 and self.getLetter() is None and event.type not in (gtk.gdk._2BUTTON_PRESS, gtk.gdk._3BUTTON_PRESS):
-            if self.board.isCurrentTurn() == True:
-                
-                if self.fixed:
-                    return False
-                
-                self.direction = self.direction + 1
-                if self.direction > GameTile.DIR_VERT:
-                    self.direction = GameTile.DIR_NONE
-                    
-                self.handleArrow(self.getArrow(self.direction))
-                
-        return False
-        
-    
-    def getArrow(self, direction):
-        '''
-        Get arrow from direction
-        
-        @param direction:
-        '''
-        if direction == GameTile.DIR_HORIZ:
-            return gtk.Arrow(gtk.ARROW_RIGHT, gtk.SHADOW_OUT)
-        if direction == GameTile.DIR_VERT:
-            return gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_OUT)
-            
-        return None
-    
-    def handleArrow(self, arrow):
-        '''
-        Place an arrow on the board
-        
-        @param arrow:
-        '''
-        dir = self.direction
-        self.get_parent().clearArrows()
-        self.direction = dir
-        
-        if arrow is not None:
-            box = gtk.HBox(False, 0)
-            arrow.set_size_request(10,10)
-            arrow.set_padding(0.0, 0.0)
-            box.pack_start(arrow, False, False, 0)
-            self.add(box)
-            self.key_press_handler = self.connect("key-press-event", self.keyPress_cb, self.direction)
-        self.show_all()
-        
-    
-    def buttonRelease_cb(self, widget, event):
-        '''
-        Button release event
-        
-        @param widget: Widget
-        @param event: Event info
-        '''
-        
-        if event.button == 3:
-            
-            menu = gtk.Menu()
-            
-            if widget.getLetter() is not None:
-            
-                board = widget.get_parent()
-                moves = board.getMovesAtXY(widget.x,widget.y)
-                
-                if len(moves) > 0:
-                    item = gtk.ImageMenuItem(stock_id=STOCK_DEFINE)
-                    menu.append(item)
-                    
-                    l = manager.LettersManager()
-                    
-                    meta = l.getMeta( self.board.getGameOption(OPTION_RULES) )
-                    site = meta['lookup']
-                    submenu = gtk.Menu()
-                    for move in moves:
-                        word = move.getWord()
-                        i = gtk.MenuItem(word)
-                        i.connect("activate", util.showUrl, '%s%s' % (site,word.lower()))
-                        submenu.append(i)
-                        
-                    item.set_submenu(submenu)
-                 
-            if len(menu.get_children()) > 0:
-                menu.show_all()
-                menu.popup(None, None, None, 1, event.time)
-    
-    def removeArrow(self):
-        '''
-        Remove arrow
-        '''
-        if self.getLetter() is None:
-            x = self.get_child()
-            if x is not None:
-                self.remove(x)
-                self.direction = GameTile.DIR_NONE
-                self.fixed = False
-        if self.handler_is_connected(self.key_press_handler):
-            self.disconnect(self.key_press_handler)     
-        
-    def keyPress_cb(self, widget, event, direction):
-        '''
-        Key press
-        
-        @param widget:
-        @param event:
-        @param direction:
-        '''
-        val = event.keyval
-        board = self.get_parent()
-        
-        if val == gtk.keysyms.Escape:
-            self.removeArrow()
-            self.direction = GameTile.DIR_NONE
-            self.fixed = False
-            return True
-        
-        if val in (gtk.keysyms.BackSpace, gtk.keysyms.Delete):
-            
-            # Handle edges
-            if direction == GameTile.DIR_HORIZ:
-                if self.x == 14 and self.getLetter() is not None:
-                    self.board.removeLetter(self.x,self.y)
-                    tile = board.get(self.x,self.y)
-                    board.set_focus_child(tile)
-                    tile.grab_focus()
-                    tile.direction = direction
-                    tile.fixed = True
-                    tile.handleArrow( self.getArrow(direction) )
-                    return True
-            if direction == GameTile.DIR_VERT and self.getLetter() is not None:
-                if self.y == 14:
-                    self.board.removeLetter(self.x,self.y)
-                    tile = board.get(self.x,self.y)
-                    board.set_focus_child(tile)
-                    tile.grab_focus()
-                    tile.direction = direction
-                    tile.fixed = True
-                    tile.handleArrow( self.getArrow(direction) )
-                    return True
-            
-            tile = None
-            if direction == GameTile.DIR_HORIZ:
-                x = self.x - 1
-                while x >= 0:
-                    if self.board.hasOnboardMove(x, self.y):
-                        tile = board.get(x, self.y)
-                        break
-                    x = x - 1
-            if direction == GameTile.DIR_VERT:
-                y = self.y -1
-                while y >= 0:
-                    if self.board.hasOnboardMove(self.x, y):
-                        tile = board.get(self.x, y)
-                        break
-                    y = y - 1
-            if tile is not None:
-                self.board.removeLetter(tile.x,tile.y)
-                tile = board.get(tile.x,tile.y)
-                board.set_focus_child(tile)
-                tile.grab_focus()
-                tile.direction = direction
-                if self.board.getNumOnBoardMoves() == 0:
-                    tile.fixed = False
-                else:
-                    tile.fixed = True
-                tile.handleArrow( self.getArrow(direction) )
-                self.removeArrow()
-            return True
-        
-        if val == gtk.keysyms.Return:
-            self.board.sendCurrentMove()
-            self.get_parent().clearArrows()
-            return True
-        
-        if val in range(gtk.keysyms.a, gtk.keysyms.z+1):
-            val = val - 32
-                
-        if val in range(gtk.keysyms.A, gtk.keysyms.Z+1):
-            ch = chr(val)
-            
-            if direction == GameTile.DIR_HORIZ:
-                if self.x == 14 and self.getLetter() is not None:
-                    gtk.gdk.beep()
-            if direction == GameTile.DIR_VERT and self.getLetter() is not None:
-                if self.y == 14:
-                    gtk.gdk.beep()
-            
-            tile = None
-            if direction == GameTile.DIR_HORIZ:
-                num = min(14 - self.x, 6)
-                for x in range(1,num+1):
-                    t = board.get(self.x + x, self.y)
-                    if t.getLetter() is None:
-                        tile = t
-                        break
-            if direction == GameTile.DIR_VERT:
-                num = min(14 - self.y, 6)
-                for x in range(1,num+1):
-                    t = board.get(self.x, self.y+x)
-                    if t.getLetter() is None:
-                        tile = t
-                        break
-            
-            placed = self.board.placeLetter(str(ch), self.x, self.y)
-            if tile is not None:
-                if placed:
-                    board.set_focus_child(t)
-                    t.grab_focus()
-                    t.direction = direction
-                    t.handleArrow( self.getArrow(direction) )
-                    tile.fixed = True  
-                    self.removeArrow()
-            
-            return True
-        return False
-            
+                    self.setBackground( TILE_COLORS[TILE_NORMAL] )       
     
     def getStyle(self):
         '''
@@ -583,14 +343,20 @@ class GameTile(gtk.Button):
         return self.__style
         
     
+    def getLetterStr(self):
+        return self.letterStr.Value()
+    
+    def getLetterScore(self):
+        return self.letterScore.Value()
+    
+    def setLetterStr(self, inStr):
+        self.letterStr.Set(inStr)
+    
+    def setLetterScore(self, score):
+        self.letterScore.Set(score)
+    
     def getLetter(self):
-        '''
-        Return Letter on this Tile or None
-        
-        @return: Letter on this Tile or None
-        '''
-        
-        return self.letter
+        return Letter(self.getLetterStr(), self.getLetterScore())
     
     def getTileScore(self):
         '''
@@ -657,18 +423,18 @@ class GameLetter(gtk.ToggleButton):
         '''
         gtk.ToggleButton.__init__(self)
         
-        self.score = letter.getScore()
+        self.letterScore = letter.getScore()
+        self.letterStr = letter.getLetter()
+        
         self.__isBlank = False
-        self.setLetter( letter.getLetter() )
         
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
-        
         
         self.letterBox = letterBox
         
         self.setBackground()
         
-        self.set_label(letter)
+        self.set_label(self.letterStr, self.letterScore)
         
         self.handlerId = 0
         self.destHandlerId = 0
@@ -691,30 +457,53 @@ class GameLetter(gtk.ToggleButton):
         self.modify_bg(gtk.STATE_ACTIVE, color )
         self.modify_bg(gtk.STATE_PRELIGHT, color )
     
-    def getLetter(self):
-        '''
-        Return the Letter object that this object represents
-        
-        @return: Letter
-        '''
-        
-        return self.clone()
+    def getLetterStr(self):
+        return self.letterStr.encode('utf-8')
     
+    def getLetterScore(self):
+        return self.letterScore
+    
+    def getLetter(self):
+        return Letter(self.getLetterStr(), self.getLetterScore())
+    
+#     def getLetter(self):
+#         '''
+#         Return the Letter object that this object represents
+#         
+#         @return: Letter
+#         '''
+#         
+#         return self.getLetterObject()
+#     
+#     def getLetterObject(self):
+#         l = Letter(self.letter)
+#         l.__isBlank = self.isBlank()
+#         l.score = self.score
+#         return l
+    
+#     def copyLetter(self, letter):
+#         '''
+#         Copy a letter onto this Letter
+#         
+#         @param letter: Letter
+#         '''
+#         
+#         s = letter.getLetter()
+#         if letter.isBlank():
+#             s = ""
+#         
+#         self.setLetter(s)
+#         self.setScore( letter.getScore() )
+#         self.setIsBlank(letter.isBlank())
+#         self.set_label(letter)
+
     def copyLetter(self, letter):
         '''
-        Copy a letter onto this Letter
-        
-        @param letter: Letter
+        @letter: Letter object whose letter and score will be copied onto this GameLetter
         '''
-        
-        s = letter.getLetter()
-        if letter.isBlank():
-            s = ""
-        
-        self.setLetter(s)
-        self.setScore( letter.getScore() )
-        self.setIsBlank(letter.isBlank())
-        self.set_label(letter)
+        self.letterStr = letter.letter
+        self.letterScore = letter.score
+        self.set_label(letter.letter, letter.score)
     
     def dragLetter(self, widget, context, selection, targetType, eventTime):
         '''
@@ -726,52 +515,62 @@ class GameLetter(gtk.ToggleButton):
         @param targetType:
         @param eventTime:
         '''
-        #print 'dragging gameletter %s' % widget.getLetter().getLetter()
-        selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
-    
+        #print 'dragging GameLetter %s' % widget.getLetterStr()
+        #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        #selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetterStr(), str(widget.getLetterScore()), "False"))
+        selection.set(selection.target, 8, '%s:%s:%s' % ("", str(0), "False"))
+
+
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
-        '''
-        Callback when a widget is dragged onto this letter.
+        sourceWidget = context.get_source_widget()
         
-        @param widget:
-        @param context:
-        @param x:
-        @param y:
-        @param selection:
-        @param targetType:
-        @param eventType:
-        '''
-        letter = context.get_source_widget()
-        
-        if isinstance(letter, GameTile): # Swap from Board to Tile
-            tile = letter
-            tmp = self.clone()
-            tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
-            self.copyLetter( tile.getLetter() )
-            tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
-            return
-        
-        if isinstance(letter, GameLetter):
+        if isinstance(sourceWidget, GameTile): # Swap from Board to Tile
+            sourceWidget.board.swapTileAndLetter(sourceWidget, self)
             
-            if id(letter) == id(self): # ignore if widget is dragged onto itself
-                return
-            
-            o = manager.OptionManager()
-            opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
-            
-            if opt == OPTION_LETTER_INSERT:
-                letters = self.letterBox.get_children()
-                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-                letters = [ l for l in letters if id(l) != id(letter) ]
-                for l in letters:
-                    if id(l) == id(widget):
-                        self.letterBox.pack_start(letter, False, False, 0)
-                    self.letterBox.pack_start(l, False, False, 0)
-            
-            if opt == OPTION_LETTER_SWAP:
-                l = self.getLetter().clone()
-                self.copyLetter(letter.getLetter())
-                letter.copyLetter(l)
+    
+#     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
+#         '''
+#         Callback when a widget is dragged onto this letter.
+#         
+#         @param widget:
+#         @param context:
+#         @param x:
+#         @param y:
+#         @param selection:
+#         @param targetType:
+#         @param eventType:
+#         '''
+#         letter = context.get_source_widget()
+#         
+#         if isinstance(letter, GameTile): # Swap from Board to Tile
+#             tile = letter
+#             tmp = self.clone()
+#             tile.board.removeMove(tile,tile.x,tile.y, refresh=False)
+#             self.copyLetter( tile.getLetter() )
+#             tile.setLetter( None, tmp.getLetter(), tmp.getScore(), tmp.isBlank() )
+#             return
+#          
+#         if isinstance(letter, GameLetter):
+#              
+#             if id(letter) == id(self): # ignore if widget is dragged onto itself
+#                 return
+#              
+#             o = manager.OptionManager()
+#             opt = o.get_default_option(OPTION_SWAP, OPTION_LETTER_SWAP)
+#              
+#             if opt == OPTION_LETTER_INSERT:
+#                 letters = self.letterBox.get_children()
+#                 self.letterBox.foreach(lambda w: self.letterBox.remove(w))
+#                 letters = [ l for l in letters if id(l) != id(letter) ]
+#                 for l in letters:
+#                     if id(l) == id(widget):
+#                         self.letterBox.pack_start(letter, False, False, 0)
+#                     self.letterBox.pack_start(l, False, False, 0)
+#              
+#             if opt == OPTION_LETTER_SWAP:
+#                 l = self.getLetter().clone()
+#                 self.copyLetter(letter.getLetter())
+#                 letter.copyLetter(l)
     
     def activate(self):
         '''
@@ -809,11 +608,11 @@ class GameLetter(gtk.ToggleButton):
         Refresh colors on this tile
         '''
         
-        self.set_label( self.getLetter() )
+        self.set_label( self.letterStr, self.letterScore )
         self.setBackground()
         
     
-    def set_label(self, letter):
+    def set_label(self, letterStr, letterScore):
         '''
         Set the Letter/score label on the Tile
         
@@ -826,24 +625,18 @@ class GameLetter(gtk.ToggleButton):
         else:
             self.remove(widget)
         
-        l = letter.getLetter()
-        s = str(letter.getScore())
+        l = letterStr
+        s = str(letterScore)
         o = manager.OptionManager()
-        if letter.isBlank():
-            l = ""
-            if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
-        else:
-            if o.get_default_bool_option(USE_COLOR_TEXT, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
+        if o.get_default_bool_option(USE_COLOR_TEXT, True):
+            l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
+            s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
         
         if o.get_default_bool_option(OPTION_TEXT_BOLD, False):
             l = """<span weight="bold">%s</span>""" % l
             s = """<span weight="bold">%s</span>""" % s
         
-        if len(str(letter.getScore())) == 2:
+        if len(str(letterScore)) == 2:
             widget.set_markup("""%s <sub><span size="xx-small">%s</span></sub>""" % (l, s))
         else:
             widget.set_markup("""%s <sub><span size="x-small">%s</span></sub>""" % (l, s))
@@ -861,18 +654,18 @@ class GameLetter(gtk.ToggleButton):
             self.__isBlank = True
         #else:
         #    self.__isBlank = False
-        self.letter = letter
+        self.letterStr = letter
 
-    def clone(self):
-        '''
-        Clone the letter
-        
-        @return: Clone of this Letter
-        '''
-        l = Letter(self.letter)
-        l.__isBlank = self.isBlank()
-        l.score = self.score
-        return l
+    #def clone(self):
+    #    '''
+    #    Clone the letter
+    #    
+    #    @return: Clone of this Letter
+    #    '''
+    #    l = Letter(self.letter)
+    #    l.__isBlank = self.isBlank()
+    #    l.score = self.score
+    #    return l
     
     def isBlank(self):
         '''
@@ -947,14 +740,15 @@ class GameBoard(gtk.Table):
         
         for l, x, y in move.getTiles():
             if self.tiles.has_key( (x,y) ):
-                if (self.tiles[(x,y)].getLetter() != l):
+                if (self.tiles[(x,y)].getLetterStr() != l):
                     return False
             elif not self.tiles.has_key( (x,y) ):
                 return False
         
         return True
         
-    
+        
+    #TODO: figure out if this method is still used
     def putLetter(self, letter, x, y, set_bg):
         '''
         Put a Letter on a Tile on the board
@@ -1019,7 +813,11 @@ class GameBoard(gtk.Table):
         
         @return: True if the board is empty
         '''
-        return self.empty
+#        return self.empty
+        for gTile in self.tiles.values():
+            if gTile.getLetter().letter != "":
+                return False
+        return True
     
     def getTilesAtX(self, _x):
         '''
@@ -1033,7 +831,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if x == _x:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetter() != None:
+                    if self.tiles[(x, y)].getLetter().letter != "":
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -1050,7 +848,7 @@ class GameBoard(gtk.Table):
         for x,y in self.tiles.keys():
             if y == _y:
                 if (self.tiles.has_key((x, y))):
-                    if self.tiles[(x, y)].getLetter() != None:
+                    if self.tiles[(x, y)].getLetter().letter != "":
                         list.append( (self.tiles[x,y], x, y) )
         
         return list
@@ -1080,7 +878,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x+1, y))):
-            if self.tiles[(x+1, y)].getLetter() != None:
+            if self.tiles[(x+1, y)].getLetter().letter != "":
                 return True
         return False
     
@@ -1094,7 +892,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y+1))):
-            if self.tiles[(x, y+1)].getLetter() != None:
+            if self.tiles[(x, y+1)].getLetter().letter != "":
                 return True
         return False
     
@@ -1136,7 +934,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x-1, y))):
-            if self.tiles[(x-1, y)].getLetter() != None:
+            if self.tiles[(x-1, y)].getLetter().letter != "":
                 return True
         return False
     
@@ -1150,7 +948,7 @@ class GameBoard(gtk.Table):
         '''
         
         if (self.tiles.has_key((x, y-1))):
-            if self.tiles[(x, y-1)].getLetter() != None:
+            if self.tiles[(x, y-1)].getLetter().letter != "":
                 return True
         return False
     
@@ -1261,7 +1059,8 @@ class GameBoard(gtk.Table):
         Remove arrows
         '''
         for tile in self.tiles.itervalues():
-            tile.removeArrow()
+            pass
+            #tile.removeArrow()
         
         
         
