@@ -1,6 +1,0 @@
-*.pyc
-*.swp
-resources/config/options.cfg
-resources/config/pyscrabble.db.fs*
-resources/config/pyscrabble.log
-resources/config/server_history

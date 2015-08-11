@@ -10,6 +10,9 @@ project (DIAMOND)
 if (NOT ANDROID)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall -pthread")
+else()
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wall -Wno-uninitialized")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -fPIC -Wall")
 endif()
 
 # ---------------------------------------------------------
@@ -32,7 +35,7 @@ endif()
 set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}")
     
 if(ANDROID)
-    set(HIREDIS_MAKE make 
+    set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}"
     "CFLAGS=${CMAKE_C_FLAGS}" "DYLIB_MAKE_CMD=${CMAKE_C_COMPILER} -shared ${ANDROID_NDK_GLOBAL_LDFLAGS} -o ${DYLIBNAME}"
     "STLIB_MAKE_CMD=${CMAKE_AR} rcs ${STDLIBNAME}"
     "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}")

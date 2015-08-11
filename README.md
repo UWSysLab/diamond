@@ -36,7 +36,7 @@ bindings:
 
 To run tests for the C++ and Python bindings type in the `build` directory:
 
-    $ make test
+    $ make diamondtest
 
 After you have compiled the C++ shared library, you can compile the
 Java bindings for those libraries: 
