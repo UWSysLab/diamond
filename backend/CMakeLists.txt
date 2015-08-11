@@ -19,8 +19,6 @@ endif()
 # Download dependencies
 # ---------------------------------------------------------
 
-set(PROJECT_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/libraries")
-
 # Download the hiredis client
 # set up the hiredis redis client that redox needs
 INCLUDE(ExternalProject)
