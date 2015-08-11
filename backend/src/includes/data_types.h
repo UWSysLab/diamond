@@ -20,7 +20,7 @@ class DString
 {
 public:
     DString() {};
-    DString(const std::string &s, const std::string &key) : _s(s) {};
+    DString(const std::string &s, const std::string &key) : _s(s), _key(key) {};
     ~DString() {};
     static int Map(DString &addr, const std::string &key);
     std::string Value();
