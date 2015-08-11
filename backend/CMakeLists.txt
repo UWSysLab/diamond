@@ -55,9 +55,30 @@ ExternalProject_Add(
     LOG_CONFIGURE ON
     LOG_BUILD ON)
 
-    include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
-    link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
-  
+ include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
+ link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
+
+ExternalProject_Add(
+    unqlite-db
+    URL http://unqlite.org/db/unqlite-db-20130825-116.zip
+    PREFIX ${PROJECT_BINARY_DIR}/unqlite
+    DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/unqlite/src
+    SOURCE_DIR ${PROJECT_BINARY_DIR}/unqlite/src
+    BINARY_DIR ${PROJECT_BINARY_DIR}/unqlite/src
+    STAMP_DIR ${PROJECT_BINARY_DIR}/unqlite/stamp
+    TMP_DIR ${PROJECT_BINARY_DIR}/unqlite/tmp
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ""
+    UPDATE_COMMAND ""
+    CONFIGURE_COMMAND ""
+    LOG_DOWNLOAD ON
+    LOG_CONFIGURE ON
+    LOG_BUILD ON)
+
+set(SRC_UNQLITE ${PROJECT_BINARY_DIR}/unqlite/src/unqlite.c)
+include_directories(${PROJECT_BINARY_DIR}/unqlite/src)
+link_directories(${PROJECT_BINARY_DIR}/unqlite/src)
+
 # ---------------------------------------------------------
 # Include and link directories
 # ---------------------------------------------------------
@@ -105,9 +126,11 @@ set(DIAMOND_LIB_DEPS hiredis)
 add_library (diamond SHARED
             ${SRC_DIAMOND_LIB}
             ${SRC_DIAMOND_CLIENT}
-            ${SRC_DIAMOND_DATA_TYPES})
+            ${SRC_DIAMOND_DATA_TYPES}
+            ${SRC_UNQLITE})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond hiredis-redisclient)
+add_dependencies(diamond unqlite-db)
 
 # only create and test for x86
 if (NOT ANDROID)
