@@ -7,7 +7,7 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
@@ -18,7 +18,7 @@ namespace diamond {
 
 using namespace std;
 
-extern Client diamondclient;
+extern Cloud cloudstore;
 static unordered_map<string, DList> cache;
    
 int
@@ -32,12 +32,12 @@ DList::Map(DList &addr, const string &key)
         return 0;
     }
    
-    if (!diamondclient.IsConnected()) {
+    if (!cloudstore.IsConnected()) {
         Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
-    int ret = diamondclient.Read(key, value);
+    int ret = cloudstore.Read(key, value);
 
     if (ret != RPC_OK) {
         return ret;
@@ -86,7 +86,7 @@ vector<uint64_t>
 DList::Members()
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     return _vec;
 }
@@ -95,7 +95,7 @@ int
 DList::Index(const uint64_t val)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
@@ -109,7 +109,7 @@ uint64_t
 DList::Value(const int index)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     return _vec.at(index);
 }
@@ -118,58 +118,58 @@ void
 DList::Append(const uint64_t val)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _vec.push_back(val);
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DList::Append(const vector<uint64_t> &vec)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     for (auto e : vec) {
         _vec.push_back(e);
     }
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DList::Insert(const int index, const uint64_t val) {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _vec.insert(index + _vec.begin(), val);
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DList::Erase(const int index) {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _vec.erase(index + _vec.begin());
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DList::Remove(const uint64_t val) {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _vec.erase(Index(val) + _vec.begin());
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DList::Clear() {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _vec.clear();
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 } // namespace diamond

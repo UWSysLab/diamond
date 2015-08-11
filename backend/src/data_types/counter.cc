@@ -7,7 +7,7 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
@@ -17,7 +17,7 @@ namespace diamond {
 
 using namespace std;
 
-extern Client diamondclient;
+extern Cloud cloudstore;
 static unordered_map<string, DCounter> cache;
 
 int
@@ -31,13 +31,13 @@ DCounter::Map(DCounter &addr, const string &key) {
         return 0;
     }
    
-   if (!diamondclient.IsConnected()) {
+   if (!cloudstore.IsConnected()) {
       Panic("Cannot map objects before connecting to backing store server");
    }
 
    string value;
    
-   int ret = diamondclient.Read(key, value);
+   int ret = cloudstore.Read(key, value);
 
    if (ret != RPC_OK) {
       return ret;
@@ -51,7 +51,7 @@ DCounter::Map(DCounter &addr, const string &key) {
 int
 DCounter::Value() {
     string s;
-    int ret = diamondclient.Read(_key, s);
+    int ret = cloudstore.Read(_key, s);
 
     if (ret == RPC_OK) {
         _counter = atoi(s.c_str());
@@ -65,7 +65,7 @@ DCounter::Set(int val)
     _counter = val;
     char buf[50];
     sprintf(buf, "%i", _counter);
-    diamondclient.Write(_key, string(buf));
+    cloudstore.Write(_key, string(buf));
 }
    
 } // namespace diamond

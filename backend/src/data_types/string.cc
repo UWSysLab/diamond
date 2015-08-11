@@ -7,7 +7,7 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
@@ -17,7 +17,7 @@ namespace diamond {
 
 using namespace std;
 
-Client diamondclient;    
+Cloud cloudstore;    
 static unordered_map<string, DString> cache;
     
 int
@@ -31,13 +31,13 @@ DString::Map(DString &addr, const string &key) {
         return 0;
     }
 
-    if (!diamondclient.IsConnected()) {
+    if (!cloudstore.IsConnected()) {
        Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
    
-    int ret = diamondclient.Read(key, value);
+    int ret = cloudstore.Read(key, value);
 
     if (ret != RPC_OK) {
        return ret;
@@ -52,7 +52,7 @@ DString::Map(DString &addr, const string &key) {
 std::string
 DString::Value() {
     string s;
-    int ret = diamondclient.Read(_key, s);
+    int ret = cloudstore.Read(_key, s);
 
     if (ret == RPC_OK) {
         _s = s;
@@ -64,7 +64,7 @@ void
 DString::Set(const std::string &s)
 {
     _s = s;
-    diamondclient.Write(_key, _s);
+    cloudstore.Write(_key, _s);
 }
 
 } // namespace diamond

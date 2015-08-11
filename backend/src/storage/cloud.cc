@@ -7,19 +7,19 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 
 namespace diamond {
 
 using namespace std;
 
-Client::~Client()
+Cloud::~Cloud()
 {
  
 }
     
 int
-Client::Connect(const std::string &host)
+Cloud::Connect(const std::string &host)
 {
     if (_connected) {
         return RPC_OK;
@@ -34,13 +34,13 @@ Client::Connect(const std::string &host)
 }
 
 bool
-Client::IsConnected()
+Cloud::IsConnected()
 {
     return _connected;
 }
     
 int
-Client::Read(const string &key, string &value)
+Cloud::Read(const string &key, string &value)
 {
     if (!_connected) {
         return RPC_UNCONNECTED;
@@ -61,7 +61,7 @@ Client::Read(const string &key, string &value)
 }
 
 int
-Client::Write(const string &key, const string &value)
+Cloud::Write(const string &key, const string &value)
 {
     if (!_connected) {
         return RPC_UNCONNECTED;

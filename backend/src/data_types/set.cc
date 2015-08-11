@@ -7,7 +7,7 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
@@ -18,7 +18,7 @@ namespace diamond {
 
 using namespace std;
 
-extern Client diamondclient;
+extern Cloud cloudstore;
 static unordered_map<string, DSet> cache;
    
 int
@@ -32,12 +32,12 @@ DSet::Map(DSet &addr, const string &key)
         return 0;
     }
    
-    if (!diamondclient.IsConnected()) {
+    if (!cloudstore.IsConnected()) {
         Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
-    int ret = diamondclient.Read(key, value);
+    int ret = cloudstore.Read(key, value);
 
     if (ret != RPC_OK) {
         return ret;
@@ -86,7 +86,7 @@ unordered_set<uint64_t>
 DSet::Members()
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     return _set;
 }
@@ -95,7 +95,7 @@ bool
 DSet::InSet(const uint64_t val)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     return _set.count(val) > 0;
 }
@@ -104,42 +104,42 @@ void
 DSet::Add(const uint64_t val)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _set.insert(val);
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DSet::Add(const unordered_set<uint64_t> &set)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     for (auto e : set) {
         _set.insert(e);
     }
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DSet::Remove(const uint64_t val)
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _set.erase(val);
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
 
 void
 DSet::Clear()
 {
     string s;
-    diamondclient.Read(_key, s);
+    cloudstore.Read(_key, s);
     Deserialize(s);
     _set.clear();
-    diamondclient.Write(_key, Serialize());
+    cloudstore.Write(_key, Serialize());
 }
     
 } // namespace diamond

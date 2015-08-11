@@ -87,7 +87,7 @@ set(SRC_DIAMOND_LIB
     ${DIAMOND_SOURCE_DIR}/lib/message.cc)
 
 # Diamond data store client
-set(SRC_DIAMOND_CLIENT ${DIAMOND_SOURCE_DIR}/client/client.cc)
+set(SRC_DIAMOND_CLOUD_STORE ${DIAMOND_SOURCE_DIR}/storage/cloud.cc)
 
 # Diamond data structure implementations
 set(SRC_DIAMOND_DATA_TYPES
@@ -108,7 +108,7 @@ set(DIAMOND_LIB_DEPS hiredis)
 
 add_library (diamond SHARED
             ${SRC_DIAMOND_LIB}
-            ${SRC_DIAMOND_CLIENT}
+            ${SRC_DIAMOND_CLOUD_STORE}
             ${SRC_DIAMOND_DATA_TYPES}
             ${SRC_UNQLITE})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})

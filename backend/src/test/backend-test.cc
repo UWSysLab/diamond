@@ -28,21 +28,21 @@
  *
  **********************************************************************/
 
-#include "client/client.h"
+#include "storage/cloud.h"
 #include "includes/data_types.h"
 
 #include <gtest/gtest.h>
 
 using namespace diamond;
 
-extern Client diamondclient;
+extern Cloud cloudstore;
 
 TEST(DString, Map)
 {
     DString s1;
     DString s2;
 
-    //diamondclient.Connect("seymour");
+    //cloudstore.Connect("seymour");
     int ret = DString::Map(s1, std::string("10"));
     s1 = std::string("Hello");
     

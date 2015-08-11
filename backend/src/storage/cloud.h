@@ -2,13 +2,13 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * client/client.h:
- *   Diamond client-side logic
+ * storage/cloud.h:
+ *   Diamond logic for accessing cloud storage
  *
  **********************************************************************/
 
-#ifndef _CLIENT_H_
-#define _CLIENT_H_
+#ifndef _CLOUD_H_
+#define _CLOUD_H_
 
 #define RPC_OK 0
 #define RPC_UNCONNECTED 1
@@ -20,11 +20,11 @@
 
 namespace diamond {
 
-class Client
+class Cloud
 {
 public:
-    Client() {Connect("coldwater.cs.washington.edu");};
-    virtual ~Client();
+    Cloud() {Connect("coldwater.cs.washington.edu");};
+    virtual ~Cloud();
     int Connect(const std::string &host);
     bool IsConnected();
     int Read(const std::string &key, std::string &value);
