@@ -19,9 +19,10 @@ on Ubuntu/Debian or Macports/Homebrew on OSX):
 * C++ bindings: Install CMake and either gcc or clang. Diamond builds
   as a C++ shared library by default.
 * Python bindings: Install the Python Boost modules
-* Java bindings: Install Maven for compiling the Java bindings
+* Java bindings: Install Maven and the JDK for compiling the Java bindings
 
-For Ubuntu 14.04, installing the following packages are sufficient:
+For Ubuntu 14.04, installing the following packages should be 
+sufficient to build Diamond:
    $ apt-get install build-essential cmake maven libpython-dev libboost-dev
 
 ### Building the source and language bindings
