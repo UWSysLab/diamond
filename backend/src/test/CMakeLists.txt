@@ -7,7 +7,7 @@ if ((NOT GTEST_FOUND) OR APPLE)
    # Set default ExternalProject root directory
    ExternalProject_Add(
         googletest
-        PREFIX ${PROJECT_LIBRARIES_DIR}/gtest
+        PREFIX ${PROJECT_BINARY_DIR}/gtest
         URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
 	UPDATE_COMMAND ""
         INSTALL_COMMAND ""

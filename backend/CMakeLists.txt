@@ -19,8 +19,6 @@ endif()
 # Download dependencies
 # ---------------------------------------------------------
 
-set(PROJECT_LIBRARIES_DIR "${PROJECT_SOURCE_DIR}/libraries")
-
 # Download the hiredis client
 # set up the hiredis redis client that redox needs
 INCLUDE(ExternalProject)
@@ -58,9 +56,9 @@ ExternalProject_Add(
     LOG_CONFIGURE ON
     LOG_BUILD ON)
 
-    include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
-    link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
-  
+ include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
+ link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
+
 # ---------------------------------------------------------
 # Include and link directories
 # ---------------------------------------------------------
@@ -79,6 +77,9 @@ endif()
 # ---------------------------------------------------------
 # Source files
 # ---------------------------------------------------------
+
+# UNQLITE code
+set(SRC_UNQLITE ${DIAMOND_SOURCE_DIR}/lib/unqlite.c)
 
 # Diamond general library code
 set(SRC_DIAMOND_LIB
@@ -108,7 +109,8 @@ set(DIAMOND_LIB_DEPS hiredis)
 add_library (diamond SHARED
             ${SRC_DIAMOND_LIB}
             ${SRC_DIAMOND_CLIENT}
-            ${SRC_DIAMOND_DATA_TYPES})
+            ${SRC_DIAMOND_DATA_TYPES}
+            ${SRC_UNQLITE})
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond hiredis-redisclient)
 
