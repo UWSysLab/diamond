@@ -29,7 +29,7 @@ DList::Map(DList &addr, const string &key)
     auto find = cache.find(key);
     if (find != cache.end()) {
         addr._vec = find->second._vec;
-        return 0;
+        return ERR_OK;
     }
    
     if (!cloudstore.IsConnected()) {
@@ -39,14 +39,14 @@ DList::Map(DList &addr, const string &key)
     string value;
     int ret = cloudstore.Read(key, value);
 
-    if (ret != RPC_OK) {
+    if (ret != ERR_OK) {
         return ret;
     }
 
     addr.Deserialize(value);
     cache[key] = addr;
     
-    return 0;
+    return ERR_OK;
 }
 
 string

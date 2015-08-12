@@ -28,7 +28,7 @@ DString::Map(DString &addr, const string &key) {
     auto find = cache.find(key);
     if (find != cache.end()) {
         addr._s = find->second._s;
-        return 0;
+        return ERR_OK;
     }
 
     if (!cloudstore.IsConnected()) {
@@ -39,13 +39,13 @@ DString::Map(DString &addr, const string &key) {
    
     int ret = cloudstore.Read(key, value);
 
-    if (ret != RPC_OK) {
+    if (ret != ERR_OK) {
        return ret;
     }
 
     addr._s = value;
     cache[key] = addr;
-    return RPC_OK;
+    return ERR_OK;
 }
 
 
@@ -54,7 +54,7 @@ DString::Value() {
     string s;
     int ret = cloudstore.Read(_key, s);
 
-    if (ret == RPC_OK) {
+    if (ret == ERR_OK) {
         _s = s;
     }
     return _s;

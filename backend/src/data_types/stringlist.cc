@@ -39,7 +39,7 @@ DStringList::Map(DStringList &addr, const string &key)
     string value;
     int ret = cloudstore.Read(key, value);
 
-    if (ret != RPC_OK) {
+    if (ret != ERR_OK) {
         return ret;
     }
 

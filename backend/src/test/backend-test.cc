@@ -48,7 +48,7 @@ TEST(DString, Map)
     
     ret = DString::Map(s2, std::string("10"));
 
-    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(s1.Value(), s2.Value());
 
     s2 = std::string("Goodbye");
@@ -65,7 +65,7 @@ TEST(DLong, Map) {
 
     ret = DLong::Map(l2, std::string("11"));
 
-    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(l1.Value(), l2.Value());
 
     l2 = 0;
@@ -82,7 +82,7 @@ TEST(DCounter, Map) {
 
     ret = DCounter::Map(c2, std::string("12"));
 
-    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(c1.Value(), c2.Value());
 
     ++c2;
@@ -100,7 +100,7 @@ TEST(DSet, Map) {
 
     ret = DSet::Map(set2, std::string("13"));
 
-    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(set2.InSet(33), true);
 
     set2.Add(7);
@@ -125,7 +125,7 @@ TEST(DList, Map) {
 
     ret = DList::Map(list2, std::string("14"));
 
-    EXPECT_EQ(ret, RPC_OK);
+    EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(list2.Index(9), 1);
     EXPECT_EQ(list2.Value(0), 4);
 
