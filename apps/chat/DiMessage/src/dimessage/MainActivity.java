@@ -1,6 +1,9 @@
-package com.example.dimessage;
+package dimessage;
 
 import android.support.v7.app.ActionBarActivity;
+
+import com.example.dimessage.R;
+
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
