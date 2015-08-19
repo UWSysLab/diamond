@@ -10,13 +10,20 @@
     tools:context="dimessage.MainActivity" >
 
     <TextView
+    	android:id="@+id/chatTextBox"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hello_world" />
+        android:layout_height="350dp"
+        android:text="@string/chat_box" />
+
+	<View
+		android:layout_width="fill_parent"
+		android:layout_height="1dp"
+		android:background="#000000" />
         
     <EditText
+    	android:id="@+id/entryTextBox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:hint="@string/chat_box" />
+        android:hint="@string/entry_box" />
 
 </LinearLayout>

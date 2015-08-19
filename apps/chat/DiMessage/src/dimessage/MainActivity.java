@@ -7,6 +7,8 @@ import com.example.dimessage.R;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+import edu.washington.cs.diamond.Diamond.DString;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -14,6 +16,12 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		TextView chatTextBox = (TextView)findViewById(R.id.chatTextBox);
+		DString str1 = new DString("String1", "a");
+		DString str2 = new DString("String2", "a");
+		str1.Set("Testing Diamond");
+		chatTextBox.setText(str2.Value());
 	}
 
 	@Override
