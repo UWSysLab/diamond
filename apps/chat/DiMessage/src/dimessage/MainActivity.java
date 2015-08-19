@@ -1,12 +1,15 @@
 package dimessage;
 
 import android.support.v7.app.ActionBarActivity;
+import android.util.Log;
 
 import com.example.dimessage.R;
 
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.TextView;
 import edu.washington.cs.diamond.Diamond.DString;
 
@@ -22,6 +25,19 @@ public class MainActivity extends ActionBarActivity {
 		DString str2 = new DString("String2", "a");
 		str1.Set("Testing Diamond");
 		chatTextBox.setText(str2.Value());
+		
+		TextView entryTextBox = (TextView)findViewById(R.id.entryTextBox);
+		entryTextBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+			
+			@Override
+			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				EditText ev = (EditText)v;
+				ev.setText("");
+				Log.i(this.getClass().toString(), "Editor action detected");
+				return true;
+			}
+		});
+
 	}
 
 	@Override
