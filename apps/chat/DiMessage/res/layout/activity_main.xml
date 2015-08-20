@@ -10,9 +10,9 @@
     tools:context="dimessage.MainActivity" >
 
     <TextView
-    	android:id="@+id/chatTextBox"
+        android:id="@+id/chatTextBox"
         android:layout_width="wrap_content"
-        android:layout_height="350dp"
+        android:layout_height="200dp"
         android:text="@string/chat_box" />
 
 	<View
