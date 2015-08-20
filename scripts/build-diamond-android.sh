@@ -2,8 +2,9 @@ DIAMOND_SRC_DIR=$1
 DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/backend"
 PROJECT_DIR=$2
 
-if [ $# -ne 2]
+if [ $# -ne 2 ]
     then echo "usage: ./build-diamond-android.sh <diamond-src-dir> <android-project-dir>"
+    exit
 fi
 
 # build ARM binaries
