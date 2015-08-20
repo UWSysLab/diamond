@@ -19,7 +19,7 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-		
+				
 		TextView chatTextBox = (TextView)findViewById(R.id.chatTextBox);
 		DString str1 = new DString("String1", "a");
 		DString str2 = new DString("String2", "a");
@@ -27,15 +27,10 @@ public class MainActivity extends ActionBarActivity {
 		chatTextBox.setText(str2.Value());
 		
 		EditText entryTextBox = (EditText)findViewById(R.id.entryTextBox);		
-		entryTextBox.setOnEditorActionListener(new EditText.OnEditorActionListener() {
-			
-			@Override
-			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-				EditText ev = (EditText)v;
-				ev.setText("");
-				return true;
-			}
-		});
+		ChatManager manager = new ChatManager(chatTextBox, entryTextBox);
+
+		entryTextBox.setOnEditorActionListener(new EntryActionListener(manager));
+
 	}
 
 	@Override
