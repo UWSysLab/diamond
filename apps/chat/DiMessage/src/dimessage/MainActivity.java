@@ -26,18 +26,16 @@ public class MainActivity extends ActionBarActivity {
 		str1.Set("Testing Diamond");
 		chatTextBox.setText(str2.Value());
 		
-		TextView entryTextBox = (TextView)findViewById(R.id.entryTextBox);
-		entryTextBox.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+		EditText entryTextBox = (EditText)findViewById(R.id.entryTextBox);		
+		entryTextBox.setOnEditorActionListener(new EditText.OnEditorActionListener() {
 			
 			@Override
 			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 				EditText ev = (EditText)v;
 				ev.setText("");
-				Log.i(this.getClass().toString(), "Editor action detected");
 				return true;
 			}
 		});
-
 	}
 
 	@Override
