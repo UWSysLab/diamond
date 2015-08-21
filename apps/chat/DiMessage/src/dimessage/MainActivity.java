@@ -26,9 +26,11 @@ public class MainActivity extends ActionBarActivity {
 		str1.Set("Testing Diamond");
 		chatTextBox.setText(str2.Value());
 		
+		String userName = "DefaultUser";
+		
+		ChatManager manager = new ChatManager(chatTextBox, userName);
+		
 		EditText entryTextBox = (EditText)findViewById(R.id.entryTextBox);		
-		ChatManager manager = new ChatManager(chatTextBox, entryTextBox);
-
 		entryTextBox.setOnEditorActionListener(new EntryActionListener(manager));
 
 	}
