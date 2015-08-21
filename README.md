@@ -23,7 +23,7 @@ on Ubuntu/Debian or Macports/Homebrew on OSX):
 
 For Ubuntu 14.04, installing the following packages should be 
 sufficient to build Diamond:
-   $ apt-get install build-essential cmake maven libpython-dev libboost-dev
+   $ apt-get install build-essential cmake maven libpython-dev libboost-dev libevent-dev
 
 ### Building the source and language bindings
 To compile a shared object library and both the C++ and Python
