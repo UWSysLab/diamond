@@ -10,11 +10,11 @@
 #ifndef _CLOUD_H_
 #define _CLOUD_H_
 
-#define RPC_OK 0
-#define RPC_UNCONNECTED 1
-#define RPC_ERR 2
+#define ERR_OK 0
+#define ERR_UNAVAILABLE 1
+#define ERR_NETWORK 2
+#define ERR_LOCAL 3
 
-#include <unordered_map>
 #include <string>
 #include "hiredis.h"
 

@@ -2,8 +2,8 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * client/client.cc:
- *   Diamond client
+ * storage/cloud.cc:
+ *   Diamond client for cloud storage
  *
  **********************************************************************/
 
@@ -22,14 +22,14 @@ int
 Cloud::Connect(const std::string &host)
 {
     if (_connected) {
-        return RPC_OK;
+        return ERR_OK;
     }
     _redis = redisConnect(host.c_str(), 6379);
     if (_redis != NULL && _redis->err == 0) {
         _connected = true;
-        return RPC_OK;
+        return ERR_OK;
     } else {
-        return RPC_UNCONNECTED;
+        return ERR_UNAVAILABLE;
     }
 }
 
@@ -43,7 +43,7 @@ int
 Cloud::Read(const string &key, string &value)
 {
     if (!_connected) {
-        return RPC_UNCONNECTED;
+        return ERR_UNAVAILABLE;
     }
 
     redisReply *reply = (redisReply *)redisCommand(_redis, "GET %s", key.c_str());
@@ -52,30 +52,30 @@ Cloud::Read(const string &key, string &value)
         if (reply->type == REDIS_REPLY_STRING) {
             value = string(reply->str);
             freeReplyObject(reply);
-            return RPC_OK;
+            return ERR_OK;
         }
     }
 
     freeReplyObject(reply);
-    return RPC_ERR;
+    return ERR_NETWORK;
 }
 
 int
 Cloud::Write(const string &key, const string &value)
 {
     if (!_connected) {
-        return RPC_UNCONNECTED;
+        return ERR_UNAVAILABLE;
     }
 
     redisReply *reply = (redisReply *)redisCommand(_redis, "SET %s %s", key.c_str(), value.c_str());
 
     if (reply != NULL) {
         freeReplyObject(reply);
-        return RPC_OK;
+        return ERR_OK;
     }
 
     freeReplyObject(reply);
-    return RPC_OK;
+    return ERR_OK;
 }
 
 } // namespace diamond

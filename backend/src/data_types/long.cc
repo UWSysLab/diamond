@@ -30,7 +30,7 @@ DLong::Map(DLong &addr, const string &key)
    auto find = cache.find(key);
    if (find != cache.end()) {
       addr._l = find->second._l;
-      return 0;
+      return ERR_OK;
    }
    
    if (!cloudstore.IsConnected()) {
@@ -41,13 +41,13 @@ DLong::Map(DLong &addr, const string &key)
    
    int ret = cloudstore.Read(key, value);
 
-   if (ret != RPC_OK) {
+   if (ret != ERR_OK) {
       return ret;
    }
 
    addr._l = atol(value.c_str());
    cache[key] = addr;
-   return 0;
+   return ERR_OK;
 }
 
 uint64_t
@@ -55,7 +55,7 @@ DLong::Value() {
     string s;
     int ret = cloudstore.Read(_key, s);
 
-    if (ret == RPC_OK) {
+    if (ret == ERR_OK) {
         _l = atol(s.c_str());
     }
     return _l;

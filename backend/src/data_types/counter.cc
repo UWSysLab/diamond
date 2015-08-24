@@ -28,7 +28,7 @@ DCounter::Map(DCounter &addr, const string &key) {
     auto find = cache.find(key);
     if (find != cache.end()) {
         addr._counter = find->second._counter;
-        return 0;
+        return ERR_OK;
     }
    
    if (!cloudstore.IsConnected()) {
@@ -39,7 +39,7 @@ DCounter::Map(DCounter &addr, const string &key) {
    
    int ret = cloudstore.Read(key, value);
 
-   if (ret != RPC_OK) {
+   if (ret != ERR_OK) {
       return ret;
    }
 
@@ -53,7 +53,7 @@ DCounter::Value() {
     string s;
     int ret = cloudstore.Read(_key, s);
 
-    if (ret == RPC_OK) {
+    if (ret == ERR_OK) {
         _counter = atoi(s.c_str());
     }
     return _counter;
