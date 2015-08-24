@@ -3,6 +3,13 @@
 cmake_minimum_required (VERSION 2.8.11)
 project (DIAMOND)
 
+
+# ----------------------------------------------------
+# Additional CMake modules 
+# ----------------------------------------------------
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
+
 # ----------------------------------------------------
 # C Flags
 # ----------------------------------------------------
@@ -114,6 +121,7 @@ add_library (diamond SHARED
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond hiredis-redisclient)
 
+
 # only create and test for x86
 if (NOT ANDROID)
   # Add python bindings for Linux and Mac OSX
@@ -121,4 +129,13 @@ if (NOT ANDROID)
 
 # Adding Diamond tests
 add_subdirectory(${DIAMOND_SOURCE_DIR}/test)
+
+
+find_package (LibEvent)
+if (LibEvent_FOUND)
+  include_directories(${LIBEVENT_INCLUDE_DIR})
+  target_link_libraries (diamond ${LIBEVENT_LIB})
+endif (LibEvent_FOUND)
+
+
 endif()
