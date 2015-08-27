@@ -16,6 +16,7 @@
 
 namespace diamond {
 
+
 class DString
 {
 public:
@@ -41,6 +42,7 @@ public:
     static int Map(DLong &addr, const std::string &key);
     uint64_t Value();
     void Set(const uint64_t l);
+	void Wait();
     DLong & operator=(const uint64_t l) { Set(l); return *this; };
     DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
     DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };

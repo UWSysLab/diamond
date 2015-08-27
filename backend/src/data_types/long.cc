@@ -18,7 +18,6 @@ namespace diamond {
 
 using namespace std;
 
-extern Cloud cloudstore;
 static unordered_map<string, DLong> cache;
 
 int
@@ -33,13 +32,13 @@ DLong::Map(DLong &addr, const string &key)
       return ERR_OK;
    }
    
-   if (!cloudstore.IsConnected()) {
+   if (!cloudstore->IsConnected()) {
       Panic("Cannot map objects before connecting to backing store server");
    }
 
    string value;
    
-   int ret = cloudstore.Read(key, value);
+   int ret = cloudstore->Read(key, value);
 
    if (ret != ERR_OK) {
       return ret;
@@ -53,7 +52,7 @@ DLong::Map(DLong &addr, const string &key)
 uint64_t
 DLong::Value() {
     string s;
-    int ret = cloudstore.Read(_key, s);
+    int ret = cloudstore->Read(_key, s);
 
     if (ret == ERR_OK) {
         _l = atol(s.c_str());
@@ -67,8 +66,21 @@ DLong::Set(const uint64_t l)
     _l = l;
     char buf[50];
     sprintf(buf, "%" PRIu64 "", _l);
-    cloudstore.Write(_key, string(buf));
+    cloudstore->Write(_key, string(buf));
+	
+//	string channel = "channel";
+//	string message = "message";
+//	cloudstore->Publish(channel, message);
+
 }
 
-   
+
+void
+DLong::Wait(){
+// 	string channel = "channel";
+// 	cloudstore->Subscribe(channel);
+// 	cloudstore->Unsubscribe(channel);
+}
+
+
 } // namespace diamond

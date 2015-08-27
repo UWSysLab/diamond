@@ -18,7 +18,6 @@ namespace diamond {
 
 using namespace std;
 
-extern Cloud cloudstore;
 static unordered_map<string, DStringList> cache;
    
 int
@@ -32,12 +31,12 @@ DStringList::Map(DStringList &addr, const string &key)
         return 0;
     }
    
-    if (!cloudstore.IsConnected()) {
+    if (!cloudstore->IsConnected()) {
         Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
-    int ret = cloudstore.Read(key, value);
+    int ret = cloudstore->Read(key, value);
 
     if (ret != ERR_OK) {
         return ret;
@@ -86,7 +85,7 @@ vector<string>
 DStringList::Members()
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     return _vec;
 }
@@ -95,7 +94,7 @@ int
 DStringList::Index(const string val)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
@@ -109,7 +108,7 @@ string
 DStringList::Value(const int index)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     return _vec.at(index);
 }
@@ -118,58 +117,58 @@ void
 DStringList::Append(const string val)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _vec.push_back(val);
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DStringList::Append(const vector<string> &vec)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     for (auto e : vec) {
         _vec.push_back(e);
     }
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DStringList::Insert(const int index, const string val) {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _vec.insert(index + _vec.begin(), val);
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DStringList::Erase(const int index) {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _vec.erase(index + _vec.begin());
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DStringList::Remove(const string val) {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _vec.erase(Index(val) + _vec.begin());
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DStringList::Clear() {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _vec.clear();
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 } // namespace diamond

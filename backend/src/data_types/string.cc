@@ -17,7 +17,8 @@ namespace diamond {
 
 using namespace std;
 
-Cloud cloudstore;    
+Cloud* cloudstore = Cloud::Instance();    
+
 static unordered_map<string, DString> cache;
     
 int
@@ -31,13 +32,13 @@ DString::Map(DString &addr, const string &key) {
         return ERR_OK;
     }
 
-    if (!cloudstore.IsConnected()) {
+    if (!cloudstore->IsConnected()) {
        Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
    
-    int ret = cloudstore.Read(key, value);
+    int ret = cloudstore->Read(key, value);
 
     if (ret != ERR_OK) {
        return ret;
@@ -52,7 +53,7 @@ DString::Map(DString &addr, const string &key) {
 std::string
 DString::Value() {
     string s;
-    int ret = cloudstore.Read(_key, s);
+    int ret = cloudstore->Read(_key, s);
 
     if (ret == ERR_OK) {
         _s = s;
@@ -64,7 +65,7 @@ void
 DString::Set(const std::string &s)
 {
     _s = s;
-    cloudstore.Write(_key, _s);
+    cloudstore->Write(_key, _s);
 }
 
 } // namespace diamond

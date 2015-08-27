@@ -18,7 +18,6 @@ namespace diamond {
 
 using namespace std;
 
-extern Cloud cloudstore;
 static unordered_map<string, DSet> cache;
    
 int
@@ -32,12 +31,12 @@ DSet::Map(DSet &addr, const string &key)
         return ERR_OK;
     }
    
-    if (!cloudstore.IsConnected()) {
+    if (!cloudstore->IsConnected()) {
         Panic("Cannot map objects before connecting to backing store server");
     }
 
     string value;
-    int ret = cloudstore.Read(key, value);
+    int ret = cloudstore->Read(key, value);
 
     if (ret != ERR_OK) {
         return ret;
@@ -86,7 +85,7 @@ unordered_set<uint64_t>
 DSet::Members()
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     return _set;
 }
@@ -95,7 +94,7 @@ bool
 DSet::InSet(const uint64_t val)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     return _set.count(val) > 0;
 }
@@ -104,42 +103,42 @@ void
 DSet::Add(const uint64_t val)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _set.insert(val);
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DSet::Add(const unordered_set<uint64_t> &set)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     for (auto e : set) {
         _set.insert(e);
     }
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DSet::Remove(const uint64_t val)
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _set.erase(val);
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
 
 void
 DSet::Clear()
 {
     string s;
-    cloudstore.Read(_key, s);
+    cloudstore->Read(_key, s);
     Deserialize(s);
     _set.clear();
-    cloudstore.Write(_key, Serialize());
+    cloudstore->Write(_key, Serialize());
 }
     
 } // namespace diamond
