@@ -33,11 +33,12 @@ INCLUDE(ExternalProject)
 set(STDLIBNAME "libhiredis.a")
 if(APPLE)
   set(DYLIBNAME "libhiredis.dylib")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk -mmacosx-version-min=10.10")
 else()
   set(DYLIBNAME "libhiredis.so")
 endif()
 
-set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}")
+set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}" "CFLAGS=${CMAKE_C_FLAGS}")
     
 if(ANDROID)
     set(HIREDIS_MAKE make "CC=${CMAKE_C_COMPILER}"
