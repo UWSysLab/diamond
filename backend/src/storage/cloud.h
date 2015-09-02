@@ -16,6 +16,7 @@
 #define ERR_LOCAL 3
 
 #include <string>
+#include <stdlib.h>
 #include "hiredis.h"
 #include "adapters/libevent.h"
 
