@@ -23,6 +23,7 @@
 
 #include <string>
 #include <semaphore.h>
+#include <stdlib.h>
 #include "hiredis.h"
 #include "adapters/libevent.h"
 
