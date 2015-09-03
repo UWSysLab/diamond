@@ -16,6 +16,7 @@
 
 namespace diamond {
 
+#define LOCK_DURATION_MS (5*1000)
 
 class DString
 {
@@ -42,14 +43,24 @@ public:
     static int Map(DLong &addr, const std::string &key);
     uint64_t Value();
     void Set(const uint64_t l);
-	void Wait();
     DLong & operator=(const uint64_t l) { Set(l); return *this; };
     DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
     DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };
-    
+
+	void Lock();
+	void ContinueLock();
+	void Unlock();
+	void Signal();
+	void Broadcast();
+	void Wait();
+
+
 private:
     uint64_t _l;
     std::string _key;
+
+	uint64_t _lockid = 0;
+	bool _locked = false;
 };
 
 
