@@ -3,6 +3,8 @@ package edu.washington.cs.diamond;
 import org.bytedeco.javacpp.*;
 import org.bytedeco.javacpp.annotation.*;
 import java.net.URL;
+import java.util.List;
+import java.util.ArrayList;
 
 @Platform(include={"data_types.h"})
 
@@ -63,5 +65,28 @@ public class Diamond {
       public native void Add(long val);
       public native void Remove(long val);
    }
+
+    public static class DStringList {
+        static { Loader.load(); }
+        DStringList() { allocate(); }
+        private native void allocate();
+
+        public List<String> Members() {
+            List<String> result = new ArrayList<String>();
+            DiamondUtil.StringVector members = nativeMembers();
+            for (int i = 0; i < members.size(); i++) {
+                result.add(members.get(i).getString());
+            }
+            return result;
+        }
+        public native @ByVal DiamondUtil.StringVector nativeMembers();
+
+        public native @StdString String Value(int index);
+        public native int Index(@StdString String val);
+        public native void Append(@StdString String val);
+        public native void Erase(int index);
+        public native void Remove(@StdString String val);
+        public native void Clear();
+    }
 
 }
