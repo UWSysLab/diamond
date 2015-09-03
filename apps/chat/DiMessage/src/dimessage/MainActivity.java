@@ -21,8 +21,8 @@ public class MainActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 				
-		Intent chatIntent = new Intent(this, ChatActivity.class);
-		startActivity(chatIntent);
+		Intent loginIntent = new Intent(this, LoginActivity.class);
+		startActivity(loginIntent);
 	}
 	
 	@Override

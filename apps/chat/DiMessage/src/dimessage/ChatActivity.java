@@ -2,7 +2,9 @@ package dimessage;
 
 import com.example.dimessage.R;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -22,7 +24,8 @@ public class ChatActivity extends ActionBarActivity {
 		str1.Set("Testing Diamond");
 		chatTextBox.setText(str2.Value());
 		
-		String userName = "DefaultUser";
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.getBaseContext());
+		String userName = prefs.getString(LoginActivity.PREFS_SCREENNAME, "AnonymousUser");
 		
 		ChatManager manager = new ChatManager(chatTextBox, userName);
 		

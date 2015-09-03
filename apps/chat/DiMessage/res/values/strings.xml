@@ -7,5 +7,9 @@
 
     <string name="chat_box">Chat message goes here</string>
     <string name="entry_box">Type message here</string>
+    
+    <string name="hint_screenname">Screenname</string>
+    <string name="dialog_login_title">Login</string>
+    <string name="dialog_login_positive">Ok</string>
 
 </resources>
