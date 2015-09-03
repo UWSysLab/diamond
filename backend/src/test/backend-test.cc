@@ -1,4 +1,4 @@
-// -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
+// -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 3 -*-
 /***********************************************************************
  *
  * kvstore-test.cc:
@@ -30,12 +30,14 @@
 
 #include "storage/cloud.h"
 #include "includes/data_types.h"
+#include <semaphore.h>
+
 
 #include <gtest/gtest.h>
 
 using namespace diamond;
 
-extern Cloud cloudstore;
+extern Cloud* cloudstore;
 
 TEST(DString, Map)
 {
@@ -141,3 +143,128 @@ TEST(DList, Map) {
     list1.Clear();
     EXPECT_EQ(list2.Members().size(), 0);
 }
+
+
+void* dlong_wait_client1_thread(void *v){
+    DLong l1;
+    sem_t *sem = (sem_t*) v;
+
+    int ret = DLong::Map(l1, std::string("11"));
+    EXPECT_EQ(ret, ERR_OK);
+
+    l1 = 10;    // Initial value
+
+    sem_post(sem);
+    sleep(1);
+
+    l1 = 20;    // New value
+
+    return 0;
+}
+
+void* dlong_wait_client2_thread(void *v){
+    DLong l1;
+    sem_t *sem = (sem_t*) v;
+
+    int ret = DLong::Map(l1, std::string("11"));
+    EXPECT_EQ(ret, ERR_OK);
+
+
+    sem_wait(sem);
+    EXPECT_EQ(l1.Value(), 10); // Expect initial value
+
+    l1.Wait();
+    EXPECT_EQ(l1.Value(), 20) << "ERROR: Client 2 did not wait for the new value"; // Expect new value
+
+    return 0;
+}
+
+
+// TEST(DLong, Wait) {
+// 
+//     DLong l1;
+//     DLong l2;
+//  pthread_t thread1, thread2; 
+//  void *status;
+//  sem_t sem;
+//  int ret;
+// 
+//  ret = sem_init(&sem, 0, 0);
+//  EXPECT_EQ(ret, 0);
+//  
+//     ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+//     l1 = 42;
+// 
+//  pthread_create (&thread1, NULL,  &dlong_wait_client1_thread, (void *) &sem);
+//  pthread_create (&thread2, NULL,  &dlong_wait_client2_thread, (void *) &sem);
+// 
+//  pthread_join(thread1, &status);
+//  pthread_join(thread2, &status);
+// 
+// }
+
+
+void* dlong_lock_client1_thread(void *v){
+    DLong l1;
+    sem_t *sem = (sem_t*) v;
+
+    int ret = DLong::Map(l1, std::string("11"));
+    EXPECT_EQ(ret, ERR_OK);
+
+    l1.Lock();
+    l1 = 10;    // Initial value
+    sleep(1);
+    EXPECT_EQ(l1.Value(), 10);
+    l1.Unlock();
+
+    return 0;
+}
+
+void* dlong_lock_client2_thread(void *v){
+    DLong l1;
+    sem_t *sem = (sem_t*) v;
+
+    int ret = DLong::Map(l1, std::string("11"));
+    EXPECT_EQ(ret, ERR_OK);
+
+    l1.Lock();
+    l1 = 5; // Initial value
+    sleep(1);
+    EXPECT_EQ(l1.Value(), 5);
+    l1.Unlock();
+
+    return 0;
+}
+
+
+TEST(DLong, Lock) {
+
+    DLong l1;
+    DLong l2;
+    pthread_t thread1, thread2; 
+    void *status;
+    sem_t sem;
+    int ret;
+
+    ret = sem_init(&sem, 0, 0);
+    EXPECT_EQ(ret, 0);
+    
+    ret = DLong::Map(l1, std::string("11"));
+    EXPECT_EQ(ret, ERR_OK);
+    l1 = 42;
+
+    pthread_create (&thread1, NULL,  &dlong_lock_client1_thread, (void *) &sem);
+    pthread_create (&thread2, NULL,  &dlong_lock_client2_thread, (void *) &sem);
+
+    pthread_join(thread1, &status);
+    pthread_join(thread2, &status);
+
+
+}
+
+
+
+
+
