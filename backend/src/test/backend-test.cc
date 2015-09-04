@@ -144,130 +144,145 @@ TEST(DList, Map) {
     EXPECT_EQ(list2.Members().size(), 0);
 }
 
-
-void* dlong_wait_client1_thread(void *v){
-    DLong l1;
-    sem_t *sem = (sem_t*) v;
-
-    int ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-
-    l1.Lock();
-    l1 = 10;    // Initial value
-
-    sem_post(sem);
-    sleep(1);
-
-    l1 = 20;    // New value
-    l1.Signal();
-    l1.Unlock();
-
-    return 0;
-}
-
-void* dlong_wait_client2_thread(void *v){
-    DLong l1;
-    sem_t *sem = (sem_t*) v;
-
-    int ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-
-
-    sem_wait(sem);
-    l1.Lock();
-    EXPECT_EQ(l1.Value(), 10); // Expect initial value
-
-    l1.Wait();
-    l1.Unlock();
-
-    EXPECT_EQ(l1.Value(), 20) << "ERROR: Client 2 did not wait for the new value"; // Expect new value
-
-    return 0;
-}
-
-
-TEST(DLong, Wait) {
-    DLong l1;
-    DLong l2;
-    pthread_t thread1, thread2; 
-    void *status;
-    sem_t sem;
-    int ret;
-
-    ret = sem_init(&sem, 0, 0);
-    EXPECT_EQ(ret, 0);
- 
-    ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-
-    l1 = 42;
-
-    pthread_create (&thread1, NULL,  &dlong_wait_client1_thread, (void *) &sem);
-    pthread_create (&thread2, NULL,  &dlong_wait_client2_thread, (void *) &sem);
-
-    pthread_join(thread1, &status);
-    pthread_join(thread2, &status);
-}
-
-
-void* dlong_lock_client1_thread(void *v){
-    DLong l1;
-    sem_t *sem = (sem_t*) v;
-
-    int ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-
-    l1.Lock();
-    l1 = 10;    // Initial value
-    sleep(1);
-    EXPECT_EQ(l1.Value(), 10);
-    l1.Unlock();
-
-    return 0;
-}
-
-void* dlong_lock_client2_thread(void *v){
-    DLong l1;
-    sem_t *sem = (sem_t*) v;
-
-    int ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-
-    l1.Lock();
-    l1 = 5; // Initial value
-    sleep(1);
-    EXPECT_EQ(l1.Value(), 5);
-    l1.Unlock();
-
-    return 0;
-}
+// int dlong_wait_local = 0;
+// 
+// void* dlong_wait_client1_thread(void *v){
+//     DLong l1;
+//     sem_t *sem = (sem_t*) v;
+// 
+//     int ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+//     l1.Lock();
+//     l1 = 10;    // Initial value
+//     dlong_wait_local = 10;
+// 
+//     sem_post(sem);
+//     sleep(1);
+// 
+//     l1 = 20;    // New value
+//     dlong_wait_local = 20;
+//     l1.Signal();
+//     l1.Unlock();
+// 
+//     return 0;
+// }
+// 
+// void* dlong_wait_client2_thread(void *v){
+//     DLong l1;
+//     sem_t *sem = (sem_t*) v;
+// 
+//     int ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+// 
+//     sem_wait(sem);
+//     l1.Lock();
+//     EXPECT_EQ(dlong_wait_local, 10); // Expect initial value
+//     EXPECT_EQ(l1.Value(), 10); // Expect initial value
+// 
+//     l1.Wait();
+//     l1.Unlock();
+// 
+//     EXPECT_EQ(dlong_wait_local, 20) << "ERROR: Client 2 did not wait for the new value"; // Expect new value
+//     EXPECT_EQ(l1.Value(), 20) << "ERROR: Client 2 did not wait for the new value"; // Expect new value
+// 
+//     return 0;
+// }
+// 
+// 
+// TEST(DLong, Wait) {
+//     DLong l1;
+//     DLong l2;
+//     pthread_t thread1, thread2; 
+//     void *status;
+//     sem_t sem;
+//     int ret;
+// 
+//     ret = sem_init(&sem, 0, 0);
+//     EXPECT_EQ(ret, 0);
+//  
+//     ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+//     l1 = 42;
+// 
+//     pthread_create (&thread1, NULL,  &dlong_wait_client1_thread, (void *) &sem);
+//     pthread_create (&thread2, NULL,  &dlong_wait_client2_thread, (void *) &sem);
+// 
+//     pthread_join(thread1, &status);
+//     pthread_join(thread2, &status);
+// }
 
 
-TEST(DLong, Lock) {
 
-    DLong l1;
-    DLong l2;
-    pthread_t thread1, thread2; 
-    void *status;
-    sem_t sem;
-    int ret;
-
-    ret = sem_init(&sem, 0, 0);
-    EXPECT_EQ(ret, 0);
-    
-    ret = DLong::Map(l1, std::string("11"));
-    EXPECT_EQ(ret, ERR_OK);
-    l1 = 42;
-
-    pthread_create (&thread1, NULL,  &dlong_lock_client1_thread, (void *) &sem);
-    pthread_create (&thread2, NULL,  &dlong_lock_client2_thread, (void *) &sem);
-
-    pthread_join(thread1, &status);
-    pthread_join(thread2, &status);
-
-
-}
-
+// int dlong_lock_local = 0;
+// void* dlong_lock_client1_thread(void *v){
+//     DLong l1;
+//     sem_t *sem = (sem_t*) v;
+// 
+//     int ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+//     l1.Lock();
+//     l1 = 10;    // Initial value
+//     dlong_lock_local = 10;
+// 
+//     sleep(1);
+// 
+//     EXPECT_EQ(dlong_lock_local, 10);
+//     EXPECT_EQ(l1.Value(), 10);
+//     l1.Unlock();
+// 
+//     return 0;
+// }
+// 
+// void* dlong_lock_client2_thread(void *v){
+//     DLong l1;
+//     sem_t *sem = (sem_t*) v;
+// 
+//     int ret = DLong::Map(l1, std::string("11"));
+//     EXPECT_EQ(ret, ERR_OK);
+// 
+//     l1.Lock();
+//     l1 = 5; // Initial value
+//     dlong_lock_local = 5;
+// 
+//     sleep(1);
+// 
+//     EXPECT_EQ(dlong_lock_local, 5);
+//     EXPECT_EQ(l1.Value(), 5);
+//     l1.Unlock();
+// 
+//     return 0;
+// }
+// 
+// 
+// TEST(DLong, Lock) {
+// 
+//     DLong l1;
+//     DLong l2;
+//     pthread_t thread1, thread2; 
+//     void *status;
+//     sem_t sem;
+//     int ret;
+// 
+//     ret = sem_init(&sem, 0, 0);
+//     EXPECT_EQ(ret, 0);
+//     
+//  //   ret = DLong::Map(l1, std::string("11"));
+//  //   EXPECT_EQ(ret, ERR_OK);
+//  //   l1 = 42;
+// 
+//     pthread_create (&thread1, NULL,  &dlong_lock_client1_thread, (void *) &sem);
+//     pthread_create (&thread2, NULL,  &dlong_lock_client2_thread, (void *) &sem);
+// 
+//     pthread_join(thread1, &status);
+//     pthread_join(thread2, &status);
+// 
+// 
+// }
+// 
 
 
 
