@@ -118,6 +118,7 @@ DLong::Unlock(){
 
     sprintf(value, "%" PRIu64 "", _lockid);
     res = cloudstore->RunOnServer(m_unlockScript, _key + string("-lock"), string(value));
+    assert(res == ERR_OK);
 
     if(!_locked){
         Panic("Object not locked");
@@ -177,8 +178,10 @@ DLong::Wait(){
 
     // A. Unlock & Sleep
     res = cloudstore->Push(_key + string("-lock-wait"), string(lockid));
+    assert(res == ERR_OK);
     Unlock();
     res = cloudstore->Pop(_key + string("-lock-wait-") + string(lockid), value, true);
+    assert(res == ERR_OK);
 
 
     // B. Reaquire lock
