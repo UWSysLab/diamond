@@ -128,15 +128,17 @@ if (NOT ANDROID)
   # Add python bindings for Linux and Mac OSX
   add_subdirectory(${DIAMOND_SOURCE_DIR}/bindings/python)
 
-# Adding Diamond tests
-add_subdirectory(${DIAMOND_SOURCE_DIR}/test)
+  # Adding Diamond tests
+  add_subdirectory(${DIAMOND_SOURCE_DIR}/test)
 
+  # Adding Diamond parallel tests
+  add_subdirectory(${DIAMOND_SOURCE_DIR}/test-parallel)
 
-find_package (LibEvent)
-if (LibEvent_FOUND)
-  include_directories(${LIBEVENT_INCLUDE_DIR})
-  target_link_libraries (diamond ${LIBEVENT_LIB})
-endif (LibEvent_FOUND)
-
+  # Add the Libevent
+  find_package (LibEvent)
+  if (LibEvent_FOUND)
+    include_directories(${LIBEVENT_INCLUDE_DIR})
+    target_link_libraries (diamond ${LIBEVENT_LIB})
+  endif (LibEvent_FOUND)
 
 endif()
