@@ -74,12 +74,12 @@ private:
 };
 
 
-long gettid();
+long getThreadID();
 
 #ifdef DEBUG_HIREDIS
 
-#define LOG_REQUEST(req, cmd) { printf("[%ld] Issuing " #req  " request (command = \"%s\")\n", gettid(), cmd);}
-#define LOG_REPLY(req, reply) { printf("[%ld] Received " #req " reply (reply->type = %d, reply->str = \"%s\")\n", gettid(), reply->type, reply->str);}
+#define LOG_REQUEST(req, cmd) { printf("[%ld] Issuing " #req  " request (command = \"%s\")\n", getThreadID(), cmd);}
+#define LOG_REPLY(req, reply) { printf("[%ld] Received " #req " reply (reply->type = %d, reply->str = \"%s\")\n", getThreadID(), reply->type, reply->str);}
 
 #else // DEBUG_HIREDIS
 

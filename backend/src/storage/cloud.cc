@@ -264,7 +264,7 @@ Cloud::Pop(const string &key, string &value, bool block)
 
 
 
-long gettid(){
+long getThreadID(){
     long tid;
     tid = syscall(SYS_gettid);
     return tid;
