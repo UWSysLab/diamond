@@ -22,10 +22,21 @@
 #define WRITE_IFF_EXIST 3
 
 #include <string>
+#include <stdlib.h>
+#include <stdio.h>
+#include <csignal>
+
 #include <semaphore.h>
 #include <stdlib.h>
 #include "hiredis.h"
-#include "adapters/libevent.h"
+
+#include <signal.h>
+#include <unistd.h>
+#include <assert.h>
+#include "lib/assert.h"
+#include <string.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
 
 namespace diamond {
 
@@ -36,17 +47,13 @@ class Cloud
 public:
 
     static Cloud* Instance();
-    static struct event_base * GetEventBase();
+    static void NewInstance();
     static void SetConnected(bool);
     static bool GetConnected();
 
-    static int GetCallbackRet();
-    static void SetCallbackRet(int);
-    static std::string &GetCallbackReply();
-    static void SetCallbackReply(std::string& reply);
 
     int Connect(const std::string &host);
-    int AsyncConnect(const std::string &host);
+    int Reconnect(const std::string &host);
     bool IsConnected();
     int Read(const std::string &key, std::string &value);
     int Write(const std::string &key, const std::string &value);
@@ -58,28 +65,39 @@ public:
 
 private:
     static Cloud *_instance;
-    static struct event_base *_base;
     static bool _connected;
-
-    redisAsyncContext *_redisAsync;
-    sem_t hiredis_sem;
-    static std::string _callbackReply;
-    static int _callbackRet;
+    redisContext *_redis;
 
     // contructor and destructor should be private in Singleton
     Cloud();
     virtual ~Cloud();
 };
 
+
+long gettid();
+
+#ifdef DEBUG_HIREDIS
+
+#define LOG_REQUEST(req, cmd) { printf("[%ld] Issuing " #req  " request (command = \"%s\")\n", gettid(), cmd);}
+#define LOG_REPLY(req, reply) { printf("[%ld] Received " #req " reply (reply->type = %d, reply->str = \"%s\")\n", gettid(), reply->type, reply->str);}
+
+#else // DEBUG_HIREDIS
+
+#define LOG_REQUEST(req, cmd) { }
+#define LOG_REPLY(req, reply) { }
+
+#endif // DEBUG_HIREDIS
+
+
 extern Cloud* cloudstore;
 
-void evalCallback(redisAsyncContext *c, void *r, void *privdata);
-void writeCallback(redisAsyncContext *c, void *r, void *privdata);
-void readCallback(redisAsyncContext *c, void *r, void *privdata);
-void connectCallback(const redisAsyncContext *c, int status);
-void disconnectCallback(const redisAsyncContext *c, int status);
-void popCallback(redisAsyncContext *c, void *r, void *privdata);
-void pushCallback(redisAsyncContext *c, void *r, void *privdata);
+// void evalCallback(redisAsyncContext *c, void *r, void *privdata);
+// void writeCallback(redisAsyncContext *c, void *r, void *privdata);
+// void readCallback(redisAsyncContext *c, void *r, void *privdata);
+// void connectCallback(const redisAsyncContext *c, int status);
+// void disconnectCallback(const redisAsyncContext *c, int status);
+// void popCallback(redisAsyncContext *c, void *r, void *privdata);
+// void pushCallback(redisAsyncContext *c, void *r, void *privdata);
 
 } // namespace diamond
 
