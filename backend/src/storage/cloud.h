@@ -91,14 +91,6 @@ long gettid();
 
 extern Cloud* cloudstore;
 
-// void evalCallback(redisAsyncContext *c, void *r, void *privdata);
-// void writeCallback(redisAsyncContext *c, void *r, void *privdata);
-// void readCallback(redisAsyncContext *c, void *r, void *privdata);
-// void connectCallback(const redisAsyncContext *c, int status);
-// void disconnectCallback(const redisAsyncContext *c, int status);
-// void popCallback(redisAsyncContext *c, void *r, void *privdata);
-// void pushCallback(redisAsyncContext *c, void *r, void *privdata);
-
 } // namespace diamond
 
 #endif 
