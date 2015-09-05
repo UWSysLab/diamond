@@ -11,7 +11,7 @@
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
-#include "lib/rdtsc.h"
+#include "lib/timestamp.h"
 #include <unordered_map>
 #include <inttypes.h>
 
@@ -82,7 +82,7 @@ DLong::Lock(){
         Panic("Object already locked");
     }
 
-    _lockid = rdtsc();
+    _lockid = getTimestamp();
     sprintf(value, "%" PRIu64 "", _lockid);
 
     while(max_tries--){
