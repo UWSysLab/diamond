@@ -101,9 +101,8 @@ Cloud::Read(const string &key, string &value)
         freeReplyObject(reply);
         return ERR_OK;
     }else if(reply->type == REDIS_REPLY_NIL){
-        // XXX: Return the same code?
         freeReplyObject(reply);
-        return ERR_OK;
+        return ERR_EMPTY;
     }
     return ERR_OK;
 }
@@ -262,7 +261,8 @@ Cloud::Pop(const string &key, string &value, bool block)
         freeReplyObject(reply);
         return ERR_OK;
     }else if(reply->type == REDIS_REPLY_NIL){
-        Panic("NYI");
+        freeReplyObject(reply);
+        return ERR_EMPTY;
     }
     return ERR_OK;
 }

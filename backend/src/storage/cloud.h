@@ -16,6 +16,7 @@
 #define ERR_LOCAL 3
 #define ERR_REMOTE 4
 #define ERR_NOT_PERFORMED 5
+#define ERR_EMPTY 6
 
 #define WRITE_ALWAYS 1
 #define WRITE_IFF_NOT_EXIST 2
