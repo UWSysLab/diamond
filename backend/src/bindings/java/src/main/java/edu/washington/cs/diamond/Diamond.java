@@ -92,6 +92,7 @@ public class Diamond {
         public native void Erase(int index);
         public native void Remove(@StdString String val);
         public native void Clear();
+        public native int Size();
     }
 
 }
