@@ -144,6 +144,26 @@ TEST(DList, Map) {
     EXPECT_EQ(list2.Members().size(), 0);
 }
 
+TEST(DString, EmptyStrings) {
+    DString s1, s2;
+
+    int ret = DString::Map(s1, std::string("s"));
+    s1 = "hi";
+
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(s1.Value(), "hi");
+
+    ret = DString::Map(s2, std::string("s"));
+
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(s2.Value(), "hi");
+
+    s1 = "";
+    
+    EXPECT_EQ(s1.Value(), "");
+    EXPECT_EQ(s2.Value(), "");
+}
+
 // int dlong_wait_local = 0;
 // 
 // void* dlong_wait_client1_thread(void *v){
