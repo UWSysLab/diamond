@@ -257,18 +257,10 @@ Cloud::Pop(const string &key, string &value, bool block)
     return ERR_OK;
 }
 
-
-
-
-} // namespace diamond
-
-
-
-
 long getThreadID(){
     long tid;
     tid = syscall(SYS_gettid);
     return tid;
 }
 
-
+} // namespace diamond

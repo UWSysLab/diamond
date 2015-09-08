@@ -171,4 +171,12 @@ DStringList::Clear() {
     cloudstore->Write(_key, Serialize());
 }
 
+int
+DStringList::Size() {
+    string s;
+    cloudstore->Read(_key, s);
+    Deserialize(s);
+    return _vec.size();
+}
+
 } // namespace diamond
