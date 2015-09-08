@@ -89,7 +89,6 @@ Cloud::Read(const string &key, string &value)
     sprintf(cmd, "GET %s", key.c_str());
     LOG_REQUEST("GET", cmd);
     reply = (redisReply *)redisCommand(_redis,  "GET %s", key.c_str());
-    //reply = (redisReply *)redisCommand(_redis, cmd);
     LOG_REPLY("GET", reply);
 
 
@@ -162,7 +161,8 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
     // FIXME: command is not currently escaped (using "%s" as the format string is not supported)
     sprintf(cmd, "SET %s %s PX %ld%s", key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
     LOG_REQUEST("SET NX/XX", cmd);
-    reply = (redisReply *)redisCommand(_redis, cmd);
+    reply = (redisReply *)redisCommand(_redis, "SET %s %s PX %ld%s", 
+                                key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
     LOG_REPLY("SET NX/XX", reply);
 
 
@@ -215,7 +215,7 @@ Cloud::Push(const string &key, const string &value)
 
     sprintf(cmd, "RPUSH %s %s", key.c_str(), value.c_str());
     LOG_REQUEST("RPUSH", cmd);
-    reply = (redisReply *)redisCommand(_redis, cmd);
+    reply = (redisReply *)redisCommand(_redis, "RPUSH %s %s", key.c_str(), value.c_str());
     LOG_REPLY("RPUSH", reply);
 
     if (reply == NULL) {
@@ -240,12 +240,12 @@ Cloud::Pop(const string &key, string &value, bool block)
     if(block){
         sprintf(cmd, "BLPOP %s", key.c_str());
         LOG_REQUEST("BLPOP", cmd);
-        reply = (redisReply *)redisCommand(_redis, cmd);
+        reply = (redisReply *)redisCommand(_redis, "BLPOP %s", key.c_str());
         LOG_REPLY("BLPOP", reply);
     }else{
         sprintf(cmd, "LPOP %s", key.c_str());
         LOG_REQUEST("LPOP", cmd);
-        reply = (redisReply *)redisCommand(_redis, cmd);
+        reply = (redisReply *)redisCommand(_redis, "LPOP %s", key.c_str());
         LOG_REPLY("LPOP", reply);
     }
 
