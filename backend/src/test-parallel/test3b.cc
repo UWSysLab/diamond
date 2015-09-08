@@ -32,10 +32,10 @@
 #include "includes/data_types.h"
 #include "test.h"
 
-// This client (test3a) tests Wait() while the other client (test3b) tests Signal()
+// The other client (test3a) tests Wait() while this client (test3b) tests Signal()
 //
 // Run the two clients at the same time (within a one second window)
-// Sucess if both client print that the test passed
+// Success if both client print that the test passed
 //
 // Usage:
 //   $ ./test3a & ./test3b & wait ; wait 
