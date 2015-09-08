@@ -144,26 +144,30 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
     }
 
     std::string write_cond_option;
-    switch(write_cond){
-        case WRITE_ALWAYS:
-            write_cond_option = "";
-            break;
-        case WRITE_IFF_EXIST:
-            write_cond_option = " XX";
-            break;
-        case WRITE_IFF_NOT_EXIST:
-            write_cond_option = " NX";
-            break;
-        default:
-            Panic("Write condition invalid");
-    }
 
-    // FIXME: command is not currently escaped (using "%s" as the format string is not supported)
-    sprintf(cmd, "SET %s %s PX %ld%s", key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
-    LOG_REQUEST("SET NX/XX", cmd);
-    reply = (redisReply *)redisCommand(_redis, "SET %s %s PX %ld%s", 
-                                key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
-    LOG_REPLY("SET NX/XX", reply);
+    if(write_cond == WRITE_ALWAYS){
+        sprintf(cmd, "SET %s %s PX %ld", key.c_str(), value.c_str(), expire_ms);
+        LOG_REQUEST("SET ALWAYS", cmd);
+        reply = (redisReply *)redisCommand(_redis, "SET %s %s PX %ld", 
+                                    key.c_str(), value.c_str(), expire_ms);
+        LOG_REPLY("SET ALWAYS", reply);
+    }else{
+        switch(write_cond){
+            case WRITE_IFF_EXIST:
+                write_cond_option = "XX";
+                break;
+            case WRITE_IFF_NOT_EXIST:
+                write_cond_option = "NX";
+                break;
+            default:
+                Panic("Write condition invalid");
+        }
+        sprintf(cmd, "SET %s %s PX %ld %s", key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
+        LOG_REQUEST("SET NX/XX", cmd);
+        reply = (redisReply *)redisCommand(_redis, "SET %s %s PX %ld %s", 
+                                    key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
+        LOG_REPLY("SET NX/XX", reply);
+    }
 
 
     if (reply == NULL) {
@@ -238,9 +242,9 @@ Cloud::Pop(const string &key, string &value, bool block)
 
 
     if(block){
-        sprintf(cmd, "BLPOP %s", key.c_str());
+        sprintf(cmd, "BLPOP %s %d", key.c_str(), 0);
         LOG_REQUEST("BLPOP", cmd);
-        reply = (redisReply *)redisCommand(_redis, "BLPOP %s", key.c_str());
+        reply = (redisReply *)redisCommand(_redis, "BLPOP %s %d", key.c_str(), 0);
         LOG_REPLY("BLPOP", reply);
     }else{
         sprintf(cmd, "LPOP %s", key.c_str());
@@ -253,7 +257,13 @@ Cloud::Pop(const string &key, string &value, bool block)
         Panic("reply == null");
     }
 
-    freeReplyObject(reply);
+    if (reply->type == REDIS_REPLY_STRING) {
+        value = string(reply->str);
+        freeReplyObject(reply);
+        return ERR_OK;
+    }else if(reply->type == REDIS_REPLY_NIL){
+        Panic("NYI");
+    }
     return ERR_OK;
 }
 
