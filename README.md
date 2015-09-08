@@ -103,9 +103,9 @@ source directory.
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
-    * Go to File -> Import
-    * Choose "Existing Projects into Workspace" and click next
-    * Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish
+    1. Go to File -> Import
+    2. Choose "Existing Projects into Workspace" and click next
+    3. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish
 
 3. Clean the project (Project -> Clean) and close and open the project (right-click on the project in the Package Explorer -> Close Project) until it builds successfully.
 
@@ -114,6 +114,6 @@ Let Niel know whether or not this step is necessary, and he will either remove i
 
 5. Run the project as an Android application:
 
-    * Right click on the project name in the Package Explorer pane
-    * Select "Run As" -> "Android Application"
-    * Choose a device (either an emulator or a physical device) to run on
+    1. Right click on the project name in the Package Explorer pane
+    2. Select "Run As" -> "Android Application"
+    3. Choose a device (either an emulator or a physical device) to run on
