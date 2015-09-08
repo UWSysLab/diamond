@@ -88,7 +88,8 @@ Cloud::Read(const string &key, string &value)
 
     sprintf(cmd, "GET %s", key.c_str());
     LOG_REQUEST("GET", cmd);
-    reply = (redisReply *)redisCommand(_redis, cmd);
+    reply = (redisReply *)redisCommand(_redis,  "GET %s", key.c_str());
+    //reply = (redisReply *)redisCommand(_redis, cmd);
     LOG_REPLY("GET", reply);
 
 
@@ -120,7 +121,7 @@ Cloud::Write(const string &key, const string &value)
 
     sprintf(cmd, "SET %s %s", key.c_str(), value.c_str());
     LOG_REQUEST("SET", cmd);
-    reply = (redisReply *)redisCommand(_redis, cmd);
+    reply = (redisReply *)redisCommand(_redis,  "SET %s %s", key.c_str(), value.c_str());
     LOG_REPLY("SET", reply);
 
     if (reply == NULL) {
