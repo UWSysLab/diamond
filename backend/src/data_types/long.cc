@@ -138,6 +138,7 @@ DLong::Signal(){
    
     res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
     assert(res == ERR_OK);
+    assert(value != "");
 
     res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
     assert(res == ERR_OK);
