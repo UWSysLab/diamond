@@ -4,6 +4,9 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
  * Unit test for Diamond data structures
  */
@@ -56,6 +59,37 @@ public class DiamondTest
        assert(s2.Value() == 13);
        assert(s1.Value() == 13);
        //System.out.println("DLong test ok!");
+    }
+
+    /**
+     * Diamond string list test
+     */
+    public void testDStringList()
+    {
+        Diamond.DStringList list1 = new Diamond.DStringList("c");
+        Diamond.DStringList list2 = new Diamond.DStringList("c");
+
+        list1.Clear();
+        
+        assert(list2.MembersList().size() == 0);
+
+        list1.Append("hello");
+        list1.Append("test");
+        list1.Append("world");
+
+        assert(list2.Index("world") == 2);
+        assert(list2.Value(0).equals("hello"));
+
+        list1.Remove("test");
+
+        assert(list2.Index("world") == 1);
+
+        List<String> membersList = new ArrayList<String>();
+        membersList.add("hello");
+        membersList.add("world");
+        assert(list2.MembersList().equals(membersList));
+
+        //System.out.println("DStringList test ok!");
     }
 
 }
