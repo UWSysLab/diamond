@@ -32,7 +32,8 @@
 #include "includes/data_types.h"
 #include "test.h"
 
-
+// Tests the Lock and the Unlock 
+// 
 // Run two clients at the same time (within a one second window)
 // Sucess if both client print that the test passed
 //
@@ -60,7 +61,7 @@ int main(void){
     EXPECT_EQ(l1.Value(), (unsigned int) pid);
     l1.Unlock();
 
-    printf("Client %d passed the test!\n", pid);
+    printf("Client test2 (%d) passed the test!\n", pid);
 }
 
 
