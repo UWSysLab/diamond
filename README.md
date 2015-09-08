@@ -90,3 +90,24 @@ that you downloaded there.
 
 		$ cd backend/src/bindings/java
 		$ mvn package
+
+### Running a test Android app
+The project DiamondAndroidTest in apps/test-apps is an Eclipse project containing a simple Diamond test app for Android.
+The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
+source directory.
+
+1. Run the script build-diamond-android.sh to build the Java bindings and copy the shared libraries into the project folder:
+		$ cd scripts
+		$ ./build-diamond-android.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
+2. In Eclipse, import the DiamondAndroidTest project:
+	a. Go to File -> Import
+	b. Choose "Existing Projects into Workspace" and click next
+	c. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish
+3. Clean the project (Project -> Clean) and close and open the project (right-click on the project in the Package Explorer -> Close Project) until it builds successfully.
+4. If there are still build errors, follow the instructions in the top answer of this Stack Overflow question: http://stackoverflow.com/questions/17870881/cant-find-theme-appcompat-light-for-new-android-actionbar-support.
+Let Niel know whether or not this step is necessary, and he will either remove it or describe it more formally.
+5. Run the project as an Android application:
+	a. Right click on the project name in the Package Explorer pane
+	b. Select "Run As" -> "Android Application"
+	c. Choose a device (either an emulator or a physical device) to run on
+
