@@ -124,6 +124,7 @@ public:
     void Erase(const int index);
     void Remove(const uint64_t val); /* Removes the first copy of val, if present */
     void Clear();
+    int Size();
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
     
 private:
@@ -155,6 +156,7 @@ public:
     void Erase(const int index);
     void Remove(const std::string val); /* Removes the first copy of val, if present */
     void Clear();
+    int Size();
     DStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
     
 private:
