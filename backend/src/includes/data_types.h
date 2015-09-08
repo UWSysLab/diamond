@@ -143,6 +143,7 @@ class DStringList
 public:
     DStringList() {};
     DStringList(std::vector<std::string> vec, const std::string &key) : _key(key), _vec(vec) {};
+    DStringList(const std::string &key) : _key(key) {};
     ~DStringList() {};
     static int Map(DStringList &addr, const std::string &key);
     std::vector<std::string> Members();
