@@ -107,12 +107,14 @@ source directory.
     2. Choose "Existing Projects into Workspace" and click Next.
     3. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish.
 
-3. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
+3. Go to Window -> Preferences. In the preferences window, expand the Android menu and select Build, then uncheck the option "Force error when external jars contain native libraries."
 
-4. If there are still build errors, follow the instructions in the top answer of this Stack Overflow question: http://stackoverflow.com/questions/17870881/cant-find-theme-appcompat-light-for-new-android-actionbar-support.
+4. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
+
+5. If there are still build errors, follow the instructions in the top answer of this Stack Overflow question: http://stackoverflow.com/questions/17870881/cant-find-theme-appcompat-light-for-new-android-actionbar-support.
 Let Niel know whether or not this step is necessary, and he will either remove it or describe it more formally.
 
-5. Run the project as an Android application:
+6. Run the project as an Android application:
 
     1. Right click on the project name in the Package Explorer pane.
     2. Select "Run As" -> "Android Application."
