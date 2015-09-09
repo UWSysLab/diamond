@@ -99,6 +99,7 @@ set(SRC_DIAMOND_CLOUD_STORE ${DIAMOND_SOURCE_DIR}/storage/cloud.cc)
 
 # Diamond data structure implementations
 set(SRC_DIAMOND_DATA_TYPES
+    ${DIAMOND_SOURCE_DIR}/data_types/object.cc
     ${DIAMOND_SOURCE_DIR}/data_types/string.cc
     ${DIAMOND_SOURCE_DIR}/data_types/counter.cc
     ${DIAMOND_SOURCE_DIR}/data_types/long.cc

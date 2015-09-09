@@ -18,7 +18,31 @@ namespace diamond {
 
 #define LOCK_DURATION_MS (5*1000)
 
-class DString
+class DObject
+{
+public:
+//    virtual DObject() = 0; // Abstract class
+
+	void Lock();
+	void ContinueLock();
+	void Unlock();
+	void Signal();
+	void Broadcast();
+	void Wait();
+
+protected:
+    DObject(){};
+    DObject(const std::string &key) :  _key(key) {};
+    std::string _key;
+
+private:
+
+	uint64_t _lockid = 0;
+	bool _locked = false;
+};
+
+
+class DString  
 {
 public:
     DString() {};
@@ -34,11 +58,11 @@ private:
     std::string _key;
 };
     
-class DLong
+class DLong : public DObject
 {
 public:
     DLong() {};
-    DLong(const uint64_t l, const std::string &key) : _l(l), _key(key) {};
+    DLong(const uint64_t l, const std::string &key) : DObject(key), _l(l) {};
     ~DLong() {};
     static int Map(DLong &addr, const std::string &key);
     uint64_t Value();
@@ -47,20 +71,8 @@ public:
     DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
     DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };
 
-	void Lock();
-	void ContinueLock();
-	void Unlock();
-	void Signal();
-	void Broadcast();
-	void Wait();
-
-
 private:
     uint64_t _l;
-    std::string _key;
-
-	uint64_t _lockid = 0;
-	bool _locked = false;
 };
 
 
