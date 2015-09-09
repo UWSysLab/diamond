@@ -11,8 +11,8 @@ public class ChatManager {
 	public ChatManager(TextView tv, String name) {
 		chatBox = tv;
 		userName = name;
-		
 		messageList = new Diamond.DStringList("dimessage:messagelist");
+		refreshChatBox();
 	}
 	
 	private void addToMessages(String msg) {
@@ -24,20 +24,19 @@ public class ChatManager {
 	
 	private void refreshChatBox() {
 		StringBuilder sb = new StringBuilder();
-		//int numLines = chatBox.getLineCount();
 		int numLines = 12;
 		int minLine = messageList.Size() - numLines;
 		if (minLine < 0) {
 			minLine = 0;
 		}
 		for (int i = minLine; i < messageList.Size(); i++) {
-			sb.append(userName + ": " + messageList.Value(i) + "\n");
+			sb.append(messageList.Value(i) + "\n");
 		}
 		chatBox.setText(sb.toString());
 	}
 	
 	public void sendMessage(String msg) {
-		addToMessages(msg);
+		addToMessages(userName + ": " + msg);
 		refreshChatBox();
 	}
 }

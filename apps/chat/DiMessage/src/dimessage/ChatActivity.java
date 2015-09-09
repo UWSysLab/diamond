@@ -19,10 +19,6 @@ public class ChatActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_chat);
 				
 		TextView chatTextBox = (TextView)findViewById(R.id.chatTextBox);
-		DString str1 = new DString("String1", "a");
-		DString str2 = new DString("String2", "a");
-		str1.Set("Testing Diamond");
-		chatTextBox.setText(str2.Value());
 		
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.getBaseContext());
 		String userName = prefs.getString(LoginActivity.PREFS_SCREENNAME, "AnonymousUser");
@@ -31,6 +27,5 @@ public class ChatActivity extends ActionBarActivity {
 		
 		EditText entryTextBox = (EditText)findViewById(R.id.entryTextBox);		
 		entryTextBox.setOnEditorActionListener(new EntryActionListener(manager));
-
 	}
 }
