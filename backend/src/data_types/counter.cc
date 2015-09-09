@@ -66,5 +66,5 @@ DCounter::Set(int val)
     sprintf(buf, "%i", _counter);
     cloudstore->Write(_key, string(buf));
 }
-   
+
 } // namespace diamond
