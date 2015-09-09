@@ -21,8 +21,8 @@ bool Cloud::_connected = false;
 
 Cloud::Cloud()
 {
-    //Connect("coldwater.cs.washington.edu");
-    Connect("localhost");
+    Connect("coldwater.cs.washington.edu");
+    //Connect("localhost");
 }
 
 Cloud::~Cloud()
