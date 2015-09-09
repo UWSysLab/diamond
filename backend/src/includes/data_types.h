@@ -42,11 +42,11 @@ private:
 };
 
 
-class DString  
+class DString : public DObject 
 {
 public:
     DString() {};
-    DString(const std::string &s, const std::string &key) : _s(s), _key(key) {};
+    DString(const std::string &s, const std::string &key) : DObject(key), _s(s) {};
     ~DString() {};
     static int Map(DString &addr, const std::string &key);
     std::string Value();
@@ -55,7 +55,6 @@ public:
         
 private:
     std::string _s;
-    std::string _key;
 };
     
 class DLong : public DObject
@@ -76,11 +75,11 @@ private:
 };
 
 
-class DCounter
+class DCounter : public DObject
 {
 public:
     DCounter() {};
-    DCounter(const int c, const std::string &key) : _counter(c), _key(key) {};
+    DCounter(const int c, const std::string &key) : DObject(key), _counter(c) {};
     ~DCounter() {};
     static int Map(DCounter &addr, const std::string &key);
     int Value();
@@ -93,15 +92,13 @@ public:
 
 private:
     int _counter;
-    std::string _key;
-    
 };
 
-class DSet
+class DSet : public DObject
 {
 public:
     DSet() {};
-    DSet(std::unordered_set<uint64_t> set, const std::string &key) : _key(key), _set(set) {};
+    DSet(std::unordered_set<uint64_t> set, const std::string &key) : DObject(key), _set(set) {};
     ~DSet() {};
     static int Map(DSet &addr, const std::string &key);
     std::unordered_set<uint64_t> Members();
@@ -113,18 +110,17 @@ public:
     DSet & operator=(const std::unordered_set<uint64_t> &set) { Add(set); return *this; };
     
 private:
-    std::string _key;
     std::unordered_set<uint64_t> _set;
 
     std::string Serialize();
     void Deserialize(std::string &s);
 };
 
-class DList
+class DList : public DObject
 {
 public:
     DList() {};
-    DList(std::vector<uint64_t> vec, const std::string &key) : _key(key), _vec(vec) {};
+    DList(std::vector<uint64_t> vec, const std::string &key) : DObject(key), _vec(vec) {};
     ~DList() {};
     static int Map(DList &addr, const std::string &key);
     std::vector<uint64_t> Members();
@@ -140,7 +136,6 @@ public:
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
     
 private:
-    std::string _key;
     std::vector<uint64_t> _vec;
 
     std::string Serialize();
@@ -151,12 +146,12 @@ private:
 //DList as a quick hack. What is our permanent solution to this problem? A template DList class,
 //or multiple classes for different primitive types?
 
-class DStringList
+class DStringList : public DObject
 {
 public:
     DStringList() {};
-    DStringList(std::vector<std::string> vec, const std::string &key) : _key(key), _vec(vec) {};
-    DStringList(const std::string &key) : _key(key) {};
+    DStringList(std::vector<std::string> vec, const std::string &key) : DObject(key), _vec(vec) {};
+    DStringList(const std::string &key) : DObject(key) {};
     ~DStringList() {};
     static int Map(DStringList &addr, const std::string &key);
     std::vector<std::string> Members();
@@ -172,7 +167,6 @@ public:
     DStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
     
 private:
-    std::string _key;
     std::vector<std::string> _vec;
 
     std::string Serialize();
