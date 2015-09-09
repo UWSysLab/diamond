@@ -16,6 +16,13 @@ public class Diamond {
         static { Loader.load(); }
         protected DObject() { }
         protected DObject(String key) { }
+
+        public native void Lock();
+        public native void ContinueLock();
+        public native void Unlock();
+        public native void Signal();
+        public native void Broadcast();
+        public native void Wait();
     }
    
    public static class DString extends DObject {
