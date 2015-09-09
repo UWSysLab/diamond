@@ -11,8 +11,14 @@ import java.util.ArrayList;
 @Namespace("diamond")
 
 public class Diamond {
+
+    public static class DObject extends Pointer {
+        static { Loader.load(); }
+        protected DObject() { }
+        protected DObject(String key) { }
+    }
    
-   public static class DString extends Pointer {
+   public static class DString extends DObject {
       static { Loader.load(); }
       public DString() { allocate(); }
       public DString(String s, String key) { allocate(s, key); }
@@ -26,7 +32,7 @@ public class Diamond {
       public native @ByRef DString Assign(@ByRef @StdString String s);
    }
 
-   public static class DLong extends Pointer {
+   public static class DLong extends DObject {
       static { Loader.load(); }
       public DLong() { allocate(); }
       public DLong(long l, String key) { allocate(l, key); }
@@ -37,7 +43,7 @@ public class Diamond {
       public native void Set(long l);
    }
 
-   public static class DCounter {
+   public static class DCounter extends DObject {
       static { Loader.load(); }
       public DCounter() { allocate(); }
       public DCounter(int c, String key) { allocate(c, key); }
@@ -53,10 +59,9 @@ public class Diamond {
       public native @ByRef DCounter Increment();
       @Name("operator--")
       public native @ByRef DCounter Decrement();
-
    }
 
-   public static class DSet {
+   public static class DSet extends DObject {
       static { Loader.load(); }
       DSet() { allocate(); }
       private native void allocate();
@@ -66,7 +71,7 @@ public class Diamond {
       public native void Remove(long val);
    }
 
-    public static class DStringList extends Pointer {
+    public static class DStringList extends DObject {
         static { Loader.load(); }
         public DStringList() { allocate(); }
         public DStringList(String key) { allocate(key); }
