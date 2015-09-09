@@ -1,26 +1,24 @@
 package dimessage;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import android.widget.TextView;
+import edu.washington.cs.diamond.Diamond;
 
 public class ChatManager {
 	private TextView chatBox;
-	private List<String> messageList;
+	private Diamond.DStringList messageList;
 	String userName;
 	
 	public ChatManager(TextView tv, String name) {
 		chatBox = tv;
 		userName = name;
 		
-		messageList = new ArrayList<String>();
+		messageList = new Diamond.DStringList("dimessage:messagelist");
 	}
 	
 	private void addToMessages(String msg) {
-		messageList.add(msg);
-		if (messageList.size() > 100) {
-			messageList.remove(0);
+		messageList.Append(msg);
+		if (messageList.Size() > 100) {
+			messageList.Erase(0);
 		}
 	}
 	
@@ -28,12 +26,12 @@ public class ChatManager {
 		StringBuilder sb = new StringBuilder();
 		//int numLines = chatBox.getLineCount();
 		int numLines = 12;
-		int minLine = messageList.size() - numLines;
+		int minLine = messageList.Size() - numLines;
 		if (minLine < 0) {
 			minLine = 0;
 		}
-		for (int i = minLine; i < messageList.size(); i++) {
-			sb.append(userName + ": " + messageList.get(i) + "\n");
+		for (int i = minLine; i < messageList.Size(); i++) {
+			sb.append(userName + ": " + messageList.Value(i) + "\n");
 		}
 		chatBox.setText(sb.toString());
 	}
