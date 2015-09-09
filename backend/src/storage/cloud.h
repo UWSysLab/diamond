@@ -34,7 +34,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <assert.h>
-#include "lib/assert.h"
+//#include "lib/assert.h"
 #include <string.h>
 #include <sys/types.h>
 #include <sys/syscall.h>

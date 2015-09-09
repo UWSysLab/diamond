@@ -8,6 +8,7 @@
  **********************************************************************/
 
 #include "storage/cloud.h"
+#include "lib/assert.h"
 
 
 namespace diamond {

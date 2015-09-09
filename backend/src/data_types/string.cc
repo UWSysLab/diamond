@@ -45,7 +45,7 @@ DString::Map(DString &addr, const string &key) {
     }
 
     addr._s = value;
-    cache[key] = addr;
+    cache[key] = addr;  // PF: This currently causes a WRITE to be sent to redis because '=' is overloaded
     return ERR_OK;
 }
 
