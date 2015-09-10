@@ -36,6 +36,25 @@ public class ChatActivity extends ActionBarActivity {
 		entryTextBox.setOnEditorActionListener(new EntryActionListener(this));
 		
 		refreshChatBox();
+		
+		new Thread(new Runnable() {
+			public void run() {
+				while (true) {
+					Log.i(this.getClass().getName(), "Hello I'm a thread");
+					try {
+						Thread.sleep(100);
+					}
+					catch (InterruptedException e) {
+						Log.e(this.getClass().getName(), "Thread sleep interrupted");
+					}
+					chatBox.post(new Runnable() {
+						public void run() {
+							refreshChatBox();
+						}
+					});
+				}
+			}
+		}).start();
 	}
 	
 	private void addToMessages(String msg) {
