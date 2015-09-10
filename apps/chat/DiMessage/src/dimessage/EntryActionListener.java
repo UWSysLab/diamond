@@ -6,22 +6,17 @@ import android.widget.TextView;
 
 public class EntryActionListener implements EditText.OnEditorActionListener {
 
-	private ChatManager manager;
+	private ChatActivity activity;
 	
-	public EntryActionListener(ChatManager cm) {
-		manager = cm;
-	}
-	
-	public EntryActionListener() {
-		manager = null;
+	public EntryActionListener(ChatActivity ca) {
+		activity = ca;
 	}
 	
 	@Override
 	public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
 		EditText ev = (EditText)v;
-		manager.sendMessage(ev.getText().toString());
+		activity.sendMessage(ev.getText().toString());
 		ev.setText("");
 		return true;
 	}
-
 }
