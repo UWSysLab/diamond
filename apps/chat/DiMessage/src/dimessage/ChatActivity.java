@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
@@ -40,7 +41,6 @@ public class ChatActivity extends ActionBarActivity {
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
-					Log.i(this.getClass().getName(), "Hello I'm a thread");
 					try {
 						Thread.sleep(100);
 					}
@@ -57,13 +57,6 @@ public class ChatActivity extends ActionBarActivity {
 		}).start();
 	}
 	
-	private void addToMessages(String msg) {
-		messageList.Append(msg);
-		if (messageList.Size() > 100) {
-			messageList.Erase(0);
-		}
-	}
-	
 	private void refreshChatBox() {
 		StringBuilder sb = new StringBuilder();
 		int numLines = 12;
@@ -78,7 +71,27 @@ public class ChatActivity extends ActionBarActivity {
 	}
 	
 	public void sendMessage(String msg) {
-		addToMessages(userName + ": " + msg);
+		String fullMsg = userName + ": " + msg;
+		messageList.Append(fullMsg);
+		if (messageList.Size() > 100) {
+			messageList.Erase(0);
+		}
 		refreshChatBox();
+	}
+	
+	private class EntryActionListener implements EditText.OnEditorActionListener {
+		private ChatActivity activity;
+		
+		public EntryActionListener(ChatActivity ca) {
+			activity = ca;
+		}
+		
+		@Override
+		public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+			EditText ev = (EditText)v;
+			activity.sendMessage(ev.getText().toString());
+			ev.setText("");
+			return true;
+		}
 	}
 }
