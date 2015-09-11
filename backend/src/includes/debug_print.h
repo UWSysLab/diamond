@@ -19,7 +19,7 @@ void debugPrint(const char * str) {
 #else //__ANDROID__
 
 void debugPrint(const char * str) {
-    printf(str);
+    printf("%s", str);
 }
 
 #endif //__ANDROID__
