@@ -39,6 +39,8 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 
+#include <unordered_map>
+
 namespace diamond {
 
 
@@ -46,9 +48,7 @@ namespace diamond {
 class Cloud
 {
 public:
-
     static Cloud* Instance();
-    static void NewInstance();
     static void SetConnected(bool);
     static bool GetConnected();
 
@@ -64,10 +64,16 @@ public:
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 
+    redisContext* GetRedisContext();
+
 private:
     static Cloud *_instance;
     static bool _connected;
-    redisContext *_redis;
+
+    // Keep one connection per thread
+    std::unordered_map<int, redisContext*> _redisContexts;
+
+    //redisContext *_redis;
 
     // contructor and destructor should be private in Singleton
     Cloud();
