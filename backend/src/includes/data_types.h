@@ -41,7 +41,7 @@ protected:
 private:
     // mutex to protect local fields of the object
 	uint64_t _lockid = 0;
-	bool _locked = false;
+	long _locked = 0;
 
 	void LockNotProtected(); // Callee should hold the _objectMutex
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
