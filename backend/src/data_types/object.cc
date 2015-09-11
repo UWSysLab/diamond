@@ -12,9 +12,16 @@ namespace diamond {
 using namespace std;
 
 
-
 void
 DObject::Lock(){
+    pthread_mutex_lock(&_objectMutex);
+    LockNotProtected();
+    pthread_mutex_unlock(&_objectMutex);
+}
+
+
+void
+DObject::LockNotProtected(){
     int res;
     char value[50];
     int max_tries = 1000;
@@ -32,9 +39,15 @@ DObject::Lock(){
         res = cloudstore->Write(_key + string("-lock"), string(value), WRITE_IFF_NOT_EXIST, LOCK_DURATION_MS);
         if(res == ERR_OK){
             _locked = true;
+
             return;
         }else if(res == ERR_NOT_PERFORMED){
+            
+            // Release the lock during sleep to prevent deadlocks
+            pthread_mutex_unlock(&_objectMutex);
             usleep(delay_ns);
+            pthread_mutex_lock(&_objectMutex);
+
             delay_ns = std::min(delay_ns * 2, max_delay_ns);
         }else{
             Panic("NYI");
@@ -45,15 +58,25 @@ DObject::Lock(){
 
 void
 DObject::ContinueLock(){
+    pthread_mutex_lock(&_objectMutex);
     if(!_locked){
         Panic("Object not locked");
     }
     Panic("NYI");
+    pthread_mutex_unlock(&_objectMutex);
 }
-
 
 void
 DObject::Unlock(){
+
+    pthread_mutex_lock(&_objectMutex);
+    UnlockNotProtected();
+    pthread_mutex_unlock(&_objectMutex);
+
+}
+
+void
+DObject::UnlockNotProtected(){
     // From redlock
     string m_unlockScript = string("if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end");
     int res;
@@ -69,14 +92,17 @@ DObject::Unlock(){
     _locked = false;
 }
 
+
 void
 DObject::Signal(){
-    if(!_locked){
-        Panic("Object not locked");
-    }
     int res;
     string value;
     string empty = "";
+
+    pthread_mutex_lock(&_objectMutex);
+    if(!_locked){
+        Panic("Object not locked");
+    }
 
     res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
     assert(res == ERR_OK);
@@ -84,17 +110,22 @@ DObject::Signal(){
 
     res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
     assert(res == ERR_OK);
+
+    // If we can assume _key is immutable then we can there is no need to hold the mutex till the end
+    pthread_mutex_unlock(&_objectMutex);
 }
 
 void
 DObject::Broadcast(){
-    if(!_locked){
-        Panic("Object not locked");
-    }
     int res;
     string value;
     string empty = "";
 
+    pthread_mutex_lock(&_objectMutex);
+    if(!_locked){
+        Panic("Object not locked");
+    }
+    
     while(1){
         res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
         if(res != ERR_OK){
@@ -103,6 +134,9 @@ DObject::Broadcast(){
         res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
         assert(res == ERR_OK);
     }
+
+    // If we can assume _key is immutable then we can there is no need to hold the mutex till the end
+    pthread_mutex_unlock(&_objectMutex);
 }
 
 
@@ -112,6 +146,7 @@ DObject::Wait(){
     char lockid[50];
     string value;
 
+    pthread_mutex_lock(&_objectMutex);
     if(!_locked){
         Panic("Object not locked");
     }
@@ -122,13 +157,15 @@ DObject::Wait(){
     // A. Unlock & Sleep
     res = cloudstore->Push(_key + string("-lock-wait"), string(lockid));
     assert(res == ERR_OK);
-    Unlock();
+    UnlockNotProtected();
     res = cloudstore->Pop(_key + string("-lock-wait-") + string(lockid), value, true);
     assert(res == ERR_OK);
 
 
     // B. Reaquire lock
-    Lock();
+    LockNotProtected();
+
+    pthread_mutex_unlock(&_objectMutex);
 }
 
 } // namespace diamond

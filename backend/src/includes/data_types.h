@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <string>
 #include <vector>
+#include <pthread.h>
 
 namespace diamond {
 
@@ -30,15 +31,20 @@ public:
 	void Broadcast();
 	void Wait();
 
+
 protected:
-    DObject(){};
-    DObject(const std::string &key) :  _key(key) {};
+    DObject() {};
+    DObject(const std::string &key) : _key(key) {};
     std::string _key;
+    pthread_mutex_t  _objectMutex = PTHREAD_MUTEX_INITIALIZER;
 
 private:
-
+    // mutex to protect local fields of the object
 	uint64_t _lockid = 0;
 	bool _locked = false;
+
+	void LockNotProtected(); // Callee should hold the _objectMutex
+	void UnlockNotProtected(); // Callee should hold the _objectMutex
 };
 
 
@@ -126,6 +132,7 @@ public:
     std::vector<uint64_t> Members();
     uint64_t Value(const int index);
     int Index(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
+
     void Append(const uint64_t val);
     void Append(const std::vector<uint64_t> &vec);
     void Insert(const int index, const uint64_t val);
@@ -140,6 +147,7 @@ private:
 
     std::string Serialize();
     void Deserialize(std::string &s);
+    int IndexNotProtected(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
 //Niel: I needed a List that could hold strings for PyScrabble, so I opted to just copy/paste
