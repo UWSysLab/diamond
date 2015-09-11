@@ -28,18 +28,20 @@ DObject::LockNotProtected(){
     int delay_ns = 1;
     int max_delay_ns = 1000 * 1000;
 
-    if(_locked){
-        Panic("Object already locked");
+    int tid = getThreadID();
+
+    if(_locked == tid){
+        Panic("Current thread already holds the lock");
     }
 
-    _lockid = getTimestamp();
-    sprintf(value, "%" PRIu64 "", _lockid);
+    long lockid = getTimestamp();
+    sprintf(value, "%" PRIu64 "", lockid);
 
     while(max_tries--){
         res = cloudstore->Write(_key + string("-lock"), string(value), WRITE_IFF_NOT_EXIST, LOCK_DURATION_MS);
         if(res == ERR_OK){
-            _locked = true;
-
+            _locked = tid;
+            _lockid = lockid;
             return;
         }else if(res == ERR_NOT_PERFORMED){
             
@@ -59,8 +61,8 @@ DObject::LockNotProtected(){
 void
 DObject::ContinueLock(){
     pthread_mutex_lock(&_objectMutex);
-    if(!_locked){
-        Panic("Object not locked");
+    if(_locked != getThreadID()){
+        Panic("Current thread does not hold the lock");
     }
     Panic("NYI");
     pthread_mutex_unlock(&_objectMutex);
@@ -72,7 +74,6 @@ DObject::Unlock(){
     pthread_mutex_lock(&_objectMutex);
     UnlockNotProtected();
     pthread_mutex_unlock(&_objectMutex);
-
 }
 
 void
@@ -86,10 +87,10 @@ DObject::UnlockNotProtected(){
     res = cloudstore->RunOnServer(m_unlockScript, _key + string("-lock"), string(value));
     assert(res == ERR_OK);
 
-    if(!_locked){
-        Panic("Object not locked");
+    if(_locked != getThreadID()){
+        Panic("Current thread does not hold the lock");
     }
-    _locked = false;
+    _locked = 0;
 }
 
 
@@ -100,8 +101,8 @@ DObject::Signal(){
     string empty = "";
 
     pthread_mutex_lock(&_objectMutex);
-    if(!_locked){
-        Panic("Object not locked");
+    if(_locked != getThreadID()){
+        Panic("Current thread does not hold the lock");
     }
 
     res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
@@ -122,8 +123,8 @@ DObject::Broadcast(){
     string empty = "";
 
     pthread_mutex_lock(&_objectMutex);
-    if(!_locked){
-        Panic("Object not locked");
+    if(_locked != getThreadID()){
+        Panic("Current thread does not hold the lock");
     }
     
     while(1){
@@ -147,8 +148,8 @@ DObject::Wait(){
     string value;
 
     pthread_mutex_lock(&_objectMutex);
-    if(!_locked){
-        Panic("Object not locked");
+    if(_locked != getThreadID()){
+        Panic("Current thread does not hold the lock");
     }
 
 
