@@ -66,7 +66,7 @@ set(ANDROID_NDK_GCC_VERSION "4.9")
 
 # global linker flags
 #  -Wl,-z,noexecstack -Wl,--gc-sections -Wl,-z,nocopyreloc
-set(ANDROID_NDK_GLOBAL_LDFLAGS "-Wl,--no-undefined -Wl,-z,noexecstack -Wl,--fix-cortex-a8")
+set(ANDROID_NDK_GLOBAL_LDFLAGS "-Wl,--no-undefined -Wl,-z,noexecstack -Wl,--fix-cortex-a8 -llog")
 
 
 # linker flags (here only one thing missing here is lstdc++ - in Android the actual STL implementation is user dependent!)
