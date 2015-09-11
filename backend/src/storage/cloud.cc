@@ -9,6 +9,7 @@
 
 #include "storage/cloud.h"
 #include "lib/assert.h"
+#include "includes/debug_print.h"
 #include <string>
 
 namespace diamond {
@@ -64,9 +65,9 @@ Cloud::Connect(const std::string &host)
     if (_connected) {
         return ERR_OK;
     }
-    printf("Connecting...\n");
+    debugPrint("Connecting...\n");
     redis = redisConnect(host.c_str(), 6379);
-    printf("Connected.\n");
+    debugPrint("Connected.\n");
     if (redis != NULL && redis->err == 0) {
         _connected = true;
         threadID = getThreadID();
