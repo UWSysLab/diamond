@@ -25,6 +25,22 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(testTextBox);
 		//setContentView(R.layout.activity_main);
 	}
+	
+	public void testStringList() {
+		Diamond.DStringList testList = new Diamond.DStringList("diamondandroidtest:testlist");
+		testList.Clear();
+		testList.Append("Nexus 7: hello from the Nexus 7");
+		testList.Append("Nexus 5: Nexus 5 here");
+		testList.Append("Nexus 7: Now to get sync working...");
+		testList.Append("Nexus 5: what happened");
+		testList.Append("Nexus 7: hello");
+		testList.Append("Nexus 5: test");
+		testList.Append("Nexus 5: testing locks");
+		testList.Append("Nexus 5: testing more");
+		testList.Append("Nexus 5: broadcast was causing segfaults");
+		testList.Append("Nexus 5: trying broadcast again");
+		testList.Append("Test string 2");
+	}
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
