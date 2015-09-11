@@ -38,23 +38,7 @@ public class ChatActivity extends ActionBarActivity {
 		
 		refreshChatBox();
 		
-		new Thread(new Runnable() {
-			public void run() {
-				while (true) {
-					try {
-						Thread.sleep(100);
-					}
-					catch (InterruptedException e) {
-						Log.e(this.getClass().getName(), "Thread sleep interrupted");
-					}
-					chatBox.post(new Runnable() {
-						public void run() {
-							refreshChatBox();
-						}
-					});
-				}
-			}
-		}).start();
+		new Thread(new BackgroundRefresher()).start();
 	}
 	
 	private void refreshChatBox() {
@@ -71,12 +55,59 @@ public class ChatActivity extends ActionBarActivity {
 	}
 	
 	public void sendMessage(String msg) {
-		String fullMsg = userName + ": " + msg;
-		messageList.Append(fullMsg);
-		if (messageList.Size() > 100) {
-			messageList.Erase(0);
+		new Thread(new MessageSender(msg)).start();
+	}
+	
+	private class MessageSender implements Runnable {
+		String message;
+		
+		public MessageSender(String msg) {
+			message = msg;
 		}
-		refreshChatBox();
+		
+		public void run() {
+			String fullMsg = userName + ": " + message;
+			Log.i(this.getClass().getName(), "ms start");
+			messageList.Lock();
+			Log.i(this.getClass().getName(), "ms locked");
+			messageList.Append(fullMsg);
+			if (messageList.Size() > 100) {
+				messageList.Erase(0);
+			}
+			Log.i(this.getClass().getName(), "ms stuff done");
+			messageList.Broadcast();
+			Log.i(this.getClass().getName(), "ms broadcast");
+			messageList.Unlock();
+			Log.i(this.getClass().getName(), "ms unlock");
+			refreshChatBox();
+		}
+	}
+	
+	private class BackgroundRefresher implements Runnable {
+		private int internalSize = 0;
+		
+		public void run() {
+			while (true) {
+				Log.i(this.getClass().getName(), "br start");
+				messageList.Lock();
+				Log.i(this.getClass().getName(), "br locked");
+				if (messageList.Size() == internalSize) {
+					Log.i(this.getClass().getName(), "br waiting");
+					messageList.Wait();
+				}
+				Log.i(this.getClass().getName(), "br done waiting");
+				chatBox.post(new Runnable() {
+					public void run() {
+						refreshChatBox();
+					}
+				});
+				Log.i(this.getClass().getName(), "br finished refresh");
+				internalSize = messageList.Size();
+				messageList.Unlock();
+				Log.i(this.getClass().getName(), "br unlock");
+
+			}
+		}
 	}
 	
 	private class EntryActionListener implements EditText.OnEditorActionListener {
