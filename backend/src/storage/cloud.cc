@@ -130,6 +130,7 @@ Cloud::Read(const string &key, string &value)
         freeReplyObject(reply);
         return ERR_EMPTY;
     }
+    freeReplyObject(reply);
     return ERR_OK;
 }
 
