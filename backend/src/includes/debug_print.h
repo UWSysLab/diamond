@@ -13,7 +13,7 @@
 #define APPNAME "Diamond"
 
 void debugPrint(const char * str) {
-    __android_log_print(ANDROID_LOG_VERBOSE, APPNAME, str);
+    __android_log_print(ANDROID_LOG_INFO, APPNAME, "%s", str);
 }
 
 #else //__ANDROID__
