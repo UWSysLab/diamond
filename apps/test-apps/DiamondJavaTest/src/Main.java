@@ -3,7 +3,7 @@ import edu.washington.cs.diamond.Diamond.DString;
 
 public class Main {
 	public static void main(String[] args) {
-		basicTest();
+		threadTest();
 	}
 	
 	/**
@@ -29,13 +29,18 @@ public class Main {
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
+					System.out.println("Ping start");
 					pingPong.Lock();
+					System.out.println("Ping locked");
 					while (pingPong.Value().equals("ping")) {
+						System.out.println("Ping wait");
 						pingPong.Wait();
 					}
 					pingPong.Set("ping");
 					pingPong.Signal();
+					System.out.println("Ping signaled");
 					pingPong.Unlock();
+					System.out.println("Ping unlocked");
 					System.out.println("ping");
 				}
 			}
@@ -43,13 +48,18 @@ public class Main {
 		new Thread(new Runnable() {
 			public void run() {
 				while (true) {
+					System.out.println("Pong start");
 					pingPong.Lock();
+					System.out.println("Pong locked");
 					while (pingPong.Value().equals("pong")) {
+						System.out.println("Pong wait");
 						pingPong.Wait();
 					}
 					pingPong.Set("pong");
 					pingPong.Signal();
+					System.out.println("Pong signaled");
 					pingPong.Unlock();
+					System.out.println("Pong unlocked");
 					System.out.println("pong");
 				}
 			}
