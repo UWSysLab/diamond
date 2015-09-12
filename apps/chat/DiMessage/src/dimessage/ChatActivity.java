@@ -79,7 +79,6 @@ public class ChatActivity extends ActionBarActivity {
 			Log.i(this.getClass().getName(), "ms broadcast");
 			messageList.Unlock();
 			Log.i(this.getClass().getName(), "ms unlock");
-			refreshChatBox();
 		}
 	}
 	
