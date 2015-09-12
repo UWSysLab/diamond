@@ -106,11 +106,13 @@ DObject::Signal(){
     }
 
     res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
-    assert(res == ERR_OK);
-    assert(value != "");
 
-    res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
-    assert(res == ERR_OK);
+    assert((res == ERR_OK) || (res == ERR_EMPTY));
+    if(res == ERR_OK){
+        assert(value != "");
+        res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
+        assert(res == ERR_OK);
+    }
 
     // If we can assume _key is immutable then we can there is no need to hold the mutex till the end
     pthread_mutex_unlock(&_objectMutex);
@@ -159,7 +161,11 @@ DObject::Wait(){
     res = cloudstore->Push(_key + string("-lock-wait"), string(lockid));
     assert(res == ERR_OK);
     UnlockNotProtected();
+    pthread_mutex_unlock(&_objectMutex);
+
     res = cloudstore->Pop(_key + string("-lock-wait-") + string(lockid), value, true);
+    
+    pthread_mutex_lock(&_objectMutex);
     assert(res == ERR_OK);
 
 
