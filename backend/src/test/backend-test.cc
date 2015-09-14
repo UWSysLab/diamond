@@ -154,6 +154,45 @@ TEST(DList, Map) {
     EXPECT_EQ(list2.Size(), 0);
 }
 
+TEST(DStringList, Map) {
+    DStringList list1;
+    DStringList list2;
+
+    int ret = DStringList::Map(list1, std::string("15"));
+    list1.Clear();
+    list1.Append("A");
+    list1.Append("B");
+
+    ret = DStringList::Map(list2, std::string("15"));
+
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(list2.Index("B"), 1);
+    EXPECT_EQ(list2.Value(0), "A");
+
+    list2.Append("B");
+    list2.Append("D");
+
+    EXPECT_EQ(list1.Index("D"), 3);
+    EXPECT_EQ(list1.Index("B"), 1);
+
+    list1.Insert(2, "C");
+
+    EXPECT_EQ(list2.Index("C"), 2);
+    EXPECT_EQ(list2.Index("D"), 4);
+    EXPECT_EQ(list2.Value(3), "B");
+
+    EXPECT_EQ(list2.Members().size(), list2.Size()); 
+    EXPECT_EQ(list2.Members().at(1), list2.Value(1));
+    EXPECT_EQ(list2.Members().at(2), list2.Value(2));
+
+    list1.Erase(2);
+    list1.Remove("B");
+    EXPECT_EQ(list2.Index("D"), 2);
+
+    list1.Clear();
+    EXPECT_EQ(list2.Size(), 0);
+}
+
 TEST(DString, EmptyStrings) {
     DString s1, s2;
 
