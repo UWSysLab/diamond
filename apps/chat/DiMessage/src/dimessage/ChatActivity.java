@@ -61,6 +61,11 @@ public class ChatActivity extends ActionBarActivity {
 		new Thread(new MessageSender(msg)).start();
 	}
 	
+	@Override
+	public void onBackPressed() {
+		
+	}
+	
 	private class MessageSender implements Runnable {
 		String message;
 		
