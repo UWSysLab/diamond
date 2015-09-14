@@ -18,6 +18,7 @@ import edu.washington.cs.diamond.Diamond.DString;
 public class ChatActivity extends ActionBarActivity {
 	
 	final int NUM_LINES = 11;
+	final int MESSAGE_LIST_SIZE = 100;
 	
 	private TextView chatBox;
 	private Diamond.DStringList messageList;
@@ -73,7 +74,7 @@ public class ChatActivity extends ActionBarActivity {
 			messageList.Lock();
 			Log.i(this.getClass().getName(), "ms locked");
 			messageList.Append(fullMsg);
-			if (messageList.Size() > 100) {
+			if (messageList.Size() > MESSAGE_LIST_SIZE) {
 				messageList.Erase(0);
 			}
 			Log.i(this.getClass().getName(), "ms stuff done");
