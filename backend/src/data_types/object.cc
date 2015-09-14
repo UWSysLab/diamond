@@ -34,7 +34,7 @@ DObject::LockNotProtected(){
         Panic("Current thread already holds the lock");
     }
 
-    long lockid = getTimestamp();
+    uint64_t lockid = getTimestamp();
     sprintf(value, "%" PRIu64 "", lockid);
 
     while(max_tries--){
