@@ -59,8 +59,8 @@ public:
     int Read(const std::string &key, std::string &value);
     int Write(const std::string &key, const std::string &value);
     int Write(const std::string &key, const std::string &value, int write_cond, long expire_ms);
-    int Push(const std::string &key, const std::string &value);
-    int Pop(const std::string &key, std::string &value, bool block);
+    int Rpush(const std::string &key, const std::string &value);
+    int Lpop(const std::string &key, std::string &value, bool block);
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 

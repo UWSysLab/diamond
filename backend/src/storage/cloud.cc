@@ -231,7 +231,7 @@ Cloud::RunOnServer(const string &script, const string &resource, const string &v
 }
 
 int
-Cloud::Push(const string &key, const string &value)
+Cloud::Rpush(const string &key, const string &value)
 {
     char cmd[256];
     redisReply *reply;
@@ -254,7 +254,7 @@ Cloud::Push(const string &key, const string &value)
 }
 
 int
-Cloud::Pop(const string &key, string &value, bool block)
+Cloud::Lpop(const string &key, string &value, bool block)
 {
     char cmd[256];
     redisReply *reply;

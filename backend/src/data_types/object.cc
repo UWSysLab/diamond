@@ -105,12 +105,12 @@ DObject::Signal(){
         Panic("Current thread does not hold the lock");
     }
 
-    res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
+    res = cloudstore->Lpop(_key + string("-lock-wait"), value, false);
 
     assert((res == ERR_OK) || (res == ERR_EMPTY));
     if(res == ERR_OK){
         assert(value != "");
-        res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
+        res = cloudstore->Rpush(_key + string("-lock-wait-") + value, empty);
         assert(res == ERR_OK);
     }
 
@@ -130,11 +130,11 @@ DObject::Broadcast(){
     }
     
     while(1){
-        res = cloudstore->Pop(_key + string("-lock-wait"), value, false);
+        res = cloudstore->Lpop(_key + string("-lock-wait"), value, false);
         if(res != ERR_OK){
             break;
         }
-        res = cloudstore->Push(_key + string("-lock-wait-") + value, empty);
+        res = cloudstore->Rpush(_key + string("-lock-wait-") + value, empty);
         assert(res == ERR_OK);
     }
 
@@ -158,12 +158,12 @@ DObject::Wait(){
     sprintf(lockid, "%" PRIu64 "", _lockid);
 
     // A. Unlock & Sleep
-    res = cloudstore->Push(_key + string("-lock-wait"), string(lockid));
+    res = cloudstore->Rpush(_key + string("-lock-wait"), string(lockid));
     assert(res == ERR_OK);
     UnlockNotProtected();
     pthread_mutex_unlock(&_objectMutex);
 
-    res = cloudstore->Pop(_key + string("-lock-wait-") + string(lockid), value, true);
+    res = cloudstore->Lpop(_key + string("-lock-wait-") + string(lockid), value, true);
     
     pthread_mutex_lock(&_objectMutex);
     assert(res == ERR_OK);
