@@ -20,6 +20,7 @@ public class LoginActivity extends Activity implements LoginDialogFragment.Login
 		setContentView(R.layout.activity_main);
 		
 		DialogFragment dialog = new LoginDialogFragment();
+		dialog.setCancelable(false);
 		dialog.show(getFragmentManager(), dialog.getClass().getName());
 	}
 	
