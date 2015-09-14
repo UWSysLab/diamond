@@ -138,6 +138,7 @@ public:
     void Insert(const int index, const uint64_t val);
     void Erase(const int index);
     void Remove(const uint64_t val); /* Removes the first copy of val, if present */
+    uint64_t Lpop();
     void Clear();
     int Size();
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
@@ -166,6 +167,7 @@ public:
     void Insert(const int index, const std::string val);
     void Erase(const int index);
     void Remove(const std::string val); /* Removes the first copy of val, if present */
+    std::string Lpop();
     void Clear();
     int Size();
     DStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
