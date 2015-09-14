@@ -150,10 +150,6 @@ private:
     int IndexNotProtected(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
-//Niel: I needed a List that could hold strings for PyScrabble, so I opted to just copy/paste
-//DList as a quick hack. What is our permanent solution to this problem? A template DList class,
-//or multiple classes for different primitive types?
-
 class DStringList : public DObject
 {
 public:
