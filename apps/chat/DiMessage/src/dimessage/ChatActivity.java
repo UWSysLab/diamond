@@ -17,6 +17,8 @@ import edu.washington.cs.diamond.Diamond.DString;
 
 public class ChatActivity extends ActionBarActivity {
 	
+	final int NUM_LINES = 11;
+	
 	private TextView chatBox;
 	private Diamond.DStringList messageList;
 	private String userName;
@@ -43,7 +45,7 @@ public class ChatActivity extends ActionBarActivity {
 	
 	private void refreshChatBox() {
 		StringBuilder sb = new StringBuilder();
-		int numLines = 12;
+		int numLines = NUM_LINES;
 		int minLine = messageList.Size() - numLines;
 		if (minLine < 0) {
 			minLine = 0;
