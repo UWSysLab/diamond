@@ -75,18 +75,13 @@ public class ChatActivity extends ActionBarActivity {
 		
 		public void run() {
 			String fullMsg = userName + ": " + message;
-			Log.i(this.getClass().getName(), "ms start");
 			messageList.Lock();
-			Log.i(this.getClass().getName(), "ms locked");
 			messageList.Append(fullMsg);
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
 				messageList.Erase(0);
 			}
-			Log.i(this.getClass().getName(), "ms stuff done");
 			messageList.Broadcast();
-			Log.i(this.getClass().getName(), "ms broadcast");
 			messageList.Unlock();
-			Log.i(this.getClass().getName(), "ms unlock");
 		}
 	}
 	
@@ -95,23 +90,18 @@ public class ChatActivity extends ActionBarActivity {
 		
 		public void run() {
 			while (true) {
-				Log.i(this.getClass().getName(), "br start");
 				messageList.Lock();
-				Log.i(this.getClass().getName(), "br locked");
 				while (messageList.Size() == internalSize) {
 					Log.i(this.getClass().getName(), "br waiting");
 					messageList.Wait();
 				}
-				Log.i(this.getClass().getName(), "br done waiting");
 				chatBox.post(new Runnable() {
 					public void run() {
 						refreshChatBox();
 					}
 				});
-				Log.i(this.getClass().getName(), "br finished refresh");
 				internalSize = messageList.Size();
 				messageList.Unlock();
-				Log.i(this.getClass().getName(), "br unlock");
 
 			}
 		}
