@@ -44,7 +44,6 @@ TEST(DString, Map)
     DString s1;
     DString s2;
 
-    //cloudstore.Connect("seymour");
     int ret = DString::Map(s1, std::string("10"));
     s1 = std::string("Hello");
     
@@ -137,11 +136,22 @@ TEST(DList, Map) {
     EXPECT_EQ(list1.Index(25), 3);
     EXPECT_EQ(list1.Index(9), 1);
 
+    list1.Insert(2, 16);
+
+    EXPECT_EQ(list2.Index(16), 2);
+    EXPECT_EQ(list2.Index(25), 4);
+    EXPECT_EQ(list2.Value(3), 9);
+
+    EXPECT_EQ(list2.Members().size(), list2.Size()); 
+    EXPECT_EQ(list2.Members().at(1), list2.Value(1));
+    EXPECT_EQ(list2.Members().at(2), list2.Value(2));
+
+    list1.Erase(2);
     list1.Remove(9);
     EXPECT_EQ(list2.Index(25), 2);
 
     list1.Clear();
-    EXPECT_EQ(list2.Members().size(), 0);
+    EXPECT_EQ(list2.Size(), 0);
 }
 
 TEST(DString, EmptyStrings) {
