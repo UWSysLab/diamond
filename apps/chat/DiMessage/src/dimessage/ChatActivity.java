@@ -90,7 +90,7 @@ public class ChatActivity extends ActionBarActivity {
 				Log.i(this.getClass().getName(), "br start");
 				messageList.Lock();
 				Log.i(this.getClass().getName(), "br locked");
-				if (messageList.Size() == internalSize) {
+				while (messageList.Size() == internalSize) {
 					Log.i(this.getClass().getName(), "br waiting");
 					messageList.Wait();
 				}
