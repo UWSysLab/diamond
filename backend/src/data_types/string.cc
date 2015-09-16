@@ -56,7 +56,7 @@ DString::Value() {
     int ret = cloudstore->Read(_key, s);
 
     if (ret == ERR_OK) {
-        _s = s;
+        Deserialize(s);
     }
     return _s;
 }
@@ -65,7 +65,16 @@ void
 DString::Set(const std::string &s)
 {
     _s = s;
-    cloudstore->Write(_key, _s);
+    cloudstore->Write(_key, Serialize());
+}
+
+std::string
+DString::Serialize() {
+    return _s;
+}
+
+void DString::Deserialize(const std::string &s) {
+    _s = s;
 }
 
 } // namespace diamond

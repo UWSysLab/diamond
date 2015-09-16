@@ -56,7 +56,7 @@ DLong::Value() {
     int ret = cloudstore->Read(_key, s);
 
     if (ret == ERR_OK) {
-        _l = atol(s.c_str());
+        Deserialize(s);
     }
     return _l;
 }
@@ -65,10 +65,19 @@ void
 DLong::Set(const uint64_t l)
 {
     _l = l;
-    char buf[50];
-    sprintf(buf, "%" PRIu64 "", _l);
-    cloudstore->Write(_key, string(buf));
+    cloudstore->Write(_key, Serialize());
 }
 
+std::string
+DLong::Serialize() {
+    char buf[50];
+    sprintf(buf, "%" PRIu64 "", _l);
+    return string(buf);
+}
+
+void
+DLong::Deserialize(const std::string &s) {
+    _l = atol(s.c_str());
+}
 
 } // namespace diamond

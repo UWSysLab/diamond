@@ -53,7 +53,7 @@ DCounter::Value() {
     int ret = cloudstore->Read(_key, s);
 
     if (ret == ERR_OK) {
-        _counter = atoi(s.c_str());
+        Deserialize(s);
     }
     return _counter;
 }
@@ -62,9 +62,17 @@ void
 DCounter::Set(int val)
 {
     _counter = val;
+    cloudstore->Write(_key, Serialize());
+}
+
+std::string Serialize() {
     char buf[50];
     sprintf(buf, "%i", _counter);
-    cloudstore->Write(_key, string(buf));
+    return string(buf);
+}
+
+void Deserialize(const std::string &s) {
+    _counter = atoi(s.c_str());
 }
 
 } // namespace diamond
