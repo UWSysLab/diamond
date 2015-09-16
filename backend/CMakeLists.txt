@@ -48,24 +48,19 @@ if(ANDROID)
 endif()
 
 ExternalProject_Add(
-    hiredis-redisclient
-    URL https://github.com/redis/hiredis/archive/v0.13.1.tar.gz
-    PREFIX ${PROJECT_BINARY_DIR}/hiredis
-    DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
-    SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
-    BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
-    STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
-    TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
+  hiredis-redisclient
+    PREFIX ${PROJECT_SOURCE_DIR}/external/hiredis
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
+    BINARY_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
     BUILD_COMMAND ${HIREDIS_MAKE}
+    DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
-    LOG_DOWNLOAD ON
-    LOG_CONFIGURE ON
     LOG_BUILD ON)
 
- include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
- link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
+ include_directories(${PROJECT_SOURCE_DIR}/external/hiredis)
+ link_directories(${PROJECT_SOURCE_DIR}/external/hiredis) 
 
 # ---------------------------------------------------------
 # Include and link directories
