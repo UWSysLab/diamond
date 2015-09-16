@@ -18,42 +18,6 @@ namespace diamond {
 
 using namespace std;
 
-static unordered_map<string, DList> cache;
-   
-int
-DList::Map(DList &addr, const string &key)
-{
-    pthread_mutex_lock(&addr._objectMutex);
-
-    addr._key = key;
-    // take a look in the cache first
-    auto find = cache.find(key);
-    if (find != cache.end()) {
-        addr._vec = find->second._vec;
-        pthread_mutex_unlock(&addr._objectMutex);
-        return ERR_OK;
-    }
-   
-    if (!cloudstore->IsConnected()) {
-        Panic("Cannot map objects before connecting to backing store server");
-    }
-
-    string value;
-    int ret = cloudstore->Read(key, value);
-
-    if (ret != ERR_OK) {
-        pthread_mutex_unlock(&addr._objectMutex);
-        return ret;
-    }
-
-    addr.Deserialize(value);
-    cache[key] = addr;
-
-    pthread_mutex_unlock(&addr._objectMutex);
-    
-    return ERR_OK;
-}
-
 // Callee should hold the _objectMutex
 string
 DList::Serialize()
@@ -70,7 +34,7 @@ DList::Serialize()
 
 // Callee should hold the _objectMutex
 void
-DList::Deserialize(string &s)
+DList::Deserialize(const string &s)
 {
     _vec.clear();
 

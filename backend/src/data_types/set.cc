@@ -18,36 +18,6 @@ namespace diamond {
 
 using namespace std;
 
-static unordered_map<string, DSet> cache;
-   
-int
-DSet::Map(DSet &addr, const string &key)
-{
-    addr._key = key;
-    // take a look in the cache first
-    auto find = cache.find(key);
-    if (find != cache.end()) {
-        addr._set = find->second._set;
-        return ERR_OK;
-    }
-   
-    if (!cloudstore->IsConnected()) {
-        Panic("Cannot map objects before connecting to backing store server");
-    }
-
-    string value;
-    int ret = cloudstore->Read(key, value);
-
-    if (ret != ERR_OK) {
-        return ret;
-    }
-
-    addr.Deserialize(value);
-    cache[key] = addr;
-    
-    return 0;
-}
-
 string
 DSet::Serialize()
 {
@@ -62,7 +32,7 @@ DSet::Serialize()
 }
 
 void
-DSet::Deserialize(string &s)
+DSet::Deserialize(const string &s)
 {
     _set.clear();
 
