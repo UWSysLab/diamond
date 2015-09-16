@@ -35,7 +35,27 @@ DObject::Map(DObject &addr, const string &key)
 
 int
 DObject::MultiMap(map<string, DObject *> & keyMap) {
-    return ERR_NOT_PERFORMED;
+    vector<string> keys;
+    vector<string> values;
+    for (auto it = keyMap.begin(); it != keyMap.end(); it++) {
+        keys.push_back((*it).first);
+    }
+
+    int ret = cloudstore->MultiGet(keys, values);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+
+    if (keys.size() != values.size()) {
+        Panic("Mismatch between number of keys and values");
+    }
+
+    for (size_t i = 0; i < keys.size(); i++) {
+        string currentKey = keys.at(i);
+        keyMap[currentKey]->Deserialize(values.at(i));
+    }
+
+    return 0;
 }
 
 
