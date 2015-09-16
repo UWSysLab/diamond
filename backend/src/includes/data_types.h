@@ -13,6 +13,7 @@
 #include <unordered_set>
 #include <string>
 #include <vector>
+#include <map>
 #include <pthread.h>
 
 namespace diamond {
@@ -30,6 +31,7 @@ public:
 	void Signal();
 	void Broadcast();
 	void Wait();
+   static int MultiMap(std::map<DObject *, std::string> & keyMap);
 
 
 protected:

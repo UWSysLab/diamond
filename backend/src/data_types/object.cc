@@ -5,11 +5,18 @@
 #include "lib/message.h"
 #include "lib/timestamp.h"
 #include <unordered_map>
+#include <map>
 #include <inttypes.h>
 
 namespace diamond {
 
 using namespace std;
+
+
+int
+DObject::MultiMap(map<DObject *, string> & keyMap) {
+    return ERR_NOT_PERFORMED;
+}
 
 
 void
