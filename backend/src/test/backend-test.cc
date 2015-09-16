@@ -32,6 +32,7 @@
 #include "includes/data_types.h"
 #include <semaphore.h>
 
+#include <map>
 
 #include <gtest/gtest.h>
 
@@ -211,6 +212,39 @@ TEST(DString, EmptyStrings) {
     
     EXPECT_EQ(s1.Value(), "");
     EXPECT_EQ(s2.Value(), "");
+}
+
+TEST(DObject, MultiMap) {
+    DString sa1, sa2, sb1, sb2;
+
+    std::map<std::string, DObject *> objMap1;
+    objMap1["sa"] = &sa1;
+    objMap1["sb"] = &sb1;
+    int ret = DObject::MultiMap(objMap1);
+    sa1 = "hello";
+    sb1 = "world";
+    
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(sa1.Value(), "hello");
+    EXPECT_EQ(sb1.Value(), "world");
+
+
+    std::map<std::string, DObject *> objMap2;
+    objMap2["sa"] = &sa2;
+    objMap2["sb"] = &sb2;
+    ret = DObject::MultiMap(objMap2);
+
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(sa2.Value(), "hello");
+    EXPECT_EQ(sb2.Value(), "world");
+
+    sa1 = "";
+    sb1 = "";
+    
+    EXPECT_EQ(sa1.Value(), "");
+    EXPECT_EQ(sb1.Value(), "");
+    EXPECT_EQ(sa2.Value(), "");
+    EXPECT_EQ(sb2.Value(), "");
 }
 
 // int dlong_wait_local = 0;
