@@ -41,6 +41,9 @@ protected:
     std::string _key;
     pthread_mutex_t  _objectMutex = PTHREAD_MUTEX_INITIALIZER;
 
+    virtual std::string Serialize() = 0;
+    virtual void Deserialize(const std::string &s) = 0;
+
 private:
     // mutex to protect local fields of the object
 	uint64_t _lockid = 0;
