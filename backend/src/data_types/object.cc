@@ -34,7 +34,7 @@ DObject::Map(DObject &addr, const string &key)
 
 
 int
-DObject::MultiMap(map<DObject *, string> & keyMap) {
+DObject::MultiMap(map<string, DObject *> & keyMap) {
     return ERR_NOT_PERFORMED;
 }
 
