@@ -122,13 +122,11 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
     }
     reply = (redisReply *)redisCommandArgv(GetRedisContext(), keys.size() + 1, &(argv[0]), &(argvlen[0]));
 
-    Notice("Type: %d, len: %d, elements: %lu\n", reply->type, reply->len, reply->elements);
-
     if (reply == NULL){
         Panic("reply == null");
     }
     if(reply->type != REDIS_REPLY_ARRAY) {
-        Panic("MultiGet reply is not REDIS_REPLY_ARRAY");
+        Panic("MultiGet reply is not an array");
         freeReplyObject(reply);
         return ERR_EMPTY;
     }
