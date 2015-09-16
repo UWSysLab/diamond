@@ -10,6 +10,7 @@
 #include "storage/cloud.h"
 #include "lib/assert.h"
 #include <string>
+#include <vector>
 
 namespace diamond {
 
@@ -97,6 +98,53 @@ Cloud::GetRedisContext()
         assert(find != _redisContexts.end());
         return find->second;
     }
+}
+
+int
+Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
+    redisReply *reply;
+
+    if (values.size() != 0) {
+        Panic("Values list not empty");
+    }
+
+    values.resize(keys.size());
+
+    vector<const char *> argv(keys.size() + 1);
+    vector<size_t> argvlen(keys.size() + 1);
+
+    string mgetCmd("MGET");
+    argv[0] = mgetCmd.c_str();
+    argvlen[0] = mgetCmd.size();
+    for (size_t i = 0; i < keys.size(); i++) {
+        argv[i + 1] = keys.at(i).c_str();
+        argvlen[i + 1] = keys.at(i).size();
+    }
+    reply = (redisReply *)redisCommandArgv(GetRedisContext(), keys.size() + 1, &(argv[0]), &(argvlen[0]));
+
+    Notice("Type: %d, len: %d, elements: %lu\n", reply->type, reply->len, reply->elements);
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+    if(reply->type != REDIS_REPLY_ARRAY) {
+        Panic("MultiGet reply is not REDIS_REPLY_ARRAY");
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
+
+    for (size_t i = 0; i < reply->elements; i++) {
+        redisReply *subreply = reply->element[i];
+        if (subreply->type == REDIS_REPLY_STRING) {
+            values.at(i) = string(subreply->str);
+        }
+        else if (subreply->type == REDIS_REPLY_NIL) {
+            values.at(i) = "";
+        }
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
 }
 
 int

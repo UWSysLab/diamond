@@ -40,6 +40,7 @@
 #include <sys/syscall.h>
 
 #include <unordered_map>
+#include <vector>
 
 namespace diamond {
 
@@ -56,6 +57,7 @@ public:
     int Connect(const std::string &host);
     int Reconnect(const std::string &host);
     bool IsConnected();
+    int MultiGet(const std::vector<std::string> &keys, std::vector<std::string> &values);
     int Read(const std::string &key, std::string &value);
     int Write(const std::string &key, const std::string &value);
     int Write(const std::string &key, const std::string &value, int write_cond, long expire_ms);
