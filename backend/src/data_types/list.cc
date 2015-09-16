@@ -70,7 +70,7 @@ DList::Serialize()
 
 // Callee should hold the _objectMutex
 void
-DList::Deserialize(string &s)
+DList::Deserialize(const string &s)
 {
     _vec.clear();
 

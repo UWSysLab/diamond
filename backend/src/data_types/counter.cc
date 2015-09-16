@@ -65,13 +65,13 @@ DCounter::Set(int val)
     cloudstore->Write(_key, Serialize());
 }
 
-std::string Serialize() {
+std::string DCounter::Serialize() {
     char buf[50];
     sprintf(buf, "%i", _counter);
     return string(buf);
 }
 
-void Deserialize(const std::string &s) {
+void DCounter::Deserialize(const std::string &s) {
     _counter = atoi(s.c_str());
 }
 

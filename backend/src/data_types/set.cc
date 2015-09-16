@@ -62,7 +62,7 @@ DSet::Serialize()
 }
 
 void
-DSet::Deserialize(string &s)
+DSet::Deserialize(const string &s)
 {
     _set.clear();
 

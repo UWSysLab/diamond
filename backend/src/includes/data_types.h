@@ -31,7 +31,8 @@ public:
 	void Signal();
 	void Broadcast();
 	void Wait();
-   static int MultiMap(std::map<DObject *, std::string> & keyMap);
+    static int MultiMap(std::map<DObject *, std::string> &keyMap);
+    static int Map(DObject &addr, const std::string &key);
 
 
 protected:
@@ -62,7 +63,11 @@ public:
     DString & operator=(const std::string &s) { Set(s); return *this; };
         
 private:
+
     std::string _s;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
 };
     
 class DLong : public DObject
@@ -80,6 +85,9 @@ public:
 
 private:
     uint64_t _l;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
 };
 
 
@@ -100,6 +108,9 @@ public:
 
 private:
     int _counter;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
 };
 
 class DSet : public DObject
@@ -121,7 +132,7 @@ private:
     std::unordered_set<uint64_t> _set;
 
     std::string Serialize();
-    void Deserialize(std::string &s);
+    void Deserialize(const std::string &s);
 };
 
 class DList : public DObject
@@ -149,7 +160,7 @@ private:
     std::vector<uint64_t> _vec;
 
     std::string Serialize();
-    void Deserialize(std::string &s);
+    void Deserialize(const std::string &s);
     int IndexNotProtected(const uint64_t val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
@@ -178,7 +189,7 @@ private:
     std::vector<std::string> _vec;
 
     std::string Serialize();
-    void Deserialize(std::string &s);
+    void Deserialize(const std::string &s);
 };
 
 } // namespace diamond

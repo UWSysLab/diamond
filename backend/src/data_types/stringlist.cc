@@ -62,7 +62,7 @@ DStringList::Serialize()
 }
 
 void
-DStringList::Deserialize(string &s)
+DStringList::Deserialize(const string &s)
 {
     _vec.clear();
 
