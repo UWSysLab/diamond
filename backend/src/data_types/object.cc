@@ -52,6 +52,7 @@ DObject::MultiMap(map<string, DObject *> & keyMap) {
 
     for (size_t i = 0; i < keys.size(); i++) {
         string currentKey = keys.at(i);
+        keyMap[currentKey]->_key = currentKey;
         keyMap[currentKey]->Deserialize(values.at(i));
     }
 
