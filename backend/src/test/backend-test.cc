@@ -215,36 +215,55 @@ TEST(DString, EmptyStrings) {
 }
 
 TEST(DObject, MultiMap) {
-    DString sa1, sa2, sb1, sb2;
+    DString sa1, sa2;
+    DString sb1, sb2;
+    DLong long1, long2;
+    DList list1, list2;
 
     std::map<std::string, DObject *> objMap1;
     objMap1["sa"] = &sa1;
     objMap1["sb"] = &sb1;
+    objMap1["long"] = &long1;
+    objMap1["list"] = &list1;
     int ret = DObject::MultiMap(objMap1);
     sa1 = "hello";
     sb1 = "world";
+    long1 = 42;
+    list1.Append(4);
+    list1.Append(9);
     
     EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(sa1.Value(), "hello");
     EXPECT_EQ(sb1.Value(), "world");
-
+    EXPECT_EQ(long1.Value(), 42);
+    EXPECT_EQ(list1.Value(0), 4);
+    EXPECT_EQ(list1.Value(1), 9);
 
     std::map<std::string, DObject *> objMap2;
     objMap2["sa"] = &sa2;
     objMap2["sb"] = &sb2;
+    objMap2["long"] = &long2;
+    objMap2["list"] = &list2;
     ret = DObject::MultiMap(objMap2);
 
     EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(sa2.Value(), "hello");
     EXPECT_EQ(sb2.Value(), "world");
+    EXPECT_EQ(long2.Value(), 42);
+    EXPECT_EQ(list2.Value(0), 4);
+    EXPECT_EQ(list2.Value(1), 9);
 
     sa1 = "";
     sb1 = "";
+    list1.Clear();
     
     EXPECT_EQ(sa1.Value(), "");
     EXPECT_EQ(sb1.Value(), "");
+    EXPECT_EQ(list1.Size(), 0);
+
     EXPECT_EQ(sa2.Value(), "");
     EXPECT_EQ(sb2.Value(), "");
+    EXPECT_EQ(list2.Size(), 0);
 }
 
 // int dlong_wait_local = 0;
