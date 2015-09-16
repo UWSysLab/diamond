@@ -17,36 +17,6 @@ namespace diamond {
 
 using namespace std;
 
-static unordered_map<string, DCounter> cache;
-
-int
-DCounter::Map(DCounter &addr, const string &key) {
-
-    addr._key = key;
-    // take a look in the cache first
-    auto find = cache.find(key);
-    if (find != cache.end()) {
-        addr._counter = find->second._counter;
-        return ERR_OK;
-    }
-   
-   if (!cloudstore->IsConnected()) {
-      Panic("Cannot map objects before connecting to backing store server");
-   }
-
-   string value;
-   
-   int ret = cloudstore->Read(key, value);
-
-   if (ret != ERR_OK) {
-      return ret;
-   }
-
-   addr._counter = atol(value.c_str());
-   cache[key] = addr;
-   return 0;
-}
-
 int
 DCounter::Value() {
     string s;

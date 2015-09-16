@@ -19,37 +19,6 @@ using namespace std;
 
 Cloud* cloudstore = Cloud::Instance();    
 
-static unordered_map<string, DString> cache;
-    
-int
-DString::Map(DString &addr, const string &key) {
-    // take a look in the cache first
-    addr._key = key;
-    
-    auto find = cache.find(key);
-    if (find != cache.end()) {
-        addr._s = find->second._s;
-        return ERR_OK;
-    }
-
-    if (!cloudstore->IsConnected()) {
-       Panic("Cannot map objects before connecting to backing store server");
-    }
-
-    string value;
-   
-    int ret = cloudstore->Read(key, value);
-
-    if (ret != ERR_OK) {
-       return ret;
-    }
-
-    addr._s = value;
-    cache[key] = addr;  // PF: This currently causes a WRITE to be sent to redis because '=' is overloaded
-    return ERR_OK;
-}
-
-
 std::string
 DString::Value() {
     string s;

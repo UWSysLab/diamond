@@ -14,6 +14,26 @@ using namespace std;
 
 
 int
+DObject::Map(DObject &addr, const string &key)
+{
+    addr._key = key;
+   
+    if (!cloudstore->IsConnected()) {
+        Panic("Cannot map objects before connecting to backing store server");
+    }
+
+    string value;
+    int ret = cloudstore->Read(key, value);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    addr.Deserialize(value);
+    
+    return 0;
+}
+
+
+int
 DObject::MultiMap(map<DObject *, string> & keyMap) {
     return ERR_NOT_PERFORMED;
 }
