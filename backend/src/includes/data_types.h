@@ -38,6 +38,7 @@ public:
 protected:
     DObject() {};
     DObject(const std::string &key) : _key(key) {};
+    virtual ~DObject() {};
     std::string _key;
     pthread_mutex_t  _objectMutex = PTHREAD_MUTEX_INITIALIZER;
 
