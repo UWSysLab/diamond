@@ -9,6 +9,7 @@ import org.bytedeco.javacpp.annotation.*;
  */
 
 //@Platform(include={"<vector>", "<string>"})
+@Platform(include={"data_types.h"})
 
 public class DiamondUtil {
 
@@ -38,4 +39,29 @@ public class DiamondUtil {
         }
     }
 
+    @Name("std::vector<diamond::DObject *>") public static class DObjectVector extends Pointer {
+        static { Loader.load(); }
+        /** Pointer cast constructor. Invokes {@link Pointer#Pointer(Pointer)}. */
+        public DObjectVector(Pointer p) { super(p); }
+        public DObjectVector(Diamond.DObject ... array) { this(array.length); put(array); }
+        public DObjectVector()       { allocate();  }
+        public DObjectVector(long n) { allocate(n); }
+        private native void allocate();
+        private native void allocate(@Cast("size_t") long n);
+        public native @Name("operator=") @ByRef DObjectVector put(@ByRef DObjectVector x);
+
+        public native long size();
+        public native void resize(@Cast("size_t") long n);
+
+        @Index public native Diamond.DObject get(@Cast("size_t") long i);
+        public native DObjectVector put(@Cast("size_t") long i, Diamond.DObject value);
+
+        public DObjectVector put(Diamond.DObject ... array) {
+            if (size() != array.length) { resize(array.length); }
+            for (int i = 0; i < array.length; i++) {
+                put(i, array[i]);
+            }
+            return this;
+        }
+    }
 }

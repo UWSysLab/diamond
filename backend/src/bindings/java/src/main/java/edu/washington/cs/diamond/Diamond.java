@@ -17,6 +17,9 @@ public class Diamond {
         protected DObject() { }
         protected DObject(String key) { }
 
+        public static native int Map(@ByRef DObject addr, @ByRef @StdString String key);
+        public static native int MultiMap(@ByRef DiamondUtil.DObjectVector addr, @ByRef DiamondUtil.StringVector key);
+
         public native void Lock();
         public native void ContinueLock();
         public native void Unlock();
