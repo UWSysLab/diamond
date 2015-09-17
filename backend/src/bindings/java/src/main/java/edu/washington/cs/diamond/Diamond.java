@@ -19,6 +19,7 @@ public class Diamond {
 
         public static native int Map(@ByRef DObject addr, @ByRef @StdString String key);
 
+        /*
         public static int MultiMap(List<DObject> objects, List<String> keys) {
             DiamondUtil.DObjectVector nativeObjects = new DiamondUtil.DObjectVector();
             DiamondUtil.StringVector nativeKeys = new DiamondUtil.StringVector();
@@ -33,6 +34,7 @@ public class Diamond {
         }
         @Name("MultiMap")
         public static native int NativeMultiMap(@ByRef DiamondUtil.DObjectVector objects, @ByRef DiamondUtil.StringVector keys);
+        */
 
         public native void Lock();
         public native void ContinueLock();
