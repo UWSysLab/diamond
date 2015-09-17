@@ -231,7 +231,7 @@ TEST(DObject, MultiMap) {
     objects1.push_back(&long1);
     objects1.push_back(&list1);
 
-    int ret = DObject::MultiMap(keys, objects1);
+    int ret = DObject::MultiMap(objects1, keys);
     sa1 = "hello";
     sb1 = "world";
     long1 = 42;
@@ -250,7 +250,7 @@ TEST(DObject, MultiMap) {
     objects2.push_back(&sb2);
     objects2.push_back(&long2);
     objects2.push_back(&list2);
-    ret = DObject::MultiMap(keys, objects2);
+    ret = DObject::MultiMap(objects2, keys);
 
     EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(sa2.Value(), "hello");
