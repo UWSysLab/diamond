@@ -220,12 +220,18 @@ TEST(DObject, MultiMap) {
     DLong long1, long2;
     DList list1, list2;
 
-    std::map<std::string, DObject *> objMap1;
-    objMap1["sa"] = &sa1;
-    objMap1["sb"] = &sb1;
-    objMap1["long"] = &long1;
-    objMap1["list"] = &list1;
-    int ret = DObject::MultiMap(objMap1);
+    std::vector<std::string> keys;
+    keys.push_back("sa");
+    keys.push_back("sb");
+    keys.push_back("long");
+    keys.push_back("list");
+    std::vector<DObject *> objects1;
+    objects1.push_back(&sa1);
+    objects1.push_back(&sb1);
+    objects1.push_back(&long1);
+    objects1.push_back(&list1);
+
+    int ret = DObject::MultiMap(keys, objects1);
     sa1 = "hello";
     sb1 = "world";
     long1 = 42;
@@ -239,12 +245,12 @@ TEST(DObject, MultiMap) {
     EXPECT_EQ(list1.Value(0), 4);
     EXPECT_EQ(list1.Value(1), 9);
 
-    std::map<std::string, DObject *> objMap2;
-    objMap2["sa"] = &sa2;
-    objMap2["sb"] = &sb2;
-    objMap2["long"] = &long2;
-    objMap2["list"] = &list2;
-    ret = DObject::MultiMap(objMap2);
+    std::vector<DObject *> objects2;
+    objects2.push_back(&sa2);
+    objects2.push_back(&sb2);
+    objects2.push_back(&long2);
+    objects2.push_back(&list2);
+    ret = DObject::MultiMap(keys, objects2);
 
     EXPECT_EQ(ret, ERR_OK);
     EXPECT_EQ(sa2.Value(), "hello");
