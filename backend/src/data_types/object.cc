@@ -34,7 +34,7 @@ DObject::Map(DObject &addr, const string &key)
 
 
 int
-DObject::MultiMap(vector<string> &keys, vector<DObject *> &objects) {
+DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
 
     if (keys.size() != objects.size()) {
         Panic("Mismatch between number of keys and DObjects");
