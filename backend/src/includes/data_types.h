@@ -31,7 +31,7 @@ public:
 	void Signal();
 	void Broadcast();
 	void Wait();
-    static int MultiMap(std::map<std::string, DObject *> &keyMap);
+    static int MultiMap(std::vector<std::string> &keys, std::vector<DObject *> &objects);
     static int Map(DObject &addr, const std::string &key);
 
 
