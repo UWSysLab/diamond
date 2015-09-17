@@ -92,4 +92,47 @@ public class DiamondTest
         //System.out.println("DStringList test ok!");
     }
 
+    public void testMultiMap() {
+        Diamond.DString string1 = new Diamond.DString();
+        Diamond.DString string2 = new Diamond.DString();
+        Diamond.DLong long1 = new Diamond.DLong();
+        Diamond.DLong long2 = new Diamond.DLong();
+        Diamond.DStringList list1 = new Diamond.DStringList();
+        Diamond.DStringList list2 = new Diamond.DStringList();
+
+        List<String> keyList = new ArrayList<String>();
+        keyList.add("string");
+        keyList.add("long");
+        keyList.add("list");
+
+        List<Diamond.DObject> objectList = new ArrayList<Diamond.DObject>();
+        objectList.add(string1);
+        objectList.add(long1);
+        objectList.add(list1);
+
+        Diamond.DObject.MultiMap(objectList, keyList);
+
+        string1.Set("Testing");
+        long1.Set(42);
+        list1.Append("Hello");
+        list1.Append("World");
+
+        assert(string1.Value().equals("Testing"));
+        assert(long1.Value() == 42);
+        assert(list1.Index("Hello") == 0);
+        assert(list1.Value(1).equals("World"));
+
+        List<Diamond.DObject> objectList2 = new ArrayList<Diamond.DObject>();
+        objectList2.add(string2);
+        objectList2.add(long2);
+        objectList2.add(list2);
+
+        Diamond.DObject.MultiMap(objectList2, keyList);
+
+        assert(string2.Value().equals("Testing"));
+        assert(long2.Value() == 42);
+        assert(list2.Index("Hello") == 0);
+        assert(list2.Value(1).equals("World"));
+    }
+
 }
