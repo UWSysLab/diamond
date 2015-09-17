@@ -18,7 +18,21 @@ public class Diamond {
         protected DObject(String key) { }
 
         public static native int Map(@ByRef DObject addr, @ByRef @StdString String key);
-        public static native int MultiMap(@ByRef DiamondUtil.DObjectVector addr, @ByRef DiamondUtil.StringVector key);
+
+        public static int MultiMap(List<DObject> objects, List<String> keys) {
+            DiamondUtil.DObjectVector nativeObjects = new DiamondUtil.DObjectVector();
+            DiamondUtil.StringVector nativeKeys = new DiamondUtil.StringVector();
+
+            for (int i = 0; i < objects.size(); i++) {
+                nativeObjects.put(nativeObjects.size(), objects.get(i));
+            }
+            for (int i = 0; i < keys.size(); i++) {
+                nativeKeys.put(nativeKeys.size(), keys.get(i));
+            }
+            return NativeMultiMap(nativeObjects, nativeKeys);
+        }
+        @Name("MultiMap")
+        public static native int NativeMultiMap(@ByRef DiamondUtil.DObjectVector objects, @ByRef DiamondUtil.StringVector keys);
 
         public native void Lock();
         public native void ContinueLock();
@@ -95,7 +109,7 @@ public class Diamond {
             List<String> result = new ArrayList<String>();
             DiamondUtil.StringVector members = Members();
             for (int i = 0; i < members.size(); i++) {
-                result.add(members.get(i).getString());
+                result.add(members.get(i));
             }
             return result;
         }
