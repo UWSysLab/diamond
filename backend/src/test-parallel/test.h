@@ -24,6 +24,7 @@ using namespace diamond;
 #define EXPECT_EQ(left,right) {         \
         if(!((left) == (right))){       \
             std::cerr << "!!ASSERT FAILED: " << #left << "==" << #right << " @ " << __FILE__ << " (" << __LINE__ << "). " << #left << "=" << (left) << "; " << #right << "=" << (right) << std::endl; \
+            exit(2); \
         }}
 
 
