@@ -2,6 +2,7 @@ package edu.washington.cs.diamond;
 
 import org.bytedeco.javacpp.*;
 import org.bytedeco.javacpp.annotation.*;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.List;
 import java.util.ArrayList;
@@ -11,6 +12,44 @@ import java.util.ArrayList;
 @Namespace("diamond")
 
 public class Diamond {
+
+    public static void MapObject(Object obj, String key, MapObjectFunction func) {
+        List<DObject> dobjects = new ArrayList<DObject>();
+        List<String> keys = new ArrayList<String>();
+        Field[] fields = obj.getClass().getDeclaredFields();
+        try {
+            for (int i = 0; i < fields.length; i++) {
+                Field curField = fields[i];
+                if (isDiamondType(curField)) {
+                    DObject dobj = (DObject)curField.get(obj);
+                    dobjects.add(dobj);
+                    keys.add(func.function(key, curField.getName()));
+                }
+            }
+        }
+        catch (IllegalAccessException e) {
+            System.out.println("MapObject exception: " + e);
+            System.exit(1);
+        }
+        DObject.MultiMap(dobjects, keys);
+    }
+
+    //TODO: Implement more elegantly? Right now we need to manually add each new type
+    private static boolean isDiamondType(Field f) {
+        if (f.getType().equals(Diamond.DString.class)
+            || f.getType().equals(Diamond.DLong.class)
+            || f.getType().equals(Diamond.DCounter.class)
+            || f.getType().equals(Diamond.DSet.class)
+            || f.getType().equals(Diamond.DStringList.class)
+            || f.getType().equals(Diamond.DList.class)) {
+            return true;
+        }
+        return false;
+    }
+
+    public interface MapObjectFunction {
+        public String function(String key, String varname);
+    }
 
     public static class DObject extends Pointer {
         static { Loader.load(); }
@@ -95,6 +134,10 @@ public class Diamond {
       public native void Remove(long val);
    }
 
+    //TODO: implement DList
+    public static class DList extends DObject {
+    }
+
     public static class DStringList extends DObject {
         static { Loader.load(); }
         public DStringList() { allocate(); }
@@ -102,18 +145,16 @@ public class Diamond {
         private native void allocate();
         private native void allocate(@ByRef @StdString String key);
 
-        //TODO: Figure out if there's a way to name the method that binds
-        //to the native Members() method something else, so that this method
-        //can be named Members()
-        public List<String> MembersList() {
+        public List<String> Members() {
             List<String> result = new ArrayList<String>();
-            DiamondUtil.StringVector members = Members();
+            DiamondUtil.StringVector members = NativeMembers();
             for (int i = 0; i < members.size(); i++) {
                 result.add(members.get(i));
             }
             return result;
         }
-        public native @ByVal DiamondUtil.StringVector Members();
+        @Name("Members")
+        public native @ByVal DiamondUtil.StringVector NativeMembers();
 
         public native @StdString String Value(int index);
         public native int Index(@StdString String val);

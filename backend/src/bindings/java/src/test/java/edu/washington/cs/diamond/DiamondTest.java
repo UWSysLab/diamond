@@ -71,7 +71,7 @@ public class DiamondTest
 
         list1.Clear();
         
-        assert(list2.MembersList().size() == 0);
+        assert(list2.Members().size() == 0);
 
         list1.Append("hello");
         list1.Append("test");
@@ -87,7 +87,7 @@ public class DiamondTest
         List<String> membersList = new ArrayList<String>();
         membersList.add("hello");
         membersList.add("world");
-        assert(list2.MembersList().equals(membersList));
+        assert(list2.Members().equals(membersList));
 
         //System.out.println("DStringList test ok!");
     }
@@ -133,6 +133,39 @@ public class DiamondTest
         assert(long2.Value() == 42);
         assert(list2.Index("Hello") == 0);
         assert(list2.Value(1).equals("World"));
+    }
+
+    class TestObject {
+        Diamond.DString dstr;
+        Diamond.DLong dl;
+
+        public TestObject() {
+            dstr = new Diamond.DString();
+            dl = new Diamond.DLong();
+        }
+    }
+
+    class TestObjectFunction implements Diamond.MapObjectFunction {
+        public String function(String key, String varname) {
+            return key + ":" + varname;
+        }
+    }
+
+    public void testMapObject() {
+        TestObject testObj1 = new TestObject();
+        Diamond.MapObject(testObj1, "javatest:testobj", new TestObjectFunction());
+
+        testObj1.dstr.Set("map object test");
+        testObj1.dl.Set(15);
+
+        assert(testObj1.dstr.Value().equals("map object test"));
+        assert(testObj1.dl.Value() == 15);
+
+        TestObject testObj2 = new TestObject();
+        Diamond.MapObject(testObj2, "javatest:testobj", new TestObjectFunction());
+
+        assert(testObj2.dstr.Value().equals("map object test"));
+        assert(testObj2.dl.Value() == 15);
     }
 
 }
