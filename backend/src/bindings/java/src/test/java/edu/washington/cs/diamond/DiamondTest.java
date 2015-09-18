@@ -71,7 +71,7 @@ public class DiamondTest
 
         list1.Clear();
         
-        assert(list2.MembersList().size() == 0);
+        assert(list2.Members().size() == 0);
 
         list1.Append("hello");
         list1.Append("test");
@@ -87,7 +87,7 @@ public class DiamondTest
         List<String> membersList = new ArrayList<String>();
         membersList.add("hello");
         membersList.add("world");
-        assert(list2.MembersList().equals(membersList));
+        assert(list2.Members().equals(membersList));
 
         //System.out.println("DStringList test ok!");
     }

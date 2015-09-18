@@ -148,15 +148,16 @@ public class Diamond {
         //TODO: Figure out if there's a way to name the method that binds
         //to the native Members() method something else, so that this method
         //can be named Members()
-        public List<String> MembersList() {
+        public List<String> Members() {
             List<String> result = new ArrayList<String>();
-            DiamondUtil.StringVector members = Members();
+            DiamondUtil.StringVector members = NativeMembers();
             for (int i = 0; i < members.size(); i++) {
                 result.add(members.get(i));
             }
             return result;
         }
-        public native @ByVal DiamondUtil.StringVector Members();
+        @Name("Members")
+        public native @ByVal DiamondUtil.StringVector NativeMembers();
 
         public native @StdString String Value(int index);
         public native int Index(@StdString String val);
