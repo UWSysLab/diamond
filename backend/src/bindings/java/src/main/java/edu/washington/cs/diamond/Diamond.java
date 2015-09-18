@@ -145,9 +145,6 @@ public class Diamond {
         private native void allocate();
         private native void allocate(@ByRef @StdString String key);
 
-        //TODO: Figure out if there's a way to name the method that binds
-        //to the native Members() method something else, so that this method
-        //can be named Members()
         public List<String> Members() {
             List<String> result = new ArrayList<String>();
             DiamondUtil.StringVector members = NativeMembers();
