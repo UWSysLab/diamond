@@ -148,15 +148,14 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
 int
 Cloud::Read(const string &key, string &value)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
 
-    sprintf(cmd, "GET %s", key.c_str());
-    LOG_REQUEST("GET", cmd);
+    //sprintf(cmd, "GET %s", key.c_str());
+    LOG_REQUEST("GET", "");
     reply = (redisReply *)redisCommand(GetRedisContext(),  "GET %s", key.c_str());
     LOG_REPLY("GET", reply);
 
@@ -180,15 +179,14 @@ Cloud::Read(const string &key, string &value)
 int
 Cloud::Write(const string &key, const string &value)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
 
-    sprintf(cmd, "SET %s %s", key.c_str(), value.c_str());
-    LOG_REQUEST("SET", cmd);
+    //sprintf(cmd, "SET %s %s", key.c_str(), value.c_str());
+    LOG_REQUEST("SET", "");
     reply = (redisReply *)redisCommand(GetRedisContext(),  "SET %s %s", key.c_str(), value.c_str());
     LOG_REPLY("SET", reply);
 
@@ -205,7 +203,6 @@ Cloud::Write(const string &key, const string &value)
 int
 Cloud::Write(const string &key, const string &value, int write_cond, long expire_ms)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
@@ -215,8 +212,8 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
     std::string write_cond_option;
 
     if(write_cond == WRITE_ALWAYS){
-        sprintf(cmd, "SET %s %s PX %ld", key.c_str(), value.c_str(), expire_ms);
-        LOG_REQUEST("SET ALWAYS", cmd);
+        //sprintf(cmd, "SET %s %s PX %ld", key.c_str(), value.c_str(), expire_ms);
+        LOG_REQUEST("SET ALWAYS", "");
         reply = (redisReply *)redisCommand(GetRedisContext(), "SET %s %s PX %ld", 
                                     key.c_str(), value.c_str(), expire_ms);
         LOG_REPLY("SET ALWAYS", reply);
@@ -231,8 +228,8 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
             default:
                 Panic("Write condition invalid");
         }
-        sprintf(cmd, "SET %s %s PX %ld %s", key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
-        LOG_REQUEST("SET NX/XX", cmd);
+        //sprintf(cmd, "SET %s %s PX %ld %s", key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
+        LOG_REQUEST("SET NX/XX", "");
         reply = (redisReply *)redisCommand(GetRedisContext(), "SET %s %s PX %ld %s", 
                                     key.c_str(), value.c_str(), expire_ms, write_cond_option.c_str());
         LOG_REPLY("SET NX/XX", reply);
@@ -256,15 +253,14 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
 int 
 Cloud::RunOnServer(const string &script, const string &resource, const string &value)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
 
-    sprintf(cmd, "EVAL %s 1 %s %s", script.c_str(), resource.c_str(), value.c_str());
-    LOG_REQUEST("EVAL", cmd);
+    //sprintf(cmd, "EVAL %s 1 %s %s", script.c_str(), resource.c_str(), value.c_str());
+    LOG_REQUEST("EVAL", "");
     reply = (redisReply *)redisCommand(GetRedisContext(),  "EVAL %s 1 %s %s", script.c_str(), resource.c_str(), value.c_str());
     LOG_REPLY("EVAL", reply);
 
@@ -279,15 +275,14 @@ Cloud::RunOnServer(const string &script, const string &resource, const string &v
 int
 Cloud::Rpush(const string &key, const string &value)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
 
-    sprintf(cmd, "RPUSH %s %s", key.c_str(), value.c_str());
-    LOG_REQUEST("RPUSH", cmd);
+    //sprintf(cmd, "RPUSH %s %s", key.c_str(), value.c_str());
+    LOG_REQUEST("RPUSH", "");
     reply = (redisReply *)redisCommand(GetRedisContext(), "RPUSH %s %s", key.c_str(), value.c_str());
     LOG_REPLY("RPUSH", reply);
 
@@ -302,7 +297,6 @@ Cloud::Rpush(const string &key, const string &value)
 int
 Cloud::Lpop(const string &key, string &value, bool block)
 {
-    char cmd[256];
     redisReply *reply;
 
     if (!_connected) {
@@ -311,13 +305,13 @@ Cloud::Lpop(const string &key, string &value, bool block)
 
 
     if(block){
-        sprintf(cmd, "BLPOP %s %d", key.c_str(), 0);
-        LOG_REQUEST("BLPOP", cmd);
+        //sprintf(cmd, "BLPOP %s %d", key.c_str(), 0);
+        LOG_REQUEST("BLPOP", "");
         reply = (redisReply *)redisCommand(GetRedisContext(), "BLPOP %s %d", key.c_str(), 0);
         LOG_REPLY("BLPOP", reply);
     }else{
-        sprintf(cmd, "LPOP %s", key.c_str());
-        LOG_REQUEST("LPOP", cmd);
+        //sprintf(cmd, "LPOP %s", key.c_str());
+        LOG_REQUEST("LPOP", "");
         reply = (redisReply *)redisCommand(GetRedisContext(), "LPOP %s", key.c_str());
         LOG_REPLY("LPOP", reply);
     }
