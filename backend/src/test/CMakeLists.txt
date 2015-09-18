@@ -56,3 +56,7 @@ add_executable(diamondtest
     
 target_link_libraries(diamondtest diamond ${DIAMOND_LIB_DEPS} ${GTEST_BOTH_LIBRARIES})
 add_test(DiamondBackendTests diamondtest)
+
+add_executable(testlist
+    testlist.cc)
+target_link_libraries(testlist diamond ${DIAMOND_LIB_DEPS})
