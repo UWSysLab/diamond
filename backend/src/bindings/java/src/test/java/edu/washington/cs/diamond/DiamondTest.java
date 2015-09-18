@@ -168,4 +168,39 @@ public class DiamondTest
         assert(testObj2.dl.Value() == 15);
     }
 
+    public void testMapObjectRange() {
+        TestObject testObjA1 = new TestObject();
+        TestObject testObjB1 = new TestObject();
+        List<Object> objList1 = new ArrayList<Object>();
+        objList1.add(testObjA1);
+        objList1.add(testObjB1);
+
+        List<String> keysList = new ArrayList<String>();
+        keysList.add("javatest:testobjectrangeA");
+        keysList.add("javatest:testobjectrangeB");
+        Diamond.MapObjectRange(objList1, keysList, new TestObjectFunction());
+
+        testObjA1.dstr.Set("testA");
+        testObjA1.dl.Set(16);
+        testObjA1.dstr.Set("testB");
+        testObjA1.dl.Set(17);
+
+        assert(testObjA1.dstr.Value().equals("testA"));
+        assert(testObjA1.dl.Value() == 16);
+        assert(testObjB1.dstr.Value().equals("testB"));
+        assert(testObjB1.dl.Value() == 17);
+
+        TestObject testObjA2 = new TestObject();
+        TestObject testObjB2 = new TestObject();
+        List<Object> objList2 = new ArrayList<Object>();
+        objList2.add(testObjA2);
+        objList2.add(testObjB2);
+
+        Diamond.MapObjectRange(objList1, keysList, new TestObjectFunction());
+        assert(testObjA2.dstr.Value().equals("testA"));
+        assert(testObjA2.dl.Value() == 16);
+        assert(testObjB2.dstr.Value().equals("testB"));
+        assert(testObjB2.dl.Value() == 17);
+    }
+
 }
