@@ -29,3 +29,8 @@ target_link_libraries(test5 diamond ${DIAMOND_LIB_DEPS})
 # Test6
 add_executable(test6 test6.cc)
 target_link_libraries(test6 diamond ${DIAMOND_LIB_DEPS})
+
+# Test7
+add_executable(test7 test7.cc)
+target_link_libraries(test7 diamond ${DIAMOND_LIB_DEPS})
+
