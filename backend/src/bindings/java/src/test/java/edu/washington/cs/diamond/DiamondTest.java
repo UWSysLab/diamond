@@ -182,8 +182,8 @@ public class DiamondTest
 
         testObjA1.dstr.Set("testA");
         testObjA1.dl.Set(16);
-        testObjA1.dstr.Set("testB");
-        testObjA1.dl.Set(17);
+        testObjB1.dstr.Set("testB");
+        testObjB1.dl.Set(17);
 
         assert(testObjA1.dstr.Value().equals("testA"));
         assert(testObjA1.dl.Value() == 16);
@@ -196,7 +196,7 @@ public class DiamondTest
         objList2.add(testObjA2);
         objList2.add(testObjB2);
 
-        Diamond.MapObjectRange(objList1, keysList, new TestObjectFunction());
+        Diamond.MapObjectRange(objList2, keysList, new TestObjectFunction());
         assert(testObjA2.dstr.Value().equals("testA"));
         assert(testObjA2.dl.Value() == 16);
         assert(testObjB2.dstr.Value().equals("testB"));
