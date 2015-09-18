@@ -54,18 +54,14 @@ DStringList::Deserialize(const string &s)
 vector<string>
 DStringList::Members()
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     return _vec;
 }
 
 int
 DStringList::Index(const string val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
             return (it - _vec.begin());
@@ -77,75 +73,59 @@ DStringList::Index(const string val)
 string
 DStringList::Value(const int index)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     return _vec.at(index);
 }
 
 void
 DStringList::Append(const string val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.push_back(val);
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DStringList::Append(const vector<string> &vec)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     for (auto e : vec) {
         _vec.push_back(e);
     }
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DStringList::Insert(const int index, const string val) {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.insert(index + _vec.begin(), val);
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DStringList::Erase(const int index) {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.erase(index + _vec.begin());
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DStringList::Remove(const string val) {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.erase(Index(val) + _vec.begin());
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DStringList::Clear() {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.clear();
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 int
 DStringList::Size() {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     return _vec.size();
 }
 

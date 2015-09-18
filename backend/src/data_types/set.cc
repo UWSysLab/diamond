@@ -54,61 +54,49 @@ DSet::Deserialize(const string &s)
 unordered_set<uint64_t>
 DSet::Members()
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     return _set;
 }
 
 bool
 DSet::InSet(const uint64_t val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     return _set.count(val) > 0;
 }
 
 void
 DSet::Add(const uint64_t val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _set.insert(val);
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DSet::Add(const unordered_set<uint64_t> &set)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     for (auto e : set) {
         _set.insert(e);
     }
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DSet::Remove(const uint64_t val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _set.erase(val);
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 void
 DSet::Clear()
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _set.clear();
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
     
 } // namespace diamond

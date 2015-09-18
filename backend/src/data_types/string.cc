@@ -21,12 +21,7 @@ Cloud* cloudstore = Cloud::Instance();
 
 std::string
 DString::Value() {
-    string s;
-    int ret = cloudstore->Read(_key, s);
-
-    if (ret == ERR_OK) {
-        Deserialize(s);
-    }
+    Pull(); 
     return _s;
 }
 
@@ -34,7 +29,7 @@ void
 DString::Set(const std::string &s)
 {
     _s = s;
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 std::string
