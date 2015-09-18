@@ -19,22 +19,20 @@ public class Diamond {
 
         public static native int Map(@ByRef DObject addr, @ByRef @StdString String key);
 
-        /*
         public static int MultiMap(List<DObject> objects, List<String> keys) {
-            DiamondUtil.DObjectVector nativeObjects = new DiamondUtil.DObjectVector();
-            DiamondUtil.StringVector nativeKeys = new DiamondUtil.StringVector();
+            DiamondUtil.DObjectVector nativeObjects = new DiamondUtil.DObjectVector(objects.size());
+            DiamondUtil.StringVector nativeKeys = new DiamondUtil.StringVector(keys.size());
 
             for (int i = 0; i < objects.size(); i++) {
-                nativeObjects.put(nativeObjects.size(), objects.get(i));
+                nativeObjects.put(i, objects.get(i));
             }
             for (int i = 0; i < keys.size(); i++) {
-                nativeKeys.put(nativeKeys.size(), keys.get(i));
+                nativeKeys.put(i, keys.get(i));
             }
             return NativeMultiMap(nativeObjects, nativeKeys);
         }
         @Name("MultiMap")
         public static native int NativeMultiMap(@ByRef DiamondUtil.DObjectVector objects, @ByRef DiamondUtil.StringVector keys);
-        */
 
         public native void Lock();
         public native void ContinueLock();

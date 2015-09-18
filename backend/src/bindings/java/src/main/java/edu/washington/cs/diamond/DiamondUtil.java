@@ -53,7 +53,7 @@ public class DiamondUtil {
         public native void resize(@Cast("size_t") long n);
 
         @Index public native Diamond.DObject get(@Cast("size_t") long i);
-        public native DObjectVector put(@Cast("size_t") long i, Diamond.DObject value);
+        public native void put(@Cast("size_t") long i, Diamond.DObject value);
 
         public DObjectVector put(Diamond.DObject ... array) {
             if (size() != array.length) { resize(array.length); }

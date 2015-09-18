@@ -92,7 +92,6 @@ public class DiamondTest
         //System.out.println("DStringList test ok!");
     }
 
-    /*
     public void testMultiMap() {
         Diamond.DString string1 = new Diamond.DString();
         Diamond.DString string2 = new Diamond.DString();
@@ -135,6 +134,5 @@ public class DiamondTest
         assert(list2.Index("Hello") == 0);
         assert(list2.Value(1).equals("World"));
     }
-    */
 
 }
