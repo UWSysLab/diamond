@@ -38,8 +38,7 @@ public:
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
 
-    void SetConsistencyGlobal(enum DConsistency dc);
-
+    void SetGlobalConsistency(enum DConsistency dc);
 
 protected:
     DObject() {};
@@ -60,6 +59,8 @@ private:
 
 	void LockNotProtected(); // Callee should hold the _objectMutex
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
+    int PushAlways();
+    int PullAlways();
 };
 
 
@@ -205,5 +206,17 @@ private:
 
 
 } // namespace diamond
+
+
+//#define DEBUG_RC
+
+#ifdef DEBUG_RC
+#define LOG_RC(str) { printf("[%ld] Key %s: %s\n", getThreadID(), this->_key.c_str(), str);}
+#else // DEBUG_RC
+#define LOG_RC(str) { }
+#endif // DEBUG_RC
+
+
+
 
 #endif 

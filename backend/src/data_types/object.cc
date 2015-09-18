@@ -30,22 +30,53 @@ DObject::Map(DObject &addr, const string &key)
     return addr.Pull();
 }
 
+// XXX: Ensure return codes are correct
+// XXX: Protect with pthread locks
+// XXX: per-key vs per-dobject?
+
 int
-DObject::Pull(){
+DObject::PullAlways(){
     string value;
+    LOG_RC("PullAlways()"); 
 
     int ret = cloudstore->Read(_key, value);
     if (ret != ERR_OK) {
         return ret;
     }
+
     Deserialize(value);
     return 0;
 }
 
 
 int
-DObject::Push(){
+DObject::Pull(){
     string value;
+
+    if(globalConsistency == SEQUENTIAL_CONSISTENCY){
+        return PullAlways();
+
+    } else {
+        // Release consistency
+
+        if((RS.find(this) != RS.end()) || (WS.find(this) != WS.end())){
+            // Don't do anything if object is in the WS or RS
+            LOG_RC("Pull(): Object in RS or WS -> Returning local copy");
+            return 0;
+        }
+        LOG_RC("Pull(): Object neither in RS nor in WS -> Calling PullAlways()");
+        LOG_RC("Pull(): Adding object to RS"); 
+        RS.insert(this);
+
+        return PullAlways();
+    }
+}
+
+int
+DObject::PushAlways(){
+    string value;
+    LOG_RC("PushAlways()"); 
+
     value = Serialize();
 
     int ret = cloudstore->Write(_key, value);
@@ -54,6 +85,21 @@ DObject::Push(){
     }
     return 0;
 }
+
+
+int
+DObject::Push(){
+    string value;
+
+    if(globalConsistency == SEQUENTIAL_CONSISTENCY){
+        return PushAlways();
+    }else{
+        LOG_RC("Push(): Adding object to WS");
+        WS.insert(this);
+        return 0; 
+    }
+}
+
 
 int
 DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
@@ -87,9 +133,11 @@ DObject::Lock(){
     pthread_mutex_lock(&_objectMutex);
     LockNotProtected();
 
-    // RC code
-    RS.clear();
-    // Could also load the value of the current object in the background?
+    if(globalConsistency == RELEASE_CONSISTENCY){
+        RS.clear();
+        // Could also load the value of the current object in the background?
+        LOG_RC("Lock(): Clearing RS");
+    }
 
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -149,12 +197,15 @@ DObject::Unlock(){
     pthread_mutex_lock(&_objectMutex);
     UnlockNotProtected();
 
-    // RS Code
-    set<DObject*>::iterator it;
-    for (it = WS.begin(); it != WS.end(); it++) {
-        (*it)->Push();
+    if(globalConsistency == RELEASE_CONSISTENCY){
+        LOG_RC("Unlock(): Pushing everything")
+        set<DObject*>::iterator it;
+        for (it = WS.begin(); it != WS.end(); it++) {
+            (*it)->PushAlways();
+        }
+        WS.clear();
+        LOG_RC("Unlock(): Clearing WS")
     }
-    WS.clear();
 
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -258,9 +309,19 @@ DObject::Wait(){
     pthread_mutex_unlock(&_objectMutex);
 }
 
-
-void SetGlobalConsistency(enum DConsistency dc)
+void
+DObject::SetGlobalConsistency(enum DConsistency dc)
 {
+    LOG_RC("SetGlobalConsistency");
+    if((dc == RELEASE_CONSISTENCY) && (globalConsistency == SEQUENTIAL_CONSISTENCY)){
+        // Updating from RELEASE_CONSISTENCY to SEQUENTIAL_CONSISTENCY
+        set<DObject*>::iterator it;
+        for (it = WS.begin(); it != WS.end(); it++) {
+            (*it)->PushAlways();
+        }
+        WS.clear();
+    }
+
     globalConsistency = dc;
 }
 
