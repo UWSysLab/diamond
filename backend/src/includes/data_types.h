@@ -13,12 +13,16 @@
 #include <unordered_set>
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <pthread.h>
 
 namespace diamond {
 
 #define LOCK_DURATION_MS (5*1000)
+
+enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
+
 
 class DObject
 {
@@ -34,6 +38,8 @@ public:
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
 
+    void SetConsistencyGlobal(enum DConsistency dc);
+
 
 protected:
     DObject() {};
@@ -44,6 +50,8 @@ protected:
 
     virtual std::string Serialize() = 0;
     virtual void Deserialize(const std::string &s) = 0;
+    int Push();
+    int Pull();
 
 private:
     // mutex to protect local fields of the object
@@ -189,6 +197,12 @@ private:
     std::string Serialize();
     void Deserialize(const std::string &s);
 };
+
+
+//extern std::set<DObject*> RS;
+//extern std::set<DObject*> WS;
+
+
 
 } // namespace diamond
 

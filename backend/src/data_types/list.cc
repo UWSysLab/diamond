@@ -59,10 +59,8 @@ DList::Members()
 {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
-    
+    Pull();
+
     pthread_mutex_unlock(&_objectMutex);
     return _vec;
 }
@@ -70,9 +68,8 @@ DList::Members()
 int
 DList::IndexNotProtected(const uint64_t val)
 {
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
+
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
             return (it - _vec.begin());
@@ -96,10 +93,8 @@ DList::Value(const int index)
 {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
-    
+    Pull();
+
     pthread_mutex_unlock(&_objectMutex);
     return _vec.at(index);
 }
@@ -109,12 +104,10 @@ DList::Append(const uint64_t val)
 {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.push_back(val);
-    cloudstore->Write(_key, Serialize());
-    
+    Push();    
+
     pthread_mutex_unlock(&_objectMutex);
 }
 
@@ -123,13 +116,11 @@ DList::Append(const vector<uint64_t> &vec)
 {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     for (auto e : vec) {
         _vec.push_back(e);
     }
-    cloudstore->Write(_key, Serialize());
+    Push();
     
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -138,11 +129,9 @@ void
 DList::Insert(const int index, const uint64_t val) {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.insert(index + _vec.begin(), val);
-    cloudstore->Write(_key, Serialize());
+    Push();
     
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -151,11 +140,9 @@ void
 DList::Erase(const int index) {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.erase(index + _vec.begin());
-    cloudstore->Write(_key, Serialize());
+    Push();
     
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -164,11 +151,9 @@ void
 DList::Remove(const uint64_t val) {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.erase(IndexNotProtected(val) + _vec.begin());
-    cloudstore->Write(_key, Serialize());
+    Push();
     
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -177,11 +162,9 @@ void
 DList::Clear() {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
+    Pull();
     _vec.clear();
-    cloudstore->Write(_key, Serialize());
+    Push();
     
     pthread_mutex_unlock(&_objectMutex);
 }
@@ -190,10 +173,8 @@ int
 DList::Size() {
     pthread_mutex_lock(&_objectMutex);
 
-    string s;
-    cloudstore->Read(_key, s);
-    Deserialize(s);
-    
+    Pull();
+
     pthread_mutex_unlock(&_objectMutex);
     return _vec.size();
 }

@@ -19,12 +19,7 @@ using namespace std;
 
 int
 DCounter::Value() {
-    string s;
-    int ret = cloudstore->Read(_key, s);
-
-    if (ret == ERR_OK) {
-        Deserialize(s);
-    }
+    Pull();
     return _counter;
 }
         
@@ -32,7 +27,7 @@ void
 DCounter::Set(int val)
 {
     _counter = val;
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 std::string DCounter::Serialize() {

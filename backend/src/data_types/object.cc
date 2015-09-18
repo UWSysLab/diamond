@@ -7,10 +7,15 @@
 #include <unordered_map>
 #include <map>
 #include <inttypes.h>
+#include <set>
 
 namespace diamond {
 
 using namespace std;
+
+static std::set<DObject*> RS;
+static std::set<DObject*> WS;
+static enum DConsistency globalConsistency = SEQUENTIAL_CONSISTENCY;
 
 
 int
@@ -22,16 +27,33 @@ DObject::Map(DObject &addr, const string &key)
         Panic("Cannot map objects before connecting to backing store server");
     }
 
+    return addr.Pull();
+}
+
+int
+DObject::Pull(){
     string value;
-    int ret = cloudstore->Read(key, value);
+
+    int ret = cloudstore->Read(_key, value);
     if (ret != ERR_OK) {
         return ret;
     }
-    addr.Deserialize(value);
-    
+    Deserialize(value);
     return 0;
 }
 
+
+int
+DObject::Push(){
+    string value;
+    value = Serialize();
+
+    int ret = cloudstore->Write(_key, value);
+    if (ret != ERR_OK) {
+        return ret;
+    }
+    return 0;
+}
 
 int
 DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
@@ -64,6 +86,11 @@ void
 DObject::Lock(){
     pthread_mutex_lock(&_objectMutex);
     LockNotProtected();
+
+    // RC code
+    RS.clear();
+    // Could also load the value of the current object in the background?
+
     pthread_mutex_unlock(&_objectMutex);
 }
 
@@ -121,6 +148,14 @@ DObject::Unlock(){
 
     pthread_mutex_lock(&_objectMutex);
     UnlockNotProtected();
+
+    // RS Code
+    set<DObject*>::iterator it;
+    for (it = WS.begin(); it != WS.end(); it++) {
+        (*it)->Push();
+    }
+    WS.clear();
+
     pthread_mutex_unlock(&_objectMutex);
 }
 
@@ -222,6 +257,13 @@ DObject::Wait(){
 
     pthread_mutex_unlock(&_objectMutex);
 }
+
+
+void SetGlobalConsistency(enum DConsistency dc)
+{
+    globalConsistency = dc;
+}
+
 
 } // namespace diamond
 

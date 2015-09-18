@@ -21,12 +21,7 @@ using namespace std;
 
 uint64_t
 DLong::Value() {
-    string s;
-    int ret = cloudstore->Read(_key, s);
-
-    if (ret == ERR_OK) {
-        Deserialize(s);
-    }
+    Pull();
     return _l;
 }
         
@@ -34,7 +29,7 @@ void
 DLong::Set(const uint64_t l)
 {
     _l = l;
-    cloudstore->Write(_key, Serialize());
+    Push();
 }
 
 std::string
