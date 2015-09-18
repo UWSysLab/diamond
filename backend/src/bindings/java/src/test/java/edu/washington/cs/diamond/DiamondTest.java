@@ -114,6 +114,7 @@ public class DiamondTest
 
         string1.Set("Testing");
         long1.Set(42);
+        list1.Clear();
         list1.Append("Hello");
         list1.Append("World");
 
