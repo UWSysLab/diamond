@@ -33,38 +33,6 @@ public class Diamond {
         }
     }
 
-    public static void MapObjectRange(List<Object> objects, List<String> keys, MapObjectFunction func) {
-        List<DObject> dobjects = new ArrayList<DObject>();
-        List<String> multiMapKeys = new ArrayList<String>();
-
-        if (objects.size() != keys.size()) {
-            System.out.println("MapObjectRange error: number of keys and objects not equal");
-            System.exit(1);
-        }
-
-        try {
-            for (int j = 0; j < objects.size(); j++) {
-                Object obj = objects.get(j);
-                String key = keys.get(j);
-                Field[] fields = obj.getClass().getDeclaredFields();
-                for (int i = 0; i < fields.length; i++) {
-                    Field curField = fields[i];
-                    if (isDiamondType(curField)) {
-                        DObject dobj = (DObject)curField.get(obj);
-                        dobjects.add(dobj);
-                        multiMapKeys.add(func.function(key, curField.getName()));
-                    }
-                }
-            }
-        }
-        catch (IllegalAccessException e) {
-            System.out.println("MapObjectRange exception: " + e);
-            System.exit(1);
-        }
-        DObject.MultiMap(dobjects, multiMapKeys);
-        
-    }
-
     public static void MapObject(Object obj, String key, MapObjectFunction func) {
         List<DObject> dobjects = new ArrayList<DObject>();
         List<String> keys = new ArrayList<String>();
