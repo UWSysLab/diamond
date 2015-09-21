@@ -13,7 +13,7 @@ import java.util.ArrayList;
 
 public class Diamond {
 
-    class MappedObjectList<T> {
+    public static class MappedObjectList<T> {
         DStringList keyList;
         MapObjectFunction func;
         Class objClass;
@@ -25,7 +25,7 @@ public class Diamond {
             objClass = c;
         }
 
-        public T get(int index) throws InstantiationException, IllegalAccessException {
+        public T get(int index) {
             try {
                 String objKey = keyList.Value(index);
                 T obj = (T)objClass.newInstance();

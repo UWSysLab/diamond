@@ -170,6 +170,39 @@ public class DiamondTest
     }
 
     public void testMapObjectRange() {
+        String key = "javatest:objectlist";
+        Diamond.DStringList keyList = new Diamond.DStringList();
+        Diamond.DObject.Map(keyList, key);
+        keyList.Append("testobjectA");
+        keyList.Append("testobjectB");
+
+        Diamond.MappedObjectList<TestObject> objList1 = 
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class);
+        TestObject testObjA1 = objList1.get(0);
+        TestObject testObjB1 = objList1.get(1);
+
+        testObjA1.dstr.Set("testA");
+        testObjA1.dl.Set(16);
+        testObjB1.dstr.Set("testB");
+        testObjB1.dl.Set(17);
+
+        assert(testObjA1.dstr.Value().equals("testA"));
+        assert(testObjA1.dl.Value() == 16);
+        assert(testObjB1.dstr.Value().equals("testB"));
+        assert(testObjB1.dl.Value() == 17);
+
+        Diamond.MappedObjectList<TestObject> objList2 = 
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class);
+        TestObject testObjA2 = objList2.get(0);
+        TestObject testObjB2 = objList2.get(1);
+
+        assert(testObjA2.dstr.Value().equals("testA"));
+        assert(testObjA2.dl.Value() == 16);
+        assert(testObjB2.dstr.Value().equals("testB"));
+        assert(testObjB2.dl.Value() == 17);
+
+
+/*
         TestObject testObjA1 = new TestObject();
         TestObject testObjB1 = new TestObject();
         List<Object> objList1 = new ArrayList<Object>();
@@ -202,6 +235,7 @@ public class DiamondTest
         assert(testObjA2.dl.Value() == 16);
         assert(testObjB2.dstr.Value().equals("testB"));
         assert(testObjB2.dl.Value() == 17);
+*/
     }
 
 }
