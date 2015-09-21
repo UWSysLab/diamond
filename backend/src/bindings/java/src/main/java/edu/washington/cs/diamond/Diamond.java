@@ -52,10 +52,8 @@ public class Diamond {
                 return obj;
             }
             catch (Exception e) {
-                System.out.println("MappedObjectList.get() exception: " + e);
-                System.exit(1);
+                throw new RuntimeException(e);
             }
-            return null;
         }
     }
 
@@ -74,8 +72,7 @@ public class Diamond {
             }
         }
         catch (IllegalAccessException e) {
-            System.out.println("MapObject exception: " + e);
-            System.exit(1);
+            throw new RuntimeException(e);
         }
         DObject.MultiMap(dobjects, keys);
     }
