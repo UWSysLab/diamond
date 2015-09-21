@@ -26,10 +26,17 @@ public class Diamond {
         }
 
         public T get(int index) throws InstantiationException, IllegalAccessException {
-            String objKey = keyList.Value(index);
-            T obj = (T)objClass.newInstance();
-            MapObject(obj, objKey, func);
-            return obj;
+            try {
+                String objKey = keyList.Value(index);
+                T obj = (T)objClass.newInstance();
+                MapObject(obj, objKey, func);
+                return obj;
+            }
+            catch (Exception e) {
+                System.out.println("MappedObjectList.get() exception: " + e);
+                System.exit(1);
+            }
+            return null;
         }
     }
 
