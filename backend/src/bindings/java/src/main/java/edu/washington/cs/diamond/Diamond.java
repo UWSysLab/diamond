@@ -13,6 +13,26 @@ import java.util.ArrayList;
 
 public class Diamond {
 
+    class MappedObjectList<T> {
+        DStringList keyList;
+        MapObjectFunction func;
+        Class objClass;
+
+        public MappedObjectList(String key, MapObjectFunction f, Class c) {
+            keyList = new DStringList();
+            DObject.Map(keyList, key);
+            func = f;
+            objClass = c;
+        }
+
+        public T get(int index) throws InstantiationException, IllegalAccessException {
+            String objKey = keyList.Value(index);
+            T obj = (T)objClass.newInstance();
+            MapObject(obj, objKey, func);
+            return obj;
+        }
+    }
+
     public static void MapObjectRange(List<Object> objects, List<String> keys, MapObjectFunction func) {
         List<DObject> dobjects = new ArrayList<DObject>();
         List<String> multiMapKeys = new ArrayList<String>();
