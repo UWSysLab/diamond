@@ -2,6 +2,7 @@ package edu.washington.cs.diamond;
 
 import org.bytedeco.javacpp.*;
 import org.bytedeco.javacpp.annotation.*;
+import java.lang.IndexOutOfBoundsException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.List;
@@ -17,17 +18,35 @@ public class Diamond {
         DStringList keyList;
         MapObjectFunction func;
         Class objClass;
+        int start;
+        int end;
+
+        public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
+            this(key, f, c);
+            start = rangeStart;
+            end = rangeEnd;
+        }
 
         public MappedObjectList(String key, MapObjectFunction f, Class c) {
             keyList = new DStringList();
             DObject.Map(keyList, key);
             func = f;
             objClass = c;
+            start = 0;
+            end = keyList.Size();
         }
 
-        public T get(int index) {
+        public int Size() {
+            return end - start;
+        }
+
+        public T Get(int index) {
+            if (index < 0 || index >= Size()) {
+                throw new IndexOutOfBoundsException();
+            }
             try {
-                String objKey = keyList.Value(index);
+                int externalIndex = start + index;
+                String objKey = keyList.Value(externalIndex);
                 T obj = (T)objClass.newInstance();
                 MapObject(obj, objKey, func);
                 return obj;
