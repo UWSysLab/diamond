@@ -217,10 +217,6 @@ public class DiamondTest
         TestObject testObjB3 = objList3.Get(1);
         TestObject testObjC3 = objList3.Get(2);
 
-        System.out.println("DERP A " + testObjA3.dstr.Value());
-        System.out.println("DERP B " + testObjB3.dstr.Value());
-        System.out.println("DERP C " + testObjC3.dstr.Value());
-
         assert(testObjA3.dstr.Value().equals("testA"));
         assert(testObjA3.dl.Value() == 16);
         assert(testObjB3.dstr.Value().equals("testB"));
