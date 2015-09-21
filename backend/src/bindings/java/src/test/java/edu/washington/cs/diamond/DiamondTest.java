@@ -175,11 +175,13 @@ public class DiamondTest
         Diamond.DObject.Map(keyList, key);
         keyList.Append("testobjectA");
         keyList.Append("testobjectB");
+        keyList.Append("testobjectC");
 
+        // Set objects A and B
         Diamond.MappedObjectList<TestObject> objList1 = 
-            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class);
-        TestObject testObjA1 = objList1.get(0);
-        TestObject testObjB1 = objList1.get(1);
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 0, 2);
+        TestObject testObjA1 = objList1.Get(0);
+        TestObject testObjB1 = objList1.Get(1);
 
         testObjA1.dstr.Set("testA");
         testObjA1.dl.Set(16);
@@ -190,16 +192,42 @@ public class DiamondTest
         assert(testObjA1.dl.Value() == 16);
         assert(testObjB1.dstr.Value().equals("testB"));
         assert(testObjB1.dl.Value() == 17);
+        assert(objList1.Size() == 2);
 
+
+        // Read object B and set object C
         Diamond.MappedObjectList<TestObject> objList2 = 
-            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class);
-        TestObject testObjA2 = objList2.get(0);
-        TestObject testObjB2 = objList2.get(1);
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 1, 3);
+        TestObject testObjB2 = objList2.Get(0);
+        TestObject testObjC2 = objList2.Get(1);
 
-        assert(testObjA2.dstr.Value().equals("testA"));
-        assert(testObjA2.dl.Value() == 16);
+        testObjC2.dstr.Set("testC");
+        testObjC2.dl.Set(18);
+
         assert(testObjB2.dstr.Value().equals("testB"));
         assert(testObjB2.dl.Value() == 17);
+        assert(testObjC2.dstr.Value().equals("testC"));
+        assert(testObjC2.dl.Value() == 18);
+        assert(objList2.Size() == 2);
+
+        // Read objects A, B, and C
+        Diamond.MappedObjectList<TestObject> objList3 = 
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 0, 3);
+        TestObject testObjA3 = objList3.Get(0);
+        TestObject testObjB3 = objList3.Get(1);
+        TestObject testObjC3 = objList3.Get(2);
+
+        System.out.println("DERP A " + testObjA3.dstr.Value());
+        System.out.println("DERP B " + testObjB3.dstr.Value());
+        System.out.println("DERP C " + testObjC3.dstr.Value());
+
+        assert(testObjA3.dstr.Value().equals("testA"));
+        assert(testObjA3.dl.Value() == 16);
+        assert(testObjB3.dstr.Value().equals("testB"));
+        assert(testObjB3.dl.Value() == 17);
+        assert(testObjC3.dstr.Value().equals("testC"));
+        assert(testObjC3.dl.Value() == 18);
+        assert(objList3.Size() == 3);
     }
 
 }
