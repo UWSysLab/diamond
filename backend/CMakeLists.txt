@@ -137,4 +137,12 @@ if (NOT ANDROID)
     target_link_libraries (diamond ${LIBEVENT_LIB})
   endif (LibEvent_FOUND)
 
+  # Add the Libevent
+  find_package (LibUV)
+  if (LIBUV_FOUND)
+    include_directories(${LIBUV_INCLUDE_DIRS})
+    target_link_libraries (diamond ${LIBUV_LIBRARIES})
+  endif (LIBUV_FOUND)
+
+
 endif()
