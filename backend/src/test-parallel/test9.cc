@@ -32,7 +32,7 @@ int main(void){
 
     l1 = 10;    // Initial value
     EXPECT_EQ(l1.Value(), 10);
-    //EXPECT_EQ(l1_2.Value(), 10);
+    EXPECT_EQ(l1_2.Value(), 10);
 
     l1 = 11;
     EXPECT_EQ(l1.Value(), 11);
@@ -57,7 +57,7 @@ int main(void){
 
     l1 = 10;    // Initial value
     EXPECT_EQ(l1.Value(), 10);
-    //EXPECT_EQ(l1_2.Value(), 10);
+    EXPECT_EQ(l1_2.Value(), 10);
 
     l1 = 11;
     EXPECT_EQ(l1.Value(), 11);
