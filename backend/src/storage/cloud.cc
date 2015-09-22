@@ -22,7 +22,8 @@ Cloud* Cloud::_instance = NULL;
 bool Cloud::_connected = false;
 
 std::string serverAddress = "coldwater.cs.washington.edu";
-//String serverAddress = "localhost";
+//std::string serverAddress = "localhost";
+
 
 
 Cloud::Cloud()
@@ -330,6 +331,101 @@ Cloud::Lpop(const string &key, string &value, bool block)
     }
     return ERR_OK;
 }
+
+int
+Cloud::Multi(void)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    LOG_REQUEST("MULTI", "");
+    reply = (redisReply *)redisCommand(GetRedisContext(), "MULTI");
+    LOG_REPLY("MULTI", reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+
+int
+Cloud::Exec(void)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    LOG_REQUEST("EXEC", "");
+    reply = (redisReply *)redisCommand(GetRedisContext(), "EXEC");
+    LOG_REPLY("EXEC", reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+    
+    if(reply->type == REDIS_REPLY_NIL){
+        // Transaction failed
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
+
+    // Transaction succeded
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
+Cloud::Watch(const string &key)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    LOG_REQUEST("WATCH", "");
+    reply = (redisReply *)redisCommand(GetRedisContext(), "WATCH %s", key.c_str());
+    LOG_REPLY("WATCH", reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+
+
+int
+Cloud::Unwatch(void)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    LOG_REQUEST("UNWATCH", "");
+    reply = (redisReply *)redisCommand(GetRedisContext(), "UNWATCH");
+    LOG_REPLY("UNWATCH", reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
 
 long getThreadID(){
     long tid;
