@@ -27,8 +27,6 @@ enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
 class DObject
 {
 public:
-//    virtual DObject() = 0; // Abstract class
-
 	void Lock();
 	void ContinueLock();
 	void Unlock();
@@ -211,10 +209,6 @@ private:
     void Deserialize(const std::string &s);
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
-
-
-//extern std::set<DObject*> RS;
-//extern std::set<DObject*> WS;
 
 
 
