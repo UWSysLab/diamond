@@ -19,9 +19,9 @@ static enum DConsistency globalConsistency = SEQUENTIAL_CONSISTENCY;
 
 
 static std::set<int> transationsTID; // set with the TIDs of the running transactions
-static std::map<int, std::set<DObject*> > transactionsRS; // map with the RS for each transaction
-static std::map<int, std::set<DObject*> > transactionsWS; // map with the WS for each transaction
-static std::map<int, std::map<DObject*, string > > transactionsLocal; // map with the local values of the objects for each tx
+static std::map<int, std::set<string> > transactionsRS; // map with the RS for each transaction
+static std::map<int, std::set<string> > transactionsWS; // map with the WS for each transaction
+static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
 pthread_mutex_t  _transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
 
@@ -69,28 +69,28 @@ DObject::Pull(){
     // XXX: use the tx lock
 
     if(IsTransactionInProgress()){
-        std::set<DObject*>* txRS = GetTransactionRS();
-        std::set<DObject*>* txWS = GetTransactionWS();
+        std::set<string>* txRS = GetTransactionRS();
+        std::set<string>* txWS = GetTransactionWS();
 
-        if((txRS->find(this) != txRS->end()) || (txWS->find(this) != txWS->end())){
+        if((txRS->find(this->GetKey()) != txRS->end()) || (txWS->find(this->GetKey()) != txWS->end())){
             // Don't pull if the object is already in our WS or our RS
 
             // Use our local TX value
             string value;
-            std::map<DObject*, string >* locals = GetTransactionLocals();
-            value = (*locals)[this];
+            std::map<string, string >* locals = GetTransactionLocals();
+            value = (*locals)[this->GetKey()];
             Deserialize(value);
             return 0;
         }
-        cloudstore->Watch(this->_key);
-        txRS->insert(this);
+        cloudstore->Watch(this->GetKey());
+        txRS->insert(this->GetKey());
         int res = PullAlways();
 
         // Add new value to our local TX view
         string value;
         value = Serialize();
-        std::map<DObject*, string >* locals = GetTransactionLocals();
-        (*locals)[this]=value;
+        std::map<string, string >* locals = GetTransactionLocals();
+        (*locals)[this->GetKey()]=value;
 
         return res;
 
@@ -127,20 +127,32 @@ DObject::PushAlways(){
     return 0;
 }
 
+// int
+// DObject::PushAlways(string key, string value){
+//     LOG_RC("PushAlways()"); 
+// 
+//     int ret = cloudstore->Write(key, value);
+//     if (ret != ERR_OK) {
+//         return ret;
+//     }
+//     return 0;
+// }
+// 
+
 
 int
 DObject::Push(){
 
     if(IsTransactionInProgress()){
         // Add object to our WS
-        std::set<DObject*>* txWS = GetTransactionWS();
-        txWS->insert(this);
+        std::set<string>* txWS = GetTransactionWS();
+        txWS->insert(this->GetKey());
 
         // Add new value to our local TX view
         string value;
         value = Serialize();
-        std::map<DObject*, string >* locals = GetTransactionLocals();
-        (*locals)[this]=value;
+        std::map<string, string >* locals = GetTransactionLocals();
+        (*locals)[this->GetKey()]=value;
 
         // Do not push to storage yet, wait for commit
         return 0; 
@@ -415,9 +427,9 @@ DObject::SetTransactionInProgress(bool inProgress)
         transationsTID.erase(threadID);
     }
 
-    std::set<DObject*>* txWS = GetTransactionWS();
-    std::set<DObject*>* txRS = GetTransactionRS();
-    std::map<DObject*, string >* locals = GetTransactionLocals();
+    auto txWS = GetTransactionWS();
+    auto txRS = GetTransactionRS();
+    auto locals = GetTransactionLocals();
 
     txWS->clear();
     txRS->clear();
@@ -425,29 +437,29 @@ DObject::SetTransactionInProgress(bool inProgress)
 }
 
 
-std::set<DObject*>*
+std::set<string>*
 DObject::GetTransactionRS(void){
     long tid = getThreadID();
     
-    std::set<DObject*> *s;
+    std::set<string> *s;
     s = &transactionsRS[tid];
     return s;
 }
 
-std::set<DObject*>*
+std::set<string>*
 DObject::GetTransactionWS(void){
     long tid = getThreadID();
     
-    std::set<DObject*> *s;
+    std::set<string> *s;
     s = &transactionsWS[tid];
     return s;
 }
 
-std::map<DObject*, string >*
+std::map<string, string >*
 DObject::GetTransactionLocals(void){
     long tid = getThreadID();
     
-    std::map<DObject*, string >* m;
+    std::map<string, string >* m;
     m = &transactionsLocal[tid];
     return m;
 }
@@ -483,21 +495,17 @@ DObject::TransactionCommit(void)
     assert(res == ERR_OK);
 
     string value;
-    std::map<DObject*, string >* locals = GetTransactionLocals();
-    std::set<DObject*>* txWS = GetTransactionWS();
+    std::map<string, string >* locals = GetTransactionLocals();
+    std::set<string>* txWS = GetTransactionWS();
     auto it = txWS->begin();
     for (; it != txWS->end(); it++) {
         // Push our local Tx values for all objects in our WS
-        DObject *obj = *it;
-        pthread_mutex_lock(&obj->_objectMutex);
+        string key = *it;
+        value = (*locals)[key];
 
-        value = (*locals)[obj];
-        obj->Deserialize(value);
+        int ret = cloudstore->Write(key, value);
+        assert(ret == ERR_OK); 
 
-        // Push to storage
-        obj->PushAlways();
-
-        pthread_mutex_unlock(&obj->_objectMutex);
     }
 
     // Try to commit the storage transaction

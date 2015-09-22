@@ -68,9 +68,9 @@ private:
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);
-    static std::set<DObject*>* GetTransactionRS(void);
-    static std::set<DObject*>* GetTransactionWS(void);
-    static std::map<DObject*, std::string >* GetTransactionLocals(void);
+    static std::set<std::string>* GetTransactionRS(void);
+    static std::set<std::string>* GetTransactionWS(void);
+    static std::map<std::string, std::string >* GetTransactionLocals(void);
 };
 
 
