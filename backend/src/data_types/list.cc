@@ -18,7 +18,7 @@ namespace diamond {
 
 using namespace std;
 
-// Callee should hold the _objectMutex
+// Thread-safety: Callee should hold the _objectMutex
 string
 DList::Serialize()
 {
@@ -32,7 +32,7 @@ DList::Serialize()
     return ret;
 }
 
-// Callee should hold the _objectMutex
+// Thread-safety: Callee should hold the _objectMutex
 void
 DList::Deserialize(const string &s)
 {
@@ -60,11 +60,13 @@ DList::Members()
     pthread_mutex_lock(&_objectMutex);
 
     Pull();
+    vector<uint64_t> ret = _vec;
 
     pthread_mutex_unlock(&_objectMutex);
-    return _vec;
+    return ret;
 }
 
+// Thread-safety: Callee should hold the _objectMutex
 int
 DList::IndexNotProtected(const uint64_t val)
 {
@@ -72,9 +74,11 @@ DList::IndexNotProtected(const uint64_t val)
 
     for (auto it = _vec.begin(); it != _vec.end(); it++) {
         if (*it == val) {
-            return (it - _vec.begin());
+            int ret = (it - _vec.begin());
+            return ret; 
         }
     }
+
     return -1;
 }
 
@@ -83,7 +87,9 @@ int
 DList::Index(const uint64_t val)
 {
     pthread_mutex_lock(&_objectMutex);
+
     int res = IndexNotProtected(val);
+
     pthread_mutex_unlock(&_objectMutex);
     return res;
 }
@@ -94,9 +100,10 @@ DList::Value(const int index)
     pthread_mutex_lock(&_objectMutex);
 
     Pull();
+    uint64_t ret = _vec.at(index);
 
     pthread_mutex_unlock(&_objectMutex);
-    return _vec.at(index);
+    return ret; 
 }
 
 void
@@ -174,9 +181,10 @@ DList::Size() {
     pthread_mutex_lock(&_objectMutex);
 
     Pull();
+    int ret = _vec.size();
 
     pthread_mutex_unlock(&_objectMutex);
-    return _vec.size();
+    return ret;
 }
 
 } // namespace diamond

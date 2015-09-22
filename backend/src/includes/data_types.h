@@ -27,8 +27,6 @@ enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
 class DObject
 {
 public:
-//    virtual DObject() = 0; // Abstract class
-
 	void Lock();
 	void ContinueLock();
 	void Unlock();
@@ -39,6 +37,13 @@ public:
     static int Map(DObject &addr, const std::string &key);
 
     void SetGlobalConsistency(enum DConsistency dc);
+
+    static void TransactionBegin(void);
+    static int TransactionCommit(void);
+    static void TransactionRollback(void);
+    static void TransactionRetry(void);
+
+    std::string GetKey(void);
 
 protected:
     DObject() {};
@@ -53,7 +58,6 @@ protected:
     int Pull();
 
 private:
-    // mutex to protect local fields of the object
 	uint64_t _lockid = 0;
 	long _locked = 0;
 
@@ -61,6 +65,12 @@ private:
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
+
+    static bool IsTransactionInProgress(void);
+    static void SetTransactionInProgress(bool res);
+    static std::set<std::string>* GetTransactionRS(void);
+    static std::set<std::string>* GetTransactionWS(void);
+    static std::map<std::string, std::string >* GetTransactionLocals(void);
 };
 
 
@@ -75,7 +85,6 @@ public:
     DString & operator=(const std::string &s) { Set(s); return *this; };
         
 private:
-
     std::string _s;
 
     std::string Serialize();
@@ -91,14 +100,15 @@ public:
     uint64_t Value();
     void Set(const uint64_t l);
     DLong & operator=(const uint64_t l) { Set(l); return *this; };
-    DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
-    DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };
+    DLong & operator+=(const uint64_t i);
+    DLong & operator-=(const uint64_t i);
 
 private:
     uint64_t _l;
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    void SetNotProtected(const uint64_t l);
 };
 
 
@@ -111,16 +121,17 @@ public:
     int Value();
     void Set(const int val);
     DCounter & operator=(const int val) { Set(val); return *this; };
-    DCounter & operator++() { Set(_counter + 1); return *this; };
-    DCounter & operator--() { Set(_counter - 1); return *this; };
-    DCounter & operator+=(const uint64_t i) { Set(_counter + i); return *this; };
-    DCounter & operator-=(const uint64_t i) { Set(_counter - i); return *this; };
+    DCounter & operator++();
+    DCounter & operator--();
+    DCounter & operator+=(const uint64_t i);
+    DCounter & operator-=(const uint64_t i);
 
 private:
     int _counter;
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    void SetNotProtected(const int val);
 };
 
 class DSet : public DObject
@@ -197,11 +208,8 @@ private:
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
-
-
-//extern std::set<DObject*> RS;
-//extern std::set<DObject*> WS;
 
 
 
@@ -216,6 +224,43 @@ private:
 #define LOG_RC(str) { }
 #endif // DEBUG_RC
 
+
+
+//#define DEBUG_TX
+
+#ifdef DEBUG_TX
+#define LOG_TX(str) {\
+    printf("[%ld] %s\n", getThreadID(), str);\
+}
+#define LOG_TX_DUMP_RS() {\
+        std::set<DObject*>* txRS = GetTransactionRS();\
+        int i = 0;\
+        printf("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
+        auto it = txRS->begin();\
+        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        for (; it != txRS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it)->GetKey().c_str();\
+             printf("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#define LOG_TX_DUMP_WS() {\
+        std::set<DObject*>* txWS = GetTransactionWS();\
+        int i = 0;\
+        printf("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
+        auto it = txWS->begin();\
+        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        for (; it != txWS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it)->GetKey().c_str();\
+             printf("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#else  // DEBUG_TX
+#define LOG_TX(str) {}
+#define LOG_TX_DUMP_RS() {}
+#define LOG_TX_DUMP_WS() {}
+#endif // DEBUG_TX
 
 
 

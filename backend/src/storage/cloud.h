@@ -63,6 +63,10 @@ public:
     int Write(const std::string &key, const std::string &value, int write_cond, long expire_ms);
     int Rpush(const std::string &key, const std::string &value);
     int Lpop(const std::string &key, std::string &value, bool block);
+    int Multi(void);
+    int Exec(void);
+    int Watch(const std::string &key);
+    int Unwatch(void);
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 

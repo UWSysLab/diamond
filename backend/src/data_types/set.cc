@@ -54,49 +54,75 @@ DSet::Deserialize(const string &s)
 unordered_set<uint64_t>
 DSet::Members()
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
-    return _set;
+    unordered_set<uint64_t> ret = _set;
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
 }
 
 bool
 DSet::InSet(const uint64_t val)
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
-    return _set.count(val) > 0;
+    bool ret =  _set.count(val) > 0;
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
 }
 
 void
 DSet::Add(const uint64_t val)
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
     _set.insert(val);
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 void
 DSet::Add(const unordered_set<uint64_t> &set)
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
     for (auto e : set) {
         _set.insert(e);
     }
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 void
 DSet::Remove(const uint64_t val)
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
     _set.erase(val);
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 void
 DSet::Clear()
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
     _set.clear();
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
     
 } // namespace diamond
