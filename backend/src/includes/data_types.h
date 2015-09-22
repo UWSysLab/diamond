@@ -60,7 +60,6 @@ protected:
     int Pull();
 
 private:
-    // mutex to protect local fields of the object
 	uint64_t _lockid = 0;
 	long _locked = 0;
 
