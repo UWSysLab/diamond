@@ -75,6 +75,8 @@ DObject::Pull(){
         if((txRS->find(this->GetKey()) != txRS->end()) || (txWS->find(this->GetKey()) != txWS->end())){
             // Don't pull if the object is already in our WS or our RS
 
+            txRS->insert(this->GetKey());
+
             // Use our local TX value
             string value;
             std::map<string, string >* locals = GetTransactionLocals();
@@ -147,6 +149,8 @@ DObject::Push(){
         // Add object to our WS
         std::set<string>* txWS = GetTransactionWS();
         txWS->insert(this->GetKey());
+
+        cloudstore->Watch(this->GetKey());  // PF: Watch probably can be avoided on writes; if read-after-writes deals with it properly
 
         // Add new value to our local TX view
         string value;
@@ -473,6 +477,8 @@ DObject::TransactionBegin(void)
 {
     pthread_mutex_lock(&_transactionMutex);
 
+    LOG_TX("TRANSACTION BEGIN");
+
     SetTransactionInProgress(true);
 
     pthread_mutex_unlock(&_transactionMutex);
@@ -517,10 +523,10 @@ DObject::TransactionCommit(void)
 
     if(res == ERR_EMPTY){
         // XXX: Need to revert the changes to the WS
-        LOG_TX("Transaction commit failed");
+        LOG_TX("TRANSACTION COMMIT -> aborted");
         return false;
     }else{
-        LOG_TX("Transaction commit succeeded");
+        LOG_TX("TRANSACTION COMMIT -> committed");
         return true;
     }
 }
@@ -530,6 +536,8 @@ DObject::TransactionRollback(void)
 {
 
     pthread_mutex_lock(&_transactionMutex);
+
+    LOG_TX("TRANSACTION ROLLBACK");
 
     int res = cloudstore->Unwatch(); 
     assert(res == ERR_OK); // Is this assert really necessary?
@@ -546,6 +554,8 @@ DObject::TransactionRetry(void)
     // Implement with pooling for now
 
     assert(0);
+
+    LOG_TX("TRANSACTION RETRY");
 
     pthread_mutex_lock(&_transactionMutex);
     SetTransactionInProgress(false);
