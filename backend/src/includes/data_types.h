@@ -233,26 +233,26 @@ private:
     printf("[%ld] %s\n", getThreadID(), str);\
 }
 #define LOG_TX_DUMP_RS() {\
-        std::set<DObject*>* txRS = GetTransactionRS();\
+        std::set<string>* txRS = GetTransactionRS();\
         int i = 0;\
         printf("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
         auto it = txRS->begin();\
-        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        std::map<string, string >* locals = GetTransactionLocals();\
         for (; it != txRS->end(); it++,i++) {\
              const char* value = (*locals)[*it].c_str();\
-             const char* key =  (*it)->GetKey().c_str();\
+             const char* key =  (*it).c_str();\
              printf("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
         }\
     }
 #define LOG_TX_DUMP_WS() {\
-        std::set<DObject*>* txWS = GetTransactionWS();\
+        std::set<string>* txWS = GetTransactionWS();\
         int i = 0;\
         printf("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
         auto it = txWS->begin();\
-        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        std::map<string, string >* locals = GetTransactionLocals();\
         for (; it != txWS->end(); it++,i++) {\
              const char* value = (*locals)[*it].c_str();\
-             const char* key =  (*it)->GetKey().c_str();\
+             const char* key =  (*it).c_str();\
              printf("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
         }\
     }

@@ -63,9 +63,9 @@ Cloud::Connect(const std::string &host)
     redisContext* redis;
     long threadID;
 
-    Notice("Connecting...\n");
+    Notice("Connecting...");
     redis = redisConnect(host.c_str(), 6379);
-    Notice("Connected.\n");
+    Notice("Connected.");
     if (redis != NULL && redis->err == 0) {
         _connected = true;
         threadID = getThreadID();
