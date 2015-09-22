@@ -21,15 +21,24 @@ Cloud* cloudstore = Cloud::Instance();
 
 std::string
 DString::Value() {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull(); 
-    return _s;
+    std::string ret = _s;
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
 }
 
 void
 DString::Set(const std::string &s)
 {
+    pthread_mutex_lock(&_objectMutex); 
+    
     _s = s;
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 std::string
