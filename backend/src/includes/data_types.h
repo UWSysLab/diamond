@@ -100,14 +100,15 @@ public:
     uint64_t Value();
     void Set(const uint64_t l);
     DLong & operator=(const uint64_t l) { Set(l); return *this; };
-    DLong & operator+=(const uint64_t i) { Set(_l + i); return *this; };
-    DLong & operator-=(const uint64_t i) { Set(_l - i); return *this; };
+    DLong & operator+=(const uint64_t i);
+    DLong & operator-=(const uint64_t i);
 
 private:
     uint64_t _l;
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    void SetNotProtected(const uint64_t l);
 };
 
 
