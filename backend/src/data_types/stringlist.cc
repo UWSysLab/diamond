@@ -24,9 +24,7 @@ DStringList::Serialize()
     string ret = "";
         
     for (auto i : _vec) {
-        char buf[50];
-        sprintf(buf, "%s\n", i.c_str());
-        ret += string(buf);
+        ret = ret + i + "\n";
     }
     return ret;
 }
