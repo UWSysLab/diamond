@@ -209,6 +209,7 @@ private:
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
 
