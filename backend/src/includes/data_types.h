@@ -40,6 +40,13 @@ public:
 
     void SetGlobalConsistency(enum DConsistency dc);
 
+    static void TransactionBegin(void);
+    static int TransactionCommit(void);
+    static void TransactionRollback(void);
+    static void TransactionRetry(void);
+
+    std::string GetKey(void);
+
 protected:
     DObject() {};
     DObject(const std::string &key) : _key(key) {};
@@ -61,6 +68,12 @@ private:
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
+
+    static bool IsTransactionInProgress(void);
+    static void SetTransactionInProgress(bool res);
+    static std::set<DObject*>* GetTransactionRS(void);
+    static std::set<DObject*>* GetTransactionWS(void);
+    static std::map<DObject*, std::string >* GetTransactionLocals(void);
 };
 
 
@@ -216,6 +229,43 @@ private:
 #define LOG_RC(str) { }
 #endif // DEBUG_RC
 
+
+
+//#define DEBUG_TX
+
+#ifdef DEBUG_TX
+#define LOG_TX(str) {\
+    printf("[%ld] %s\n", getThreadID(), str);\
+}
+#define LOG_TX_DUMP_RS() {\
+        std::set<DObject*>* txRS = GetTransactionRS();\
+        int i = 0;\
+        printf("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
+        auto it = txRS->begin();\
+        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        for (; it != txRS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it)->GetKey().c_str();\
+             printf("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#define LOG_TX_DUMP_WS() {\
+        std::set<DObject*>* txWS = GetTransactionWS();\
+        int i = 0;\
+        printf("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
+        auto it = txWS->begin();\
+        std::map<DObject*, string >* locals = GetTransactionLocals();\
+        for (; it != txWS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it)->GetKey().c_str();\
+             printf("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#else  // DEBUG_TX
+#define LOG_TX(str) {}
+#define LOG_TX_DUMP_RS() {}
+#define LOG_TX_DUMP_WS() {}
+#endif // DEBUG_TX
 
 
 

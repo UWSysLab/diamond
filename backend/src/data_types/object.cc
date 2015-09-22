@@ -13,9 +13,16 @@ namespace diamond {
 
 using namespace std;
 
-static std::set<DObject*> RS;
-static std::set<DObject*> WS;
+static std::set<DObject*> rcRS;
+static std::set<DObject*> rcWS;
 static enum DConsistency globalConsistency = SEQUENTIAL_CONSISTENCY;
+
+
+static std::set<int> transationsTID; // set with the TIDs of the running transactions
+static std::map<int, std::set<DObject*> > transactionsRS; // map with the RS for each transaction
+static std::map<int, std::set<DObject*> > transactionsWS; // map with the WS for each transaction
+static std::map<int, std::map<DObject*, string > > transactionsLocal; // map with the local values of the objects for each tx
+pthread_mutex_t  _transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
 
 int
@@ -48,25 +55,54 @@ DObject::PullAlways(){
     return 0;
 }
 
+// XXX: need to use locks in the readers/writers
 
 int
 DObject::Pull(){
     string value;
 
-    if(globalConsistency == SEQUENTIAL_CONSISTENCY){
+    // XXX: use the tx lock
+
+    if(IsTransactionInProgress()){
+        std::set<DObject*>* txRS = GetTransactionRS();
+        std::set<DObject*>* txWS = GetTransactionWS();
+
+        if((txRS->find(this) != txRS->end()) || (txWS->find(this) != txWS->end())){
+            // Don't pull if the object is already in our WS or our RS
+
+            // Use our local TX value
+            string value;
+            std::map<DObject*, string >* locals = GetTransactionLocals();
+            value = (*locals)[this];
+            Deserialize(value);
+            return 0;
+        }
+        cloudstore->Watch(this->_key);
+        txRS->insert(this);
+        int res = PullAlways();
+
+        // Add new value to our local TX view
+        string value;
+        value = Serialize();
+        std::map<DObject*, string >* locals = GetTransactionLocals();
+        (*locals)[this]=value;
+
+        return res;
+
+    }else if(globalConsistency == SEQUENTIAL_CONSISTENCY){
         return PullAlways();
 
     } else {
         // Release consistency
 
-        if((RS.find(this) != RS.end()) || (WS.find(this) != WS.end())){
+        if((rcRS.find(this) != rcRS.end()) || (rcWS.find(this) != rcWS.end())){
             // Don't do anything if object is in the WS or RS
-            LOG_RC("Pull(): Object in RS or WS -> Returning local copy");
+            LOG_RC("Pull(): Object in rcRS or rcWS -> Returning local copy");
             return 0;
         }
-        LOG_RC("Pull(): Object neither in RS nor in WS -> Calling PullAlways()");
-        LOG_RC("Pull(): Adding object to RS"); 
-        RS.insert(this);
+        LOG_RC("Pull(): Object neither in rcRS nor in rcWS -> Calling PullAlways()");
+        LOG_RC("Pull(): Adding object to rcRS"); 
+        rcRS.insert(this);
 
         return PullAlways();
     }
@@ -89,13 +125,27 @@ DObject::PushAlways(){
 
 int
 DObject::Push(){
-    string value;
 
-    if(globalConsistency == SEQUENTIAL_CONSISTENCY){
+    if(IsTransactionInProgress()){
+        // Add object to our WS
+        std::set<DObject*>* txWS = GetTransactionWS();
+        txWS->insert(this);
+
+        // Add new value to our local TX view
+        string value;
+        value = Serialize();
+        std::map<DObject*, string >* locals = GetTransactionLocals();
+        (*locals)[this]=value;
+
+        // Do not push to storage yet, wait for commit
+        return 0; 
+
+    }else if(globalConsistency == SEQUENTIAL_CONSISTENCY){
         return PushAlways();
+
     }else{
-        LOG_RC("Push(): Adding object to WS");
-        WS.insert(this);
+        LOG_RC("Push(): Adding object to rcWS");
+        rcWS.insert(this);
         return 0; 
     }
 }
@@ -134,9 +184,9 @@ DObject::Lock(){
     LockNotProtected();
 
     if(globalConsistency == RELEASE_CONSISTENCY){
-        RS.clear();
+        rcRS.clear();
         // Could also load the value of the current object in the background?
-        LOG_RC("Lock(): Clearing RS");
+        LOG_RC("Lock(): Clearing rcRS");
     }
 
     pthread_mutex_unlock(&_objectMutex);
@@ -200,11 +250,11 @@ DObject::Unlock(){
     if(globalConsistency == RELEASE_CONSISTENCY){
         LOG_RC("Unlock(): Pushing everything")
         set<DObject*>::iterator it;
-        for (it = WS.begin(); it != WS.end(); it++) {
+        for (it = rcWS.begin(); it != rcWS.end(); it++) {
             (*it)->PushAlways();
         }
-        WS.clear();
-        LOG_RC("Unlock(): Clearing WS")
+        rcWS.clear();
+        LOG_RC("Unlock(): Clearing rcWS")
     }
 
     pthread_mutex_unlock(&_objectMutex);
@@ -316,15 +366,175 @@ DObject::SetGlobalConsistency(enum DConsistency dc)
     if((dc == RELEASE_CONSISTENCY) && (globalConsistency == SEQUENTIAL_CONSISTENCY)){
         // Updating from RELEASE_CONSISTENCY to SEQUENTIAL_CONSISTENCY
         set<DObject*>::iterator it;
-        for (it = WS.begin(); it != WS.end(); it++) {
+        for (it = rcWS.begin(); it != rcWS.end(); it++) {
             (*it)->PushAlways();
         }
-        WS.clear();
+        rcWS.clear();
     }
 
     globalConsistency = dc;
 }
 
+
+bool
+DObject::IsTransactionInProgress(void)
+{
+    long threadID = getThreadID();
+
+    auto find = transationsTID.find(threadID);
+    if(find != transationsTID.end()){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+void
+DObject::SetTransactionInProgress(bool inProgress)
+{
+    long threadID = getThreadID();
+
+    auto find = transationsTID.find(threadID);
+    if(find == transationsTID.end()){
+        LOG_TX("change state to \"transaction in progress\"");
+        assert(inProgress);
+        transationsTID.insert(threadID);
+    }else{
+        LOG_TX("change state to \"transaction not in progress\"");
+        assert(!inProgress);
+        transationsTID.erase(threadID);
+    }
+
+    std::set<DObject*>* txWS = GetTransactionWS();
+    std::set<DObject*>* txRS = GetTransactionRS();
+    std::map<DObject*, string >* locals = GetTransactionLocals();
+
+    txWS->clear();
+    txRS->clear();
+    locals->clear();
+}
+
+
+std::set<DObject*>*
+DObject::GetTransactionRS(void){
+    long tid = getThreadID();
+    
+    std::set<DObject*> *s;
+    s = &transactionsRS[tid];
+    return s;
+}
+
+std::set<DObject*>*
+DObject::GetTransactionWS(void){
+    long tid = getThreadID();
+    
+    std::set<DObject*> *s;
+    s = &transactionsWS[tid];
+    return s;
+}
+
+std::map<DObject*, string >*
+DObject::GetTransactionLocals(void){
+    long tid = getThreadID();
+    
+    std::map<DObject*, string >* m;
+    m = &transactionsLocal[tid];
+    return m;
+}
+
+
+
+// XXX: Ensure that it's ok to call the Begin, Commit, Rollback and Retry concurrently from different threads
+
+void
+DObject::TransactionBegin(void)
+{
+    pthread_mutex_lock(&_transactionMutex);
+
+    SetTransactionInProgress(true);
+
+    pthread_mutex_unlock(&_transactionMutex);
+
+    // XXX: Prevent locks from being acquired during a Tx
+
+}
+
+int
+DObject::TransactionCommit(void)
+{
+    pthread_mutex_lock(&_transactionMutex);
+
+    LOG_TX_DUMP_RS()
+    LOG_TX_DUMP_WS()
+
+    // Begin storage transaction 
+    // (the Watch commands executed earlier detect the conflicts)
+    int res = cloudstore->Multi();
+    assert(res == ERR_OK);
+
+    string value;
+    std::map<DObject*, string >* locals = GetTransactionLocals();
+    std::set<DObject*>* txWS = GetTransactionWS();
+    auto it = txWS->begin();
+    for (; it != txWS->end(); it++) {
+        // Push our local Tx values for all objects in our WS
+        DObject *obj = *it;
+        value = (*locals)[obj];
+        obj->Deserialize(value);
+
+        // Push to storage
+        obj->PushAlways();
+    }
+
+    // Try to commit the storage transaction
+    res = cloudstore->Exec();
+
+    SetTransactionInProgress(false);
+
+    pthread_mutex_unlock(&_transactionMutex);
+
+    if(res == ERR_EMPTY){
+        // XXX: Need to revert the changes to the WS
+        LOG_TX("Transaction commit failed");
+        return false;
+    }else{
+        LOG_TX("Transaction commit succeeded");
+        return true;
+    }
+}
+
+void
+DObject::TransactionRollback(void)
+{
+
+    pthread_mutex_lock(&_transactionMutex);
+
+    int res = cloudstore->Unwatch(); 
+    assert(res == ERR_OK); // Is this assert really necessary?
+
+    SetTransactionInProgress(false);
+
+    pthread_mutex_unlock(&_transactionMutex);
+
+}
+
+void
+DObject::TransactionRetry(void)
+{
+    // Implement with pooling for now
+
+    assert(0);
+
+    pthread_mutex_lock(&_transactionMutex);
+    SetTransactionInProgress(false);
+    pthread_mutex_unlock(&_transactionMutex);
+
+}
+
+std::string
+DObject::GetKey(){
+    return _key;
+}
 
 } // namespace diamond
 
