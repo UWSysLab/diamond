@@ -2,6 +2,7 @@ package edu.washington.cs.diamond;
 
 import org.bytedeco.javacpp.*;
 import org.bytedeco.javacpp.annotation.*;
+import java.lang.IndexOutOfBoundsException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.List;
@@ -13,36 +14,47 @@ import java.util.ArrayList;
 
 public class Diamond {
 
-    public static void MapObjectRange(List<Object> objects, List<String> keys, MapObjectFunction func) {
-        List<DObject> dobjects = new ArrayList<DObject>();
-        List<String> multiMapKeys = new ArrayList<String>();
+    public static class MappedObjectList<T> {
+        DStringList keyList;
+        MapObjectFunction func;
+        Class objClass;
+        int start;
+        int end;
 
-        if (objects.size() != keys.size()) {
-            System.out.println("MapObjectRange error: number of keys and objects not equal");
-            System.exit(1);
+        public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
+            this(key, f, c);
+            start = rangeStart;
+            end = rangeEnd;
         }
 
-        try {
-            for (int j = 0; j < objects.size(); j++) {
-                Object obj = objects.get(j);
-                String key = keys.get(j);
-                Field[] fields = obj.getClass().getDeclaredFields();
-                for (int i = 0; i < fields.length; i++) {
-                    Field curField = fields[i];
-                    if (isDiamondType(curField)) {
-                        DObject dobj = (DObject)curField.get(obj);
-                        dobjects.add(dobj);
-                        multiMapKeys.add(func.function(key, curField.getName()));
-                    }
-                }
+        public MappedObjectList(String key, MapObjectFunction f, Class c) {
+            keyList = new DStringList();
+            DObject.Map(keyList, key);
+            func = f;
+            objClass = c;
+            start = 0;
+            end = keyList.Size();
+        }
+
+        public int Size() {
+            return end - start;
+        }
+
+        public T Get(int index) {
+            if (index < 0 || index >= Size()) {
+                throw new IndexOutOfBoundsException();
+            }
+            try {
+                int externalIndex = start + index;
+                String objKey = keyList.Value(externalIndex);
+                T obj = (T)objClass.newInstance();
+                MapObject(obj, objKey, func);
+                return obj;
+            }
+            catch (Exception e) {
+                throw new RuntimeException(e);
             }
         }
-        catch (IllegalAccessException e) {
-            System.out.println("MapObjectRange exception: " + e);
-            System.exit(1);
-        }
-        DObject.MultiMap(dobjects, multiMapKeys);
-        
     }
 
     public static void MapObject(Object obj, String key, MapObjectFunction func) {
@@ -60,8 +72,7 @@ public class Diamond {
             }
         }
         catch (IllegalAccessException e) {
-            System.out.println("MapObject exception: " + e);
-            System.exit(1);
+            throw new RuntimeException(e);
         }
         DObject.MultiMap(dobjects, keys);
     }
