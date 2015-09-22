@@ -489,11 +489,15 @@ DObject::TransactionCommit(void)
     for (; it != txWS->end(); it++) {
         // Push our local Tx values for all objects in our WS
         DObject *obj = *it;
+        pthread_mutex_lock(&obj->_objectMutex);
+
         value = (*locals)[obj];
         obj->Deserialize(value);
 
         // Push to storage
         obj->PushAlways();
+
+        pthread_mutex_unlock(&obj->_objectMutex);
     }
 
     // Try to commit the storage transaction
