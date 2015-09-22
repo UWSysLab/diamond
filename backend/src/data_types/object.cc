@@ -28,13 +28,18 @@ pthread_mutex_t  _transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the 
 int
 DObject::Map(DObject &addr, const string &key)
 {
+    pthread_mutex_lock(&addr._objectMutex);
+
     addr._key = key;
    
     if (!cloudstore->IsConnected()) {
         Panic("Cannot map objects before connecting to backing store server");
     }
+    
+    int res = addr.Pull();
 
-    return addr.Pull();
+    pthread_mutex_unlock(&addr._objectMutex);
+    return res;
 }
 
 // XXX: Ensure return codes are correct
@@ -150,7 +155,8 @@ DObject::Push(){
     }
 }
 
-
+// XXX: Thread-safety: make sure Multi-get is thread-safe
+// We're not protecting against situations where the user modifies the parameters concurrently with MultiMap
 int
 DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
 
@@ -169,9 +175,13 @@ DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
     }
 
     for (size_t i = 0; i < keys.size(); i++) {
+        pthread_mutex_lock(&objects.at(i)->_objectMutex);
+
         string currentKey = keys.at(i);
         objects.at(i)->_key = currentKey;
         objects.at(i)->Deserialize(values.at(i));
+
+        pthread_mutex_unlock(&objects.at(i)->_objectMutex);
     }
 
     return 0;
