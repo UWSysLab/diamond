@@ -27,6 +27,12 @@ using namespace diamond;
             exit(2); \
         }}
 
+#define EXPECT_TRUE(cond) {         \
+        if(!(cond)){       \
+            std::cerr << "!!ASSERT FAILED: " << #cond << " @ " << __FILE__ << " (" << __LINE__ << "). " << "; "  << std::endl; \
+            exit(2); \
+        }}
 
+    
 
 #endif // TEST_H
