@@ -21,15 +21,24 @@ using namespace std;
 
 uint64_t
 DLong::Value() {
+    pthread_mutex_unlock(&_objectMutex); 
+
     Pull();
-    return _l;
+    uint64_t ret = _l;
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
 }
         
 void
 DLong::Set(const uint64_t l)
 {
+    pthread_mutex_lock(&_objectMutex); 
+    
     _l = l;
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 std::string
