@@ -33,11 +33,58 @@ DCounter::Set(int val)
 {
     pthread_mutex_lock(&_objectMutex); 
 
-    _counter = val;
-    Push();
+    SetNotProtected(val);
 
     pthread_mutex_unlock(&_objectMutex); 
 }
+
+void
+DCounter::SetNotProtected(int val)
+{
+    _counter = val;
+    Push();
+}
+
+
+DCounter & DCounter::operator++() 
+{ 
+    pthread_mutex_lock(&_objectMutex); 
+
+    SetNotProtected(_counter + 1); 
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return *this; 
+};
+
+DCounter & DCounter::operator--() 
+{ 
+    pthread_mutex_lock(&_objectMutex); 
+
+    SetNotProtected(_counter - 1); 
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return *this; 
+}
+
+DCounter & DCounter::operator+=(const uint64_t i) 
+{ 
+    pthread_mutex_lock(&_objectMutex); 
+
+    SetNotProtected(_counter + i); 
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return *this; 
+}
+
+DCounter & DCounter::operator-=(const uint64_t i) 
+{ 
+    pthread_mutex_lock(&_objectMutex); 
+
+    SetNotProtected(_counter - i); 
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return *this; 
+}; 
 
 std::string DCounter::Serialize() {
     char buf[50];

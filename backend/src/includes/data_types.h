@@ -87,7 +87,6 @@ public:
     DString & operator=(const std::string &s) { Set(s); return *this; };
         
 private:
-
     std::string _s;
 
     std::string Serialize();
@@ -123,16 +122,17 @@ public:
     int Value();
     void Set(const int val);
     DCounter & operator=(const int val) { Set(val); return *this; };
-    DCounter & operator++() { Set(_counter + 1); return *this; };
-    DCounter & operator--() { Set(_counter - 1); return *this; };
-    DCounter & operator+=(const uint64_t i) { Set(_counter + i); return *this; };
-    DCounter & operator-=(const uint64_t i) { Set(_counter - i); return *this; };
+    DCounter & operator++();
+    DCounter & operator--();
+    DCounter & operator+=(const uint64_t i);
+    DCounter & operator-=(const uint64_t i);
 
 private:
     int _counter;
 
     std::string Serialize();
     void Deserialize(const std::string &s);
+    void SetNotProtected(const int val);
 };
 
 class DSet : public DObject
