@@ -19,15 +19,24 @@ using namespace std;
 
 int
 DCounter::Value() {
+    pthread_mutex_lock(&_objectMutex); 
+
     Pull();
-    return _counter;
+    int ret = _counter;
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
 }
         
 void
 DCounter::Set(int val)
 {
+    pthread_mutex_lock(&_objectMutex); 
+
     _counter = val;
     Push();
+
+    pthread_mutex_unlock(&_objectMutex); 
 }
 
 std::string DCounter::Serialize() {
