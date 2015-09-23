@@ -90,11 +90,13 @@ void* dlong_lock_client2(void *arg){
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1;
     int ret;
     pthread_t t1,t2;
    
-    ret = DLong::Map(l1, std::string("11"));
+    ret = DLong::Map(l1, std::string("l1"));
     EXPECT_EQ(ret, ERR_OK);
     l1 = PING;
 

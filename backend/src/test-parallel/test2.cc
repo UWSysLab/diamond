@@ -46,6 +46,7 @@ pid_t pid;
 
 
 int main(void){
+    DiamondInit();
 
     pid = getpid();
     DLong l1;

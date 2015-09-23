@@ -73,6 +73,8 @@ void* thread2(void *arg){
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1;
     int ret;
     pthread_t t1,t2;

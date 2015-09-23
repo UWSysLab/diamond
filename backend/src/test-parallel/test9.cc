@@ -16,6 +16,8 @@
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1, l1_2, l2;
     int ret; 
 

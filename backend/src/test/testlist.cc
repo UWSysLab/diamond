@@ -4,6 +4,8 @@
 using namespace diamond;
 
 int main(void){
+    DiamondInit();
+
     DStringList list1;
     DObject::Map(list1, "testlist");
 

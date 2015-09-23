@@ -43,6 +43,8 @@
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1;
 
     int ret = DLong::Map(l1, std::string("11"));
