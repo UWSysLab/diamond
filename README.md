@@ -103,19 +103,22 @@ source directory and $ANDROID_SDK with the path to the Android SDK folder.
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
-    1. Go to File -> Import.
-    2. Choose "Existing Projects into Workspace" and click Next.
-    3. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish.
+    1. Go to File -> Import -> Existing Projects into Workspace.
+    2. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory.
 
 3. Add the Android support v7 appcompat library to the project:
-    1. Go to File -> Import.
-    2. Choose "Existing Projects into Workspace" and click Next.
-    3. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory, make sure the box next to the project is checked, and click Finish.
-    4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
-4. Go to Window -> Preferences. In the preferences window, expand the Android menu and select Build, then uncheck the option "Force error when external jars contain native libraries."
+    1. Go to File -> Import -> Existing Projects into Workspace.
+    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory.
+    3. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
-5. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
+4. Go to Window -> Preferences -> Android -> Build, and uncheck the option "Force error when external jars contain native libraries."
+
+5. Refresh, clean, and close and open the project until it builds successfully:
+
+    1. To refresh: right-click on the project in the Package Explorer -> Refresh
+    2. To clean: select Project -> Clean
+    3. To close and open: right-click on the project -> Close Project (or Open Project)
 
 6. Run the project as an Android application:
 
