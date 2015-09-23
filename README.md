@@ -94,7 +94,7 @@ that you downloaded there.
 ### Running a test Android app
 The project DiamondAndroidTest in the "apps/test-apps" folder is an Eclipse project containing a simple Diamond test app for Android.
 The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
-source directory.
+source directory and $ANDROID_SDK with the path to the Android SDK folder.
 
 1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
 
@@ -107,12 +107,15 @@ source directory.
     2. Choose "Existing Projects into Workspace" and click Next.
     3. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish.
 
-3. Go to Window -> Preferences. In the preferences window, expand the Android menu and select Build, then uncheck the option "Force error when external jars contain native libraries."
+3. Add the Android support v7 appcompat library to the project:
+    1. Go to File -> Import.
+    2. Choose "Existing Projects into Workspace" and click Next.
+    3. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory, make sure the box next to the project is checked, and click Finish.
+    4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
-4. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
+4. Go to Window -> Preferences. In the preferences window, expand the Android menu and select Build, then uncheck the option "Force error when external jars contain native libraries."
 
-5. If there are still build errors, follow the instructions in the top answer of this Stack Overflow question: http://stackoverflow.com/questions/17870881/cant-find-theme-appcompat-light-for-new-android-actionbar-support.
-Let Niel know whether or not this step is necessary, and he will either remove it or describe it more formally.
+5. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
 
 6. Run the project as an Android application:
 
