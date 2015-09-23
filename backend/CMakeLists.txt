@@ -47,20 +47,40 @@ if(ANDROID)
     "LDFLAGS=${ANDROID_NDK_GLOBAL_LDFLAGS}")
 endif()
 
+# Use downloaded hiredis src
 ExternalProject_Add(
   hiredis-redisclient
-    PREFIX ${PROJECT_SOURCE_DIR}/external/hiredis
-    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
-    BINARY_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
+    URL https://github.com/redis/hiredis/archive/v0.13.1.tar.gz
+    PREFIX ${PROJECT_BINARY_DIR}/hiredis
+    DOWNLOAD_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    SOURCE_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    BINARY_DIR ${PROJECT_BINARY_DIR}/hiredis/src
+    STAMP_DIR ${PROJECT_BINARY_DIR}/hiredis/stamp
+    TMP_DIR ${PROJECT_BINARY_DIR}/hiredis/tmp
     BUILD_COMMAND ${HIREDIS_MAKE}
-    DOWNLOAD_COMMAND ""
     CONFIGURE_COMMAND ""
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
+    LOG_DOWNLOAD ON
+    LOG_CONFIGURE ON
     LOG_BUILD ON)
+include_directories(${PROJECT_BINARY_DIR}/hiredis/src)
+link_directories(${PROJECT_BINARY_DIR}/hiredis/src) 
 
- include_directories(${PROJECT_SOURCE_DIR}/external/hiredis)
- link_directories(${PROJECT_SOURCE_DIR}/external/hiredis) 
+# Use local hiredis source
+#ExternalProject_Add(
+#  hiredis-redisclient
+#    PREFIX ${PROJECT_SOURCE_DIR}/external/hiredis
+#    SOURCE_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
+#    BINARY_DIR ${PROJECT_SOURCE_DIR}/external/hiredis
+#    BUILD_COMMAND ${HIREDIS_MAKE}
+#    DOWNLOAD_COMMAND ""
+#    CONFIGURE_COMMAND ""
+#    INSTALL_COMMAND ""
+#    UPDATE_COMMAND ""
+#    LOG_BUILD ON)
+#include_directories(${PROJECT_SOURCE_DIR}/external/hiredis)
+#link_directories(${PROJECT_SOURCE_DIR}/external/hiredis) 
 
 if(ANDROID)
   include_directories("${PROJECT_SOURCE_DIR}/external/libuv/include")
@@ -152,6 +172,6 @@ if (NOT ANDROID)
 endif()
 
 if(ANDROID)
-target_link_libraries(diamond -luv)
+  target_link_libraries(diamond -luv)
 endif()
 
