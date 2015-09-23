@@ -62,6 +62,11 @@ ExternalProject_Add(
  include_directories(${PROJECT_SOURCE_DIR}/external/hiredis)
  link_directories(${PROJECT_SOURCE_DIR}/external/hiredis) 
 
+if(ANDROID)
+  include_directories("${PROJECT_SOURCE_DIR}/external/libuv/include")
+  link_directories("${PROJECT_SOURCE_DIR}/external/libuv/android")
+endif()
+
 # ---------------------------------------------------------
 # Include and link directories
 # ---------------------------------------------------------
@@ -118,7 +123,6 @@ add_library (diamond SHARED
 target_link_libraries(diamond ${DIAMOND_LIB_DEPS})
 add_dependencies(diamond hiredis-redisclient)
 
-
 # only create and test for x86
 if (NOT ANDROID)
   # Add python bindings for Linux and Mac OSX
@@ -146,3 +150,8 @@ if (NOT ANDROID)
 
 
 endif()
+
+if(ANDROID)
+target_link_libraries(diamond -luv)
+endif()
+
