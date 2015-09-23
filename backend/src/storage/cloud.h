@@ -41,6 +41,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <set>
 
 namespace diamond {
 
@@ -67,6 +68,7 @@ public:
     int Exec(void);
     int Watch(const std::string &key);
     int Unwatch(void);
+    int Wait(const std::set<std::string> &keys);
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 

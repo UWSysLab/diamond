@@ -12,6 +12,9 @@
 #include <string>
 #include <vector>
 
+#include <async.h>
+#include <adapters/libuv.h>
+
 namespace diamond {
 
 using namespace std;
@@ -24,6 +27,14 @@ bool Cloud::_connected = false;
 std::string serverAddress = "coldwater.cs.washington.edu";
 //std::string serverAddress = "localhost";
 
+
+int connectAsync();
+
+int asyncConnectionSigleton = 0;
+// mutex protects the global asyncConnection variables including the hiredis context
+pthread_mutex_t  asyncConnectionMutex = PTHREAD_MUTEX_INITIALIZER; 
+// semaphore to signal that we're connected 
+sem_t semAsyncConnected;
 
 
 Cloud::Cloud()
@@ -62,6 +73,8 @@ Cloud::Connect(const std::string &host)
 {
     redisContext* redis;
     long threadID;
+
+    connectAsync();
 
     Notice("Connecting...");
     redis = redisConnect(host.c_str(), 6379);
@@ -426,6 +439,109 @@ Cloud::Unwatch(void)
     return ERR_OK;
 }
 
+
+int
+Cloud::Wait(const std::set<std::string> &keys)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    LOG_REQUEST("RPUSH", "");
+    //reply = (redisReply *)redisCommand(GetRedisContext(), "RPUSH %s %s", key.c_str(), value.c_str());
+    LOG_REPLY("RPUSH", reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+
+
+void getCallback(redisAsyncContext *c, void *r, void *privdata) {
+    redisReply *reply = (redisReply*)r;
+    if (reply == NULL) return;
+    printf("argv[%s]: %s\n", (char*)privdata, reply->str);
+
+}
+
+void connectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        printf("Error: %s\n", c->errstr);
+        return;
+    }
+    printf("Connected...\n");
+
+    // Signal connection
+    sem_post(&semAsyncConnected);
+}
+
+void disconnectCallback(const redisAsyncContext *c, int status) {
+    if (status != REDIS_OK) {
+        printf("Error: %s\n", c->errstr);
+        return;
+    }
+    printf("Disconnected...\n");
+    assert(0);
+}
+
+
+
+void* connectAsyncThread(void *threadArg){
+    signal(SIGPIPE, SIG_IGN);
+
+    pthread_mutex_lock(&asyncConnectionMutex);
+
+    uv_loop_t* loop = uv_default_loop();
+
+    redisAsyncContext *c = redisAsyncConnect(serverAddress.c_str(), 6379);
+    if (c->err) {
+        /* Let *c leak for now... */
+        printf("Error: %s\n", c->errstr);
+        return 0;
+    }
+
+    redisLibuvAttach(c,loop);
+    redisAsyncSetConnectCallback(c,connectCallback);
+    redisAsyncSetDisconnectCallback(c,disconnectCallback);
+//    const char *value = "abc";
+//    redisAsyncCommand(c, NULL, NULL, "SET key %b", value, strlen(value));
+//    redisAsyncCommand(c, getCallback, (char*)"end-1", "GET key");
+
+    pthread_mutex_unlock(&asyncConnectionMutex);
+
+    uv_run(loop, UV_RUN_DEFAULT);
+    return 0;
+}
+
+
+int connectAsync() {
+
+    pthread_mutex_lock(&asyncConnectionMutex);
+
+    if(asyncConnectionSigleton == 0){
+        // Spawn only one thread for the asynchronous connections
+        asyncConnectionSigleton = 1;
+        pthread_t t1;
+        sem_init(&semAsyncConnected, 0, 0);
+        pthread_mutex_unlock(&asyncConnectionMutex);
+
+        int ret = pthread_create(&t1, NULL, connectAsyncThread, NULL);
+        assert(ret == 0);
+
+        // Wait for connection
+        sem_wait(&semAsyncConnected);
+    }else{
+        pthread_mutex_unlock(&asyncConnectionMutex);
+    }
+
+    return 0;
+}
 
 long getThreadID(){
     long tid;
