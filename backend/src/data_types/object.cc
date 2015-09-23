@@ -25,6 +25,13 @@ static std::map<int, std::map<string, string > > transactionsLocal; // map with 
 pthread_mutex_t  _transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
 
+Cloud* cloudstore = NULL;
+
+void DiamondInit() {
+    cloudstore = Cloud::Instance();
+}
+
+
 int
 DObject::Map(DObject &addr, const string &key)
 {
