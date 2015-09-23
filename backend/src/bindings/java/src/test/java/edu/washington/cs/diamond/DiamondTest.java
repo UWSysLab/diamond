@@ -233,4 +233,40 @@ public class DiamondTest
         assert(objList3.Size() == 3);
     }
 
+//    class TransactionTestRunnable implements Runnable {
+//        int txAttempts = 0;
+//        int committed = 0;
+//
+//        public void run() {
+//            Diamond.DLong a = new Diamond.DLong();
+//            Diamond.DLong b = new Diamond.DLong();
+//            Diamond.DObject.Map(a, "javatest:transactions:a");
+//            Diamond.DObject.Map(b, "javatest:transactions:b");
+//
+//            while (committed == 0) {
+//                assert(txAttempts < 10000);
+//                txAttempts++;
+//
+//                Diamond.DObject.TransactionBegin();
+//
+//                a.Set(10);
+//                assert(a.Value() == 10);
+//
+//                try {
+//                    Thread.sleep(2);
+//                }
+//                catch(InterruptedException e) {}
+//
+//                b.Set(11);
+//                assert(b.Value() == 11);
+//
+//                committed = Diamond.DObject.TransactionCommit();
+//            }
+//        }
+//    }
+//
+//    public void testTransactions() {
+//        new Thread(new TransactionTestRunnable()).start();
+//        new Thread(new TransactionTestRunnable()).start();
+//    }
 }
