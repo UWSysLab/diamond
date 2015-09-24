@@ -22,7 +22,10 @@ public class Main {
 	public static void writeMessage(String msg) {
 		String fullMsg = userName + ": " + msg;
 		int committed = 0;
+		long writeTimeStart = 0;
+		long writeTimeEnd = 1000 * 1000 * 1000;
 		while(committed == 0) {
+			writeTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
 			messageList.Append(fullMsg);
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
@@ -30,12 +33,17 @@ public class Main {
 			}
 			committed = Diamond.DObject.TransactionCommit();
 		}
+		writeTimeEnd = System.currentTimeMillis();
+		System.out.println(userName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
 	}
 	
 	public static List<String> readMessages() {
 		List<String> result = null;
-		boolean didRead = false;
-		while (!didRead) {
+		int committed = 0;
+		long readTimeStart = 0;
+		long readTimeEnd = 1000 * 1000 * 1000;
+		while (committed == 0) {
+			readTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
 			if (readCount.Value() == internalCount) {
 				Diamond.DObject.TransactionRetry();
@@ -43,10 +51,11 @@ public class Main {
 			}
 			result = messageList.Members();
 			readCount.Increment();
-			didRead = true;
 			internalCount = readCount.Value();
-			Diamond.DObject.TransactionCommit();
+			committed = Diamond.DObject.TransactionCommit();
 		}
+		readTimeEnd = System.currentTimeMillis();
+		System.out.println("chatclient\t" + userName + "\tread\t" + (readTimeEnd - readTimeStart));
 		return result;
 	}
 	
