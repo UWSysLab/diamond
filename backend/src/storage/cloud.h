@@ -52,7 +52,7 @@ namespace diamond {
 class Cloud
 {
 public:
-    static Cloud* Instance();
+    static Cloud* Instance(const std::string &server);
     static void SetConnected(bool);
     static bool GetConnected();
 
@@ -88,7 +88,7 @@ private:
     //redisContext *_redis;
 
     // contructor and destructor should be private in Singleton
-    Cloud();
+    Cloud(const std::string &server);
     virtual ~Cloud();
 };
 

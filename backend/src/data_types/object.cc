@@ -27,8 +27,12 @@ pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the g
 
 Cloud* cloudstore = NULL;
 
+void DiamondInit(const std::string &server) {
+    cloudstore = Cloud::Instance(server);
+}
+
 void DiamondInit() {
-    cloudstore = Cloud::Instance();
+    DiamondInit("localhost");
 }
 
 

@@ -24,6 +24,7 @@ namespace diamond {
 enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
 
 void DiamondInit();
+void DiamondInit(const std::string &server);
 
 class DObject
 {

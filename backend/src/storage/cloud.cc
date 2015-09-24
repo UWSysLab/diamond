@@ -26,8 +26,9 @@ using namespace std;
 Cloud* Cloud::_instance = NULL; 
 bool Cloud::_connected = false;
 
+std::string serverAddress;
 //std::string serverAddress = "coldwater.cs.washington.edu";
-std::string serverAddress = "localhost";
+//std::string serverAddress = "localhost";
 
 
 static const string notificationChannelPrefix = "__keyspace@0__:";
@@ -62,9 +63,9 @@ void dummy_async(uv_async_t *handle, int v);
 #endif
 
 
-Cloud::Cloud()
+Cloud::Cloud(const string &server)
 {
-    Connect(serverAddress);
+    Connect(server);
 }
 
 Cloud::~Cloud()
@@ -73,10 +74,16 @@ Cloud::~Cloud()
 }
 
 Cloud*
-Cloud::Instance(void)
+Cloud::Instance(const string &server)
 {
     if(!_instance){
-        _instance = new Cloud();
+        serverAddress = server;
+        _instance = new Cloud(server);
+    }
+    else {
+        if (server != serverAddress) {
+            Panic("Cloud is already connected to another server");
+        }
     }
     return _instance;
 }

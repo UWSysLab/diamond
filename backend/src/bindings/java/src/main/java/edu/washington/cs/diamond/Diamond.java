@@ -16,6 +16,7 @@ public class Diamond {
 
     static { Loader.load(); }
     public static native void DiamondInit();
+    public static native void DiamondInit(@ByRef @StdString String server);
 
     public static class MappedObjectList<T> {
         DStringList keyList;
