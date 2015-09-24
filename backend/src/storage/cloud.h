@@ -42,6 +42,8 @@
 #include <unordered_map>
 #include <vector>
 #include <set>
+#include <map>
+#include <list>
 
 namespace diamond {
 
@@ -60,6 +62,8 @@ public:
     bool IsConnected();
     int MultiGet(const std::vector<std::string> &keys, std::vector<std::string> &values);
     int Read(const std::string &key, std::string &value);
+    int ReadMulti(const std::list<std::string> &keys, std::list<std::string> &values);
+
     int Write(const std::string &key, const std::string &value);
     int Write(const std::string &key, const std::string &value, int write_cond, long expire_ms);
     int Rpush(const std::string &key, const std::string &value);
@@ -68,7 +72,7 @@ public:
     int Exec(void);
     int Watch(const std::string &key);
     int Unwatch(void);
-    int Wait(const std::set<std::string> &keys);
+    int Wait(const std::set<std::string> &keys, std::map<std::string, std::string> &lastReadValues);
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 
