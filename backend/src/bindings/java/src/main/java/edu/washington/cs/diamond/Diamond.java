@@ -126,6 +126,10 @@ public class Diamond {
         public native void Broadcast();
         public native void Wait();
 
+        public static native void TransactionBegin();
+        public static native int TransactionCommit();
+        public static native void TransactionRollback();
+        public static native void TransactionRetry();
     }
    
    public static class DString extends DObject {
