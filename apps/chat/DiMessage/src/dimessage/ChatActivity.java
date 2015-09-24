@@ -29,6 +29,8 @@ public class ChatActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
+		Diamond.DiamondInit("coldwater.cs.washington.edu");
+		
 		messageList = new Diamond.DStringList("dimessage:messagelist");
 		
 		chatBox = (TextView)findViewById(R.id.chatTextBox);
@@ -75,13 +77,15 @@ public class ChatActivity extends ActionBarActivity {
 		
 		public void run() {
 			String fullMsg = userName + ": " + message;
-			messageList.Lock();
-			messageList.Append(fullMsg);
-			if (messageList.Size() > MESSAGE_LIST_SIZE) {
-				messageList.Erase(0);
+			int committed = 0;
+			while(committed == 0) {
+				Diamond.DObject.TransactionBegin();
+				messageList.Append(fullMsg);
+				if (messageList.Size() > MESSAGE_LIST_SIZE) {
+					messageList.Erase(0);
+				}
+				committed = Diamond.DObject.TransactionCommit();
 			}
-			messageList.Broadcast();
-			messageList.Unlock();
 		}
 	}
 	
@@ -90,10 +94,10 @@ public class ChatActivity extends ActionBarActivity {
 		
 		public void run() {
 			while (true) {
-				messageList.Lock();
-				while (messageList.Size() == internalSize) {
-					Log.i(this.getClass().getName(), "br waiting");
-					messageList.Wait();
+				Diamond.DObject.TransactionBegin();
+				if (messageList.Size() == internalSize) {
+					Diamond.DObject.TransactionRetry();
+					continue;
 				}
 				chatBox.post(new Runnable() {
 					public void run() {
@@ -101,8 +105,7 @@ public class ChatActivity extends ActionBarActivity {
 					}
 				});
 				internalSize = messageList.Size();
-				messageList.Unlock();
-
+				Diamond.DObject.TransactionCommit();
 			}
 		}
 	}
