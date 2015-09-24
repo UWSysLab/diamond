@@ -16,6 +16,7 @@ cd $DIAMOND_BACKEND_DIR/src/bindings/java
 mvn package
 
 # copy libraries and JARs into the Java project
+mkdir -p $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/build/libdiamond.so $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/src/bindings/java/target/classes/x86-lib/libjniDiamond.so $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/src/bindings/java/libs/javacpp.jar $PROJECT_DIR/libs
