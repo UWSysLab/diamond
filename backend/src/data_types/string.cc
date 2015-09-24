@@ -17,8 +17,6 @@ namespace diamond {
 
 using namespace std;
 
-Cloud* cloudstore = Cloud::Instance();    
-
 std::string
 DString::Value() {
     pthread_mutex_lock(&_objectMutex); 

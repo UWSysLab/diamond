@@ -103,6 +103,8 @@ void* dlong_lock_client2(void *arg){
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1;
     DLong l2;
     int ret;

@@ -14,6 +14,9 @@ import java.util.ArrayList;
 
 public class Diamond {
 
+    static { Loader.load(); }
+    public static native void DiamondInit();
+
     public static class MappedObjectList<T> {
         DStringList keyList;
         MapObjectFunction func;
@@ -122,6 +125,7 @@ public class Diamond {
         public native void Signal();
         public native void Broadcast();
         public native void Wait();
+
     }
    
    public static class DString extends DObject {

@@ -23,7 +23,7 @@ on Ubuntu/Debian or Macports/Homebrew on OSX):
 
 For Ubuntu 14.04, installing the following packages should be 
 sufficient to build Diamond:
-   $ apt-get install build-essential cmake maven libpython-dev libboost-dev libevent-dev
+   $ apt-get install build-essential cmake maven libpython-dev libboost-dev libuv-dev
 
 ### Building the source and language bindings
 To compile a shared object library and both the C++ and Python
@@ -94,7 +94,7 @@ that you downloaded there.
 ### Running a test Android app
 The project DiamondAndroidTest in the "apps/test-apps" folder is an Eclipse project containing a simple Diamond test app for Android.
 The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
-source directory.
+source directory and $ANDROID_SDK with the path to the Android SDK folder.
 
 1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
 
@@ -103,16 +103,22 @@ source directory.
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
-    1. Go to File -> Import.
-    2. Choose "Existing Projects into Workspace" and click Next.
-    3. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory, make sure the box next to the project is checked, and click Finish.
+    1. Go to File -> Import -> Existing Projects into Workspace.
+    2. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory.
 
-3. Go to Window -> Preferences. In the preferences window, expand the Android menu and select Build, then uncheck the option "Force error when external jars contain native libraries."
+3. Add the Android support v7 appcompat library to the project:
 
-4. Refresh the project (right-click on the project in the Package Explorer -> Refresh), then clean the project (Project -> Clean) and close and open the project (right-click on the project -> Close Project) until it builds successfully.
+    1. Go to File -> Import -> Existing Projects into Workspace.
+    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory.
+    3. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
-5. If there are still build errors, follow the instructions in the top answer of this Stack Overflow question: http://stackoverflow.com/questions/17870881/cant-find-theme-appcompat-light-for-new-android-actionbar-support.
-Let Niel know whether or not this step is necessary, and he will either remove it or describe it more formally.
+4. Go to Window -> Preferences -> Android -> Build, and uncheck the option "Force error when external jars contain native libraries."
+
+5. Refresh, clean, and close and open the project until it builds successfully:
+
+    1. To refresh: right-click on the project in the Package Explorer -> Refresh
+    2. To clean: select Project -> Clean
+    3. To close and open: right-click on the project -> Close Project (or Open Project)
 
 6. Run the project as an Android application:
 

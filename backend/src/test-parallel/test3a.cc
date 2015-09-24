@@ -44,6 +44,8 @@
 
 
 int main(void){
+    DiamondInit();
+
     DLong l1;
     int iterations = 0;
 

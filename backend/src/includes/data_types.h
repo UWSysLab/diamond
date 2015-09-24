@@ -23,6 +23,7 @@ namespace diamond {
 
 enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
 
+void DiamondInit();
 
 class DObject
 {

@@ -42,6 +42,8 @@ extern Cloud* cloudstore;
 
 TEST(DString, Map)
 {
+    DiamondInit();
+
     DString s1;
     DString s2;
 
@@ -59,6 +61,8 @@ TEST(DString, Map)
 }
 
 TEST(DLong, Map) {
+    DiamondInit();
+
     DLong l1;
     DLong l2;
 
@@ -76,6 +80,8 @@ TEST(DLong, Map) {
 }
 
 TEST(DCounter, Map) {
+    DiamondInit();
+
     DCounter c1;
     DCounter c2;
 
@@ -93,6 +99,8 @@ TEST(DCounter, Map) {
 }
 
 TEST(DSet, Map) {
+    DiamondInit();
+
     DSet set1;
     DSet set2;
 
@@ -117,6 +125,8 @@ TEST(DSet, Map) {
 }
 
 TEST(DList, Map) {
+    DiamondInit();
+
     DList list1;
     DList list2;
 
@@ -156,6 +166,8 @@ TEST(DList, Map) {
 }
 
 TEST(DStringList, Map) {
+    DiamondInit();
+
     DStringList list1;
     DStringList list2;
 
@@ -195,6 +207,8 @@ TEST(DStringList, Map) {
 }
 
 TEST(DString, EmptyStrings) {
+    DiamondInit();
+
     DString s1, s2;
 
     int ret = DString::Map(s1, std::string("s"));
@@ -215,6 +229,8 @@ TEST(DString, EmptyStrings) {
 }
 
 TEST(DObject, MultiMap) {
+    DiamondInit();
+
     DString sa1, sa2;
     DString sb1, sb2;
     DLong long1, long2;
