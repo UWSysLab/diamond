@@ -529,17 +529,33 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     async.data = NULL;
     uv_async_send(&async);
 
+    // Wait for confirmation that we subscribed all the channels
     while(psWaiter.channelsSubscribed.size() != keys.size() && (psWaiter.updated == false)){
         pthread_cond_wait(&psWaiter.condChannelSubscribed, &asyncConnectionMutex); 
     }
 
-    
+    // Check the values of the RS because values might have changed since they were last read by the app 
     const vector<string> vKeys = vector<string>(keys.begin(),keys.end());
     vector<string> vValues;
     MultiGet(vKeys, vValues);
 
-    while(psWaiter.updated == false){
-        pthread_cond_wait(&psWaiter.condUpdated, &asyncConnectionMutex); 
+    assert(vKeys.size() == vValues.size());
+    unsigned int i;
+    bool updated = false;
+    for (i=0;i<vKeys.size();i++){
+        string key = vKeys.at(i);
+        string newValue = vValues.at(i);
+        if(lastReadValues[key] != newValue){
+            updated = true;
+            break;
+        }
+    }
+
+    if(!updated){
+        // If we didn't detect new values with the MGET, then wait for a pubsub notification
+        while(psWaiter.updated == false){
+            pthread_cond_wait(&psWaiter.condUpdated, &asyncConnectionMutex); 
+        }
     }
 
     // Clean up tasks: 
