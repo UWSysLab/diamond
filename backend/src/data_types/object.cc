@@ -22,7 +22,7 @@ static std::set<int> transationsTID; // set with the TIDs of the running transac
 static std::map<int, std::set<string> > transactionsRS; // map with the RS for each transaction
 static std::map<int, std::set<string> > transactionsWS; // map with the WS for each transaction
 static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
-pthread_mutex_t  _transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
+pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
 
 int
@@ -128,18 +128,6 @@ DObject::PushAlways(){
     }
     return 0;
 }
-
-// int
-// DObject::PushAlways(string key, string value){
-//     LOG_RC("PushAlways()"); 
-// 
-//     int ret = cloudstore->Write(key, value);
-//     if (ret != ERR_OK) {
-//         return ret;
-//     }
-//     return 0;
-// }
-// 
 
 
 int
@@ -475,13 +463,13 @@ DObject::GetTransactionLocals(void){
 void
 DObject::TransactionBegin(void)
 {
-    pthread_mutex_lock(&_transactionMutex);
+    pthread_mutex_lock(&transactionMutex);
 
     LOG_TX("TRANSACTION BEGIN");
 
     SetTransactionInProgress(true);
 
-    pthread_mutex_unlock(&_transactionMutex);
+    pthread_mutex_unlock(&transactionMutex);
 
     // XXX: Prevent locks from being acquired during a Tx
 
@@ -490,7 +478,7 @@ DObject::TransactionBegin(void)
 int
 DObject::TransactionCommit(void)
 {
-    pthread_mutex_lock(&_transactionMutex);
+    pthread_mutex_lock(&transactionMutex);
 
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
@@ -519,7 +507,7 @@ DObject::TransactionCommit(void)
 
     SetTransactionInProgress(false);
 
-    pthread_mutex_unlock(&_transactionMutex);
+    pthread_mutex_unlock(&transactionMutex);
 
     if(res == ERR_EMPTY){
         // XXX: Need to revert the changes to the WS
@@ -535,7 +523,7 @@ void
 DObject::TransactionRollback(void)
 {
 
-    pthread_mutex_lock(&_transactionMutex);
+    pthread_mutex_lock(&transactionMutex);
 
     LOG_TX("TRANSACTION ROLLBACK");
 
@@ -544,7 +532,7 @@ DObject::TransactionRollback(void)
 
     SetTransactionInProgress(false);
 
-    pthread_mutex_unlock(&_transactionMutex);
+    pthread_mutex_unlock(&transactionMutex);
 
 }
 
@@ -553,13 +541,23 @@ DObject::TransactionRetry(void)
 {
     // Implement with pooling for now
 
-    assert(0);
 
     LOG_TX("TRANSACTION RETRY");
 
-    pthread_mutex_lock(&_transactionMutex);
+    pthread_mutex_lock(&transactionMutex);
+
+    std::set<string>* txRS = GetTransactionRS();
+    std::map<string, string >* locals = GetTransactionLocals();
+
+    pthread_mutex_unlock(&transactionMutex);
+    
+    int ret = cloudstore->Wait(*txRS, *locals);
+    assert(ret == ERR_OK); 
+
+
+    pthread_mutex_lock(&transactionMutex);
     SetTransactionInProgress(false);
-    pthread_mutex_unlock(&_transactionMutex);
+    pthread_mutex_unlock(&transactionMutex);
 
 }
 
