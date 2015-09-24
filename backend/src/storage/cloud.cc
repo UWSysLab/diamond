@@ -55,8 +55,11 @@ static uv_async_t async;
 
 int connectAsync();
 void pubsubCallback(redisAsyncContext *c, void *r, void *privdata);
+#ifdef __ANDROID__
+void dummy_async(uv_async_t *handle);
+#else
 void dummy_async(uv_async_t *handle, int v);
-//void dummy_async(uv_async_t *handle);
+#endif
 
 
 Cloud::Cloud()
@@ -686,8 +689,11 @@ void disconnectCallback(const redisAsyncContext *c, int status) {
 
 
 // Calling this function should wake the async thread wake up at the event loop
+#ifdef __ANDROID__
+void dummy_async(uv_async_t *handle) {
+#else
 void dummy_async(uv_async_t *handle, int v) {
-//void dummy_async(uv_async_t *handle) {
+#endif
     // XXX: Probably it would be better to make the hiredis subscribe calls from here
 
     //double percentage = *((double*) handle->data);
