@@ -560,6 +560,9 @@ DObject::TransactionRetry(void)
     std::set<string>* txRS = GetTransactionRS();
     std::map<string, string >* locals = GetTransactionLocals();
 
+    int res = cloudstore->Unwatch(); 
+    assert(res == ERR_OK); // Is this assert really necessary?
+
     pthread_mutex_unlock(&transactionMutex);
     
     int ret = cloudstore->Wait(*txRS, *locals);
