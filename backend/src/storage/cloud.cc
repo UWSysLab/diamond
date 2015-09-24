@@ -558,6 +558,8 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
         }
     }
 
+    Notice("Notice cloud.cc line 561");
+
     // Clean up tasks: 
     //   1) remove the conditional variable from the waiters 
     //   2) unsubscribe the channels if we're the last subscriber
@@ -579,7 +581,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
             unsubChannels+=channel;
         }
     }
-    printf("WAIT(): unsubscribing from channels: \"%s\"\n", unsubChannels.c_str());
+    Notice("WAIT(): unsubscribing from channels: \"%s\"\n", unsubChannels.c_str());
 
 
     LOG_REQUEST("ASYNC UNSUBSCRIBE", "");
@@ -613,19 +615,19 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
 
     redisReply *reply = (redisReply*)r;
     assert(reply != NULL);
-    //printf("pubsubCallback argv[%s]: %s\n", (char*)privdata, reply->str);
+    Notice("pubsubCallback argv[%s]: %s\n", (char*)privdata, reply->str);
 
 
     // We can get 3 types of replies:
     //   1. "subscribe"
     //   2. "message"
     //   3. "unsubscribe"
-//     if (reply->type == REDIS_REPLY_ARRAY) {
-//         for (unsigned int j = 0; j < reply->elements; j++) {
-//             printf("  %u) %s\n", j, reply->element[j]->str);
-//         }
-//     }
-// 
+     if (reply->type == REDIS_REPLY_ARRAY) {
+         for (unsigned int j = 0; j < reply->elements; j++) {
+             Notice("  %u) %s\n", j, reply->element[j]->str);
+         }
+     }
+ 
     // XXX: Simplify this code and document...
     assert(reply->elements == 3);
 
@@ -655,7 +657,7 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
         auto it = psWaitersChannel->begin();
         for(;it!=psWaitersChannel->end();it++){
             auto psWaiter  = *it;
-//            printf("!!!!!!!!!!!!! Signaling condUpdated (key = %s)!!!!!!!!!!\n", key.c_str());
+            Notice("!!!!!!!!!!!!! Signaling condUpdated (key = %s)!!!!!!!!!!\n", key.c_str());
             psWaiter->updated = true;
             pthread_cond_signal(&psWaiter->condChannelSubscribed);
             pthread_cond_signal(&psWaiter->condUpdated);
@@ -671,7 +673,7 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
         auto it = psWaitersChannel->begin();
         for(;it!=psWaitersChannel->end();it++){
             auto psWaiter  = *it;
-//            printf("!!!!!!!!!!!!! Signaling condChannelSubscribed (key = %s)!!!!!!!!!!\n", key.c_str());
+            Notice("!!!!!!!!!!!!! Signaling condChannelSubscribed (key = %s)!!!!!!!!!!\n", key.c_str());
             psWaiter->channelsSubscribed.insert(channel);
             pthread_cond_signal(&psWaiter->condChannelSubscribed);
         }
