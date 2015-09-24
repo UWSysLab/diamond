@@ -4,16 +4,16 @@
 #include "includes/data_types.h"
 #include "test.h"
 
-// Tests the transactions
+// Tests the retry of the transactions
 // 
 // Run this process
 // Sucess if both clients print that the test passed
 //
 // Usage:
-//   $ ./test10
+//   $ ./test11
 // 
 
-#define TEST_NAME "Test 10"
+#define TEST_NAME "Test 11"
 
 void* thread1(void* arg);
 void* thread2(void* arg);
