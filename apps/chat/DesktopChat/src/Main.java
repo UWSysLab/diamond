@@ -7,12 +7,12 @@ public class Main {
 	
 	static final int MESSAGE_LIST_SIZE = 100;
 	static final int NUM_ACTIONS = 1000;
+	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
 	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
 	
-	static String chatLogKey = "desktopchat:defaultroom:chatlog";
-	static String updateTimeKey = "desktopchat:defaultroom:updatetime";
+	static String chatroomName = "defaultroom";
 	static String userName = "defaultclient";
 	static String serverName = "coldwater.cs.washington.edu";
 	
@@ -37,7 +37,7 @@ public class Main {
 		}
 		writeTimeEnd = System.currentTimeMillis();
 		
-		System.out.println(roundNum + "\t" + userName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
+		System.out.println(roundNum + "\t" + userName + "\t" + chatroomName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
 	}
 	
 	public static List<String> readMessages(int roundNum) {
@@ -58,12 +58,12 @@ public class Main {
 		}
 		readTimeEnd = System.currentTimeMillis();
 		
-		System.out.println(roundNum + "\t" + userName + "\tread\t" + (readTimeEnd - readTimeStart));
+		System.out.println(roundNum + "\t" + userName + "\t" + chatroomName + "\tread\t" + (readTimeEnd - readTimeStart));
 		return result;
 	}
 	
 	public static void main(String[] args) {
-		String usage = "java Main read_fraction [client_name]";
+		String usage = "java Main read_fraction [client_name] [chatroom_name]";
 		if (args.length < 1) {
 			System.err.println(usage);
 		}
@@ -71,11 +71,17 @@ public class Main {
 		if (args.length >= 2) {
 			userName = args[1];
 		}
+		if (args.length >= 3) {
+			chatroomName = args[2];
+		}
 		if (readFraction > 1.0 || readFraction < 0.0) {
 			System.err.println(usage);
 		}
 		
 		Diamond.DiamondInit(serverName);
+		
+		String chatLogKey = "desktopchat:" + chatroomName + ":chatlog";
+		String updateTimeKey = "desktopchat:" + chatroomName + ":updatetime";
 		
 		messageList = new Diamond.DStringList();
 		updateTime = new Diamond.DLong();
@@ -90,7 +96,7 @@ public class Main {
 				readMessages(i);
 			}
 			else {
-				writeMessage(i, "Help, I'm trapped in a Diamond benchmark");
+				writeMessage(i, MESSAGE);
 			}
 		}
 	}

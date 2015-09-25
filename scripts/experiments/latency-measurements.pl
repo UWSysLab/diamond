@@ -7,7 +7,7 @@ my $writeSum = 0;
 my $numWrites = 0;
 open(CLIENT1, "client1.log");
 while (<CLIENT1>) {
-    if ($_ =~ /^(\d+)\s+\S+\s+\S+\s+(\d+)$/) {
+    if ($_ =~ /^(\d+)\s+\S+\s+\S+\s+\S+\s+(\d+)$/) {
         my ($roundNum, $time) = ($1, $2);
         if ($roundNum >= 200 && $roundNum <= 800) {
             $writeSum += $time;
@@ -29,7 +29,7 @@ my $readSum = 0;
 my $numReads = 0;
 open(CLIENT2, "client2.log");
 while (<CLIENT2>) {
-    if ($_ =~ /^(\d+)\s+\S+\s+\S+\s+(\d+)$/) {
+    if ($_ =~ /^(\d+)\s+\S+\s+\S+\s+\S+\s+(\d+)$/) {
         my ($roundNum, $time) = ($1, $2);
         if ($roundNum >= 200 && $roundNum <= 800) {
             $readSum += $time;
