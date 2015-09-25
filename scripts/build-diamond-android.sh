@@ -21,5 +21,6 @@ cp $DIAMOND_BACKEND_DIR/build-arm/libdiamond.so $PROJECT_DIR/libs/armeabi
 cp $DIAMOND_BACKEND_DIR/build-arm/hiredis/src/libhiredis.so $PROJECT_DIR/libs/armeabi
 cp $DIAMOND_BACKEND_DIR/external/libuv/android/libuv.a $PROJECT_DIR/libs/armeabi
 cp $DIAMOND_BACKEND_DIR/src/bindings/java/target/classes/arm-lib/libjniDiamond.so $PROJECT_DIR/libs/armeabi
+cp $DIAMOND_BACKEND_DIR/src/bindings/java/target/classes/arm-lib/libjniDiamondUtil.so $PROJECT_DIR/libs/armeabi
 cp $DIAMOND_BACKEND_DIR/src/bindings/java/libs/javacpp.jar $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/src/bindings/java/target/diamond-1.0-SNAPSHOT.jar $PROJECT_DIR/libs
