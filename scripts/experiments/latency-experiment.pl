@@ -11,8 +11,8 @@ my $classpath = "$PROJECT_DIR/bin:$JAVA_BINDINGS_DIR/libs/javacpp.jar:$JAVA_BIND
 my $nativePath = "$JAVA_BINDINGS_DIR/target/classes/x86-lib:$DIAMOND_SRC/backend/build";
 
 $ENV{"LD_LIBRARY_PATH"} = $nativePath;
-system("java -cp $classpath -Djava.library.path=$nativePath Main 0 client1 | grep client1 > client1.log &");
-system("java -cp $classpath -Djava.library.path=$nativePath Main 1.0 client2 | grep client2 > client2.log &");
+system("java -cp $classpath -Djava.library.path=$nativePath Main 0 client1 > client1.log 2> error1.log &");
+system("java -cp $classpath -Djava.library.path=$nativePath Main 1.0 client2 > client2.log 2> error2.log &");
 sleep(1);
 system("./latency-measurements.pl");
 
