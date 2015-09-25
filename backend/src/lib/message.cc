@@ -58,6 +58,10 @@
 
 #ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
 #include <sys/syscall.h>
+#include <map>
+
+std::map<int, int> debugLogPaddings; // threadID->padding;
+
 #endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
 
 void __attribute__((weak))
@@ -163,11 +167,18 @@ _Message_VA(enum Message_Type type, FILE *fp,
     }
 
 #ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
-    long l = syscall(SYS_gettid) % DEBUG_LOG_ALIGN_PER_THREAD_MODULO * DEBUG_LOG_ALIGN_PER_THREAD_PADDING;
+    long tid = syscall(SYS_gettid);
+    int padding = 0;
+    if (debugLogPaddings.find(tid) == debugLogPaddings.end()){
+        padding = debugLogPaddings.size() * DEBUG_LOG_ALIGN_PER_THREAD_PADDING;
+        debugLogPaddings[tid] = padding;
+    }else{
+        padding = debugLogPaddings[tid];
+    }
     
-    while(l>0){
+    while(padding>0){
         fprintf(fp, " ");
-        l--;
+        padding--;
     }
 
 #endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
