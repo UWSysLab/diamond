@@ -14,6 +14,9 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		
+		Diamond.DiamondInit("coldwater.cs.washington.edu");
+		
 		Diamond.DString testString1 = new Diamond.DString("String 1: if this string shows up, Diamond syncing is not working", "a");
 		Diamond.DString testString2 = new Diamond.DString("String 2: if this string shows up, Diamond syncing is not working", "a");
 
