@@ -31,6 +31,8 @@
 
 #include "message.h"
 
+#include "includes/debug_print.h"
+
 #include <ctype.h>
 #include <errno.h>
 #include <fnmatch.h>
@@ -52,6 +54,11 @@
 
 #define TIMESTAMP_BASE62 0
 #define TIMESTAMP_NUMERIC 1
+
+
+#ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
+#include <sys/syscall.h>
+#endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
 
 void __attribute__((weak))
 Message_VA(enum Message_Type type,
@@ -99,6 +106,7 @@ _Message_VA(enum Message_Type type, FILE *fp,
     pthread_mutex_lock(&messageMutex);
 
 
+
     if (haveColor == -1)
         haveColor = isatty(fileno(fp));
 
@@ -140,6 +148,7 @@ _Message_VA(enum Message_Type type, FILE *fp,
 
     fprintf(fp, "%s ", descs[nDesc].prefix);
 
+
     if (fname) {
         const char *fbasename = strrchr(fname, '/');
         if (fbasename)
@@ -149,9 +158,19 @@ _Message_VA(enum Message_Type type, FILE *fp,
         char filepos[32];
         snprintf(filepos, sizeof(filepos)/sizeof(filepos[0]),
                  "(%s:%d):", fbasename, line);
-        fprintf(fp, "%-15s %-19s ",
+        fprintf(fp, "%-19s %-19s ",
                 func, filepos);
     }
+
+#ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
+    long l = syscall(SYS_gettid) % DEBUG_LOG_ALIGN_PER_THREAD_MODULO * DEBUG_LOG_ALIGN_PER_THREAD_PADDING;
+    
+    while(l>0){
+        fprintf(fp, " ");
+        l--;
+    }
+
+#endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
 
     vfprintf(fp, fmt, args);
 
