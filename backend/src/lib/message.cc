@@ -39,6 +39,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 #ifdef __ANDROID__
 #include <android/log.h>
@@ -73,6 +74,9 @@ _Message(enum Message_Type type,
     Message_DoFrees();
 }
 
+// Serialize the print messages
+static pthread_mutex_t  messageMutex = PTHREAD_MUTEX_INITIALIZER;
+
 void
 _Message_VA(enum Message_Type type, FILE *fp,
             const char *fname, int line, const char *func,
@@ -90,6 +94,10 @@ _Message_VA(enum Message_Type type, FILE *fp,
         {" ",     "22;37"},
         {"<Invalid message type>", 0},
     };
+
+
+    pthread_mutex_lock(&messageMutex);
+
 
     if (haveColor == -1)
         haveColor = isatty(fileno(fp));
@@ -152,7 +160,7 @@ _Message_VA(enum Message_Type type, FILE *fp,
 
     if (haveColor && descs[nDesc].color)
         fputs("\033[0m", fp);
-    fprintf(fp, "\n");
+    //fprintf(fp, "\n");
     fflush(fp);
 
 #ifdef __ANDROID__
@@ -166,6 +174,8 @@ _Message_VA(enum Message_Type type, FILE *fp,
     }
     __android_log_vprint(prio, "Diamond", fmt, args);
 #endif //__ANDROID__
+
+    pthread_mutex_unlock(&messageMutex);
 }
 
 void _Panic(void)
