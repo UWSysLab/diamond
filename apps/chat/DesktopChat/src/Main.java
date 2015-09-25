@@ -11,13 +11,13 @@ public class Main {
 	static final int ACTION_WRITE = 1;
 	
 	static String chatLogKey = "desktopchat:defaultroom:chatlog";
-	static String readCountKey = "desktopchat:defaultroom:readcount";
+	static String updateTimeKey = "desktopchat:defaultroom:updatetime";
 	static String userName = "defaultclient";
 	static String serverName = "coldwater.cs.washington.edu";
 	
 	private static Diamond.DStringList messageList;
-	private static Diamond.DCounter readCount;
-	private static long internalCount;
+	private static Diamond.DLong updateTime;
+	private static long lastReadUpdateTime;
 	
 	public static void writeMessage(String msg) {
 		String fullMsg = userName + ": " + msg;
@@ -31,10 +31,11 @@ public class Main {
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
 				messageList.Erase(0);
 			}
+			updateTime.Set(System.currentTimeMillis());
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		writeTimeEnd = System.currentTimeMillis();
-		System.out.println(userName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
+		System.out.println("chatclient\t" + userName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
 	}
 	
 	public static List<String> readMessages() {
@@ -45,13 +46,12 @@ public class Main {
 		while (committed == 0) {
 			readTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
-			if (readCount.Value() == internalCount) {
+			if (updateTime.Value() == lastReadUpdateTime) {
 				Diamond.DObject.TransactionRetry();
 				continue;
 			}
 			result = messageList.Members();
-			readCount.Increment();
-			internalCount = readCount.Value();
+			lastReadUpdateTime = updateTime.Value();
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		readTimeEnd = System.currentTimeMillis();
@@ -60,15 +60,21 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
+		if (args.length < 1) {
+			System.out.println("java Main [read | write] <clientname>");
+		}
+		
+		int action = (args[0].equals("read") ? ACTION_READ : ACTION_WRITE);
+		userName = args[1];
+		
 		Diamond.DiamondInit(serverName);
 		
 		messageList = new Diamond.DStringList();
-		readCount = new Diamond.DCounter();
+		updateTime = new Diamond.DLong();
 		Diamond.DObject.Map(messageList, chatLogKey);
-		Diamond.DObject.Map(readCount, readCountKey);
+		Diamond.DObject.Map(updateTime, updateTimeKey);
 		
 		for (int i = 0; i < NUM_ACTIONS; i++) {
-			int action = ACTION_WRITE;
 			if (action == ACTION_READ) {
 				readMessages();
 			}
