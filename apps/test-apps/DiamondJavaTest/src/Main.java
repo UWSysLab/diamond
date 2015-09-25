@@ -1,11 +1,15 @@
 import edu.washington.cs.diamond.Diamond.DStringList;
+import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DLong;
+import edu.washington.cs.diamond.Diamond.DObject;
 import edu.washington.cs.diamond.Diamond.DString;
 
 public class Main {
 	public static void main(String[] args) {
+		Diamond.DiamondInit();
 		threadTest();
 	}
-	
+
 	/**
 	 * Simple test of Diamond syncing
 	 */
