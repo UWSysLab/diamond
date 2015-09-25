@@ -48,12 +48,12 @@ public class Main {
 		while (committed == 0) {
 			readTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
-			if (updateTime.Value() == lastReadUpdateTime) {
+			/*if (updateTime.Value() == lastReadUpdateTime) {
 				Diamond.DObject.TransactionRetry();
 				continue;
 			}
+			lastReadUpdateTime = updateTime.Value();*/
 			result = messageList.Members();
-			lastReadUpdateTime = updateTime.Value();
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		readTimeEnd = System.currentTimeMillis();
