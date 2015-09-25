@@ -80,8 +80,8 @@ public class Main {
 		
 		Diamond.DiamondInit(serverName);
 		
-		String chatLogKey = "desktopchat:" + chatroomName + ":chatlog";
-		String updateTimeKey = "desktopchat:" + chatroomName + ":updatetime";
+		String chatLogKey = "dimessage:" + chatroomName + ":chatlog";
+		String updateTimeKey = "dimessage:" + chatroomName + ":updatetime";
 		
 		messageList = new Diamond.DStringList();
 		updateTime = new Diamond.DLong();
