@@ -55,6 +55,8 @@
 #define TIMESTAMP_BASE62 0
 #define TIMESTAMP_NUMERIC 1
 
+#include <assert.h>
+
 
 #ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
 #include <sys/syscall.h>
@@ -175,13 +177,16 @@ _Message_VA(enum Message_Type type, FILE *fp,
     }else{
         padding = debugLogPaddings[tid];
     }
-    
-    while(padding>0){
-        fprintf(fp, " ");
-        padding--;
-    }
+    char paddingStr[256];
+    int i;
+    assert(padding<255);
 
-#endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
+    for(i=0;i<padding;i++){
+        paddingStr[i]=' '; 
+    }
+    paddingStr[padding] = 0;
+    fprintf(fp,"%s", paddingStr);
+#endif // DEBUG_LOG_ALIGN_PER_THREAD_PADDING
 
     vfprintf(fp, fmt, args);
 
@@ -202,7 +207,18 @@ _Message_VA(enum Message_Type type, FILE *fp,
         case MSG_DEBUG: prio = ANDROID_LOG_DEBUG; break;
         default: prio = ANDROID_LOG_ERROR; break;
     }
+
+#ifdef DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
+    char androidStr[1024];
+    strcpy(androidStr, "");
+    snprintf(androidStr, sizeof(androidStr) - 1, "%s", paddingStr);
+    vsnprintf(androidStr, sizeof(androidStr) - 1, fmt, args);
+    __android_log_print(prio, "Diamond", "%s", androidStr);
+#else
     __android_log_vprint(prio, "Diamond", fmt, args);
+#endif // DEBUG_LOG_ALIGN_PER_THREAD_ENABLED
+
+
 #endif //__ANDROID__
 
     pthread_mutex_unlock(&messageMutex);
