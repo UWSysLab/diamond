@@ -108,9 +108,9 @@ Cloud::Connect(const std::string &host)
 
     connectAsync();
 
-    Notice("Connecting...");
+    Notice("Connecting...\n");
     redis = redisConnect(host.c_str(), 6379);
-    Notice("Connected.");
+    Notice("Connected.\n");
     if (redis != NULL && redis->err == 0) {
         _connected = true;
         threadID = getThreadID();
@@ -513,7 +513,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
 // 
 //         printf("psWaitersChannel->size(): %lu\n", psWaitersChannel->size());
     }
-    printf("WAIT(): subscribing to channels: \"%s\"\n", subChannels.c_str());
+    Notice("WAIT(): subscribing to channels: \"%s\"\n", subChannels.c_str());
 
 
 
@@ -558,7 +558,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
         }
     }
 
-    Notice("Notice cloud.cc line 561");
+    Notice("Notice cloud.cc line 561\n");
 
     // Clean up tasks: 
     //   1) remove the conditional variable from the waiters 
@@ -605,7 +605,7 @@ void getCallback(redisAsyncContext *c, void *r, void *privdata) {
 
     redisReply *reply = (redisReply*)r;
     if (reply == NULL) return;
-    printf("getCallback argv[%s]: %s\n", (char*)privdata, reply->str);
+    Notice("getCallback argv[%s]: %s\n", (char*)privdata, reply->str);
 
     pthread_mutex_unlock(&asyncConnectionMutex);
 }
@@ -615,21 +615,23 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
 
     redisReply *reply = (redisReply*)r;
     assert(reply != NULL);
-    Notice("pubsubCallback argv[%s]: %s\n", (char*)privdata, reply->str);
+    //Notice("pubsubCallback argv[%s]: %s\n", (char*)privdata, reply->str);
 
 
     // We can get 3 types of replies:
     //   1. "subscribe"
     //   2. "message"
     //   3. "unsubscribe"
-     if (reply->type == REDIS_REPLY_ARRAY) {
-         for (unsigned int j = 0; j < reply->elements; j++) {
-             Notice("  %u) %s\n", j, reply->element[j]->str);
-         }
-     }
+    assert(reply->elements == 3);
+    Notice("pubsubCallback() received (%s, %s, %s)\n", reply->element[0]->str, reply->element[1]->str, reply->element[2]->str);
+
+//     if (reply->type == REDIS_REPLY_ARRAY) {
+//          for (unsigned int j = 0; j < reply->elements; j++) {
+//              Notice("  %u) %s\n", j, reply->element[j]->str);
+//          }
+//      }
  
     // XXX: Simplify this code and document...
-    assert(reply->elements == 3);
 
     string channel = string(reply->element[1]->str);
     int keyspacePos = channel.find(notificationChannelPrefix);
@@ -640,20 +642,20 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
     if(strcmp(reply->element[0]->str, "message")==0){
         // Wake up all the waiters on this key
 
-//        printf("channel=%s key=%s\n", channel.c_str(), key.c_str());
-//         printf("psWaiters.size(): %lu\n", psWaiters.size());
+//        Notice("channel=%s key=%s\n", channel.c_str(), key.c_str());
+//         Notice("psWaiters.size(): %lu\n", psWaiters.size());
 // 
 //         for(auto iter = psWaiters.begin(); iter != psWaiters.end(); iter++)
 //         {
 //             string k =  iter->first;
 //             auto set = iter->second;
-//             printf("keys: \"%s\" (%d)\n", k.c_str(), set.size());
+//             Notice("keys: \"%s\" (%d)\n", k.c_str(), set.size());
 //         }
 
          auto psWaitersChannel = &psWaiters[channel];
 //        auto itConds = psWaiters.find(channel);
 
-//        printf("psWaitersChannel->size(): %lu\n", psWaitersChannel->size());
+//        Notice("psWaitersChannel->size(): %lu\n", psWaitersChannel->size());
         auto it = psWaitersChannel->begin();
         for(;it!=psWaitersChannel->end();it++){
             auto psWaiter  = *it;
@@ -662,14 +664,14 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
             pthread_cond_signal(&psWaiter->condChannelSubscribed);
             pthread_cond_signal(&psWaiter->condUpdated);
         }
-//        printf("psWaitersChannel.size(): %lu\n", psWaitersChannel->size());
+//        Notice("psWaitersChannel.size(): %lu\n", psWaitersChannel->size());
 
     } else if(strcmp(reply->element[0]->str, "subscribe")==0) {
 
          auto psWaitersChannel = &psWaiters[channel];
 //        auto itConds = psWaiters.find(channel);
 
-//        printf("psWaitersChannel->size(): %lu\n", psWaitersChannel->size());
+//        Notice("psWaitersChannel->size(): %lu\n", psWaitersChannel->size());
         auto it = psWaitersChannel->begin();
         for(;it!=psWaitersChannel->end();it++){
             auto psWaiter  = *it;
@@ -677,7 +679,7 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
             psWaiter->channelsSubscribed.insert(channel);
             pthread_cond_signal(&psWaiter->condChannelSubscribed);
         }
-//        printf("psWaitersChannel.size(): %lu\n", psWaitersChannel->size());
+//        Notice("psWaitersChannel.size(): %lu\n", psWaitersChannel->size());
 
 
 
@@ -694,10 +696,10 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
 
 void connectCallback(const redisAsyncContext *c, int status) {
     if (status != REDIS_OK) {
-        printf("Error: %s\n", c->errstr);
+        Notice("Error: %s\n", c->errstr);
         return;
     }
-    printf("Connected...\n");
+    Notice("Connected...\n");
 
     // Signal connection
     sem_post(&semAsyncConnected);
@@ -705,10 +707,10 @@ void connectCallback(const redisAsyncContext *c, int status) {
 
 void disconnectCallback(const redisAsyncContext *c, int status) {
     if (status != REDIS_OK) {
-        printf("Error: %s\n", c->errstr);
+        Notice("Error: %s\n", c->errstr);
         return;
     }
-    printf("Disconnected...\n");
+    Notice("Disconnected...\n");
     assert(0);
 }
 
@@ -736,7 +738,7 @@ void* connectAsyncThread(void *threadArg){
     asyncContext = redisAsyncConnect(serverAddress.c_str(), 6379);
     if (asyncContext->err) {
         /* Let *c leak for now... */
-        printf("Error: %s\n", asyncContext->errstr);
+        Notice("Error: %s\n", asyncContext->errstr);
         assert(0);
     }
 
