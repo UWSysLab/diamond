@@ -28,7 +28,6 @@ public class MainActivity extends ActionBarActivity {
 	
 	private Diamond.DStringList messageList;
 	private Diamond.DLong updateTime;
-	private long lastReadUpdateTime;
 	
 	public long writeMessage(int roundNum, String msg) {
 		String fullMsg = userName + ": " + msg;
@@ -57,11 +56,6 @@ public class MainActivity extends ActionBarActivity {
 		while (committed == 0) {
 			readTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
-			/*if (updateTime.Value() == lastReadUpdateTime) {
-				Diamond.DObject.TransactionRetry();
-				continue;
-			}
-			lastReadUpdateTime = updateTime.Value();*/
 			result = messageList.Members();
 			committed = Diamond.DObject.TransactionCommit();
 		}
@@ -83,8 +77,6 @@ public class MainActivity extends ActionBarActivity {
 		
 		String chatLogKey = "dimessage:" + chatroomName + ":chatlog";
 		String updateTimeKey = "dimessage:" + chatroomName + ":updatetime";
-		//String chatLogKey = "dimessage:androidbenchmark:chatlog";
-		//String updateTimeKey = "dimessage:androidbenchmark:updatetime";
 		
 		messageList = new Diamond.DStringList(chatLogKey);
 		updateTime = new Diamond.DLong(0, updateTimeKey);
