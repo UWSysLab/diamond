@@ -3,10 +3,11 @@
 use warnings;
 use strict;
 
-my $usage = "usage: ./run-desktop-client.pl read_fraction [client_name] [chatroom_name]";
+#my $usage = "usage: ./run-desktop-client.pl job_type job_number read_fraction [client_name] [chatroom_name]";
+#die $usage unless @ARGV == 5;
 
-die $usage unless @ARGV >= 1;
-
+my $jobType = shift;
+my $jobNumber = shift;
 my $readFraction = shift;
 my $clientName = shift;
 my $chatroomName = shift;
@@ -19,4 +20,4 @@ my $classpath = "$PROJECT_DIR/bin:$JAVA_BINDINGS_DIR/libs/javacpp.jar:$JAVA_BIND
 my $nativePath = "$JAVA_BINDINGS_DIR/target/classes/x86-lib:$DIAMOND_SRC/backend/build";
 
 $ENV{"LD_LIBRARY_PATH"} = $nativePath;
-system("java -cp $classpath -Djava.library.path=$nativePath Main $readFraction $clientName $chatroomName");
+system("java -cp $classpath -Djava.library.path=$nativePath Main $jobType $jobNumber $readFraction $clientName $chatroomName");
