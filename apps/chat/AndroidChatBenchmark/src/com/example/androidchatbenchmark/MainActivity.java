@@ -6,9 +6,11 @@ import android.util.Log;
 import java.util.List;
 
 import android.app.AlertDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 import edu.washington.cs.diamond.Diamond;
 
 public class MainActivity extends ActionBarActivity {
@@ -71,7 +73,11 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+		//setContentView(R.layout.activity_main);
+		
+		TextView textBox = new TextView(this.getBaseContext());
+		textBox.setTextColor(Color.BLACK);
+		setContentView(textBox);
 		
 		Diamond.DiamondInit("coldwater.cs.washington.edu");
 		
@@ -85,26 +91,32 @@ public class MainActivity extends ActionBarActivity {
 		//Diamond.DObject.Map(messageList, chatLogKey);
 		//Diamond.DObject.Map(updateTime, updateTimeKey);
 		
-		int action = ACTION_READ;
 		
-		long totalTime = 0;
-		int numReps = NUM_ACTIONS;
+		long totalTimeRead = 0;
+		int numRepsRead = 0;
 		
 		for (int i = 0; i < NUM_ACTIONS; i++) {
-			if (action == ACTION_READ) {
-				totalTime += readMessages(i);
-			}
-			else {
-				totalTime += writeMessage(i, MESSAGE);
+			if (i >= 200 && i <= 800) {
+				totalTimeRead += readMessages(i);
+				numRepsRead++;
 			}
 		}
+		double averageTimeRead = ((double)totalTimeRead) / numRepsRead;
+		String readResultString = "Action: READ\tNum reps: " + numRepsRead + "\tAverage latency: " + averageTimeRead;
 		
-		double averageTime = ((double)totalTime) / numReps;
-		String actionStr = (action == ACTION_READ ? "READ" : "WRITE");
+		long totalTimeWrite = 0;
+		int numRepsWrite = 0;
 		
-		AlertDialog.Builder builder = new AlertDialog.Builder(getBaseContext());
-		AlertDialog dialog = builder.setMessage("Action: " + actionStr + " Average latency: " + averageTime).create();
-		dialog.show();
+		for (int i = 0; i < NUM_ACTIONS; i++) {
+			if (i >= 200 && i <= 800) {
+				totalTimeWrite += writeMessage(i, MESSAGE);
+				numRepsWrite++;
+			}
+		}
+		double averageTimeWrite = ((double)totalTimeWrite) / numRepsWrite;
+		String writeResultString = "Action: WRITE\tNum reps: " + numRepsWrite + "\tAverage latency: " + averageTimeWrite;
+		
+		textBox.setText(readResultString + "\n" + writeResultString);
 	}
 
 	@Override
