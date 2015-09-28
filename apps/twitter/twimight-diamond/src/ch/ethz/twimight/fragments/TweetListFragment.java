@@ -1,5 +1,8 @@
 package ch.ethz.twimight.fragments;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
@@ -16,6 +19,8 @@ import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.SearchableActivity;
 import ch.ethz.twimight.activities.ShowTweetActivity;
 import ch.ethz.twimight.activities.TwimightBaseActivity;
+import ch.ethz.twimight.net.twitter.DiamondTweet;
+import ch.ethz.twimight.net.twitter.DiamondTweetAdapter;
 import ch.ethz.twimight.net.twitter.TweetAdapter;
 import ch.ethz.twimight.net.twitter.TweetListView;
 import ch.ethz.twimight.net.twitter.Tweets;
@@ -113,11 +118,33 @@ public class TweetListFragment extends ListFragment {
 		return list;
 	}
 
+	ListAdapter getData(int filter) {
+		List<DiamondTweet> testList = new ArrayList<DiamondTweet>();
+		DiamondTweet tweet1 = new DiamondTweet();
+		tweet1.text = "Test tweet text";
+		tweet1.userid = 1;
+		tweet1.createdAt = 0;
+		tweet1.mentions = 0;
+		tweet1.screenname = "testuser1";
+		tweet1.retweetedBy = null;
+		tweet1.toFavorite = false;
+		DiamondTweet tweet2 = new DiamondTweet();
+		tweet2.text = "Another tweet";
+		tweet2.userid = 2;
+		tweet2.createdAt = 1000000;
+		tweet2.mentions = 0;
+		tweet2.screenname = "testuser2";
+		tweet2.retweetedBy = null;
+		tweet2.toFavorite = false;
+		testList.add(tweet1);
+		testList.add(tweet2);
+		return new DiamondTweetAdapter(this.getActivity().getBaseContext(), -1, testList);
+	}
 	/**
 	 * Which tweets do we show? Timeline, favorites, mentions?
 	 * @param filter
 	 */
-	ListAdapter getData(int filter){
+	/*ListAdapter getData(int filter){
 		// set all header button colors to transparent
 	
 		if(c!=null) c.close();			
@@ -169,7 +196,7 @@ public class TweetListFragment extends ListFragment {
 		return new TweetAdapter(getActivity(), c);	
 
 		
-	}
+	}*/
 	
 	
 
