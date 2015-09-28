@@ -11,6 +11,8 @@ public class Main {
 	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
+	static final String RUN_TIMED = "timed";
+	static final String RUN_FIXED = "fixed";
 	
 	static String chatroomName = "defaultroom";
 	static String userName = "defaultclient";
@@ -63,19 +65,29 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		String usage = "java Main read_fraction [client_name] [chatroom_name]";
-		if (args.length < 1) {
+		String usage = "usage: java Main run_type run_number read_fraction [client_name] [chatroom_name]\n"
+					 + "    run_type: timed or fixed\n"
+					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)";
+		if (args.length < 3) {
 			System.err.println(usage);
+			System.exit(0);
 		}
-		double readFraction = Double.parseDouble(args[0]);
-		if (args.length >= 2) {
-			userName = args[1];
+		String runType = args[0];
+		int runNumber = Integer.parseInt(args[1]);
+		double readFraction = Double.parseDouble(args[2]);
+		if (args.length >= 4) {
+			userName = args[3];
 		}
-		if (args.length >= 3) {
-			chatroomName = args[2];
+		if (args.length >= 5) {
+			chatroomName = args[4];
+		}
+		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
+			System.err.println(usage);
+			System.exit(0);
 		}
 		if (readFraction > 1.0 || readFraction < 0.0) {
 			System.err.println(usage);
+			System.exit(0);
 		}
 		
 		Diamond.DiamondInit(serverName);
@@ -90,13 +102,26 @@ public class Main {
 		
 		Random rand = new Random();
 		
-		for (int i = 0; i < NUM_ACTIONS; i++) {
+		long startTime = System.currentTimeMillis();
+		
+		int i = 0;
+		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (action == ACTION_READ) {
 				readMessages(i);
 			}
 			else {
 				writeMessage(i, MESSAGE);
+			}
+			
+			i++;
+			
+			long currentTime = System.currentTimeMillis();
+			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 > runNumber) {
+				break;
+			}
+			if (runType.equals(RUN_FIXED) && i >= runNumber) {
+				break;
 			}
 		}
 	}
