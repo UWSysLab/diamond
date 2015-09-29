@@ -17,7 +17,7 @@ public class MainActivity extends ActionBarActivity {
 		
 		Diamond.DiamondInit("coldwater.cs.washington.edu");
 		
-		Diamond.DString testString1 = new Diamond.DString("String 1: if this string shows up, Diamond syncing is not working", "a");
+		/*Diamond.DString testString1 = new Diamond.DString("String 1: if this string shows up, Diamond syncing is not working", "a");
 		Diamond.DString testString2 = new Diamond.DString("String 2: if this string shows up, Diamond syncing is not working", "a");
 
 		testString2.Set(new String("Testing Diamond on Android: syncing appears to work"));
@@ -25,7 +25,17 @@ public class MainActivity extends ActionBarActivity {
 		TextView testTextBox = new TextView(getBaseContext());
 		testTextBox.setText(testString1.Value());
 		testTextBox.setTextColor(Color.BLACK);
+		setContentView(testTextBox);*/
+		
+		Diamond.DString testString = new Diamond.DString();
+		Diamond.DObject.Map(testString, "a");
+		//Diamond.DString testString = new Diamond.DString("Testing", "a");
+		testString.Set("Testing");
+		TextView testTextBox = new TextView(getBaseContext());
+		testTextBox.setText(testString.Value());
+		testTextBox.setTextColor(Color.BLACK);
 		setContentView(testTextBox);
+		
 		//setContentView(R.layout.activity_main);
 	}
 	

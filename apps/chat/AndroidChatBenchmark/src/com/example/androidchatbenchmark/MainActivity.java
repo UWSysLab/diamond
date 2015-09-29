@@ -27,7 +27,6 @@ public class MainActivity extends ActionBarActivity {
 	static String serverName = "coldwater.cs.washington.edu";
 	
 	private Diamond.DStringList messageList;
-	private Diamond.DLong updateTime;
 	
 	public long writeMessage(int roundNum, String msg) {
 		String fullMsg = userName + ": " + msg;
@@ -41,7 +40,6 @@ public class MainActivity extends ActionBarActivity {
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
 				messageList.Erase(0);
 			}
-			updateTime.Set(System.currentTimeMillis());
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		writeTimeEnd = System.currentTimeMillis();
@@ -60,7 +58,6 @@ public class MainActivity extends ActionBarActivity {
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		readTimeEnd = System.currentTimeMillis();
-		
 		return readTimeEnd - readTimeStart;
 	}
 	
@@ -79,9 +76,7 @@ public class MainActivity extends ActionBarActivity {
 		String updateTimeKey = "dimessage:" + chatroomName + ":updatetime";
 		
 		messageList = new Diamond.DStringList(chatLogKey);
-		updateTime = new Diamond.DLong(0, updateTimeKey);
 		//Diamond.DObject.Map(messageList, chatLogKey);
-		//Diamond.DObject.Map(updateTime, updateTimeKey);
 		
 		
 		long totalTimeRead = 0;

@@ -20,9 +20,11 @@ public class Main {
 	
 	private static Diamond.DStringList messageList;
 	private static Diamond.DLong updateTime;
-	private static long lastReadUpdateTime;
 	
-	public static void writeMessage(int roundNum, String msg) {
+	private static long numActions = 0;
+	private static long totalTime = 0;
+	
+	public static long writeMessage(String msg) {
 		String fullMsg = userName + ": " + msg;
 		int committed = 0;
 		long writeTimeStart = 0;
@@ -38,11 +40,10 @@ public class Main {
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		writeTimeEnd = System.currentTimeMillis();
-		
-		System.out.println(roundNum + "\t" + userName + "\t" + chatroomName + "\twrite\t" + (writeTimeEnd - writeTimeStart));
+		return (writeTimeEnd - writeTimeStart);
 	}
 	
-	public static List<String> readMessages(int roundNum) {
+	public static long readMessages() {
 		List<String> result = null;
 		int committed = 0;
 		long readTimeStart = 0;
@@ -50,24 +51,18 @@ public class Main {
 		while (committed == 0) {
 			readTimeStart = System.currentTimeMillis();
 			Diamond.DObject.TransactionBegin();
-			/*if (updateTime.Value() == lastReadUpdateTime) {
-				Diamond.DObject.TransactionRetry();
-				continue;
-			}
-			lastReadUpdateTime = updateTime.Value();*/
 			result = messageList.Members();
 			committed = Diamond.DObject.TransactionCommit();
 		}
 		readTimeEnd = System.currentTimeMillis();
-		
-		System.out.println(roundNum + "\t" + userName + "\t" + chatroomName + "\tread\t" + (readTimeEnd - readTimeStart));
-		return result;
+		return (readTimeEnd - readTimeStart);
 	}
 	
 	public static void main(String[] args) {
 		String usage = "usage: java Main run_type run_number read_fraction [client_name] [chatroom_name]\n"
 					 + "    run_type: timed or fixed\n"
-					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)";
+					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
+		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads";
 		if (args.length < 3) {
 			System.err.println(usage);
 			System.exit(0);
@@ -102,27 +97,38 @@ public class Main {
 		
 		Random rand = new Random();
 		
-		long startTime = System.currentTimeMillis();
+		// Take 200 initial actions to warm up the JVM
+		for (int i = 0; i < 200; i++) {
+			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
+			if (action == ACTION_READ) {
+				 readMessages();
+			}
+			else {
+				writeMessage(MESSAGE);
+			}
+		}
 		
-		int i = 0;
+		long startTime = System.currentTimeMillis();
+		numActions = 0;
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (action == ACTION_READ) {
-				readMessages(i);
+				totalTime += readMessages();
 			}
 			else {
-				writeMessage(i, MESSAGE);
+				totalTime += writeMessage(MESSAGE);
 			}
-			
-			i++;
-			
+			numActions++;
 			long currentTime = System.currentTimeMillis();
 			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 > runNumber) {
 				break;
 			}
-			if (runType.equals(RUN_FIXED) && i >= runNumber) {
+			if (runType.equals(RUN_FIXED) && numActions >= runNumber) {
 				break;
 			}
 		}
+		
+		double averageTime = ((double)totalTime) / numActions;
+		System.out.println(userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime);
 	}
 }

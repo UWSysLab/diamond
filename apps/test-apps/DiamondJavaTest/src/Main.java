@@ -7,9 +7,16 @@ import edu.washington.cs.diamond.Diamond.DString;
 public class Main {
 	public static void main(String[] args) {
 		Diamond.DiamondInit();
-		threadTest();
+		//threadTest();
+		memoryTest();
 	}
 
+	public static void memoryTest() {
+		Diamond.DString testString = new Diamond.DString();
+		Diamond.DObject.Map(testString, "a");
+		System.out.println("Didn't crash");
+	}
+	
 	/**
 	 * Simple test of Diamond syncing
 	 */

@@ -1,5 +1,8 @@
 package ch.ethz.twimight.fragments;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Intent;
@@ -13,13 +16,17 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListAdapter;
 import ch.ethz.twimight.R;
+import ch.ethz.twimight.activities.LoginActivity;
 import ch.ethz.twimight.activities.SearchableActivity;
 import ch.ethz.twimight.activities.ShowTweetActivity;
 import ch.ethz.twimight.activities.TwimightBaseActivity;
+import ch.ethz.twimight.net.twitter.DiamondTweet;
+import ch.ethz.twimight.net.twitter.DiamondTweetAdapter;
 import ch.ethz.twimight.net.twitter.TweetAdapter;
 import ch.ethz.twimight.net.twitter.TweetListView;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
+import edu.washington.cs.diamond.Diamond;
 
 
 @SuppressLint("ValidFragment")
@@ -113,11 +120,30 @@ public class TweetListFragment extends ListFragment {
 		return list;
 	}
 
+	ListAdapter getData(int filter) {
+		List<DiamondTweet> testList = new ArrayList<DiamondTweet>();
+		DiamondTweet tweet1 = new DiamondTweet();
+		
+		Diamond.MappedObjectList<DiamondTweet> tweetList;
+		
+		switch(filter) {
+		case TIMELINE_KEY:
+			String uid = LoginActivity.getTwitterId(this.getActivity().getBaseContext());
+			String timelineKey = "uid:" + uid + ":timeline";
+			tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey, new Diamond.MapObjectFunction() {
+				public String function(String key, String varname) {
+					return key + ":" + varname;
+				}
+			}, DiamondTweet.class);
+			return new DiamondTweetAdapter(this.getActivity().getBaseContext(), -1, tweetList);
+		}
+		return null;
+	}
 	/**
 	 * Which tweets do we show? Timeline, favorites, mentions?
 	 * @param filter
 	 */
-	ListAdapter getData(int filter){
+	/*ListAdapter getData(int filter){
 		// set all header button colors to transparent
 	
 		if(c!=null) c.close();			
@@ -169,7 +195,7 @@ public class TweetListFragment extends ListFragment {
 		return new TweetAdapter(getActivity(), c);	
 
 		
-	}
+	}*/
 	
 	
 
