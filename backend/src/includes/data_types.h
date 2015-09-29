@@ -22,6 +22,7 @@ namespace diamond {
 #define LOCK_DURATION_MS (5*1000)
 
 enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
+enum txResult {COMMIT, ROLLBACK, RETRY};
 
 void DiamondInit();
 void DiamondInit(const std::string &server);
@@ -44,6 +45,7 @@ public:
     static int TransactionCommit(void);
     static void TransactionRollback(void);
     static void TransactionRetry(void);
+    static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
 
     std::string GetKey(void);
 
@@ -67,6 +69,7 @@ private:
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
+
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);
@@ -243,7 +246,7 @@ private:
 //#define DEBUG_RC
 
 #ifdef DEBUG_RC
-#define LOG_RC(str) { printf("[%ld] Key %s: %s\n", getThreadID(), this->_key.c_str(), str);}
+#define LOG_RC(str) { Notice("[%ld] Key %s: %s\n", getThreadID(), this->_key.c_str(), str);}
 #else // DEBUG_RC
 #define LOG_RC(str) { }
 #endif // DEBUG_RC
@@ -254,30 +257,30 @@ private:
 
 #ifdef DEBUG_TX
 #define LOG_TX(str) {\
-    printf("[%ld] %s\n", getThreadID(), str);\
+    Notice("[%ld] %s\n", getThreadID(), str);\
 }
 #define LOG_TX_DUMP_RS() {\
         std::set<string>* txRS = GetTransactionRS();\
         int i = 0;\
-        printf("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
+        Notice("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
         auto it = txRS->begin();\
         std::map<string, string >* locals = GetTransactionLocals();\
         for (; it != txRS->end(); it++,i++) {\
              const char* value = (*locals)[*it].c_str();\
              const char* key =  (*it).c_str();\
-             printf("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+             Notice("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
         }\
     }
 #define LOG_TX_DUMP_WS() {\
         std::set<string>* txWS = GetTransactionWS();\
         int i = 0;\
-        printf("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
+        Notice("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
         auto it = txWS->begin();\
         std::map<string, string >* locals = GetTransactionLocals();\
         for (; it != txWS->end(); it++,i++) {\
              const char* value = (*locals)[*it].c_str();\
              const char* key =  (*it).c_str();\
-             printf("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+             Notice("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
         }\
     }
 #else  // DEBUG_TX

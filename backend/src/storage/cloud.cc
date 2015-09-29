@@ -39,7 +39,7 @@ typedef struct structPubsubWaiter{
     std::set<string> channelsSubscribed;
     pthread_cond_t condChannelSubscribed = PTHREAD_COND_INITIALIZER;
 
-    bool updated = false;
+    bool RSTouched = false;
     pthread_cond_t condUpdated = PTHREAD_COND_INITIALIZER;
 
     std::map<string, string>* lastReadValues;    
@@ -492,6 +492,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     auto it = keys.begin();
     for (;it!=keys.end();it++){
         string* channel = new string(notificationChannelPrefix + *it);
+        Notice("Adding channel \"%s\" to psWaiters\n", channel->c_str());
         auto psWaitersChannel = &psWaiters[*channel];
         psWaitersChannel->insert(&psWaiter);
     }
@@ -500,7 +501,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     uv_async_send(&async);
 
     // Wait for confirmation that we subscribed all the channels
-    while(psWaiter.channelsSubscribed.size() != keys.size() && (psWaiter.updated == false)){
+    while(psWaiter.channelsSubscribed.size() != keys.size() && (psWaiter.RSTouched == false)){
         Notice("Waiting for all the channels to be subscribed (%lu vs %lu)\n", psWaiter.channelsSubscribed.size(), keys.size());
         pthread_cond_wait(&psWaiter.condChannelSubscribed, &asyncConnectionMutex); 
     }
@@ -512,22 +513,25 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
 
     assert(vKeys.size() == vValues.size());
     unsigned int i;
-    bool updated = false;
+    bool RSDifferent = false;
     for (i=0;i<vKeys.size();i++){
         string key = vKeys.at(i);
         string newValue = vValues.at(i);
+        Notice("MGET (key=%s, newValue=%s, old value = %s)\n", 
+                key.c_str(), newValue.c_str(), lastReadValues[key].c_str() );
         if(lastReadValues[key] != newValue){
             Notice("New value detected by MGET (key=%s, newValue=%s, old value = %s)\n", 
                 key.c_str(), newValue.c_str(), lastReadValues[key].c_str() );
-            updated = true;
+            RSDifferent = true;
             break;
         }
     }
 
-    if(!updated){
+
+    if(!RSDifferent){
         // If we didn't detect new values with the MGET, then wait for a pubsub notification
-        while(psWaiter.updated == false){
-            Notice("Waiting for a notification from the Pubsub\n");
+        while(psWaiter.RSTouched == false){
+            Notice("Waiting for a notification from pubsubCallback()\n");
             pthread_cond_wait(&psWaiter.condUpdated, &asyncConnectionMutex); 
         }
     }
@@ -535,12 +539,13 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     // Clean up tasks: 
     //   1) remove the waiter  
     //   2) remove the channel if no more waiters on that channel
-    it = keys.begin();
-    for (;it!=keys.end();it++){
+    
+    for (it = keys.begin();it!=keys.end();it++){
         string channel = notificationChannelPrefix + *it;
         auto psWaitersChannel = &psWaiters[channel];
         psWaitersChannel->erase(&psWaiter);
         if(psWaitersChannel->size()==0){
+            Notice("Removing channel \"%s\" from psWaiters\n", channel.c_str());
             psWaiters.erase(channel);
         }
     }
@@ -551,6 +556,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
 
 
     pthread_mutex_unlock(&asyncConnectionMutex);
+    //sleep(5);
     return ERR_OK;
 }
 
@@ -563,62 +569,53 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
 
     // We can get 3 types of replies:  1. "subscribe"   2. "message"   3. "unsubscribe"
     assert(reply->elements == 3);
-    Notice("Pubsub received message: %s, %s, %s\n", reply->element[0]->str, reply->element[1]->str, reply->element[2]->str);
-
-    // XXX: Simplify this code and document...
+    Notice("Pubsub callback: %s, %s, (str: %s, int: %d)\n", 
+        reply->element[0]->str, reply->element[1]->str, reply->element[2]->str, reply->element[2]->integer);
    
-    Notice("psWaiters.size(): %lu\n", psWaiters.size());
-    for(auto iter = psWaiters.begin(); iter != psWaiters.end(); iter++)
-    {
-        string k =  iter->first;
-        auto set = iter->second;
-        Notice("keys: \"%s\" (%lu)\n", k.c_str(), set.size());
-    }
+//     Notice("psWaiters.size(): %lu\n", psWaiters.size());
+//     for(auto iter = psWaiters.begin(); iter != psWaiters.end(); iter++)
+//     {
+//         string channel =  iter->first;
+//         auto set = iter->second;
+//         Notice("  Channel: \"%s\" (%lu)\n", channel.c_str(), set.size());
+//     }
    
-    string channels = string(reply->element[1]->str);
-    stringstream ssChannels(channels);
-    string channel;
-    while (std::getline(ssChannels, channel, ' ')) {
-        // For each channel in the message...
-        Notice("Channel: %s\n", channel.c_str());
+    string channel = string(reply->element[1]->str);
+//    Notice("Channel: %s\n", channel.c_str());
 
-        string channel = string(reply->element[1]->str);
-        int keyspacePos = channel.find(notificationChannelPrefix);
-        assert(keyspacePos == 0);
+    assert(channel.find(notificationChannelPrefix) == 0);
+    string key = channel.substr(notificationChannelPrefix.size());
 
-        string key = channel.substr(notificationChannelPrefix.size());
-
-        auto psWaitersChannel = &psWaiters[channel];
-        Notice("psWaitersChannel size: %lu\n", psWaitersChannel->size());
-         
-        if(strcmp(reply->element[0]->str, "message")==0){
-            // Wake up all the waiters on this key
-           Notice("message\n");
-            auto it = psWaitersChannel->begin();
-            for(;it!=psWaitersChannel->end();it++){
-                auto psWaiter  = *it;
-                Notice("Signaling that channel was subscribed (key = %s)\n", key.c_str());
-                psWaiter->updated = true;
-                pthread_cond_signal(&psWaiter->condChannelSubscribed);
-                pthread_cond_signal(&psWaiter->condUpdated);
-            }
-
-        } else if(strcmp(reply->element[0]->str, "subscribe")==0) {
-            // Wake up all waiters on this key that wait for the subscriptions to complete 
-            auto it = psWaitersChannel->begin();
-            Notice("subscribe\n");
-            for(;it!=psWaitersChannel->end();it++){
-                auto psWaiter  = *it;
-                Notice("Signaling that RS was touched (key = %s)\n", key.c_str());
-                psWaiter->channelsSubscribed.insert(channel);
-                pthread_cond_signal(&psWaiter->condChannelSubscribed);
-            }
-        } else if(strcmp(reply->element[0]->str, "unsubscribe")==0) {
-            // XXX: Probably need to be carefull with races related with subscribe + unsubscribe messages
-            // XXX: could gc the the psWaiters
-        } else {
-            assert(0);
+    auto psWaitersChannel = &psWaiters[channel];
+//    Notice("psWaitersChannel size: %lu\n", psWaitersChannel->size());
+     
+    if(strcmp(reply->element[0]->str, "message")==0){
+        // Wake up all the waiters on this key
+        Notice("Pubsub message received\n");
+        auto it = psWaitersChannel->begin();
+        for(;it!=psWaitersChannel->end();it++){
+            auto psWaiter = *it;
+            Notice("Signaling that RS was touched (key = %s)\n", key.c_str());
+            psWaiter->RSTouched = true;
+            pthread_cond_signal(&psWaiter->condChannelSubscribed);
+            pthread_cond_signal(&psWaiter->condUpdated);
         }
+
+    } else if(strcmp(reply->element[0]->str, "subscribe")==0) {
+        // Wake up all waiters on this key that wait for the subscriptions to complete 
+        auto it = psWaitersChannel->begin();
+        Notice("Pubsub subscribe confirmation received\n");
+        for(;it!=psWaitersChannel->end();it++){
+            auto psWaiter = *it;
+            Notice("Signaling that channel was subscribed (key = %s)\n", key.c_str());
+            psWaiter->channelsSubscribed.insert(channel);
+            pthread_cond_signal(&psWaiter->condChannelSubscribed);
+        }
+    } else if(strcmp(reply->element[0]->str, "unsubscribe")==0) {
+        // XXX: Probably need to be carefull with races related with subscribe + unsubscribe messages
+        // XXX: could gc the the psWaiters
+    } else {
+        assert(0);
     }
 
     pthread_mutex_unlock(&asyncConnectionMutex);
@@ -655,7 +652,17 @@ void pubsubAsync(uv_async_t *handle, int v) {
     static set<string> channelsSubscribed;
     int res;
 
-    pthread_mutex_unlock(&asyncConnectionMutex);
+    pthread_mutex_lock(&asyncConnectionMutex);
+
+//     Notice("channelsSubscribed.size(): %lu\n", channelsSubscribed.size());
+//     Notice("psWaiters.size(): %lu\n", psWaiters.size());
+//     for(auto iter = psWaiters.begin(); iter != psWaiters.end(); iter++)
+//     {
+//         string channel =  iter->first;
+//         auto set = iter->second;
+//         Notice("  Channel: \"%s\" (%lu)\n", channel.c_str(), set.size());
+//     }
+
 
     // Find out the list of channels that should be subscribed
     set<string> channelsNeeded;
@@ -668,25 +675,27 @@ void pubsubAsync(uv_async_t *handle, int v) {
 
     // Find out the list of channels that we haven't yet subscribed 
     vector<string> channelsToSubscribe;
-    string channelsSub;
     set_difference(channelsNeeded.begin(),channelsNeeded.end(),
                     channelsSubscribed.begin(),channelsSubscribed.end(), 
                     std::back_inserter(channelsToSubscribe));
 
-    for(auto iter = channelsToSubscribe.begin(); iter != channelsToSubscribe.end(); iter++){
-        if(channelsSub.size() == 0)
-            channelsSub = *iter;
-        else
-            channelsSub = channelsSub + " " + *iter;
-    }
+    Notice("Subscribing %d channels\n", channelsToSubscribe.size());
+    if(channelsToSubscribe.size() > 0){        
+        const char *argv[1024];
+        assert(channelsToSubscribe.size()<1024-1);
 
-    Notice("Subscribing to channels: \"%s\"\n", channelsSub.c_str());
+        argv[0] = "SUBSCRIBE";
+        int i = 1;
+        for(auto iter = channelsToSubscribe.begin(); iter != channelsToSubscribe.end(); iter++){
+            string channel = (*iter);
+            argv[i] = channel.c_str();
+            channelsSubscribed.insert(channel);
+            i++;
+        }      
 
-    if(channelsSub.size() > 0){
         LOG_REQUEST("SUBSCRIBE", "");
-        res = redisAsyncCommand(asyncContext, pubsubCallback, NULL, "SUBSCRIBE %s", channelsSub.c_str());
+        res = redisAsyncCommandArgv(asyncContext, pubsubCallback, NULL, channelsToSubscribe.size()+1, argv, NULL);
         assert(res == REDIS_OK);
-        //LOG_REPLY("SUBSCRIBE", reply);
     }
 
 
@@ -695,25 +704,26 @@ void pubsubAsync(uv_async_t *handle, int v) {
     set_difference(channelsSubscribed.begin(),channelsSubscribed.end(),
                     channelsNeeded.begin(),channelsNeeded.end(), 
                     std::back_inserter(channelsToUnsubscribe));
-    string channelsUnsub;
-    for(auto iter = channelsToUnsubscribe.begin(); iter != channelsToUnsubscribe.end(); iter++){
-        if(channelsUnsub.size() == 0)
-            channelsUnsub = *iter;
-        else
-            channelsUnsub = channelsUnsub + " " + *iter;
-    }
+    Notice("Unsubscribe %d channels\n", channelsToUnsubscribe.size());
+    if(channelsToUnsubscribe.size() > 0){        
+        const char *argv[1024];
+        assert(channelsToUnsubscribe.size()<1024-1);
 
-    Notice("Unsubscribing from channels: \"%s\"\n", channelsUnsub.c_str());
+        argv[0] = "UNSUBSCRIBE";
+        int i = 1;
+        for(auto iter = channelsToUnsubscribe.begin(); iter != channelsToUnsubscribe.end(); iter++){
+            string channel = *iter;
+            argv[i] = channel.c_str();
+            channelsSubscribed.erase(channel);
+            i++;
+        }      
 
-    if(channelsUnsub.size() > 0){
         LOG_REQUEST("UNSUBSCRIBE", "");
-        res = redisAsyncCommand(asyncContext, pubsubCallback, NULL, "UNSUBSCRIBE %s", channelsUnsub.c_str());
+        res = redisAsyncCommandArgv(asyncContext, pubsubCallback, NULL, channelsToUnsubscribe.size()+1, argv, NULL);
         assert(res == REDIS_OK);
     }
 
-
     pthread_mutex_unlock(&asyncConnectionMutex);
-
 }
 
 
