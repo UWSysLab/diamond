@@ -190,7 +190,7 @@ public class Diamond {
 
     public static class DSet extends DObject {
         static { Loader.load(); }
-        DSet() { allocate(); }
+        public DSet() { allocate(); }
         private native void allocate();
 
         public native @Cast("bool") boolean InSet(long val);
