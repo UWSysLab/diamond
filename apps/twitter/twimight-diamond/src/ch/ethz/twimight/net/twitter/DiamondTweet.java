@@ -1,24 +1,50 @@
 package ch.ethz.twimight.net.twitter;
 
+import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.Diamond.DLong;
+
 
 public class DiamondTweet {
-	public String text;
-	public String screenname;
-	public String name;
-	public long createdAt;
-	public String retweetedBy;
-	public long userid;
-	public int mentions;
-
-	public boolean toFavorite;
+	public DString text;
+	public DString screenname;
+	public DLong createdAt;
+	public DLong userid;
 	
 	public DiamondTweet() {
-		text = "placeholdertext";
-		screenname = "placeholderscreenname";
-		name = null;
-		createdAt = 0;
-		retweetedBy = null;
-		userid = 0;
-		mentions = 0;
+		text = new DString();
+		screenname = new DString();
+		createdAt = new DLong();
+		userid = new DLong();
+	}
+	
+	public String getScreenname() {
+		return screenname.Value();
+	}
+	
+	public String getText() {
+		return text.Value();
+	}
+	
+	public long getCreatedAt() {
+		return createdAt.Value();
+	}
+	
+	public long getUserId() {
+		return userid.Value();
+	}
+	
+	
+	
+	public String getRetweetedBy() {
+		return null;
+	}
+	
+	public boolean getToFavorite() {
+		return false;
+	}
+	
+	public long getMentions() {
+		return 0;
 	}
 }

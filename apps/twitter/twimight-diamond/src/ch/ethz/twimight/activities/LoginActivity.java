@@ -60,6 +60,7 @@ import ch.ethz.twimight.security.CertificateManager;
 import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
 import ch.ethz.twimight.util.TwimightSuggestionProvider;
+import edu.washington.cs.diamond.Diamond;
 
 /**
  * Logging the user in and out.
@@ -126,6 +127,7 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 			instance = this;
 
 			//TODO: Niel begin changes
+			Diamond.DiamondInit("coldwater.cs.washington.edu");
 			if (hasTwitterId(this.getBaseContext())) {
 				hackStartTimeline();
 			}

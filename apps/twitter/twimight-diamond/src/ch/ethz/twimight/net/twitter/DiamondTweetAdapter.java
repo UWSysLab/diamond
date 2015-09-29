@@ -40,6 +40,7 @@ import android.widget.TextView;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
 import ch.ethz.twimight.data.HtmlPagesDbHelper;
+import edu.washington.cs.diamond.Diamond;
 
 
 
@@ -53,7 +54,7 @@ public class DiamondTweetAdapter extends BaseAdapter {
 	private static final String TAG = "tweet adapter";
 	private HtmlPagesDbHelper htmlDbHelper ;
 	private final Bitmap mPlaceHolderBitmap;
-	private List<DiamondTweet> objects = null;
+	private Diamond.MappedObjectList<DiamondTweet> objects = null;
 	private Context context;
 	
 	private static class ViewHolder {
@@ -74,7 +75,7 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		}
 
 	/** Constructor */
-	public DiamondTweetAdapter(Context c, int resource, List<DiamondTweet> inObjects) {
+	public DiamondTweetAdapter(Context c, int resource, Diamond.MappedObjectList<DiamondTweet> inObjects) {
 		context = c;
 		objects = inObjects;
 		mPlaceHolderBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.default_profile);
@@ -116,26 +117,26 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		htmlDbHelper = new HtmlPagesDbHelper(context.getApplicationContext());
 		htmlDbHelper.open();
 		
-		DiamondTweet tweet = objects.get(position);
+		DiamondTweet tweet = objects.Get(position);
 		
 		// if we don't have a real name, we use the screen name
-		if(tweet.name==null){			
-			holder.usernameTextView.setText("@" + tweet.screenname);
-		}
+		//if(tweet.name==null){			
+			holder.usernameTextView.setText("@" + tweet.getScreenname());
+		//}
 		
-		long createdAt = tweet.createdAt;
+		long createdAt = tweet.getCreatedAt();
 		
 		holder.textCreatedAt.setText(DateUtils.getRelativeTimeSpanString(createdAt));		
 		// here, we don't want the entities to be clickable, so we use the standard tag handler
 		
 		
-		holder.tweetText.setText(tweet.text);
+		holder.tweetText.setText(tweet.getText());
 		//Log.i(TAG, "text: " + cursor.getString(cursor.getColumnIndex(Tweets.COL_TEXT_PLAIN)));
 		
 		boolean retweeted = false;
 		//add the retweet message in case it is a retweet
-		if (tweet.retweetedBy != null) {
-			String retweeted_by = tweet.retweetedBy;
+		if (tweet.getRetweetedBy() != null) {
+			String retweeted_by = tweet.getRetweetedBy();
 			
 			if (retweeted_by != null) {
 				holder.textRetweeted_by.setText(context.getString(R.string.retweeted_by) + " " + retweeted_by);		
@@ -227,7 +228,7 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		boolean favorited = (( (buffer & Tweets.BUFFER_FAVORITES) != 0) 
 								&& ((flags & Tweets.FLAG_TO_UNFAVORITE)==0))
 								|| ((flags & Tweets.FLAG_TO_FAVORITE)>0);*/
-		if(tweet.toFavorite){
+		if(tweet.getToFavorite()){
 			holder.favoriteStar.setVisibility(ImageView.VISIBLE);
 		} else {
 			holder.favoriteStar.setVisibility(ImageView.GONE);
@@ -245,12 +246,12 @@ public class DiamondTweetAdapter extends BaseAdapter {
 			} else {
 				holder.verifiedImage.setImageResource(android.R.drawable.ic_partial_secure);
 			}
-		} else*/ if(Long.toString(tweet.userid).equals(LoginActivity.getTwitterId(context))) {
+		} else*/ if(Long.toString(tweet.getUserId()).equals(LoginActivity.getTwitterId(context))) {
 			
 			holder.rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);
 			
-		} else if(tweet.mentions > 0){
+		} else if(tweet.getMentions() > 0){
 			
 			holder.rowLayout.setBackgroundResource(R.drawable.mention_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);			
@@ -374,7 +375,7 @@ public class DiamondTweetAdapter extends BaseAdapter {
 	@Override
 	public int getCount() {
 		// TODO Auto-generated method stub
-		return this.objects.size();
+		return this.objects.Size();
 	}
 
 	@Override
