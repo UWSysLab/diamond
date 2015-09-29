@@ -77,7 +77,7 @@ public class JedisTwitter {
 		//add to global timeline
 		DStringList globalTimeline = new DStringList();
 		DObject.Map(globalTimeline, "twitter:timeline");
-		posterHomeTimeline.Append(postKey);
+		globalTimeline.Append(postKey);
 		
 		return new JsonObject();
 	}
