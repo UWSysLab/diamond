@@ -98,6 +98,12 @@ public class Diamond {
         public String function(String key, String varname);
     }
 
+    public static class DefaultMapObjectFunction implements MapObjectFunction {
+        public String function(String key, String varname) {
+            return key + ":" + varname;
+        }
+    }
+
     public static class DObject extends Pointer {
         static { Loader.load(); }
         protected DObject() { }
