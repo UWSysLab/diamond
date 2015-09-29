@@ -146,6 +146,7 @@ public:
     DSet(std::unordered_set<uint64_t> set, const std::string &key) : DObject(key), _set(set) {};
     ~DSet() {};
     std::unordered_set<uint64_t> Members();
+    std::vector<uint64_t> MembersAsVector();
     bool InSet(const uint64_t val);
     void Add(const uint64_t val);
     void Add(const std::unordered_set<uint64_t> &set);

@@ -63,6 +63,18 @@ DSet::Members()
     return ret;
 }
 
+vector<uint64_t>
+DSet::MembersAsVector()
+{
+    pthread_mutex_lock(&_objectMutex); 
+
+    Pull();
+    vector<uint64_t> ret(_set.begin(), _set.end());
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
+}
+
 bool
 DSet::InSet(const uint64_t val)
 {

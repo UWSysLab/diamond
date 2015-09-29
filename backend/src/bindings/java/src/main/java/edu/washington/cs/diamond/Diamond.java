@@ -188,19 +188,31 @@ public class Diamond {
       public native @ByRef DCounter Decrement();
    }
 
-   public static class DSet extends DObject {
-      static { Loader.load(); }
-      DSet() { allocate(); }
-      private native void allocate();
+    public static class DSet extends DObject {
+        static { Loader.load(); }
+        DSet() { allocate(); }
+        private native void allocate();
 
-      public native @Cast("bool") boolean InSet(long val);
-      public native void Add(long val);
-      public native void Remove(long val);
-   }
+        public native @Cast("bool") boolean InSet(long val);
+        public native void Add(long val);
+        public native void Remove(long val);
+        public native void Clear();
+
+
+        public native @ByVal DiamondUtil.LongVector MembersAsVector();
+        public Set<Long> Members() {
+            Set<Long> result = new HashSet<Long>();
+            DiamondUtil.LongVector members = MembersAsVector();
+            for (int i = 0; i < members.size(); i++) {
+                result.add(members.get(i));
+            }
+            return result;
+        }
+    }
 
     public static class DStringSet extends DObject {
         static { Loader.load(); }
-        DStringSet() { allocate(); }
+        public DStringSet() { allocate(); }
         private native void allocate();
 
         public native @Cast("bool") boolean InSet(@ByRef @StdString String val);

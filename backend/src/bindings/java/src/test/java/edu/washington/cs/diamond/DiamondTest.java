@@ -125,6 +125,32 @@ public class DiamondTest
         assert(set2.Members().size() == 1);
     }
 
+    public void testDSet() {
+        Diamond.DSet set1 = new Diamond.DSet();
+        Diamond.DSet set2 = new Diamond.DSet();
+
+        Diamond.DObject.Map(set1, "3");
+        Diamond.DObject.Map(set2, "3");
+
+        set1.Clear();
+
+        assert(set2.Members().size() == 0);
+
+        set1.Add(1);
+        set1.Add(2);
+        set1.Add(1);
+
+        assert(set2.InSet(1));
+        assert(set2.InSet(2));
+        assert(set2.Members().size() == 2);
+
+        set1.Remove(1);
+
+        assert(!set2.InSet(1));
+        assert(set2.InSet(2));
+        assert(set2.Members().size() == 1);
+    }
+
     public void testMultiMap() {
         Diamond.DString string1 = new Diamond.DString();
         Diamond.DString string2 = new Diamond.DString();
