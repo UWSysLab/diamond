@@ -92,6 +92,9 @@ public class TwitterService extends Service {
 	public static final int SYNCH_SEARCH_USERS = 18;
 	public static final int SYNCH_HTML_PAGE = 19;
 	
+	public static final int SEND_TWEET = 20;
+
+	
 	public static final int OVERSCROLL_TOP = 100;	
 	public static final int OVERSCROLL_BOTTOM = -100;
 	
@@ -251,6 +254,11 @@ public class TwitterService extends Service {
 					if (intent.getStringExtra(URL) != null){
 						
 					}					
+					break;
+				case SEND_TWEET:
+					if (intent.getStringExtra("text") != null && intent.getStringExtra("isReplyTo") != null) {
+						new SendTweetTask().execute(intent.getStringExtra("text"), intent.getStringExtra("isReplyTo"));
+					}
 					break;
 				default:
 					throw new IllegalArgumentException("Exception: Unknown synch request");
@@ -2567,6 +2575,147 @@ public class TwitterService extends Service {
 	}
 
 
+private class SendTweetTask extends AsyncTask<String, Void, winterwell.jtwitter.Status> {
+
+	long attempts,notify;
+	long rowId;
+	int flags;
+	int buffer;
+	String mediaName = null;
+	Exception ex;
+
+	@Override
+	protected winterwell.jtwitter.Status doInBackground(String... args) {
+		
+		ShowTweetListActivity.setLoading(true);
+		
+		winterwell.jtwitter.Status tweet = null;
+
+		try {
+			String text = args[0];
+			long isReplyTo = Long.parseLong(args[1]);
+			mediaName = null;
+			String mediaUrl =  null;
+			
+			//if (mediaName != null)
+			//	mediaUrl = Environment.getExternalStoragePublicDirectory(Tweets.PHOTO_PATH +
+			//								"/" + LoginActivity.getTwitterId(TwitterService.this) + "/" + mediaName).getAbsolutePath();
+			
+			//boolean hasMedia;
+			//if(mediaUrl != null)
+			//	hasMedia = true;
+			//else	
+			//	hasMedia = false;				
+
+			//if(!(c.getDouble(c.getColumnIndex(Tweets.COL_LAT))==0 && c.getDouble(c.getColumnIndex(Tweets.COL_LNG))==0)){
+			//	double[] location = {c.getDouble(c.getColumnIndex(Tweets.COL_LAT)),c.getDouble(c.getColumnIndex(Tweets.COL_LNG))}; 
+			//	twitter.setMyLocation(location);
+			//} else {
+			//	twitter.setMyLocation(null);
+			//}
+			
+			if(isReplyTo >= 0){
+				//if(hasMedia){
+				//	Log.d("upload", "upload media with reply");
+				//	BigInteger replyToId = BigInteger.valueOf(c.getLong(c.getColumnIndex(Tweets.COL_REPLYTO)));
+				//	tweet = twitter.updateStatusWithMedia(text, replyToId, new File(mediaUrl));
+				//}
+				//else{
+					tweet = twitter.updateStatus(text, isReplyTo);
+				//}
+			} else {
+				//if(hasMedia){
+				//	Log.d("upload", "upload media without reply");
+				//	tweet = twitter.updateStatusWithMedia(text, null, new File(mediaUrl));
+				//}
+				//else{
+					tweet = twitter.updateStatus(text);
+				//}
+				
+			}
+
+		} catch(Exception ex) { 
+			this.ex = ex;
+		}
+		return tweet;
+	}
+
+	/**
+	 * Clear to insert flag and update the tweet with the information from twitter
+	 */
+	@Override
+	protected void onPostExecute(winterwell.jtwitter.Status result) {
+		ShowTweetListActivity.setLoading(false);
+
+		// error handling
+//		if(ex != null){
+//			if(ex instanceof TwitterException.Repetition){					
+//				Log.w(TAG, "exception while posting tweet, Tweet already posted: " + ex);
+//				// we stil clear the flag
+//			} else if(ex instanceof TwitterException.Unexplained){
+//				// we get unexplained exceptions if what twitter returns does not match what we have sent.
+//				// this does not have to be an error, it happens if we post a url, for example.
+//				Log.w(TAG, "unexplained exception while posting tweet (maybe it contained a url): " + ex);
+//				
+//			} else if(ex instanceof TwitterException.E401){
+//				Log.w(TAG, "exception while posting tweet: " + ex);
+//				// try again?
+//				if(attempts>0){
+//					Long[] params = {rowId, --attempts,notify};
+//					(new UpdateStatusTask()).execute(params);
+//					return;
+//				} else {
+//					if (ShowTweetListActivity.running && notify == TRUE)						
+//					Toast.makeText(getBaseContext(), "Something went wrong while posting your tweet.", Toast.LENGTH_SHORT).show();
+//					return;
+//				}
+//			} else if(ex instanceof TwitterException.Timeout){
+//				Log.w(TAG, "exception while posting tweet: " + ex);
+//				// try again?
+//				if(attempts>0){
+//					Long[] params = {rowId, --attempts,notify};
+//					(new UpdateStatusTask()).execute(params);
+//					return;
+//				} else {
+//					if (ShowTweetListActivity.running && notify == TRUE)						
+//					Toast.makeText(getBaseContext(), "Timeout while posting tweet your tweet.", Toast.LENGTH_SHORT).show();
+//					return;
+//				}
+//			} else {
+//				if (ShowTweetListActivity.running && notify == TRUE)						
+//					Toast.makeText(getBaseContext(), "Something went wrong while posting your tweet. Please try again later!", Toast.LENGTH_SHORT).show();
+//				Log.e(TAG, "exception while posting tweet: " + ex);
+//				return;
+//			}
+//		}			
+//		
+//		Uri queryUri = Uri.parse("content://"+Tweets.TWEET_AUTHORITY+"/"+Tweets.TWEETS+"/"+this.rowId);
+//
+//		ContentValues cv = null;
+//		// if we had a result, we get the new values. Otherwise we simply clear the flags.
+//		if(result != null){
+//			cv = getTweetContentValues(result,null, 0);
+//		} else {
+//			cv = new ContentValues();
+//		}
+//		cv.put(Tweets.COL_FLAGS, flags & ~(Tweets.FLAG_TO_INSERT));
+//		cv.put(Tweets.COL_BUFFER, buffer);
+//
+//		// TODO: Move this in async task
+//		
+//		try{
+//			getContentResolver().update(queryUri, cv, null, null);
+//		} catch (Exception ex){
+//			Log.e(TAG, "Exception while updating tweet in DB");
+//		}
+//		
+//		if (ShowTweetListActivity.running)
+//					if (ShowTweetListActivity.running)
+//					Toast.makeText(getBaseContext(), "Tweet posted", Toast.LENGTH_SHORT).show();
+//
+	}
+
+}
 		
 	/**
 	 * Post a tweet to twitter

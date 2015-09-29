@@ -14,12 +14,16 @@
 package ch.ethz.twimight.activities;
 
 
+import java.io.File;
+import java.math.BigInteger;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.location.Location;
@@ -27,6 +31,7 @@ import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.Editable;
@@ -253,7 +258,12 @@ public class NewTweetActivity extends Activity{
 
 			@Override
 			public void onClick(View v) {
-				new SendTweetTask().execute();				
+				Intent i = new Intent(NewTweetActivity.this, TwitterService.class);
+				i.putExtra("synch_request", TwitterService.SEND_TWEET);
+				i.putExtra("text", text.getText().toString());
+				i.putExtra("isReplyTo", String.valueOf(isReplyTo));
+				startService(i);
+				finish();
 			}
 
 		});
@@ -389,7 +399,7 @@ public class NewTweetActivity extends Activity{
 	 * @author pcarta
 	 *
 	 */
-private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
+private class SendTweetTaskOld extends AsyncTask<Void, Void, Boolean>{
 		
 		Uri insertUri = null;
 		StatisticsDBHelper statsDBHelper;	
@@ -479,9 +489,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 			finish();
 		}
 	}
-	
-	
-	
 	
 	
 	/**
