@@ -1,5 +1,6 @@
 #include "storage/cloud.h"
 #include "includes/data_types.h"
+#include "lib/message.h"
 
 using namespace diamond;
 
@@ -7,20 +8,12 @@ int main(void){
     DiamondInit();
 
     DLong long1;
-    DObject::Map(long1, "unusedkey");
+    DString str1;
+    DObject::Map(long1, "thiskeydoesnotexist");
+    DObject::Map(str1, "thiskeydoesnotexisteither");
 
-    long lastReadValue = 0;
-
-    int committed = 0;
-    while(true) {
-        DObject::TransactionBegin();
-        if (lastReadValue == long1.Value()) {
-            DObject::TransactionRetry();
-            continue;
-        }
-        lastReadValue = long1.Value();
-        DObject::TransactionCommit();
-    }
+    Notice("Value of string is %s\n", str1.Value().c_str());
+    Notice("Value of long is %ld\n", long1.Value());
 
     return 0;
 }
