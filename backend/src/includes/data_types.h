@@ -82,7 +82,7 @@ private:
 class DString : public DObject 
 {
 public:
-    DString() {};
+    DString() : DObject(), _s("dummystring") {};
     DString(const std::string &s, const std::string &key) : DObject(key), _s(s) {};
     ~DString() {};
     std::string Value();
