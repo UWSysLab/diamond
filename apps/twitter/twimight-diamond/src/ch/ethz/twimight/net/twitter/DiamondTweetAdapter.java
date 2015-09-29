@@ -35,6 +35,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SimpleCursorAdapter;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.TextView;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
@@ -45,7 +46,7 @@ import ch.ethz.twimight.data.HtmlPagesDbHelper;
 /** 
  * Cursor adapter for a cursor containing tweets.
  */
-public class DiamondTweetAdapter extends ArrayAdapter<DiamondTweet> {
+public class DiamondTweetAdapter extends BaseAdapter {
 	
 	static final String[] from = {TwitterUsers.COL_NAME};
 	static final int[] to = {R.id.textUser};	
@@ -53,6 +54,7 @@ public class DiamondTweetAdapter extends ArrayAdapter<DiamondTweet> {
 	private HtmlPagesDbHelper htmlDbHelper ;
 	private final Bitmap mPlaceHolderBitmap;
 	private List<DiamondTweet> objects = null;
+	private Context context;
 	
 	private static class ViewHolder {
 		TextView usernameTextView;
@@ -72,8 +74,8 @@ public class DiamondTweetAdapter extends ArrayAdapter<DiamondTweet> {
 		}
 
 	/** Constructor */
-	public DiamondTweetAdapter(Context context, int resource, List<DiamondTweet> inObjects) {		
-		super(context, R.layout.row, R.id.textText, inObjects);
+	public DiamondTweetAdapter(Context c, int resource, List<DiamondTweet> inObjects) {
+		context = c;
 		objects = inObjects;
 		mPlaceHolderBitmap = BitmapFactory.decodeResource(context.getResources(), R.drawable.default_profile);
 		
@@ -104,17 +106,13 @@ public class DiamondTweetAdapter extends ArrayAdapter<DiamondTweet> {
 
 	/** This is where data is mapped to its view */
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
-		super.getView(position, convertView, parent);
-		
+	public View getView(int position, View convertView, ViewGroup parent) {		
 		LayoutInflater inflater = (LayoutInflater) parent.getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		View row = inflater.inflate(R.layout.row, null);		
 		createHolder(row);	
 		
 		ViewHolder holder = (ViewHolder) row.getTag();			
-		
-		Context context = this.getContext();
-		
+				
 		htmlDbHelper = new HtmlPagesDbHelper(context.getApplicationContext());
 		htmlDbHelper.open();
 		
@@ -371,6 +369,24 @@ public class DiamondTweetAdapter extends ArrayAdapter<DiamondTweet> {
 	    }
 	    // No task associated with the ImageView, or an existing task was cancelled
 	    return true;
+	}
+
+	@Override
+	public int getCount() {
+		// TODO Auto-generated method stub
+		return this.objects.size();
+	}
+
+	@Override
+	public Object getItem(int position) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public long getItemId(int position) {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 
 }
