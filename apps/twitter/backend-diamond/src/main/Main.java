@@ -19,6 +19,12 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import utils.Utils;
 
+import edu.washington.cs.diamond.Diamond.DStringList;
+import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DLong;
+import edu.washington.cs.diamond.Diamond.DObject;
+
 abstract class BaseJsonHandler implements HttpHandler {
 	protected JedisTwitter jedisTwitter;
 	
@@ -369,19 +375,40 @@ class DebugHandler implements HttpHandler {
 
 public class Main {
 	public static void writeTestData(JedisTwitter jedisTwitter) {
-		jedisTwitter.addUser("sconnery", "Sean Connery");
+		/*jedisTwitter.addUser("sconnery", "Sean Connery");
 		jedisTwitter.addUser("dcraig", "Daniel Craig");
 		jedisTwitter.addUser("a", "a");
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
-		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());*/
+		
+		jedisTwitter.addUser("a", "a");		
+		DStringList timelineList = new DStringList();
+		DObject.Map(timelineList, "uid:1:timeline");
+		timelineList.Append("testTweet1");
+		
+		DString testTweetText = new DString();
+		DObject.Map(testTweetText, "testTweet1:text");
+		DString testTweetScreenname = new DString();
+		DObject.Map(testTweetScreenname, "testTweet1:screenname");
+		DLong testTweetCreatedAt = new DLong();
+		DObject.Map(testTweetCreatedAt, "testTweet1:createdAt");
+		DLong testTweetUserId = new DLong();
+		DObject.Map(testTweetUserId, "testTweet1:userid");
+		
+		testTweetText.Set("Diamond test tweet");
+		testTweetScreenname.Set("diamonduser64");
+		testTweetCreatedAt.Set(100000000);
+		testTweetUserId.Set(1);
 	}
 	
 	public static void main(String[] args) {
 		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
 		Jedis jedis = null;
 		HttpServer server = null;
+		
+		Diamond.DiamondInit();
 		
 		try {
 			jedis = pool.getResource();
