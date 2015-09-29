@@ -48,7 +48,7 @@ public:
     std::string GetKey(void);
 
 protected:
-    DObject() {};
+    DObject() : _key("dummykey") {};
     DObject(const std::string &key) : _key(key) {};
     virtual ~DObject() {};
     std::string _key;
