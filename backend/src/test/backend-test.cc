@@ -124,6 +124,32 @@ TEST(DSet, Map) {
     EXPECT_EQ(set2.Members().size(), 0);
 }
 
+TEST(DStringSet, Map) {
+    DiamondInit();
+
+    DStringSet set1;
+    DStringSet set2;
+
+    int ret = DStringSet::Map(set1, std::string("16"));
+    set1.Clear();
+    set1.Add("Hello");
+
+    ret = DStringSet::Map(set2, std::string("16"));
+
+    EXPECT_EQ(ret, ERR_OK);
+    EXPECT_EQ(set2.InSet("Hello"), true);
+
+    set2.Add("World");
+
+    EXPECT_EQ(set1.InSet("World"), true);
+
+    set1.Remove("World");
+    EXPECT_EQ(set2.InSet("World"), false);
+
+    set1.Clear();
+    EXPECT_EQ(set2.Members().size(), 0);
+}
+
 TEST(DList, Map) {
     DiamondInit();
 

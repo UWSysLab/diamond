@@ -157,6 +157,27 @@ private:
     void Deserialize(const std::string &s);
 };
 
+class DStringSet : public DObject
+{
+public:
+    DStringSet() {};
+    DStringSet(std::unordered_set<std::string> set, const std::string &key) : DObject(key), _set(set) {};
+    ~DStringSet() {};
+    std::unordered_set<std::string> Members();
+    bool InSet(const std::string &val);
+    void Add(const std::string &val);
+    void Add(const std::unordered_set<std::string> &set);
+    void Remove(const std::string &val);
+    void Clear();
+    DStringSet & operator=(const std::unordered_set<std::string> &set) { Add(set); return *this; };
+    
+private:
+    std::unordered_set<std::string> _set;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+};
+
 class DList : public DObject
 {
 public:
