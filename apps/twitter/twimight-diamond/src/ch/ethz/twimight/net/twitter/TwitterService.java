@@ -1350,34 +1350,33 @@ public class TwitterService extends Service {
 	 * @author nl35
 	 *
 	 */
-	private class RemoteAddClientUserTask extends AsyncTask<Void, Void, User> {
+	private class RemoteAddClientUserTask extends AsyncTask<Void, Void, Long> {
 
 		Exception ex;
 		
 		@Override
-		protected User doInBackground(Void... params) {
+		protected Long doInBackground(Void... params) {
 			Log.d(TAG, "AsynchTask: RemoteAddClientUserTask");
 			
-			User user = null;
+			long result = 0;
 			try {
 				String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
 				String userName = LoginActivity.getTwitterUsername(getBaseContext());
-				user = twitter.remoteAddUser(screenName, userName);
+				result = twitter.remoteAddUser(screenName, userName);
 
 			} catch (Exception ex) {
 				this.ex = ex;	
 			}
 
-			return user;
+			return result;
 		}
 
 		@Override
-		protected void onPostExecute(User result) {
+		protected void onPostExecute(Long result) {
 			if(ex != null){
 				Log.e(TAG, "exception while adding client user to backend: " + ex);
 			}
-			updateUser(result,false);
-			LoginActivity.setTwitterId(String.valueOf(result.getId()), getBaseContext());
+			LoginActivity.setTwitterId(String.valueOf(result), getBaseContext());
 		}
 	}
 	
