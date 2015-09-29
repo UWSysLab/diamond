@@ -128,8 +128,8 @@ public class TweetListFragment extends ListFragment {
 		
 		switch(filter) {
 		case TIMELINE_KEY:
-			String timelineKey = "testTimelineKey";
-			//String timelineKey = LoginActivity.getTwitterId(this.getActivity().getBaseContext()) + ":timeline";
+			String uid = LoginActivity.getTwitterId(this.getActivity().getBaseContext());
+			String timelineKey = "uid:" + uid + ":timeline";
 			tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey, new Diamond.MapObjectFunction() {
 				public String function(String key, String varname) {
 					return key + ":" + varname;
