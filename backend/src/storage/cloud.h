@@ -61,6 +61,7 @@ public:
     int Reconnect(const std::string &host);
     bool IsConnected();
     int MultiGet(const std::vector<std::string> &keys, std::vector<std::string> &values);
+    int MultiGet(const std::vector<std::string> &keys, std::vector<std::string> &values, std::vector<bool> &exist);
     int Read(const std::string &key, std::string &value);
     int ReadMulti(const std::list<std::string> &keys, std::list<std::string> &values);
 

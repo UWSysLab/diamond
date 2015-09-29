@@ -150,6 +150,12 @@ Cloud::GetRedisContext()
 
 int
 Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
+    vector<bool> exist;
+    return MultiGet(keys, values, exist);    
+}
+
+int
+Cloud::MultiGet(const vector<string> & keys, vector<string> & values, vector<bool> & exist) {
     redisReply *reply;
 
     if (values.size() != 0) {
@@ -157,6 +163,7 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
     }
 
     values.resize(keys.size());
+    exist.resize(keys.size());
 
     vector<const char *> argv(keys.size() + 1);
     vector<size_t> argvlen(keys.size() + 1);
@@ -183,9 +190,11 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values) {
         redisReply *subreply = reply->element[i];
         if (subreply->type == REDIS_REPLY_STRING) {
             values.at(i) = string(subreply->str);
+            exist.at(i) = true;
         }
         else if (subreply->type == REDIS_REPLY_NIL) {
             values.at(i) = "";
+            exist.at(i) = false;
         }
     }
 
@@ -509,7 +518,8 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     // Check the values of the RS because values might have changed since they were last read by the app 
     const vector<string> vKeys = vector<string>(keys.begin(),keys.end());
     vector<string> vValues;
-    MultiGet(vKeys, vValues);
+    vector<bool> vExist;
+    MultiGet(vKeys, vValues, vExist);
 
     assert(vKeys.size() == vValues.size());
     unsigned int i;
@@ -517,9 +527,15 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     for (i=0;i<vKeys.size();i++){
         string key = vKeys.at(i);
         string newValue = vValues.at(i);
+        // XXX: This does not fix the problem entirely
+        //   If the value does not exist now, * presumme * that it didn't exist before and
+        //   therefore wait for a pubsub message
+        //   Without this condition Retry would return always just because 
+        //   MGET and Get+Deserialize+Serialize see inconsistent values
+        bool newExist = vExist.at(i); 
         Notice("MGET (key=%s, newValue=%s, old value = %s)\n", 
                 key.c_str(), newValue.c_str(), lastReadValues[key].c_str() );
-        if(lastReadValues[key] != newValue){
+        if(lastReadValues[key] != newValue && newExist){
             Notice("New value detected by MGET (key=%s, newValue=%s, old value = %s)\n", 
                 key.c_str(), newValue.c_str(), lastReadValues[key].c_str() );
             RSDifferent = true;
@@ -715,6 +731,7 @@ void pubsubAsync(uv_async_t *handle, int v) {
             string channel = *iter;
             argv[i] = channel.c_str();
             channelsSubscribed.erase(channel);
+            Notice("after erase %d \n", channelsSubscribed.size());
             i++;
         }      
 
