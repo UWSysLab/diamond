@@ -61,6 +61,10 @@ public class Diamond {
         }
     }
 
+    public static void MapObject(Object obj, String key) {
+        MapObject(obj, key, new DefaultMapObjectFunction());
+    }
+
     public static void MapObject(Object obj, String key, MapObjectFunction func) {
         List<DObject> dobjects = new ArrayList<DObject>();
         List<String> keys = new ArrayList<String>();
