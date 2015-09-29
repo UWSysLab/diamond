@@ -99,6 +99,32 @@ public class DiamondTest
         //System.out.println("DStringList test ok!");
     }
 
+    public void testDStringSet() {
+        Diamond.DStringSet set1 = new Diamond.DStringSet();
+        Diamond.DStringSet set2 = new Diamond.DStringSet();
+
+        Diamond.DObject.Map(set1, "d");
+        Diamond.DObject.Map(set2, "d");
+
+        set1.Clear();
+
+        assert(set2.Members().size() == 0);
+
+        set1.Add("Hello");
+        set1.Add("World");
+        set1.Add("Hello");
+
+        assert(set2.InSet("Hello"));
+        assert(set2.InSet("World"));
+        assert(set2.Members().size() == 2);
+
+        set1.Remove("Hello");
+
+        assert(!set2.InSet("Hello"));
+        assert(set2.InSet("World"));
+        assert(set2.Members().size() == 1);
+    }
+
     public void testMultiMap() {
         Diamond.DString string1 = new Diamond.DString();
         Diamond.DString string2 = new Diamond.DString();

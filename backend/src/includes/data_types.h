@@ -164,6 +164,7 @@ public:
     DStringSet(std::unordered_set<std::string> set, const std::string &key) : DObject(key), _set(set) {};
     ~DStringSet() {};
     std::unordered_set<std::string> Members();
+    std::vector<std::string> MembersAsVector();
     bool InSet(const std::string &val);
     void Add(const std::string &val);
     void Add(const std::unordered_set<std::string> &set);

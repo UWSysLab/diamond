@@ -61,6 +61,18 @@ DStringSet::Members()
     return ret;
 }
 
+vector<string>
+DStringSet::MembersAsVector()
+{
+    pthread_mutex_lock(&_objectMutex); 
+
+    Pull();
+    vector<string> ret(_set.begin(), _set.end());
+
+    pthread_mutex_unlock(&_objectMutex); 
+    return ret;
+}
+
 bool
 DStringSet::InSet(const string &val)
 {

@@ -7,6 +7,8 @@ import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.HashSet;
 
 @Platform(include={"data_types.h"})
 
@@ -195,6 +197,27 @@ public class Diamond {
       public native void Add(long val);
       public native void Remove(long val);
    }
+
+    public static class DStringSet extends DObject {
+        static { Loader.load(); }
+        DStringSet() { allocate(); }
+        private native void allocate();
+
+        public native @Cast("bool") boolean InSet(@ByRef @StdString String val);
+        public native void Add(@ByRef @StdString String val);
+        public native void Remove(@ByRef @StdString String val);
+        public native void Clear();
+
+        public native @ByVal DiamondUtil.StringVector MembersAsVector();
+        public Set<String> Members() {
+            Set<String> result = new HashSet<String>();
+            DiamondUtil.StringVector members = MembersAsVector();
+            for (int i = 0; i < members.size(); i++) {
+                result.add(members.get(i));
+            }
+            return result;
+        }
+    }
 
     //TODO: implement DList
     public static class DList extends DObject {
