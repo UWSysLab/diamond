@@ -36,6 +36,7 @@ void DiamondInit() {
 }
 
 
+// XXX: Add an assert so that we don't map inside a transaction?
 int
 DObject::Map(DObject &addr, const string &key)
 {
@@ -485,6 +486,50 @@ DObject::TransactionBegin(void)
     // XXX: Prevent locks from being acquired during a Tx
 
 }
+
+
+
+
+// API notes:
+//  - txHandler MUST NOT call any TX function
+//  - txHandler just returns the txResult 
+//  - txHandler does not need to worry about control-flow issues related to 
+//  - txHandler should just use local values
+bool
+DObject::TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts)
+{
+    unsigned int attempts = 0;
+    int committed = 0;
+    
+    Notice("Executing transaction\n");
+
+    while((attempts < maxAttempts) && (maxAttempts > 0)){
+        attempts++;
+        TransactionBegin();
+        int ret = txHandler(txArg);
+        switch(ret){
+            case COMMIT:
+                committed = TransactionCommit();
+                if(committed){
+                    Notice("Committed after %d tries\n", attempts);
+                    return true;
+                }
+                // Just continue
+                break;
+            case ROLLBACK:
+                Notice("Rollbacked after %d tries\n", attempts);
+                return false; 
+                break;
+            case RETRY:
+                TransactionRetry();
+                // Just continue
+                break;
+        }
+    }
+    Notice("Give up after %d tries (max retries: %d)\n", attempts, maxAttempts);
+    return false;
+}
+
 
 int
 DObject::TransactionCommit(void)
