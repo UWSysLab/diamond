@@ -9,6 +9,16 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
+import diamond.DiamondTweet;
+import diamond.DiamondUser;
+import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DCounter;
+import edu.washington.cs.diamond.Diamond.DLong;
+import edu.washington.cs.diamond.Diamond.DObject;
+import edu.washington.cs.diamond.Diamond.DSet;
+import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.Diamond.DStringList;
+import edu.washington.cs.diamond.Diamond.DStringSet;
 import redis.clients.jedis.Jedis;
 
 public class JedisTwitter {
@@ -18,58 +28,85 @@ public class JedisTwitter {
 		jedis = j;
 	}
 	
-	public JsonElement updateStatus(String screenName, String status, String replyIdString, long time) {
-		String uidString = jedis.get("user:" + screenName + ":uid");
-		String timeString = String.valueOf(time);
-		
-		if (uidString == null) {
-			System.out.println("updateStatus error: no user with screenname " + screenName);
-			return new JsonObject();
+	public JsonElement updateStatus(String screenName, String status, String replyIdString, long time) {		
+		DString uidBackref = new DString();
+		DObject.Map(uidBackref, "twitter:user:" + screenName + ":uid");
+		String uidString = uidBackref.Value();
+				
+		if (uidString == null || uidString.equals("")) {
+			throw new RuntimeException("No user with screenname " + screenName);
 		}
+		long uid = Long.parseLong(uidString);
 		
-		//create post hash
-		long pid = jedis.incr("global:pid");
-		String postKey = "pid:" + pid;
-		jedis.hset(postKey, "content", status);
-		jedis.hset(postKey, "uid", uidString);
-		jedis.hset(postKey, "time", timeString);
-		if (replyIdString != null) {
-			jedis.hset(postKey, "reply", replyIdString);
-		}
-
+		//create Tweet
+		DCounter pidCounter = new DCounter();
+		DObject.Map(pidCounter, "twitter:global:pid");
+		pidCounter.Increment();
+		long pid = pidCounter.Value();
+		String postKey = "twitter:pid:" + pid;
+		DiamondTweet tweet = new DiamondTweet();
+		Diamond.MapObject(tweet, postKey);
+		tweet.setText(status);
+		tweet.setUserId(uid);
+		tweet.setCreatedAt(time);
+		tweet.setScreenname(screenName);
+		//tweet.setInReplyToStatusId(replyIdString);
+		
 		//add to user timeline of poster
-		jedis.rpush("uid:" + uidString + ":posts", String.valueOf(pid));
-
-		//add to home timeline of poster and all of poster's followers
-		jedis.rpush("uid:" + uidString + ":timeline", String.valueOf(pid));
-		Set<String> followerUids = jedis.smembers("uid:" + uidString + ":followers");
-		for (String followerUidString : followerUids) {
-			jedis.rpush("uid:" + followerUidString + ":timeline", String.valueOf(pid));
+		DStringList posterUserTimeline = new DStringList();
+		DObject.Map(posterUserTimeline, "twitter:uid:" + uidString + ":posts");
+		posterUserTimeline.Append(postKey);
+		
+		//add to home timeline of poster
+		DStringList posterHomeTimeline = new DStringList();
+		DObject.Map(posterHomeTimeline, "twitter:uid:" + uidString + ":timeline");
+		posterHomeTimeline.Append(postKey);
+		
+		//add to home timeline of all of poster's followers
+		DSet followerUids = new DSet();
+		DObject.Map(followerUids, "twitter:uid:" + uidString + ":followers");
+		for (long followerUid : followerUids.Members()) {
+			String followerUidString = String.valueOf(followerUid);
+			DStringList followerHomeTimeline = new DStringList();
+			DObject.Map(followerHomeTimeline, "twitter:uid:" + followerUidString + ":timeline");
+			followerHomeTimeline.Append(postKey);
 		}
 		
 		//add to global timeline
-		jedis.rpush("timeline", String.valueOf(pid));
+		DStringList globalTimeline = new DStringList();
+		DObject.Map(globalTimeline, "twitter:timeline");
+		posterHomeTimeline.Append(postKey);
 		
-		return getTweet(pid, screenName);
+		return new JsonObject();
 	}
 
 	public JsonElement addUser(String screenName, String name) {
-		String userBackrefKey = "user:" + screenName + ":uid";
-		long uid;
-		
-		if (jedis.get(userBackrefKey) == null) {
-			uid = jedis.incr("global:uid");
-			String userKey = "uid:" + uid;
-			jedis.set(userBackrefKey, String.valueOf(uid));
-			jedis.hset(userKey, "screen_name", screenName);
-			jedis.hset(userKey, "name", name);
-			jedis.rpush("users", String.valueOf(uid));
+		DLong uidBackref = new DLong();
+		DObject.Map(uidBackref, "twitter:user:" + screenName + ":uid");
+		long uid = uidBackref.Value();
+				
+		if (uid == 0) {
+			DCounter uidCounter = new DCounter();
+			DObject.Map(uidCounter, "twitter:global:uid");
+			uidCounter.Increment();
+			uid = uidCounter.Value();
+			
+			uidBackref.Set(uid);
+			
+			String userKey = "twitter:uid:" + uid;
+			DiamondUser user = new DiamondUser();
+			Diamond.MapObject(user, userKey);
+			user.setScreenname(screenName);
+			user.setName(name);
+			
+			DStringList userList = new DStringList();
+			DObject.Map(userList, "twitter:users");
+			userList.Append(String.valueOf(uid));
 		}
-		else {
-			uid = Long.parseLong(jedis.get(userBackrefKey));
-		}
 		
-		return getUser(uid, null);
+		JsonObject result = new JsonObject();
+		result.add("uid", new JsonPrimitive(uid));
+		return result;
 	}
 
 	public JsonElement getHomeTimeline(String screenName) {
