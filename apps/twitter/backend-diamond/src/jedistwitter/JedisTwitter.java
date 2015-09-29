@@ -13,6 +13,7 @@ import diamond.DiamondTweet;
 import diamond.DiamondUser;
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DCounter;
+import edu.washington.cs.diamond.Diamond.DList;
 import edu.washington.cs.diamond.Diamond.DLong;
 import edu.washington.cs.diamond.Diamond.DObject;
 import edu.washington.cs.diamond.Diamond.DSet;
@@ -28,6 +29,7 @@ public class JedisTwitter {
 		jedis = j;
 	}
 	
+	//Changed to Diamond
 	public JsonElement updateStatus(String screenName, String status, String replyIdString, long time) {		
 		DString uidBackref = new DString();
 		DObject.Map(uidBackref, "twitter:user:" + screenName + ":uid");
@@ -80,6 +82,7 @@ public class JedisTwitter {
 		return new JsonObject();
 	}
 
+	//Changed to Diamond
 	public JsonElement addUser(String screenName, String name) {
 		DLong uidBackref = new DLong();
 		DObject.Map(uidBackref, "twitter:user:" + screenName + ":uid");
@@ -142,14 +145,21 @@ public class JedisTwitter {
 		return getUser(toUnfollowUid, screenName);
 	}
 
+	//Changed to Diamond
 	public JsonElement createFriendship(String screenName, long toFollowUid) {
+		DLong followerUidObj = new DLong();
+		DObject.Map(followerUidObj, "twitter:user:" + screenName + ":uid");
+		long followerUid = followerUidObj.Value();
 		
-		String followerUidString = jedis.get("user:" + screenName + ":uid");
+		DList followingList = new DList();
+		DObject.Map(followingList, "twitter:uid:" + followerUid + ":following");
+		followingList.Append(toFollowUid);
 		
-		jedis.sadd("uid:" + followerUidString + ":following", String.valueOf(toFollowUid));
-		jedis.sadd("uid:" + toFollowUid + ":followers", followerUidString);
+		DList followersList = new DList();
+		DObject.Map(followersList, "twitter:uid:" + toFollowUid + ":followers");
+		followersList.Append(followerUid);
 		
-		return getUser(toFollowUid, screenName);
+		return new JsonObject();
 	}
 
 	public JsonObject getUser(long uid, String authScreenName) {
@@ -245,9 +255,11 @@ public class JedisTwitter {
 		return tweet;
 	}
 
+	//Changed to Diamond
 	public long getUid(String screenName) {
-		String uidString = jedis.get("user:" + screenName + ":uid");
-		return Long.parseLong(uidString);
+		DLong uid = new DLong();
+		DObject.Map(uid, "twitter:user:" + screenName + ":uid");
+		return uid.Value();
 	}
 	
 	public JsonElement getAllTweets() {

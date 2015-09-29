@@ -376,16 +376,16 @@ class DebugHandler implements HttpHandler {
 
 public class Main {
 	public static void writeTestData(JedisTwitter jedisTwitter) {
-		/*jedisTwitter.addUser("sconnery", "Sean Connery");
+		jedisTwitter.addUser("sconnery", "Sean Connery");
 		jedisTwitter.addUser("dcraig", "Daniel Craig");
 		jedisTwitter.addUser("a", "a");
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
-		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());*/
+		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());
 		
-		jedisTwitter.addUser("a", "a");
-		jedisTwitter.updateStatus("a", "Testing Diamond", null, 10000000);
+		//jedisTwitter.addUser("a", "a");
+		//jedisTwitter.updateStatus("a", "Testing Diamond", null, 10000000);
 		/*DStringList timelineList = new DStringList();
 		DObject.Map(timelineList, "twitter:uid:1:timeline");
 		timelineList.Append("twitter:testTweet1");*/
