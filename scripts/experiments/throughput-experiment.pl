@@ -15,7 +15,7 @@ for (my $numClients = 1; $numClients < 20; $numClients++) {
         system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency client$i throughputroom > $prefix.$i 2>error.$i &");
     }
 
-    sleep($time + 2);
+    sleep($time + 5);
 
     my $totalNumActions = 0;
 
@@ -31,7 +31,7 @@ for (my $numClients = 1; $numClients < 20; $numClients++) {
         }
         close(LOG);
         if ($lines != 1) {
-            die "Error: log file formatted incorrectly";
+            die "Error: log file $i has $lines lines";
         }
     }
 
