@@ -87,8 +87,8 @@ public class Main {
 		String usage = "usage: java Main run_type run_number read_fraction concurrency [client_name] [chatroom_name]\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
-		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads"
-		 			 + "	concurrency: transaction or atomic";
+		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
+		 			 + "    concurrency: transaction or atomic";
 		if (args.length < 4) {
 			System.err.println(usage);
 			System.exit(0);
