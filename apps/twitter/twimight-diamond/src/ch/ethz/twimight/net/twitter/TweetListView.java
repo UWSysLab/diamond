@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.widget.BaseAdapter;
 import android.widget.ListView;
 
 public class TweetListView extends ListView {
@@ -79,6 +80,7 @@ public class TweetListView extends ListView {
 		// did we reach the max just now?
 		if(curOverscroll>(-maxOverscroll) && scrollY==(-maxOverscroll)){			
 			sendOverscrollIntent(true);
+			((BaseAdapter)getAdapter()).notifyDataSetChanged();
 		} else if (curOverscroll<(maxOverscroll) && scrollY==(maxOverscroll)){ 
 			sendOverscrollIntent(false);	
 			
