@@ -44,6 +44,7 @@
 #include <set>
 #include <map>
 #include <list>
+#include <string>
 
 namespace diamond {
 
@@ -95,6 +96,21 @@ private:
 
 
 long getThreadID();
+
+
+#define NOTIFICATION_CHANNEL_PREFIX "__keyspace@0__:"
+
+typedef struct structPubsubWaiter{
+    std::set<std::string> channelsSubscribed;
+    pthread_cond_t condChannelSubscribed = PTHREAD_COND_INITIALIZER;
+
+    bool RSTouched = false;
+    pthread_cond_t condUpdated = PTHREAD_COND_INITIALIZER;
+
+    std::map<std::string, std::string>* lastReadValues;
+} pubsubWaiter;
+
+
 
 #ifdef DEBUG_HIREDIS
 

@@ -19,12 +19,10 @@ int main(void){
     DiamondInit();
 
     DLong l1, l1_2, l2;
-    int ret; 
 
-    ret = DLong::Map(l1, std::string("11"));
-    ret = DLong::Map(l1_2, std::string("11"));
-    ret = DLong::Map(l2, std::string("12"));
-    //EXPECT_EQ(ret, ERR_OK);
+    DLong::Map(l1, std::string("11"));
+    DLong::Map(l1_2, std::string("11"));
+    DLong::Map(l2, std::string("12"));
     l1 = 0;
     l2 = 0;
 

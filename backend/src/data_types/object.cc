@@ -9,6 +9,7 @@
 #include <inttypes.h>
 #include <set>
 
+
 namespace diamond {
 
 using namespace std;
@@ -24,6 +25,12 @@ static std::map<int, std::set<string> > transactionsWS; // map with the WS for e
 static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
 pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
+// Used by diamond_profile.h macros
+pthread_mutex_t  profileMutex = PTHREAD_MUTEX_INITIALIZER;
+long profileEnterTs[MAX_THREAD_ID];
+
+// Used to simulate that the network if offline
+bool networkConnectivity = false;
 
 Cloud* cloudstore = NULL;
 
@@ -40,6 +47,7 @@ void DiamondInit() {
 int
 DObject::Map(DObject &addr, const string &key)
 {
+    PROFILE_ENTER("MAP");
     pthread_mutex_lock(&addr._objectMutex);
 
     addr._key = key;
@@ -51,6 +59,7 @@ DObject::Map(DObject &addr, const string &key)
     int res = addr.Pull();
 
     pthread_mutex_unlock(&addr._objectMutex);
+    PROFILE_EXIT("MAP");
     return res;
 }
 
@@ -622,6 +631,19 @@ DObject::TransactionRetry(void)
     pthread_mutex_unlock(&transactionMutex);
 
 }
+
+void
+DObject::SetNetworkConnectivity(bool connectivity)
+{
+    networkConnectivity = connectivity;
+
+    if(networkConnectivity){
+        Notice("Network connectivity: off\n");
+    }else{
+        Notice("Network connectivity: on\n");
+    }
+}
+
 
 std::string
 DObject::GetKey(){
