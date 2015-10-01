@@ -108,6 +108,7 @@ public class TweetListFragment extends ListFragment {
 				DiamondTweet tweet = (DiamondTweet) arg0.getItemAtPosition(position);
 				Intent i = new Intent(getActivity(), ShowTweetActivity.class);
 				i.putExtra("rowId", tweet.getId());
+				i.putExtra("position", position);			
 				i.putExtra("type", type);			
 				startActivity(i);
 				//if (type == SEARCH_TWEETS)
