@@ -153,6 +153,7 @@ public:
     void Add(const std::unordered_set<uint64_t> &set);
     void Remove(const uint64_t val);
     void Clear();
+    int Size();
     DSet & operator=(const std::unordered_set<uint64_t> &set) { Add(set); return *this; };
     
 private:
