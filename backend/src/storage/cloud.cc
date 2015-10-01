@@ -19,6 +19,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "includes/profile.h"
+
 namespace diamond {
 
 using namespace std;
@@ -29,21 +31,6 @@ Cloud* Cloud::_instance = NULL;
 bool Cloud::_connected = false;
 
 std::string serverAddress;
-//std::string serverAddress = "coldwater.cs.washington.edu";
-//std::string serverAddress = "localhost";
-
-
-static const string notificationChannelPrefix = "__keyspace@0__:";
-
-typedef struct structPubsubWaiter{
-    std::set<string> channelsSubscribed;
-    pthread_cond_t condChannelSubscribed = PTHREAD_COND_INITIALIZER;
-
-    bool RSTouched = false;
-    pthread_cond_t condUpdated = PTHREAD_COND_INITIALIZER;
-
-    std::map<string, string>* lastReadValues;    
-} pubsubWaiter;
 
 
 static int asyncConnectionSigleton = 0;
@@ -81,6 +68,9 @@ Cloud::Instance(const string &server)
     if(!_instance){
         serverAddress = server;
         _instance = new Cloud(server);
+        //PROFILE_ENTER("SLEEP1");
+        //sleep(1);
+        //PROFILE_EXIT("SLEEP1");
     }
     else {
         if (server != serverAddress) {
@@ -500,7 +490,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
 
     auto it = keys.begin();
     for (;it!=keys.end();it++){
-        string* channel = new string(notificationChannelPrefix + *it);
+        string* channel = new string(string(NOTIFICATION_CHANNEL_PREFIX) + *it);
         Notice("Adding channel \"%s\" to psWaiters\n", channel->c_str());
         auto psWaitersChannel = &psWaiters[*channel];
         psWaitersChannel->insert(&psWaiter);
@@ -557,7 +547,7 @@ Cloud::Wait(const std::set<std::string> &keys,  std::map<string, string> &lastRe
     //   2) remove the channel if no more waiters on that channel
     
     for (it = keys.begin();it!=keys.end();it++){
-        string channel = notificationChannelPrefix + *it;
+        string channel = NOTIFICATION_CHANNEL_PREFIX + *it;
         auto psWaitersChannel = &psWaiters[channel];
         psWaitersChannel->erase(&psWaiter);
         if(psWaitersChannel->size()==0){
@@ -585,7 +575,7 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
 
     // We can get 3 types of replies:  1. "subscribe"   2. "message"   3. "unsubscribe"
     assert(reply->elements == 3);
-    Notice("Pubsub callback: %s, %s, (str: %s, int: %d)\n", 
+    Notice("Pubsub callback: %s, %s, (str: %s, int: %lld)\n", 
         reply->element[0]->str, reply->element[1]->str, reply->element[2]->str, reply->element[2]->integer);
    
 //     Notice("psWaiters.size(): %lu\n", psWaiters.size());
@@ -599,8 +589,8 @@ void pubsubCallback(redisAsyncContext *c, void *r, void *privdata) {
     string channel = string(reply->element[1]->str);
 //    Notice("Channel: %s\n", channel.c_str());
 
-    assert(channel.find(notificationChannelPrefix) == 0);
-    string key = channel.substr(notificationChannelPrefix.size());
+    assert(channel.find(string(NOTIFICATION_CHANNEL_PREFIX)) == 0);
+    string key = channel.substr(strlen(NOTIFICATION_CHANNEL_PREFIX));
 
     auto psWaitersChannel = &psWaiters[channel];
 //    Notice("psWaitersChannel size: %lu\n", psWaitersChannel->size());
@@ -695,7 +685,7 @@ void pubsubAsync(uv_async_t *handle, int v) {
                     channelsSubscribed.begin(),channelsSubscribed.end(), 
                     std::back_inserter(channelsToSubscribe));
 
-    Notice("Subscribing %d channels\n", channelsToSubscribe.size());
+    Notice("Subscribing %lu channels\n", channelsToSubscribe.size());
     if(channelsToSubscribe.size() > 0){        
         const char *argv[1024];
         assert(channelsToSubscribe.size()<1024-1);
@@ -720,7 +710,7 @@ void pubsubAsync(uv_async_t *handle, int v) {
     set_difference(channelsSubscribed.begin(),channelsSubscribed.end(),
                     channelsNeeded.begin(),channelsNeeded.end(), 
                     std::back_inserter(channelsToUnsubscribe));
-    Notice("Unsubscribe %d channels\n", channelsToUnsubscribe.size());
+    Notice("Unsubscribe %lu channels\n", channelsToUnsubscribe.size());
     if(channelsToUnsubscribe.size() > 0){        
         const char *argv[1024];
         assert(channelsToUnsubscribe.size()<1024-1);
@@ -731,7 +721,6 @@ void pubsubAsync(uv_async_t *handle, int v) {
             string channel = *iter;
             argv[i] = channel.c_str();
             channelsSubscribed.erase(channel);
-            Notice("after erase %d \n", channelsSubscribed.size());
             i++;
         }      
 

@@ -17,6 +17,8 @@
 #include <map>
 #include <pthread.h>
 
+#include "profile.h"
+
 namespace diamond {
 
 #define LOCK_DURATION_MS (5*1000)
@@ -47,6 +49,7 @@ public:
     static void TransactionRetry(void);
     static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
 
+    static void SetNetworkConnectivity(bool connectivity);
     std::string GetKey(void);
 
 protected:
@@ -64,12 +67,10 @@ protected:
 private:
 	uint64_t _lockid = 0;
 	long _locked = 0;
-
 	void LockNotProtected(); // Callee should hold the _objectMutex
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
-
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);
