@@ -99,6 +99,32 @@ public class DiamondTest
         //System.out.println("DStringList test ok!");
     }
 
+    public void testDList()
+    {
+        Diamond.DList list1 = new Diamond.DList("f");
+        Diamond.DList list2 = new Diamond.DList("f");
+
+        list1.Clear();
+        
+        assert(list2.Members().size() == 0);
+
+        list1.Append(4);
+        list1.Append(9);
+        list1.Append(16);
+
+        assert(list2.Index(16) == 2);
+        assert(list2.Value(0) == 4);
+
+        list1.Remove(9);
+
+        assert(list2.Index(16) == 1);
+
+        List<Long> membersList = new ArrayList<Long>();
+        membersList.add((long)4);
+        membersList.add((long)16);
+        assert(list2.Members().equals(membersList));
+    }
+
     public void testDStringSet() {
         Diamond.DStringSet set1 = new Diamond.DStringSet();
         Diamond.DStringSet set2 = new Diamond.DStringSet();

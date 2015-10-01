@@ -73,10 +73,13 @@ DObject::PullAlways(){
     LOG_RC("PullAlways()"); 
 
     int ret = cloudstore->Read(_key, value);
-    if (ret != ERR_OK) {
+    if (ret != ERR_EMPTY && ret != ERR_OK) {
         return ret;
     }
 
+    if (ret == ERR_EMPTY) {
+        value = "";
+    }
     Deserialize(value);
     return 0;
 }

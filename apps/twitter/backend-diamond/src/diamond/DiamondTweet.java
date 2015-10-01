@@ -1,4 +1,4 @@
-package ch.ethz.twimight.net.twitter;
+package diamond;
 
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;

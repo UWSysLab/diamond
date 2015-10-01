@@ -2968,7 +2968,7 @@ public class Twitter implements Serializable {
 	 * Add a user with the given screen name and name to the backend if a user with
 	 * that screenname is not already present.
 	 */
-	public User remoteAddUser(String screenName, String name)
+	public long remoteAddUser(String screenName, String name)
 			throws TwitterException 
 	{		
 		Map<String, String> vars = new HashMap<String, String>();
@@ -2977,8 +2977,9 @@ public class Twitter implements Serializable {
 		String result = http.post(TWITTER_URL + "/hack/adduser.json", vars,
 					true);
 		try {
-			User u = new User(new JSONObject(result), null);
-			return u;
+
+			long uid = new JSONObject(result).getLong("uid");
+			return uid;
 		} catch (JSONException e) {
 			throw new TwitterException.Parsing(result, e);
 		}

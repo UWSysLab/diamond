@@ -5,29 +5,36 @@ use strict;
 
 my $time = 5;
 my $readFraction = 0.9;
-my $file = "logthroughput.txt";
-
+my $prefix = "logthroughput";
+my $concurrency = "transaction";
 
 for (my $numClients = 1; $numClients < 20; $numClients++) {
-    system("rm $file");
+    system("rm $prefix.*");
 
     for (my $i = 0; $i < $numClients; $i++) {
-        system("./desktop-chat-wrapper.sh timed $time $readFraction client$i throughputroom >> $file 2>/dev/null &");
+        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency client$i throughputroom > $prefix.$i 2>error.$i &");
     }
 
-    sleep($time + 2);
+    sleep($time + 5);
 
     my $totalNumActions = 0;
 
-    open(LOG, $file);
-    while(<LOG>) {
-        chomp;
-        my @lineSplit = split(/\s+/);
-        my $numActions = $lineSplit[2];
-        $totalNumActions += $numActions;
+    for (my $i = 0; $i < $numClients; $i++) {
+        my $lines = 0;
+        open(LOG, "$prefix.$i");
+        while(<LOG>) {
+            chomp;
+            my @lineSplit = split(/\s+/);
+            my $numActions = $lineSplit[2];
+            $totalNumActions += $numActions;
+            $lines = $lines + 1;
+        }
+        close(LOG);
+        if ($lines != 1) {
+            die "Error: log file $i has $lines lines";
+        }
     }
-    close(LOG);
 
     my $throughput = $totalNumActions / $time;
-    print("Num clients: $numClients\tThroughput: $throughput\n");
+    print("Num clients: $numClients\tThroughput: $throughput\tConcurrency: $concurrency\n");
 }

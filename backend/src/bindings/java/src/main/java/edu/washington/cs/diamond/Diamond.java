@@ -26,11 +26,13 @@ public class Diamond {
         Class objClass;
         int start;
         int end;
+        boolean mapWholeList;
 
         public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
             this(key, f, c);
             start = rangeStart;
             end = rangeEnd;
+            mapWholeList = false;
         }
 
         public MappedObjectList(String key, MapObjectFunction f, Class c) {
@@ -40,16 +42,20 @@ public class Diamond {
             objClass = c;
             start = 0;
             end = keyList.Size();
+            mapWholeList = true;
         }
 
         public int Size() {
+            if (mapWholeList) {
+                end = keyList.Size();
+            }
             return end - start;
         }
 
         public T Get(int index) {
-            if (index < 0 || index >= Size()) {
-                throw new IndexOutOfBoundsException();
-            }
+            //if (index < 0 || index >= Size()) {
+            //    throw new IndexOutOfBoundsException();
+            //}
             try {
                 int externalIndex = start + index;
                 String objKey = keyList.Value(externalIndex);
@@ -233,6 +239,30 @@ public class Diamond {
 
     //TODO: implement DList
     public static class DList extends DObject {
+        static { Loader.load(); }
+        public DList() { allocate(); }
+        public DList(String key) { allocate(key); }
+        private native void allocate();
+        private native void allocate(@ByRef @StdString String key);
+
+        public List<Long> Members() {
+            List<Long> result = new ArrayList<Long>();
+            DiamondUtil.LongVector members = NativeMembers();
+            for (int i = 0; i < members.size(); i++) {
+                result.add(members.get(i));
+            }
+            return result;
+        }
+        @Name("Members")
+        public native @ByVal DiamondUtil.LongVector NativeMembers();
+
+        public native long Value(int index);
+        public native int Index(long val);
+        public native void Append(long val);
+        public native void Erase(int index);
+        public native void Remove(long val);
+        public native void Clear();
+        public native int Size();
     }
 
     public static class DStringList extends DObject {

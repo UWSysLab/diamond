@@ -20,4 +20,4 @@ classpath="$PROJECT_DIR/bin:$JAVA_BINDINGS_DIR/libs/javacpp.jar:$JAVA_BINDINGS_D
 nativePath="$JAVA_BINDINGS_DIR/target/classes/x86-lib:$DIAMOND_SRC/backend/build"
 
 export LD_LIBRARY_PATH=$nativePath
-java -cp $classpath -Djava.library.path=$nativePath Main $1 $2 $3 $4 $5
+java -cp $classpath -Djava.library.path=$nativePath Main $1 $2 $3 $4 $5 $6

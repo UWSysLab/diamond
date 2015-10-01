@@ -8,7 +8,17 @@ public class Main {
 	public static void main(String[] args) {
 		Diamond.DiamondInit();
 		//threadTest();
-		memoryTest();
+		//memoryTest();
+		unallocatedVariableTest();
+	}
+	
+	public static void unallocatedVariableTest() {
+		Diamond.DLong testLong = new Diamond.DLong();
+		Diamond.DObject.Map(testLong, "thiskeydoesnotexist");
+		System.out.println("Unallocated long value: " + testLong.Value());
+		Diamond.DString testString = new Diamond.DString();
+		Diamond.DObject.Map(testString, "thiskeydoesnotexisteither");
+		System.out.println("Unallocated string value: " + testString.Value());
 	}
 
 	public static void memoryTest() {

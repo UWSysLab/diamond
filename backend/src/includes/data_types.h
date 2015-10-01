@@ -189,6 +189,7 @@ class DList : public DObject
 public:
     DList() {};
     DList(std::vector<uint64_t> vec, const std::string &key) : DObject(key), _vec(vec) {};
+    DList(const std::string &key) : DObject(key) {};
     ~DList() {};
     std::vector<uint64_t> Members();
     uint64_t Value(const int index);

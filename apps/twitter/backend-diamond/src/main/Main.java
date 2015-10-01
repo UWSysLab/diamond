@@ -13,6 +13,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import diamond.DiamondTweet;
 import jedistwitter.JedisTwitter;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
@@ -375,32 +376,26 @@ class DebugHandler implements HttpHandler {
 
 public class Main {
 	public static void writeTestData(JedisTwitter jedisTwitter) {
-		/*jedisTwitter.addUser("sconnery", "Sean Connery");
+		jedisTwitter.addUser("sconnery", "Sean Connery");
 		jedisTwitter.addUser("dcraig", "Daniel Craig");
 		jedisTwitter.addUser("a", "a");
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("sconnery"));
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
-		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());*/
+		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());
 		
-		jedisTwitter.addUser("a", "a");		
-		DStringList timelineList = new DStringList();
-		DObject.Map(timelineList, "uid:1:timeline");
-		timelineList.Append("testTweet1");
+		//jedisTwitter.addUser("a", "a");
+		//jedisTwitter.updateStatus("a", "Testing Diamond", null, 10000000);
+		/*DStringList timelineList = new DStringList();
+		DObject.Map(timelineList, "twitter:uid:1:timeline");
+		timelineList.Append("twitter:testTweet1");*/
 		
-		DString testTweetText = new DString();
-		DObject.Map(testTweetText, "testTweet1:text");
-		DString testTweetScreenname = new DString();
-		DObject.Map(testTweetScreenname, "testTweet1:screenname");
-		DLong testTweetCreatedAt = new DLong();
-		DObject.Map(testTweetCreatedAt, "testTweet1:createdAt");
-		DLong testTweetUserId = new DLong();
-		DObject.Map(testTweetUserId, "testTweet1:userid");
-		
-		testTweetText.Set("Diamond test tweet");
-		testTweetScreenname.Set("diamonduser64");
-		testTweetCreatedAt.Set(100000000);
-		testTweetUserId.Set(1);
+		/*DiamondTweet testTweet1 = new DiamondTweet();
+		Diamond.MapObject(testTweet1, "twitter:testTweet1", new Diamond.DefaultMapObjectFunction());
+		testTweet1.setText("Testing Diamond");
+		testTweet1.setScreenname("diamonduser42");
+		testTweet1.setCreatedAt(0);
+		testTweet1.setUserId(1);*/
 	}
 	
 	public static void main(String[] args) {
