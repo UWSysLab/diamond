@@ -27,4 +27,23 @@ public class DiamondUser {
 	public String getName() {
 		return name.Value();
 	}
+	
+	public long getId() {
+		return 0;
+	}
+	public boolean isFollowing(DiamondUser u) {
+		return false;
+	}
+	public long getNumTweets() {
+		return 0;
+	}
+	public long getNumFavorites() {
+		return 0;
+	}
+	public long getNumFollowing() {
+		return 0;
+	}
+	public long getNumFollowers() {
+		return 0;
+	}
 }
