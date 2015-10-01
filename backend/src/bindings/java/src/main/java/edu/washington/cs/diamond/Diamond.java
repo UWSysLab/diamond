@@ -26,11 +26,13 @@ public class Diamond {
         Class objClass;
         int start;
         int end;
+        boolean mapWholeList;
 
         public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
             this(key, f, c);
             start = rangeStart;
             end = rangeEnd;
+            mapWholeList = false;
         }
 
         public MappedObjectList(String key, MapObjectFunction f, Class c) {
@@ -40,16 +42,20 @@ public class Diamond {
             objClass = c;
             start = 0;
             end = keyList.Size();
+            mapWholeList = true;
         }
 
         public int Size() {
+            if (mapWholeList) {
+                end = keyList.Size();
+            }
             return end - start;
         }
 
         public T Get(int index) {
-            if (index < 0 || index >= Size()) {
-                throw new IndexOutOfBoundsException();
-            }
+            //if (index < 0 || index >= Size()) {
+            //    throw new IndexOutOfBoundsException();
+            //}
             try {
                 int externalIndex = start + index;
                 String objKey = keyList.Value(externalIndex);
