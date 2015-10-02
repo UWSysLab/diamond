@@ -777,6 +777,9 @@ public class DiamondShowTweetFragment extends Fragment {
 			createdWithView.setVisibility(TextView.GONE);
 		//}
 
+		TextView textNumFavorites = (TextView) view.findViewById(R.id.showTweetNumFavorites);
+		long numFavorites = tweet.getNumFavorites();
+		textNumFavorites.setText("Favorited by " + numFavorites + " users");
 
 		String retweeted_by = tweet.getRetweetedBy();
 		TextView textRetweeted_by = (TextView) view.findViewById(R.id.showTweetRetweeted_by);
