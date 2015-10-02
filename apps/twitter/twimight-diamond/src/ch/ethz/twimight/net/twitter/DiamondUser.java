@@ -3,11 +3,17 @@ package ch.ethz.twimight.net.twitter;
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;
 import edu.washington.cs.diamond.Diamond.DStringList;
+import edu.washington.cs.diamond.Diamond.DStringSet;
 import edu.washington.cs.diamond.Diamond.DList;
 import edu.washington.cs.diamond.Diamond.DLong;
 import edu.washington.cs.diamond.Diamond.DSet;
 
 public class DiamondUser {
+	
+	//NOTE: Right now, the posts and timeline are string lists holding full keys
+	//to tweets (for MapObjectRange), while favorites is a set holding tweet pids and 
+	//following and followers are sets holding user uids. Is this bad design?
+	
 	public DString name;
 	public DString screenname;
 	public DLong id;
@@ -15,7 +21,7 @@ public class DiamondUser {
 	public DSet followers;
 	public DStringList posts;
 	public DStringList timeline;
-	public DList favorites;
+	public DSet favorites;
 	
 	public DiamondUser() {
 		name = new DString();
@@ -25,7 +31,7 @@ public class DiamondUser {
 		followers = new DSet();
 		posts = new DStringList();
 		timeline = new DStringList();
-		favorites = new DList();
+		favorites = new DSet();
 	}
 	
 	public void setScreenname(String s) {
