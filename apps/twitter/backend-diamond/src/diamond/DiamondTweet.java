@@ -2,6 +2,7 @@ package diamond;
 
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.Diamond.DCounter;
 import edu.washington.cs.diamond.Diamond.DLong;
 
 
@@ -12,6 +13,7 @@ public class DiamondTweet {
 	public DLong createdAt;
 	public DLong userid;
 	public DLong id;
+	public DCounter numFavorites;
 	
 	public DiamondTweet() {
 		text = new DString();
@@ -20,6 +22,7 @@ public class DiamondTweet {
 		createdAt = new DLong();
 		userid = new DLong();
 		id = new DLong();
+		numFavorites = new DCounter();
 	}
 	
 	public String getScreenname() {
@@ -64,10 +67,26 @@ public class DiamondTweet {
 		inReplyToStatusId.Set(s);
 	}
 	
+	public int getNumFavorites() {
+		return numFavorites.Value();
+	}
+	public void incrNumFavorites() {
+		numFavorites.Increment();
+	}
+	public void decrNumFavorites() {
+		numFavorites.Decrement();
+	}
 	
+	public String getName() {
+		return "Dummy Name";
+	}
 	
 	public String getRetweetedBy() {
 		return null;
+	}
+	
+	public long getNumRetweets() {
+		return 0;
 	}
 	
 	public boolean getToFavorite() {

@@ -316,6 +316,21 @@ public class JedisTwitter {
 	
 	public JsonElement createFavorite(String screenName, long pid) {
 		String uidString = jedis.get("user:" + screenName + ":uid");
+		
+		String userKey = "twitter:uid:" + uidString;
+		DiamondUser user = new DiamondUser();
+		Diamond.MapObject(user, userKey);
+		
+		DiamondTweet tweet = new DiamondTweet();
+		String tweetKey = "twitter:pid:" + pid;
+		Diamond.MapObject(tweet, tweetKey);
+		
+		if (!user.favorites.InSet(pid)) {
+			user.favorites.Add(pid);
+			tweet.incrNumFavorites();
+		}
+		
+		/*
 		String ssKey = "uid:" + uidString + ":favorites";
 		long score = jedis.zcard(ssKey);
 		jedis.zadd(ssKey, score, String.valueOf(pid));
@@ -323,12 +338,30 @@ public class JedisTwitter {
 		jedis.sadd("pid:" + pid + ":favoriters", uidString);
 		
 		return getTweet(pid, screenName);
+		*/
+		return new JsonObject();
 	}
 	
 	public JsonElement destroyFavorite(String screenName, long pid) {
 		String uidString = jedis.get("user:" + screenName + ":uid");
-		jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
-		return getTweet(pid, screenName);
+		
+		String userKey = "twitter:uid:" + uidString;
+		DiamondUser user = new DiamondUser();
+		Diamond.MapObject(user, userKey);
+		
+		DiamondTweet tweet = new DiamondTweet();
+		String tweetKey = "twitter:pid:" + pid;
+		Diamond.MapObject(tweet, tweetKey);
+		
+		if (user.favorites.InSet(pid)) {
+			user.favorites.Remove(pid);
+			tweet.decrNumFavorites();
+		}
+		
+		return new JsonObject();
+		
+		/*jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
+		return getTweet(pid, screenName);*/
 	}
 
 	//TODO: currently has duplicated code from updateStatus(): more elegant way to handle this?

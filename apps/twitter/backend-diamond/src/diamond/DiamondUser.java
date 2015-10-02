@@ -8,6 +8,11 @@ import edu.washington.cs.diamond.Diamond.DLong;
 import edu.washington.cs.diamond.Diamond.DSet;
 
 public class DiamondUser {
+	
+	//NOTE: Right now, the posts and timeline are string lists holding full keys
+	//to tweets (for MapObjectRange), while favorites is a set holding tweet pids and 
+	//following and followers are sets holding user uids. Is this bad design?
+
 	public DString name;
 	public DString screenname;
 	public DLong id;
@@ -15,8 +20,8 @@ public class DiamondUser {
 	public DSet followers;
 	public DStringList posts;
 	public DStringList timeline;
-	public DList favorites;
-	
+	public DSet favorites;
+
 	public DiamondUser() {
 		name = new DString();
 		screenname = new DString();
@@ -25,23 +30,23 @@ public class DiamondUser {
 		followers = new DSet();
 		posts = new DStringList();
 		timeline = new DStringList();
-		favorites = new DList();
+		favorites = new DSet();
 	}
-	
+
 	public void setScreenname(String s) {
 		screenname.Set(s);
 	}
 	public String getScreenname() {
 		return screenname.Value();
 	}
-	
+
 	public void setName(String s) {
 		name.Set(s);
 	}
 	public String getName() {
 		return name.Value();
 	}
-	
+
 	public long getId() {
 		return id.Value();
 	}
@@ -54,7 +59,7 @@ public class DiamondUser {
 		}
 		return false;
 	}
-	
+
 	public long getNumTweets() {
 		return posts.Size();
 	}
