@@ -1,10 +1,7 @@
 package ch.ethz.twimight.net.twitter;
 
-import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;
 import edu.washington.cs.diamond.Diamond.DStringList;
-import edu.washington.cs.diamond.Diamond.DStringSet;
-import edu.washington.cs.diamond.Diamond.DList;
 import edu.washington.cs.diamond.Diamond.DLong;
 import edu.washington.cs.diamond.Diamond.DSet;
 
@@ -59,6 +56,22 @@ public class DiamondUser {
 			return true;
 		}
 		return false;
+	}
+	
+	public boolean hasFavorite(DiamondTweet tweet) {
+		return favorites.InSet(tweet.getId());
+	}
+	public void favorite(DiamondTweet tweet) {
+		if (!favorites.InSet(tweet.getId())) {
+			favorites.Add(tweet.getId());
+			tweet.incrNumFavorites();
+		}
+	}
+	public void unfavorite(DiamondTweet tweet) {
+		if (favorites.InSet(tweet.getId())) {
+			favorites.Remove(tweet.getId());
+			tweet.decrNumFavorites();
+		}
 	}
 	
 	public long getNumTweets() {

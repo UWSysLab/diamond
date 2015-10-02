@@ -328,10 +328,7 @@ public class JedisTwitter {
 		String tweetKey = "twitter:pid:" + pid;
 		Diamond.MapObject(tweet, tweetKey);
 		
-		if (!user.favorites.InSet(pid)) {
-			user.favorites.Add(pid);
-			tweet.incrNumFavorites();
-		}
+		user.favorite(tweet);
 		
 		/*
 		String ssKey = "uid:" + uidString + ":favorites";
@@ -356,10 +353,7 @@ public class JedisTwitter {
 		String tweetKey = "twitter:pid:" + pid;
 		Diamond.MapObject(tweet, tweetKey);
 		
-		if (user.favorites.InSet(pid)) {
-			user.favorites.Remove(pid);
-			tweet.decrNumFavorites();
-		}
+		user.unfavorite(tweet);
 		
 		return new JsonObject();
 		
