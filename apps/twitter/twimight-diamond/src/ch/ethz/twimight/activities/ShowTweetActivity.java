@@ -46,6 +46,11 @@ public class ShowTweetActivity extends TwimightBaseActivity implements OnTweetDe
 			tweetList = new MappedObjectList<DiamondTweet>(timelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
 			break;
+		case TweetListFragment.SEARCH_TWEETS:
+			String globalTimelineKey = "twitter:timeline";
+			tweetList = new MappedObjectList<DiamondTweet>(globalTimelineKey,
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+			break;
 		}
 		if (tweetList != null) {			
 			ShowTweetPageAdapter pageAdapter = new ShowTweetPageAdapter(getFragmentManager(), tweetList );
