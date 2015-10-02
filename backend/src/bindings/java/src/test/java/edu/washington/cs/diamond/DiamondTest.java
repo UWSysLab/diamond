@@ -169,6 +169,7 @@ public class DiamondTest
         assert(set2.InSet(1));
         assert(set2.InSet(2));
         assert(set2.Members().size() == 2);
+        assert(set2.Size() == 2);
 
         set1.Remove(1);
 
