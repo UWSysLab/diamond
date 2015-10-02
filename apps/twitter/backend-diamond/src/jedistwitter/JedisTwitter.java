@@ -155,12 +155,14 @@ public class JedisTwitter {
 		DObject.Map(followerUidObj, "twitter:user:" + screenName + ":uid");
 		long followerUid = followerUidObj.Value();
 		
+		String followerKey = "twitter:uid:" + followerUid;
+		String toFollowKey = "twitter:uid:" + toFollowUid;
+		
 		DiamondUser followerUser = new DiamondUser();
+		Diamond.MapObject(followerUser, followerKey);
 		DiamondUser toFollowUser = new DiamondUser();
-		Diamond.MapObject(followerUser, "twitter:uid:" + followerUid);
-		Diamond.MapObject(toFollowUser, "twitter:uid:" + toFollowUid);
-		followerUser.following.Add(toFollowUid);
-		toFollowUser.followers.Add(followerUid);
+		Diamond.MapObject(toFollowUser, toFollowKey);
+		followerUser.follow(toFollowUser);
 		
 		return new JsonObject();
 	}

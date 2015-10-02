@@ -380,14 +380,12 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			@Override
 			public void onClick(View v) {
 				if(following){
-					//TODO: unfollow user
+					localUser.unfollow(user);
 					followButton.setVisibility(Button.GONE);
-					unfollowInfo.setVisibility(LinearLayout.VISIBLE);
 					following=false;
 				} else {
-					//TODO: follow user
+					localUser.follow(user);
 					followButton.setVisibility(Button.GONE);
-					followInfo.setVisibility(LinearLayout.VISIBLE);
 					following = true;
 				}			
 			}

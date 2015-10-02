@@ -57,6 +57,14 @@ public class DiamondUser {
 		}
 		return false;
 	}
+	public void follow(DiamondUser u) {
+		following.Add(u.getId());
+		u.followers.Add(this.getId());
+	}
+	public void unfollow(DiamondUser u) {
+		following.Remove(u.getId());
+		u.followers.Remove(this.getId());
+	}
 	
 	public boolean hasFavorite(DiamondTweet tweet) {
 		return favorites.InSet(tweet.getId());
