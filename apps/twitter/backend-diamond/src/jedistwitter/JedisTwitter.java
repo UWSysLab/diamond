@@ -40,6 +40,11 @@ public class JedisTwitter {
 		}
 		long uid = Long.parseLong(uidString);
 		
+		//get user
+		String posterKey = "twitter:uid:" + uid;
+		DiamondUser poster = new DiamondUser();
+		Diamond.MapObject(poster, posterKey);
+		
 		//create Tweet
 		DCounter pidCounter = new DCounter();
 		DObject.Map(pidCounter, "twitter:global:pid");
@@ -53,12 +58,10 @@ public class JedisTwitter {
 		tweet.setCreatedAt(time);
 		tweet.setScreenname(screenName);
 		tweet.setId(pid);
+		tweet.setName(poster.getName());
 		//tweet.setInReplyToStatusId(replyIdString);
 		
 		//add to user and home timeline of poster
-		String posterKey = "twitter:uid:" + uid;
-		DiamondUser poster = new DiamondUser();
-		Diamond.MapObject(poster, posterKey);
 		poster.posts.Append(postKey);
 		poster.timeline.Append(postKey);
 		

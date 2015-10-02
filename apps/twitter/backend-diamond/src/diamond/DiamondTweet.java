@@ -14,6 +14,7 @@ public class DiamondTweet {
 	public DLong userid;
 	public DLong id;
 	public DCounter numFavorites;
+	public DString name;
 	
 	public DiamondTweet() {
 		text = new DString();
@@ -23,6 +24,7 @@ public class DiamondTweet {
 		userid = new DLong();
 		id = new DLong();
 		numFavorites = new DCounter();
+		name = new DString();
 	}
 	
 	public String getScreenname() {
@@ -30,6 +32,13 @@ public class DiamondTweet {
 	}
 	public void setScreenname(String s) {
 		screenname.Set(s);
+	}
+	
+	public String getName() {
+		return name.Value();
+	}
+	public void setName(String s) {
+		name.Set(s);
 	}
 	
 	public String getText() {
@@ -75,10 +84,6 @@ public class DiamondTweet {
 	}
 	public void decrNumFavorites() {
 		numFavorites.Decrement();
-	}
-	
-	public String getName() {
-		return "Dummy Name";
 	}
 	
 	public String getRetweetedBy() {
