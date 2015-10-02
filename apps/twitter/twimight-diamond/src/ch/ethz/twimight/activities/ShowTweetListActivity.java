@@ -18,6 +18,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -30,7 +31,9 @@ import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.fragments.adapters.ListViewPageAdapter;
 import ch.ethz.twimight.listeners.TabListener;
 import ch.ethz.twimight.location.LocationHelper;
+import ch.ethz.twimight.net.twitter.DiamondTweet;
 import ch.ethz.twimight.util.Constants;
+import edu.washington.cs.diamond.Diamond;
 
 
 
@@ -123,6 +126,11 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
+
+		boolean benchmark = true;
+		if (benchmark) {
+			new BenchmarkTask().execute();
+		}
 	}
 		
 
@@ -261,6 +269,26 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	}
 
+	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			for (int rep = 0; rep < 10; rep++) {
+				long startTime = System.currentTimeMillis();
+				String uid = LoginActivity.getTwitterId(getBaseContext());
+				String timelineKey = "twitter:uid:" + uid + ":timeline";
+				Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
+						new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+				for (int i = 0; i < tweetList.Size(); i++) {
+					DiamondTweet tweet = tweetList.Get(i);
+				}
+				long endTime = System.currentTimeMillis();
+				long time = endTime - startTime;
+				Log.i("BENCHMARK", "Timeline read: rep " + rep + " time " + time + "ms");
+			}
+			return null;
+		}
+	}
 	
 	
 	/**
