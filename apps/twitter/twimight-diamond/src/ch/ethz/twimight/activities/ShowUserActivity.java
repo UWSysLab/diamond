@@ -263,7 +263,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		long favorites = user.getNumFavorites();
 		long follows = user.getNumFollowing();
 		long followed = user.getNumFollowers();
-
+		
 		statsTweets.setText(String.valueOf(tweets));
 		statsFavorits.setText(String.valueOf(favorites));
 		statsFriends.setText(String.valueOf(follows));

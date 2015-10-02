@@ -11,6 +11,7 @@ public class DiamondTweet {
 	public DString inReplyToStatusId;
 	public DLong createdAt;
 	public DLong userid;
+	public DLong id;
 	
 	public DiamondTweet() {
 		text = new DString();
@@ -18,6 +19,7 @@ public class DiamondTweet {
 		inReplyToStatusId = new DString();
 		createdAt = new DLong();
 		userid = new DLong();
+		id = new DLong();
 	}
 	
 	public String getScreenname() {
@@ -39,6 +41,13 @@ public class DiamondTweet {
 	}
 	public void setCreatedAt(long l) {
 		createdAt.Set(l);
+	}
+	
+	public long getId() {
+		return id.Value();
+	}
+	public void setId(long l) {
+		id.Set(l);
 	}
 	
 	public long getUserId() {

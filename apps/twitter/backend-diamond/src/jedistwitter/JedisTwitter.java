@@ -52,26 +52,22 @@ public class JedisTwitter {
 		tweet.setUserId(uid);
 		tweet.setCreatedAt(time);
 		tweet.setScreenname(screenName);
+		tweet.setId(pid);
 		//tweet.setInReplyToStatusId(replyIdString);
 		
-		//add to user timeline of poster
-		DStringList posterUserTimeline = new DStringList();
-		DObject.Map(posterUserTimeline, "twitter:uid:" + uidString + ":posts");
-		posterUserTimeline.Append(postKey);
-		
-		//add to home timeline of poster
-		DStringList posterHomeTimeline = new DStringList();
-		DObject.Map(posterHomeTimeline, "twitter:uid:" + uidString + ":timeline");
-		posterHomeTimeline.Append(postKey);
+		//add to user and home timeline of poster
+		String posterKey = "twitter:uid:" + uid;
+		DiamondUser poster = new DiamondUser();
+		Diamond.MapObject(poster, posterKey);
+		poster.posts.Append(postKey);
+		poster.timeline.Append(postKey);
 		
 		//add to home timeline of all of poster's followers
-		DSet followerUids = new DSet();
-		DObject.Map(followerUids, "twitter:uid:" + uidString + ":followers");
-		for (long followerUid : followerUids.Members()) {
-			String followerUidString = String.valueOf(followerUid);
-			DStringList followerHomeTimeline = new DStringList();
-			DObject.Map(followerHomeTimeline, "twitter:uid:" + followerUidString + ":timeline");
-			followerHomeTimeline.Append(postKey);
+		for (long followerUid : poster.followers.Members()) {
+			String followerKey = "twitter:uid:" + followerUid;
+			DiamondUser follower = new DiamondUser();
+			Diamond.MapObject(follower, followerKey);
+			follower.timeline.Append(postKey);
 		}
 		
 		//add to global timeline
@@ -99,8 +95,13 @@ public class JedisTwitter {
 			String userKey = "twitter:uid:" + uid;
 			DiamondUser user = new DiamondUser();
 			Diamond.MapObject(user, userKey);
-			user.setScreenname(screenName);
 			user.setName(name);
+			user.setScreenname(screenName);
+			user.setId(uid);
+			user.followers.Clear();
+			user.following.Clear();
+			user.posts.Clear();
+			user.favorites.Clear();
 			
 			DStringList userList = new DStringList();
 			DObject.Map(userList, "twitter:users");
@@ -151,13 +152,12 @@ public class JedisTwitter {
 		DObject.Map(followerUidObj, "twitter:user:" + screenName + ":uid");
 		long followerUid = followerUidObj.Value();
 		
-		DList followingList = new DList();
-		DObject.Map(followingList, "twitter:uid:" + followerUid + ":following");
-		followingList.Append(toFollowUid);
-		
-		DList followersList = new DList();
-		DObject.Map(followersList, "twitter:uid:" + toFollowUid + ":followers");
-		followersList.Append(followerUid);
+		DiamondUser followerUser = new DiamondUser();
+		DiamondUser toFollowUser = new DiamondUser();
+		Diamond.MapObject(followerUser, "twitter:uid:" + followerUid);
+		Diamond.MapObject(toFollowUser, "twitter:uid:" + toFollowUid);
+		followerUser.following.Add(toFollowUid);
+		toFollowUser.followers.Add(followerUid);
 		
 		return new JsonObject();
 	}
