@@ -12,12 +12,15 @@
  ******************************************************************************/
 package ch.ethz.twimight.activities;
 
+import java.util.List;
+
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -30,7 +33,10 @@ import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.fragments.adapters.ListViewPageAdapter;
 import ch.ethz.twimight.listeners.TabListener;
 import ch.ethz.twimight.location.LocationHelper;
+import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.util.Constants;
+import winterwell.jtwitter.Twitter;
+import winterwell.jtwitter.URLConnectionHttpClient;
 
 
 
@@ -123,6 +129,10 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
+		boolean benchmark = false;
+		if (benchmark) {
+			new BenchmarkTask().execute();
+		}
 	}
 		
 
@@ -261,6 +271,24 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	}
 
+	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
+			String twitterUrl = LoginActivity.getTwitterUrl(getBaseContext());
+			Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
+			List<winterwell.jtwitter.Status> timeline;
+			for (int i = 0; i < 1000; i++) {
+				long startTime = System.currentTimeMillis();
+				timeline = twitter.getHomeTimeline();
+				long endTime = System.currentTimeMillis();
+				long time = endTime - startTime;
+				Log.i("BENCHMARK", "OG twimight read in activity: " + time + "ms");
+			}
+			return null;
+		}
+	}
 	
 	
 	/**
