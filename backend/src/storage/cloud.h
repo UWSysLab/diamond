@@ -46,6 +46,10 @@
 #include <list>
 #include <string>
 
+#ifdef __APPLE__
+#include <pthread.h>
+#endif
+
 namespace diamond {
 
 

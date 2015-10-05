@@ -45,7 +45,7 @@ static uv_async_t async;
 
 int connectAsync();
 void pubsubCallback(redisAsyncContext *c, void *r, void *privdata);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__APPLE)
 void pubsubAsync(uv_async_t *handle);
 #else
 void pubsubAsync(uv_async_t *handle, int v);
@@ -650,7 +650,7 @@ void disconnectCallback(const redisAsyncContext *c, int status) {
 
 
 // Calling this function should wake the async thread wake up at the event loop
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__APPLE__)
 void pubsubAsync(uv_async_t *handle) {
 #else
 void pubsubAsync(uv_async_t *handle, int v) {
