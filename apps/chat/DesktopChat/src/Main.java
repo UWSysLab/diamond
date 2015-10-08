@@ -126,7 +126,6 @@ public class Main {
 		Diamond.DiamondInit(serverName);
 		
 		String chatLogKey = "dimessage:" + chatroomName + ":chatlog";
-		String updateTimeKey = "dimessage:" + chatroomName + ":updatetime";
 		
 		messageList = new Diamond.DStringList();
 		Diamond.DObject.Map(messageList, chatLogKey);
