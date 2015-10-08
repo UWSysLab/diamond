@@ -19,15 +19,11 @@ public class Main {
 	static String serverName = "coldwater.cs.washington.edu";
 	
 	private static Diamond.DStringList messageList;
-	private static Diamond.DLong updateTime;
 	
-	private static long numActions = 0;
-	private static long totalTime = 0;
-	
-	
-	public static long writeMessageTransaction(String msg) {
+	public static long[] writeMessageTransaction(String msg) {
 		String fullMsg = userName + ": " + msg;
 		int committed = 0;
+		int numAborts = 0;
 		long writeTimeStart = 0;
 		long writeTimeEnd = 1000 * 1000 * 1000;
 		while(committed == 0) {
@@ -37,11 +33,16 @@ public class Main {
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
 				messageList.Erase(0);
 			}
-			updateTime.Set(System.currentTimeMillis());
 			committed = Diamond.DObject.TransactionCommit();
+			if (committed == 0) {
+				numAborts++;
+			}
 		}
 		writeTimeEnd = System.currentTimeMillis();
-		return (writeTimeEnd - writeTimeStart);
+		long[] ret = new long[2];
+		ret[0] = writeTimeEnd - writeTimeStart;
+		ret[1] = numAborts;
+		return ret;
 	}
 	
 	public static long writeMessageAtomic(String msg) {
@@ -53,14 +54,14 @@ public class Main {
 		if (messageList.Size() > MESSAGE_LIST_SIZE) {
 			messageList.Erase(0);
 		}
-		updateTime.Set(System.currentTimeMillis());
 		writeTimeEnd = System.currentTimeMillis();
 		return (writeTimeEnd - writeTimeStart);
 	}
 	
-	public static long readMessagesTransaction() {
+	public static long[] readMessagesTransaction() {
 		List<String> result = null;
 		int committed = 0;
+		int numAborts = 0;
 		long readTimeStart = 0;
 		long readTimeEnd = 1000 * 1000 * 1000;
 		while (committed == 0) {
@@ -68,9 +69,15 @@ public class Main {
 			Diamond.DObject.TransactionBegin();
 			result = messageList.Members();
 			committed = Diamond.DObject.TransactionCommit();
+			if (committed == 0) {
+				numAborts++;
+			}
 		}
 		readTimeEnd = System.currentTimeMillis();
-		return (readTimeEnd - readTimeStart);
+		long[] ret = new long[2];
+		ret[0] = readTimeEnd - readTimeStart;
+		ret[1] = numAborts;
+		return ret;
 	}
 	
 	public static long readMessagesAtomic() {
@@ -122,9 +129,7 @@ public class Main {
 		String updateTimeKey = "dimessage:" + chatroomName + ":updatetime";
 		
 		messageList = new Diamond.DStringList();
-		updateTime = new Diamond.DLong();
 		Diamond.DObject.Map(messageList, chatLogKey);
-		Diamond.DObject.Map(updateTime, updateTimeKey);
 		
 		Random rand = new Random();
 		
@@ -150,15 +155,23 @@ public class Main {
 		}
 		
 		long startTime = System.currentTimeMillis();
-		numActions = 0;
+		
+		long numActions = 0;
+		long totalTime = 0;
+		long totalNumAborts = 0;
+
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
-					totalTime += readMessagesTransaction();
+					long[] ret = readMessagesTransaction();
+					totalTime += ret[0];
+					totalNumAborts += ret[1];
 				}
 				else {
-					totalTime += writeMessageTransaction(MESSAGE);
+					long[] ret = writeMessageTransaction(MESSAGE);
+					totalTime += ret[0];
+					totalNumAborts += ret[1];
 				}
 			}
 			else if (concurrency.equals("atomic")) {
@@ -180,6 +193,11 @@ public class Main {
 		}
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.println(userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
+		System.out.print(userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
+		if (concurrency.equals("transaction")) {
+			double averageAborts = ((double)totalNumAborts) / numActions;
+			System.out.print("\t" + averageAborts);
+		}
+		System.out.println();
 	}
 }
