@@ -91,12 +91,12 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		String usage = "usage: java Main run_type run_number read_fraction concurrency [client_name] [chatroom_name]\n"
+		String usage = "usage: java Main run_type run_number read_fraction concurrency server_url client_name chatroom_name\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
 		 			 + "    concurrency: transaction or atomic";
-		if (args.length < 4) {
+		if (args.length < 7) {
 			System.err.println(usage);
 			System.exit(0);
 		}
@@ -104,12 +104,9 @@ public class Main {
 		int runNumber = Integer.parseInt(args[1]);
 		double readFraction = Double.parseDouble(args[2]);
 		String concurrency = args[3];
-		if (args.length >= 5) {
-			userName = args[4];
-		}
-		if (args.length >= 6) {
-			chatroomName = args[5];
-		}
+		serverName = args[4];
+		userName = args[5];
+		chatroomName = args[6];
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
 			System.err.println(usage);
 			System.exit(0);
