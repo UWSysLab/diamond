@@ -23,6 +23,7 @@ import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -129,9 +130,12 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
-		boolean benchmark = false;
+		boolean benchmark = true;
 		if (benchmark) {
-			new BenchmarkTask().execute();
+			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+			StrictMode.setThreadPolicy(policy);
+			doBenchmark(getBaseContext());
+			//new BenchmarkTask().execute();
 		}
 	}
 		
@@ -271,21 +275,32 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	}
 
+	public static void doBenchmark(Context c) {
+		String screenName = LoginActivity.getTwitterScreenname(c);
+		String twitterUrl = LoginActivity.getTwitterUrl(c);
+		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
+		List<winterwell.jtwitter.Status> timeline;
+		long totalTime = 0;
+		long numReps = 0;
+		for (int i = 0; i < 100; i++) {
+			long startTime = System.currentTimeMillis();
+			timeline = twitter.getHomeTimeline();
+			long endTime = System.currentTimeMillis();
+			long time = endTime - startTime;
+			if (i >= 10 && i <= 90) {
+				totalTime += time;
+				numReps++;
+			}
+		}
+		double avgLatency = ((double)totalTime) / numReps;
+		Log.i("BENCHMARK", "OG twimight timeline read latency: " + avgLatency);
+	}
+	
 	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
 
 		@Override
 		protected Void doInBackground(Void... params) {
-			String screenName = LoginActivity.getTwitterScreenname(getBaseContext());
-			String twitterUrl = LoginActivity.getTwitterUrl(getBaseContext());
-			Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
-			List<winterwell.jtwitter.Status> timeline;
-			for (int i = 0; i < 1000; i++) {
-				long startTime = System.currentTimeMillis();
-				timeline = twitter.getHomeTimeline();
-				long endTime = System.currentTimeMillis();
-				long time = endTime - startTime;
-				Log.i("BENCHMARK", "OG twimight read in activity: " + time + "ms");
-			}
+			ShowTweetListActivity.doBenchmark(getBaseContext());
 			return null;
 		}
 	}

@@ -129,7 +129,8 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 		boolean benchmark = true;
 		if (benchmark) {
-			new BenchmarkTask().execute();
+			doBenchmark(getBaseContext());
+			//new BenchmarkTask().execute();
 		}
 	}
 		
@@ -268,24 +269,35 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 
 	}
+	
+	public static void doBenchmark(Context c) {
+		long totalTime = 0;
+		long numReps = 0;
+		for (int rep = 0; rep < 100; rep++) {
+			long startTime = System.currentTimeMillis();
+			String uid = LoginActivity.getTwitterId(c);
+			String timelineKey = "twitter:uid:" + uid + ":timeline";
+			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+			for (int i = 0; i < tweetList.Size(); i++) {
+				DiamondTweet tweet = tweetList.Get(i);
+			}
+			long endTime = System.currentTimeMillis();
+			long time = endTime - startTime;
+			if (rep >= 10 && rep <= 90) {
+				totalTime += time;
+				numReps++;
+			}
+		}
+		double avgLatency = ((double)totalTime) / numReps;
+		Log.i("BENCHMARK", "Diamond timeline read latency: " + avgLatency);
+	}
 
 	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
 
 		@Override
 		protected Void doInBackground(Void... params) {
-			for (int rep = 0; rep < 10; rep++) {
-				long startTime = System.currentTimeMillis();
-				String uid = LoginActivity.getTwitterId(getBaseContext());
-				String timelineKey = "twitter:uid:" + uid + ":timeline";
-				Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-						new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
-				for (int i = 0; i < tweetList.Size(); i++) {
-					DiamondTweet tweet = tweetList.Get(i);
-				}
-				long endTime = System.currentTimeMillis();
-				long time = endTime - startTime;
-				Log.i("BENCHMARK", "Timeline read: rep " + rep + " time " + time + "ms");
-			}
+			ShowTweetListActivity.doBenchmark(getBaseContext());
 			return null;
 		}
 	}
