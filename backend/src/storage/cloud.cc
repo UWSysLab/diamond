@@ -272,6 +272,24 @@ Cloud::Llen(const string &key, long &value) {
 }
 
 int
+Cloud::Lrem(const string &key, long count, const std::string &value) {
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    reply = (redisReply *)redisCommand(GetRedisContext(), "LREM %s %ld %s", key.c_str(), count, value.c_str());
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
 Cloud::Del(const string &key) {
     redisReply *reply;
 

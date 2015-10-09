@@ -36,7 +36,7 @@ DRedisStringList::Value(const int index)
 }
 
 void
-DRedisStringList::Append(const string val)
+DRedisStringList::Append(const string &val)
 {
     cloudstore->Rpush(_key, val);
 }
@@ -52,6 +52,11 @@ void
 DRedisStringList::EraseFirst() {
     string val;
     cloudstore->Lpop(_key, val, false);
+}
+
+void
+DRedisStringList::Remove(const string &val) {
+    cloudstore->Lrem(_key, 1, val);
 }
 
 void

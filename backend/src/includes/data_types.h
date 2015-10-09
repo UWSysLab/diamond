@@ -250,9 +250,10 @@ public:
     ~DRedisStringList() {};
     std::vector<std::string> Members();
     std::string Value(const int index);
-    void Append(const std::string val);
+    void Append(const std::string &val);
     void Append(const std::vector<std::string> &vec);
     void EraseFirst();
+    void Remove(const std::string &val);
     void Clear();
     long Size();
     DRedisStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
