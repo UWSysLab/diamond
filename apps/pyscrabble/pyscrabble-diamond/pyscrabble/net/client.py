@@ -415,12 +415,12 @@ class ScrabbleClient(object):
         
         # Callback to MainWindow, it should always be available.  Errors occur when the connection
         # to the server is lost.
-        if (isinstance(data, Failure)):
-            if isinstance(data.value, error.ConnectionDone): # Connection closed cleanly
-                self.mainWin.stopReactor()
-            else:
-                self.mainWin.fatalError(util.ErrorMessage("Connection to server has been lost"))
-            return
+        #if (isinstance(data, Failure)):
+        #    if isinstance(data.value, error.ConnectionDone): # Connection closed cleanly
+        #        self.mainWin.stopReactor()
+        #    else:
+        #        self.mainWin.fatalError(util.ErrorMessage("Connection to server has been lost"))
+        #    return
         
         command = serialize.loads(data)
         
