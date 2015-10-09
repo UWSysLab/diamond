@@ -247,6 +247,61 @@ Cloud::Write(const string &key, const string &value)
 }
 
 
+int
+Cloud::MultiWriteExec(std::map<string, string >& keyValues)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+    redisContext* context = GetRedisContext();    
+
+    // Send the requests
+    LOG_REQUEST("MULTIWRITE-EXEC BATCH", "");
+    redisAppendCommand(context, "MULTI");
+    auto it = keyValues.begin();
+    for (;it!=keyValues.end();it++){
+        string key = it->first;
+        string value = it->second;
+        redisAppendCommand(context, "SET %s %s", key.c_str(), value.c_str());
+    }
+    redisAppendCommand(context,  "EXEC");
+    LOG_REPLY("MULTIWRITE-EXEC BATCH", reply);
+
+
+    // Get the replies
+    redisGetReply(context,(void **)&reply); // reply for MULTI
+    freeReplyObject(reply);
+
+    for(unsigned int i = 0; i<keyValues.size();i++){
+        redisGetReply(context,(void **)&reply); // reply for GET
+        freeReplyObject(reply);
+        if (reply == NULL) {
+            Panic("reply == null");
+        }
+    }
+
+    redisGetReply(context,(void **)&reply); // reply for EXECs
+    freeReplyObject(reply);
+
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+
+    if(reply->type == REDIS_REPLY_NIL){
+        // Transaction failed
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
+
+    // Transaction succeded
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+
+
 
 int
 Cloud::Write(const string &key, const string &value, int write_cond, long expire_ms)
