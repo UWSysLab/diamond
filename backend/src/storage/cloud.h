@@ -80,6 +80,11 @@ public:
     int Unwatch(void);
     int Wait(const std::set<std::string> &keys, std::map<std::string, std::string> &lastReadValues);
 
+    int Lrange(const std::string &key, long start, long end, std::vector<std::string> &value);
+    int Lindex(const std::string &key, long index, std::string &value);
+    int Llen(const std::string &key, long &value);
+    int Del(const std::string &key);
+
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 
     redisContext* GetRedisContext();
