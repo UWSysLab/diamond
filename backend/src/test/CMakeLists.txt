@@ -68,3 +68,7 @@ target_link_libraries(testlongallocation diamond ${DIAMOND_LIB_DEPS})
 add_executable(testallocation
     testallocation.cc)
 target_link_libraries(testallocation diamond ${DIAMOND_LIB_DEPS})
+
+add_executable(testredisstringlist
+    testredisstringlist.cc)
+target_link_libraries(testredisstringlist diamond ${DIAMOND_LIB_DEPS})
