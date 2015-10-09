@@ -87,6 +87,8 @@ public:
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 
+    int MultiWriteExec(std::map<std::string, std::string >& keyValues);
+
     redisContext* GetRedisContext();
 
 private:
