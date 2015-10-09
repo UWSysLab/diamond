@@ -153,6 +153,7 @@ public:
     void Add(const std::unordered_set<uint64_t> &set);
     void Remove(const uint64_t val);
     void Clear();
+    int Size();
     DSet & operator=(const std::unordered_set<uint64_t> &set) { Add(set); return *this; };
     
 private:
@@ -239,6 +240,25 @@ private:
     std::string Serialize();
     void Deserialize(const std::string &s);
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
+};
+
+class DRedisStringList
+{
+public:
+    DRedisStringList() {};
+    DRedisStringList(const std::string &key) : _key(key) {};
+    ~DRedisStringList() {};
+    std::vector<std::string> Members();
+    std::string Value(const int index);
+    void Append(const std::string val);
+    void Append(const std::vector<std::string> &vec);
+    void EraseFirst();
+    void Clear();
+    long Size();
+    DRedisStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+    
+private:
+    std::string _key;
 };
 
 

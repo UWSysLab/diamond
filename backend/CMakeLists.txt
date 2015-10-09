@@ -33,7 +33,7 @@ INCLUDE(ExternalProject)
 set(STDLIBNAME "libhiredis.a")
 if(APPLE)
   set(DYLIBNAME "libhiredis.dylib")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.10.sdk -mmacosx-version-min=10.10")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk -mmacosx-version-min=10.10")
 else()
   set(DYLIBNAME "libhiredis.so")
 endif()
@@ -126,6 +126,7 @@ set(SRC_DIAMOND_DATA_TYPES
     ${DIAMOND_SOURCE_DIR}/data_types/set.cc
     ${DIAMOND_SOURCE_DIR}/data_types/list.cc
     ${DIAMOND_SOURCE_DIR}/data_types/stringlist.cc
+    ${DIAMOND_SOURCE_DIR}/data_types/redisstringlist.cc
     ${DIAMOND_SOURCE_DIR}/data_types/stringset.cc)
 
 # ---------------------------------------------------------

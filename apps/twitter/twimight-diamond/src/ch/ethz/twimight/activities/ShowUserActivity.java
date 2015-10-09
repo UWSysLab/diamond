@@ -34,8 +34,10 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.fragments.UserListFragment;
+import ch.ethz.twimight.net.twitter.DiamondUser;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
+import edu.washington.cs.diamond.Diamond;
 
 /**
  * Display a user
@@ -46,10 +48,8 @@ public class ShowUserActivity extends TwimightBaseActivity{
 
 	private static final String TAG = "ShowUserActivity";
 
-	Uri uri;
-	Cursor c;
 	int flags;
-	long rowId;
+	long userId;
 
 	// Views
 	private ImageView profileImage;
@@ -76,6 +76,9 @@ public class ShowUserActivity extends TwimightBaseActivity{
 	String userScreenName;
 	Handler handler;
 	ContentObserver observer = null;
+	
+	DiamondUser user;
+	DiamondUser localUser;
 
 	/** 
 	 * Called when the activity is first created. 
@@ -106,22 +109,20 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		showUserTweetsButton = (Button) findViewById(R.id.showUserTweetsButton);		
 		
 		if(getIntent().hasExtra("rowId")){
-			rowId = (long) getIntent().getIntExtra("rowId", 0);
+			userId = (long) getIntent().getLongExtra("rowId", 0);
 
-			// get data from local DB
-			uri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS + "/" + rowId);
-			c = getContentResolver().query(uri, null, null, null, null);			
+			user = new DiamondUser();
+			Diamond.MapObject(user, "twitter:uid:" + userId);
 			
-			if(c.getCount() == 0) finish();
-
-			c.moveToFirst();
-
+			localUser = new DiamondUser();
+			Diamond.MapObject(localUser, "twitter:uid:" + LoginActivity.getTwitterId(getBaseContext()));
+			
 		} else if(getIntent().hasExtra("screenname")){
 
 			Log.e(TAG, getIntent().getStringExtra("screenname"));
 			
 			// get data from local DB
-			uri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS);
+			/*uri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS);
 			c = getContentResolver().query(uri, null, TwitterUsers.COL_SCREENNAME+" LIKE '"+getIntent().getStringExtra("screenname")+"'", null, null);
 
 			if(c.getCount() == 0) {
@@ -131,7 +132,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			}
 
 			c.moveToFirst();
-			rowId = c.getLong(c.getColumnIndex("_id"));
+			rowId = c.getLong(c.getColumnIndex("_id"));*/
 
 		} else {
 			// if we don't know which user to show
@@ -139,21 +140,6 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			finish();
 			return;
 		}
-
-		// mark the user for updating
-		uri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS + "/" + rowId);
-		ContentValues cv = new ContentValues();
-		cv.put(TwitterUsers.COL_FLAGS, TwitterUsers.FLAG_TO_UPDATEIMAGE|TwitterUsers.FLAG_TO_UPDATE|c.getInt(c.getColumnIndex(TwitterUsers.COL_FLAGS)));
-		getContentResolver().update(uri, cv, null, null);
-		
-		// trigger the update
-		Intent i = new Intent(this, TwitterService.class);
-		i.putExtra("synch_request", TwitterService.SYNCH_USER);
-		i.putExtra("rowId", rowId);
-		startService(i);
-		
-		// register content observer to refresh when user was updated
-		handler = new Handler();		
 
 		// show the views
 		showUserInfo();
@@ -166,9 +152,9 @@ public class ShowUserActivity extends TwimightBaseActivity{
 	@Override
 	public void onResume(){
 		super.onResume();
-		observer = new UserContentObserver(handler);
+		/*observer = new UserContentObserver(handler);
 		c.registerContentObserver(observer);
-		running = true;
+		running = true;*/
 	}
 	
 	/**
@@ -177,14 +163,14 @@ public class ShowUserActivity extends TwimightBaseActivity{
 	@Override
 	public void onPause(){
 		super.onPause();
-		if(c!=null){
+		/*if(c!=null){
 			if(observer != null) 
 				try {
 					c.unregisterContentObserver(observer);
 				} catch (IllegalStateException ex) {
 					//Log.e(TAG,"error unregistering observer",ex);
 				}
-		}
+		}*/
 	}
 
 	/**
@@ -233,7 +219,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		 */
 
 		// do we have a profile image?
-		if(!c.isNull(c.getColumnIndex(TwitterUsers.COL_SCREENNAME))){
+		/*if(!c.isNull(c.getColumnIndex(TwitterUsers.COL_SCREENNAME))){
 			int userId = c.getInt(c.getColumnIndex("_id"));
 			Uri imageUri = Uri.parse("content://" +TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS + "/" + userId);
 			InputStream is;
@@ -249,19 +235,19 @@ public class ShowUserActivity extends TwimightBaseActivity{
 				Log.e(TAG,"error opening input stream",e);
 				profileImage.setImageResource(R.drawable.default_profile);
 			}	
-		}
-		userScreenName = c.getString(c.getColumnIndex(TwitterUsers.COL_SCREENNAME)); 
+		}*/
+		userScreenName = user.getScreenname(); 
 		screenName.setText("@" + userScreenName);
-		realName.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_NAME)));
+		realName.setText(user.getName());
 
-		if(c.getColumnIndex(TwitterUsers.COL_LOCATION) >=0){
-			location.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_LOCATION)));
-			location.setVisibility(TextView.VISIBLE);
-		} else {
+		//if(c.getColumnIndex(TwitterUsers.COL_LOCATION) >=0){
+		//	location.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_LOCATION)));
+		//	location.setVisibility(TextView.VISIBLE);
+		//} else {
 			location.setVisibility(TextView.GONE);
-		}
+		//}
 
-		if(c.getColumnIndex(TwitterUsers.COL_DESCRIPTION) >=0){
+		/*if(c.getColumnIndex(TwitterUsers.COL_DESCRIPTION) >=0){
 			String tmp = c.getString(c.getColumnIndex(TwitterUsers.COL_DESCRIPTION));
 			if(tmp != null){
 				description.setText(tmp);
@@ -269,29 +255,29 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			} else {
 				description.setVisibility(TextView.GONE);
 			}
-		} else {
+		} else {*/
 			description.setVisibility(TextView.GONE);
-		}
+		//}
 
-		int tweets = c.getInt(c.getColumnIndex(TwitterUsers.COL_STATUSES));
-		int favorites = c.getInt(c.getColumnIndex(TwitterUsers.COL_FAVORITES));
-		int follows = c.getInt(c.getColumnIndex(TwitterUsers.COL_FRIENDS));
-		int followed = c.getInt(c.getColumnIndex(TwitterUsers.COL_FOLLOWERS));
-
+		long tweets = user.getNumTweets();
+		long favorites = user.getNumFavorites();
+		long follows = user.getNumFollowing();
+		long followed = user.getNumFollowers();
+		
 		statsTweets.setText(String.valueOf(tweets));
 		statsFavorits.setText(String.valueOf(favorites));
 		statsFriends.setText(String.valueOf(follows));
 		statsFollowers.setText(String.valueOf(followed));
 
 		// if the user we show is the local user, disable the follow button
-		if(isLocalUser(Long.toString(c.getLong(c.getColumnIndex(TwitterUsers.COL_TWITTERUSER_ID))))){
+		if(isLocalUser(Long.toString(user.getId()))){
 			showLocalUser();
 		} else {
 			showRemoteUser();
 		}
 		
 		// if we have a user ID we show the recent tweets
-		if(!c.isNull(c.getColumnIndex(TwitterUsers.COL_TWITTERUSER_ID))){
+		/*if(!c.isNull(c.getColumnIndex(TwitterUsers.COL_TWITTERUSER_ID))){
 			showUserTweetsButton.setOnClickListener(new OnClickListener(){
 
 				@Override
@@ -310,7 +296,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			showUserTweetsButton.setVisibility(Button.VISIBLE);
 		} else {
 			showUserTweetsButton.setVisibility(Button.GONE);
-		}
+		}*/
 	}
 
 	/**
@@ -372,7 +358,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 	 * Sets the UI up to show a remote user (any user except for the local one)
 	 */
 	private void showRemoteUser(){
-		flags = c.getInt(c.getColumnIndex(TwitterUsers.COL_FLAGS));
+		//flags = c.getInt(c.getColumnIndex(TwitterUsers.COL_FLAGS));
 		Log.i(TAG,"showRemoteUser");
 		/*
 		 * The following cases are possible: 
@@ -382,7 +368,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		 * - the request to follow was sent
 		 * - none of the above, we can follow the user
 		 */
-		following = c.getInt(c.getColumnIndex(TwitterUsers.COL_ISFRIEND))>0;
+		following = localUser.isFollowing(user);
 		if(following){
 			followButton.setText(R.string.unfollow);
 		} else {
@@ -394,27 +380,19 @@ public class ShowUserActivity extends TwimightBaseActivity{
 			@Override
 			public void onClick(View v) {
 				if(following){
-					getContentResolver().update(uri, setUnfollowFlag(flags), null, null);
+					localUser.unfollow(user);
 					followButton.setVisibility(Button.GONE);
-					unfollowInfo.setVisibility(LinearLayout.VISIBLE);
 					following=false;
 				} else {
-					getContentResolver().update(uri, setFollowFlag(flags), null, null);
+					localUser.follow(user);
 					followButton.setVisibility(Button.GONE);
-					followInfo.setVisibility(LinearLayout.VISIBLE);
 					following = true;
-				}
-				
-				// trigger the update
-				Intent i = new Intent(getBaseContext(), TwitterService.class);
-				i.putExtra("synch_request", TwitterService.SYNCH_USER);
-				i.putExtra("rowId", rowId);
-				startService(i);				
+				}			
 			}
 
 		});
 
-		if((flags & TwitterUsers.FLAG_TO_FOLLOW)>0){			
+		/*if((flags & TwitterUsers.FLAG_TO_FOLLOW)>0){			
 			// disable follow button
 			followButton.setVisibility(Button.GONE);
 			// show info that the user will be followed upon connectivity
@@ -441,7 +419,7 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		if(c.getInt(c.getColumnIndex(TwitterUsers.COL_FOLLOWREQUEST))>0){			
 			// disable follow button
 			followButton.setVisibility(Button.GONE);
-		}    
+		}*/  
 
 		/*
 		 * Mention button
@@ -498,37 +476,4 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		return cv;
 	}
 
-	/**
-	 * Calls showUserInfo if the user data has been updated
-	 * @author thossmann
-	 *
-	 */
-	class UserContentObserver extends ContentObserver {
-		public UserContentObserver(Handler h) {
-			super(h);
-		}
-
-		@Override
-		public boolean deliverSelfNotifications() {
-			return true;
-		}
-
-		@Override
-		public void onChange(boolean selfChange) {
-			
-			super.onChange(selfChange);
-			
-			// and get a new one
-			uri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS + "/" + rowId);
-			c = getContentResolver().query(uri, null, null, null, null);
-			if(c.getCount() == 0) 
-				finish();
-			else {
-				c.moveToFirst();			
-				showUserInfo();
-			}
-			
-
-		}
-	}
 }

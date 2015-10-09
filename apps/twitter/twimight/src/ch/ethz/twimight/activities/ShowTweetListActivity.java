@@ -12,14 +12,18 @@
  ******************************************************************************/
 package ch.ethz.twimight.activities;
 
+import java.util.List;
+
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -30,7 +34,10 @@ import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.fragments.adapters.ListViewPageAdapter;
 import ch.ethz.twimight.listeners.TabListener;
 import ch.ethz.twimight.location.LocationHelper;
+import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.util.Constants;
+import winterwell.jtwitter.Twitter;
+import winterwell.jtwitter.URLConnectionHttpClient;
 
 
 
@@ -123,6 +130,13 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
+		boolean benchmark = true;
+		if (benchmark) {
+			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+			StrictMode.setThreadPolicy(policy);
+			doBenchmark(getBaseContext());
+			//new BenchmarkTask().execute();
+		}
 	}
 		
 
@@ -261,6 +275,35 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	}
 
+	public static void doBenchmark(Context c) {
+		String screenName = LoginActivity.getTwitterScreenname(c);
+		String twitterUrl = LoginActivity.getTwitterUrl(c);
+		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
+		List<winterwell.jtwitter.Status> timeline;
+		long totalTime = 0;
+		long numReps = 0;
+		for (int i = 0; i < 100; i++) {
+			long startTime = System.currentTimeMillis();
+			timeline = twitter.getHomeTimeline();
+			long endTime = System.currentTimeMillis();
+			long time = endTime - startTime;
+			if (i >= 10 && i <= 90) {
+				totalTime += time;
+				numReps++;
+			}
+		}
+		double avgLatency = ((double)totalTime) / numReps;
+		Log.i("BENCHMARK", "OG twimight timeline read latency: " + avgLatency);
+	}
+	
+	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Void... params) {
+			ShowTweetListActivity.doBenchmark(getBaseContext());
+			return null;
+		}
+	}
 	
 	
 	/**

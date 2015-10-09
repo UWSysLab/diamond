@@ -1757,6 +1757,17 @@ public class TwitterService extends Service {
 			try {				
 				timeline = twitter.getHomeTimeline();
 				
+				boolean benchmark = false;
+				if (benchmark) {
+					for (int i = 0; i < 1000; i++) {
+						long startTime = System.currentTimeMillis();
+						timeline = twitter.getHomeTimeline();
+						long endTime = System.currentTimeMillis();
+						long time = endTime - startTime;
+						Log.i("BENCHMARK", "OG twimight read in service: " + time + "ms");
+					}
+				}
+				
 				if (timeline.size()>0 && overscroll == OVERSCROLL_BOTTOM ) {
 					Constants.TIMELINE_BUFFER_SIZE += 50;
 					Log.i(TAG, "BUFFER_SIZE =  "+ Constants.TIMELINE_BUFFER_SIZE);

@@ -108,6 +108,7 @@ public class TweetListFragment extends ListFragment {
 				DiamondTweet tweet = (DiamondTweet) arg0.getItemAtPosition(position);
 				Intent i = new Intent(getActivity(), ShowTweetActivity.class);
 				i.putExtra("rowId", tweet.getId());
+				i.putExtra("position", position);			
 				i.putExtra("type", type);			
 				startActivity(i);
 				//if (type == SEARCH_TWEETS)
@@ -121,9 +122,6 @@ public class TweetListFragment extends ListFragment {
 	}
 
 	ListAdapter getData(int filter) {
-		List<DiamondTweet> testList = new ArrayList<DiamondTweet>();
-		DiamondTweet tweet1 = new DiamondTweet();
-		
 		Diamond.MappedObjectList<DiamondTweet> tweetList;
 		
 		switch(filter) {
@@ -131,6 +129,11 @@ public class TweetListFragment extends ListFragment {
 			String uid = LoginActivity.getTwitterId(this.getActivity().getBaseContext());
 			String timelineKey = "twitter:uid:" + uid + ":timeline";
 			tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+			return new DiamondTweetAdapter(this.getActivity().getBaseContext(), -1, tweetList);
+		case SEARCH_TWEETS:
+			String globalTimelineKey = "twitter:timeline";
+			tweetList = new Diamond.MappedObjectList<DiamondTweet>(globalTimelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
 			return new DiamondTweetAdapter(this.getActivity().getBaseContext(), -1, tweetList);
 		}

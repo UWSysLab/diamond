@@ -45,7 +45,7 @@ static uv_async_t async;
 
 int connectAsync();
 void pubsubCallback(redisAsyncContext *c, void *r, void *privdata);
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__APPLE)
 void pubsubAsync(uv_async_t *handle);
 #else
 void pubsubAsync(uv_async_t *handle, int v);
@@ -186,6 +186,103 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values, vector<boo
             values.at(i) = "";
             exist.at(i) = false;
         }
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
+Cloud::Lrange(const string &key, long start, long stop, vector<string> & ret) {
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    reply = (redisReply *)redisCommand(GetRedisContext(), "LRANGE %s %ld %ld", key.c_str(), start, stop);
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+    if(reply->type != REDIS_REPLY_ARRAY) {
+        Panic("Lrange reply is not an array");
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
+
+    for (size_t i = 0; i < reply->elements; i++) {
+        redisReply *subreply = reply->element[i];
+        if (subreply->type == REDIS_REPLY_STRING) {
+            ret.push_back(string(subreply->str));
+        }
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
+Cloud::Lindex(const string &key, long index, string &value) {
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    reply = (redisReply *)redisCommand(GetRedisContext(), "LINDEX %s %ld", key.c_str(), index);
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+
+    if (reply->type == REDIS_REPLY_STRING) {
+        value = string(reply->str);
+    }
+    else if (reply->type == REDIS_REPLY_NIL) {
+        Panic("Lindex() index out of range");
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
+Cloud::Llen(const string &key, long &value) {
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    reply = (redisReply *)redisCommand(GetRedisContext(),  "LLEN %s", key.c_str());
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+
+    if (reply->type == REDIS_REPLY_INTEGER) {
+        value = reply->integer;
+    }
+    else {
+        Panic("Llen reply is not an integer");
+    }
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+int
+Cloud::Del(const string &key) {
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+
+    reply = (redisReply *)redisCommand(GetRedisContext(), "DEL %s", key.c_str());
+
+    if (reply == NULL) {
+        Panic("reply == null");
     }
 
     freeReplyObject(reply);
@@ -705,7 +802,7 @@ void disconnectCallback(const redisAsyncContext *c, int status) {
 
 
 // Calling this function should wake the async thread wake up at the event loop
-#ifdef __ANDROID__
+#if defined(__ANDROID__) || defined(__APPLE__)
 void pubsubAsync(uv_async_t *handle) {
 #else
 void pubsubAsync(uv_async_t *handle, int v) {

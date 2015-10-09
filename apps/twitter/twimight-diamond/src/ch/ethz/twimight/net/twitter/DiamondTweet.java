@@ -2,6 +2,7 @@ package ch.ethz.twimight.net.twitter;
 
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.Diamond.DCounter;
 import edu.washington.cs.diamond.Diamond.DLong;
 
 
@@ -12,6 +13,8 @@ public class DiamondTweet {
 	public DLong createdAt;
 	public DLong userid;
 	public DLong id;
+	public DCounter numFavorites;
+	public DString name;
 	
 	public DiamondTweet() {
 		text = new DString();
@@ -20,6 +23,8 @@ public class DiamondTweet {
 		createdAt = new DLong();
 		userid = new DLong();
 		id = new DLong();
+		numFavorites = new DCounter();
+		name = new DString();
 	}
 	
 	public String getScreenname() {
@@ -27,6 +32,13 @@ public class DiamondTweet {
 	}
 	public void setScreenname(String s) {
 		screenname.Set(s);
+	}
+	
+	public String getName() {
+		return name.Value();
+	}
+	public void setName(String s) {
+		name.Set(s);
 	}
 	
 	public String getText() {
@@ -64,8 +76,14 @@ public class DiamondTweet {
 		inReplyToStatusId.Set(s);
 	}
 	
-	public String getName() {
-		return "Dummy Name";
+	public int getNumFavorites() {
+		return numFavorites.Value();
+	}
+	public void incrNumFavorites() {
+		numFavorites.Increment();
+	}
+	public void decrNumFavorites() {
+		numFavorites.Decrement();
 	}
 	
 	public String getRetweetedBy() {

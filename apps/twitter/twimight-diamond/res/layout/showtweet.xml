@@ -197,6 +197,19 @@
 			    android:text="This retweet will be posted soon (when Internet connection available)." />
 
 		</LinearLayout>
+		
+		<LinearLayout android:id="@+id/showTweetStatistics"
+			android:orientation="horizontal" android:layout_width="match_parent"
+			android:layout_height="wrap_content" android:padding="10dp"
+			android:layout_marginTop="10dp" android:background="@drawable/content_box">
+			<TextView
+			    android:id="@+id/showTweetNumFavorites"
+			    style="@style/twimightDefaultTextAppearance"
+			    android:layout_width="wrap_content"
+			    android:layout_height="wrap_content"
+			    android:text="Favorited placeholder text" />
+
+		</LinearLayout>
 
 		<LinearLayout android:id="@+id/showTweetButtons"
 			android:orientation="horizontal" android:layout_width="match_parent"

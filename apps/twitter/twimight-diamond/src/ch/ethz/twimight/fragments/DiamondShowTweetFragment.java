@@ -68,6 +68,7 @@ import ch.ethz.twimight.location.LocationHelper;
 import ch.ethz.twimight.net.Html.HtmlPage;
 import ch.ethz.twimight.net.Html.StartServiceHelper;
 import ch.ethz.twimight.net.twitter.DiamondTweet;
+import ch.ethz.twimight.net.twitter.DiamondUser;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
@@ -114,6 +115,7 @@ public class DiamondShowTweetFragment extends Fragment {
 	String screenName;
 	
 	DiamondTweet tweet;
+	DiamondUser localUser;
 
 	protected String TAG = "ShowTweetFragment";
 
@@ -198,6 +200,9 @@ public class DiamondShowTweetFragment extends Fragment {
     		//else {    			
     			tweet = new DiamondTweet();
     			Diamond.MapObject(tweet, "twitter:pid:" + tweetId);
+    			
+    			localUser = new DiamondUser();
+    			Diamond.MapObject(localUser, "twitter:uid:" + LoginActivity.getTwitterId(getActivity().getBaseContext()));
     		
     			userID = String.valueOf(tweet.getUserId());
     			//locate the directory where the photos are stored
@@ -452,7 +457,7 @@ public class DiamondShowTweetFragment extends Fragment {
 		//}
 		
 		// Favorite button
-		favorited = tweet.getToFavorite();
+		favorited = localUser.hasFavorite(tweet);
 		favoriteButton = (ImageButton) view.findViewById(R.id.showTweetFavorite);
 		if( favorited && !((flags & Tweets.FLAG_TO_UNFAVORITE)>0)){
 			favoriteButton.setImageResource(R.drawable.btn_twimight_favorite_on);
@@ -464,11 +469,13 @@ public class DiamondShowTweetFragment extends Fragment {
 				
 				if(favorited){
 					// unfavorite
+					localUser.unfavorite(tweet);
 					((ImageButton) v).setImageResource(R.drawable.btn_twimight_favorite);
 					favorited=false;
 					
 				} else {
 					// favorite
+					localUser.favorite(tweet);
 					((ImageButton) v).setImageResource(R.drawable.btn_twimight_favorite_on);
 					favorited=true;
 				}
@@ -770,6 +777,9 @@ public class DiamondShowTweetFragment extends Fragment {
 			createdWithView.setVisibility(TextView.GONE);
 		//}
 
+		TextView textNumFavorites = (TextView) view.findViewById(R.id.showTweetNumFavorites);
+		long numFavorites = tweet.getNumFavorites();
+		textNumFavorites.setText("Favorited by " + numFavorites + " users");
 
 		String retweeted_by = tweet.getRetweetedBy();
 		TextView textRetweeted_by = (TextView) view.findViewById(R.id.showTweetRetweeted_by);

@@ -203,6 +203,7 @@ public class Diamond {
         public native void Add(long val);
         public native void Remove(long val);
         public native void Clear();
+        public native int Size();
 
 
         public native @ByVal DiamondUtil.LongVector MembersAsVector();

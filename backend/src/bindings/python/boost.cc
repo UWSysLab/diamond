@@ -18,20 +18,32 @@ using namespace boost::python;
 
 BOOST_PYTHON_MODULE(libpydiamond)
 {
-    class_<DString>("DString")
+    void (*DiamondInitNoArgs)() = &DiamondInit;
+    void (*DiamondInitWithArgs)(const std::string &) = &DiamondInit;
+    def("DiamondInit", DiamondInitNoArgs);
+    def("DiamondInit", DiamondInitWithArgs);
+
+    class_<DObject, boost::noncopyable>("DObject", no_init)
+        .def("TransactionBegin", &DObject::TransactionBegin)
+        .def("TransactionCommit", &DObject::TransactionCommit)
+        .def("TransactionRetry", &DObject::TransactionRetry)
+        .def("Map", &DObject::Map)
+    ;
+
+    class_<DString, bases<DObject> >("DString")
         .def("Map", &DString::Map)
         .staticmethod("Map")
         .def("Value", &DString::Value)
         .def("Set", &DString::Set)
     ;
 
-    class_<DLong>("DLong")         
+    class_<DLong, bases<DObject> >("DLong")         
         .def("Map", &DLong::Map)
         .staticmethod("Map")
         .def("Value", &DLong::Value)
         .def("Set", &DLong::Set)
     ;
-    class_<DCounter>("DCounter")
+    class_<DCounter, bases<DObject> >("DCounter")
         .def("Map", &DCounter::Map)
         .staticmethod("Map")
         .def("Value", &DCounter::Value)
@@ -85,7 +97,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
     // the to_python converter above).
 
     void (DSet::*Add)(const uint64_t) = &DSet::Add;
-    class_<DSet>("DSet")
+    class_<DSet, bases<DObject> >("DSet")
         .def("Map", &DSet::Map)
         .staticmethod("Map")
         .def("Members", &DSet::Members)
@@ -109,7 +121,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
     boost::python::to_python_converter<std::vector<uint64_t>, uint64_vector_to_list>();
 
     void (DList::*Append)(const uint64_t) = &DList::Append;
-    class_<DList>("DList")
+    class_<DList, bases<DObject> >("DList")
         .def("Map", &DList::Map)
         .staticmethod("Map")
         .def("Members", &DList::Members)
@@ -136,7 +148,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
     boost::python::to_python_converter<std::vector<std::string>, string_vector_to_list>();
 
     void (DStringList::*StringAppend)(const std::string) = &DStringList::Append;
-    class_<DStringList>("DStringList")
+    class_<DStringList, bases<DObject> >("DStringList")
         .def("Map", &DStringList::Map)
         .staticmethod("Map")
         .def("Members", &DStringList::Members)

@@ -69,6 +69,8 @@
               <argument>-Xcompiler</argument>
               <argument>-iquote../../includes</argument>
               <argument>-Xcompiler</argument>
+              <argument>-iquote../..</argument>
+              <argument>-Xcompiler</argument>
               <argument>-L../../../build</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
@@ -114,6 +116,8 @@
               <argument>-Wl,--fix-cortex-a8</argument>
               <argument>-Xcompiler</argument>
               <argument>-iquote../../includes</argument>
+              <argument>-Xcompiler</argument>
+              <argument>-iquote../..</argument>
               <argument>-Xcompiler</argument>
               <argument>-L../../../build-arm</argument>
               <argument>-Xcompiler</argument>

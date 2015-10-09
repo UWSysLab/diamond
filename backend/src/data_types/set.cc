@@ -136,5 +136,17 @@ DSet::Clear()
 
     pthread_mutex_unlock(&_objectMutex); 
 }
+
+int
+DSet::Size() {
+    pthread_mutex_lock(&_objectMutex);
+
+    Pull();
+    int ret = _set.size();
+
+    pthread_mutex_unlock(&_objectMutex);
+
+    return ret;
+}
     
 } // namespace diamond

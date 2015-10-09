@@ -9,6 +9,7 @@ from pyscrabble import gtkutil
 from pyscrabble import util
 from pyscrabble import exceptions
 from twisted.internet import reactor
+from twisted.internet import task
 try:
     set
 except NameError:
@@ -81,6 +82,8 @@ class GameFrame(gtk.Frame):
         self.dgame = DScrabbleGame(gameId)
         self.dgame.addPlayer(self.username)
         
+        self.lastTurn = 0
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -90,8 +93,19 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
+        
+        l = task.LoopingCall(self.doDiamondRefresh)
+        l.start(1.0)
     
-    def doDiamondRefresh(self):        
+    def doDiamondRefresh(self):
+        # Check for a turn change
+        currentTurn = self.dgame.getTurnNumber()
+        if (currentTurn != self.lastTurn):
+            # If there's a turn change, do a Diamond refresh
+            self.lastTurn = currentTurn
+            self.diamondUpdateTurn()
+    
+    def diamondUpdateTurn(self):        
         # Update current turn
         currentPlayer = self.dgame.getCurrentPlayer()
         if currentPlayer.getUsername() == self.username:
@@ -802,7 +816,8 @@ class GameFrame(gtk.Frame):
     
     def endTurn(self):
         self.dgame.moveToNextTurn()
-        self.client.diamondRequestRefresh(self.currentGameId)
+        self.doDiamondRefresh()
+        #self.client.diamondRequestRefresh(self.currentGameId)
     
     def checkLegality(self, moves):
         for move in moves:
