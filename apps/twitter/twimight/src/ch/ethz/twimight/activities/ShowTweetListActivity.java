@@ -279,18 +279,18 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		String screenName = LoginActivity.getTwitterScreenname(c);
 		String twitterUrl = LoginActivity.getTwitterUrl(c);
 		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
-		List<winterwell.jtwitter.Status> timeline;
 		long totalTime = 0;
 		long numReps = 0;
 		for (int i = 0; i < 100; i++) {
 			long startTime = System.currentTimeMillis();
-			timeline = twitter.getHomeTimeline();
+			twitter.getHomeTimeline();
 			long endTime = System.currentTimeMillis();
 			long time = endTime - startTime;
 			if (i >= 10 && i <= 90) {
 				totalTime += time;
 				numReps++;
 			}
+			Log.i("BENCHMARK", "OG twimight benchmark time: " + time);
 		}
 		double avgLatency = ((double)totalTime) / numReps;
 		Log.i("BENCHMARK", "OG twimight timeline read latency: " + avgLatency);
