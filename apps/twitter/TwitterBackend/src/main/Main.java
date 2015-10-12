@@ -39,6 +39,10 @@ abstract class BaseJsonHandler implements HttpHandler {
 		catch (Exception ex) {
 			ex.printStackTrace();
 		}
+		
+		//Bug fix
+		exchange.getResponseHeaders().add("Connection", "close");
+		
 		exchange.sendResponseHeaders(200, 0);
 		OutputStream os = exchange.getResponseBody();
 		os.write(responseJson.toString().getBytes());
