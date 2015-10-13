@@ -87,7 +87,10 @@ public:
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
 
+    // Pipelining methods
     int MultiWriteExec(std::map<std::string, std::string >& keyValues);
+    int WatchRead(const std::string &key, std::string &value);
+
 
     redisContext* GetRedisContext();
 
