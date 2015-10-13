@@ -11,11 +11,11 @@ my $concurrency = "transaction";
 my $server = "localhost";
 
 for (my $numClients = 1; $numClients < 20; $numClients++) {
-    system("rm $prefix*");
-    system("rm $errPrefix*");
+    system("rm $prefix.*");
+    system("rm $errPrefix.*");
 
     for (my $i = 0; $i < $numClients; $i++) {
-        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.txt 2> $errPrefix.$i.txt &");
+        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.txt 2> $errPrefix.$i.error &");
     }
 
     sleep($time + 5);

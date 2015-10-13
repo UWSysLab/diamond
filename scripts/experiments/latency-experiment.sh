@@ -5,15 +5,15 @@ CONCURRENCY=transaction
 
 SERVER=moranis.cs.washington.edu
 
-./desktop-chat-wrapper.sh fixed 1000 0 transaction verbose $SERVER writer latencyroom > desktopchat-transaction-writer-log.txt 2> desktop-latency-error1.txt &
+./desktop-chat-wrapper.sh fixed 1000 0 transaction verbose $SERVER writer latencyroom > desktopchat-transaction-writer-log.txt 2> desktopchat-transaction-writer.error &
 PID1=$!
-./desktop-chat-wrapper.sh fixed 1000 1.0 transaction verbose $SERVER reader latencyroom > desktopchat-transaction-reader-log.txt 2> desktop-latency-error2.txt &
+./desktop-chat-wrapper.sh fixed 1000 1.0 transaction verbose $SERVER reader latencyroom > desktopchat-transaction-reader-log.txt 2> desktopchat-transaction-reader.error &
 PID2=$!
 wait $PID1 $PID2
 
-./desktop-chat-wrapper.sh fixed 1000 0 atomic verbose $SERVER writer latencyroom > desktopchat-atomic-writer-log.txt 2> desktop-latency-error3.txt &
+./desktop-chat-wrapper.sh fixed 1000 0 atomic verbose $SERVER writer latencyroom > desktopchat-atomic-writer-log.txt 2> desktopchat-atomic-writer.error &
 PID1=$!
-./desktop-chat-wrapper.sh fixed 1000 1.0 atomic verbose $SERVER reader latencyroom > desktopchat-atomic-reader-log.txt 2> desktop-latency-error4.txt &
+./desktop-chat-wrapper.sh fixed 1000 1.0 atomic verbose $SERVER reader latencyroom > desktopchat-atomic-reader-log.txt 2> desktopchat-atomic-reader.error &
 PID2=$!
 wait $PID1 $PID2
 
