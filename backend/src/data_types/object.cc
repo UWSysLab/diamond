@@ -64,8 +64,6 @@ DObject::Map(DObject &addr, const string &key)
 }
 
 // XXX: Ensure return codes are correct
-// XXX: Protect with pthread locks
-// XXX: per-key vs per-dobject?
 
 int
 DObject::PullAlways(){
@@ -83,6 +81,25 @@ DObject::PullAlways(){
     Deserialize(value);
     return 0;
 }
+
+// BATCHING VERSION
+int
+DObject::PullAlwaysWatch(){
+    string value;
+    LOG_RC("PullAlwaysWatch()"); 
+
+    int ret = cloudstore->WatchRead(_key, value);
+    if (ret != ERR_EMPTY && ret != ERR_OK) {
+        return ret;
+    }
+
+    if (ret == ERR_EMPTY) {
+        value = "";
+    }
+    Deserialize(value);
+    return 0;
+}
+
 
 // XXX: need to use locks in the readers/writers
 
@@ -108,9 +125,14 @@ DObject::Pull(){
             Deserialize(value);
             return 0;
         }
-        cloudstore->Watch(this->GetKey());
         txRS->insert(this->GetKey());
-        int res = PullAlways();
+        
+        // WITHOUT BATCHING
+        //cloudstore->Watch(this->GetKey());
+        //int res = PullAlways();
+
+        // WITH BATCHING
+        int res = PullAlwaysWatch();
 
         // Add new value to our local TX view
         string value;
@@ -551,28 +573,44 @@ DObject::TransactionCommit(void)
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
 
-    // Begin storage transaction 
-    // (the Watch commands executed earlier detect the conflicts)
-    int res = cloudstore->Multi();
-    assert(res == ERR_OK);
-
-    string value;
+// WITH BATCHING
+    std::map<string, string> keyValues;
     std::map<string, string >* locals = GetTransactionLocals();
     std::set<string>* txWS = GetTransactionWS();
     auto it = txWS->begin();
     for (; it != txWS->end(); it++) {
         // Push our local Tx values for all objects in our WS
         string key = *it;
-        value = (*locals)[key];
+        string value = (*locals)[key];
+        keyValues[key] = value;
+    }     
+    
+    int res = cloudstore->MultiWriteExec(keyValues);
 
-        int ret = cloudstore->Write(key, value);
-        assert(ret == ERR_OK); 
 
-    }
-
-    // Try to commit the storage transaction
-    res = cloudstore->Exec();
-
+// WITHOUT BATCHING
+//     // Begin storage transaction 
+//     // (the Watch commands executed earlier detect the conflicts)
+//     int res = cloudstore->Multi();
+//     assert(res == ERR_OK);
+// 
+//     string value;
+//     std::map<string, string >* locals = GetTransactionLocals();
+//     std::set<string>* txWS = GetTransactionWS();
+//     auto it = txWS->begin();
+//     for (; it != txWS->end(); it++) {
+//         // Push our local Tx values for all objects in our WS
+//         string key = *it;
+//         value = (*locals)[key];
+// 
+//         int ret = cloudstore->Write(key, value);
+//         assert(ret == ERR_OK); 
+// 
+//     }
+// 
+//     // Try to commit the storage transaction
+//     res = cloudstore->Exec();
+ 
     SetTransactionInProgress(false);
 
     pthread_mutex_unlock(&transactionMutex);
@@ -632,6 +670,7 @@ DObject::TransactionRetry(void)
 
 }
 
+// used to simulate an offline situation
 void
 DObject::SetNetworkConnectivity(bool connectivity)
 {
@@ -643,6 +682,8 @@ DObject::SetNetworkConnectivity(bool connectivity)
         Notice("Network connectivity: on\n");
     }
 }
+
+
 
 
 std::string
