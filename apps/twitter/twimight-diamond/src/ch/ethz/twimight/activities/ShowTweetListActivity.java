@@ -271,9 +271,10 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	}
 	
 	public static void doBenchmark(Context c) {
+		final long TOTAL_REPS = 1000;
 		long totalTime = 0;
 		long numReps = 0;
-		for (int rep = 0; rep < 100; rep++) {
+		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.currentTimeMillis();
 			String uid = LoginActivity.getTwitterId(c);
 			String timelineKey = "twitter:uid:" + uid + ":timeline";
@@ -284,13 +285,14 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			}
 			long endTime = System.currentTimeMillis();
 			long time = endTime - startTime;
-			if (rep >= 10 && rep <= 90) {
+			if (rep >= TOTAL_REPS / 10 && rep <= 9 * TOTAL_REPS / 10) {
 				totalTime += time;
 				numReps++;
 			}
+			Log.i("BENCHMARK", "Diamond timeline read time: " + time);
 		}
 		double avgLatency = ((double)totalTime) / numReps;
-		Log.i("BENCHMARK", "Diamond timeline read latency: " + avgLatency);
+		Log.i("BENCHMARK", "Diamond timeline average read latency: " + avgLatency + " reps: " + numReps);
 	}
 
 	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
