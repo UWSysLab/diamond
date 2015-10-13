@@ -5,7 +5,7 @@ use strict;
 
 my $endString = "average read latency";
 
-open(OUT, "> android-twitter.txt");
+open(OUT, "> android-twitter-log.txt");
 
 while(<STDIN>) {
     print OUT $_;
