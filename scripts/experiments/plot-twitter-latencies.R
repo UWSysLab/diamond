@@ -3,7 +3,7 @@ library(plyr)
 
 args <- commandArgs(TRUE)
 if (length(args) != 2) {
-    print("Usage: ./plot-distribution original_latencies diamond_latencies")
+    print("Usage: Rscript plot-twitter-latencies.R original_latencies diamond_latencies")
     q()
 }
 
