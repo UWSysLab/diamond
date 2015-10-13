@@ -48,7 +48,7 @@ abstract class BaseJsonHandler implements HttpHandler {
 		os.write(responseJson.toString().getBytes());
 		os.close();
 		
-		System.out.println(requestURI);
+		//System.out.println(requestURI);
 	}
 	
 	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders,
