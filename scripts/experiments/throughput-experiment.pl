@@ -11,9 +11,10 @@ my $server = "localhost";
 
 for (my $numClients = 1; $numClients < 20; $numClients++) {
     system("rm $prefix.*");
+    system("rm error.*");
 
     for (my $i = 0; $i < $numClients; $i++) {
-        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency $server client$i throughputroom > $prefix.$i 2>error.$i &");
+        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i 2>error.$i &");
     }
 
     sleep($time + 5);
@@ -27,10 +28,10 @@ for (my $numClients = 1; $numClients < 20; $numClients++) {
         while(<LOG>) {
             chomp;
             my @lineSplit = split(/\s+/);
-            my $numActions = $lineSplit[2];
+            my $numActions = $lineSplit[3];
             $totalNumActions += $numActions;
             if ($concurrency eq "transaction") {
-                my $abortRate = $lineSplit[5];
+                my $abortRate = $lineSplit[6];
                 $abortRateSum += $abortRate;
             }
             $lines = $lines + 1;

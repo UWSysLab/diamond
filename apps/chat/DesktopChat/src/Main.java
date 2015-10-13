@@ -214,7 +214,7 @@ public class Main {
 		}
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print(userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
+		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
 			System.out.print("\t" + averageAborts);
