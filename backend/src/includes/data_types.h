@@ -71,6 +71,9 @@ private:
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
+    int PullAlwaysWatch();
+
+
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);

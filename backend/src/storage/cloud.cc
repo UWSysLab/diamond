@@ -387,18 +387,20 @@ Cloud::MultiWriteExec(std::map<string, string >& keyValues)
 
     // Get the replies
     redisGetReply(context,(void **)&reply); // reply for MULTI
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
     freeReplyObject(reply);
 
     for(unsigned int i = 0; i<keyValues.size();i++){
         redisGetReply(context,(void **)&reply); // reply for GET
-        freeReplyObject(reply);
         if (reply == NULL) {
             Panic("reply == null");
         }
+        freeReplyObject(reply);
     }
 
     redisGetReply(context,(void **)&reply); // reply for EXECs
-    freeReplyObject(reply);
 
     if (reply == NULL) {
         Panic("reply == null");
@@ -411,6 +413,51 @@ Cloud::MultiWriteExec(std::map<string, string >& keyValues)
     }
 
     // Transaction succeded
+    freeReplyObject(reply);
+    return ERR_OK;
+}
+
+
+
+int 
+Cloud::WatchRead(const std::string &key, std::string &value)
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+    redisContext* context = GetRedisContext();    
+
+    // Send the requests
+    LOG_REQUEST("WATCH-READ BATCH", "");
+    redisAppendCommand(context, "WATCH %s", key.c_str());
+    redisAppendCommand(context, "GET %s", key.c_str());
+    LOG_REPLY("WATCH-READ BATCH", reply);
+
+
+    // Get the replies
+    redisGetReply(context,(void **)&reply); // reply for WATCH
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+    freeReplyObject(reply);
+
+
+    redisGetReply(context,(void **)&reply); // reply for GET
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+
+    if (reply->type == REDIS_REPLY_STRING) {
+        value = string(reply->str);
+        freeReplyObject(reply);
+        return ERR_OK;
+    }else if(reply->type == REDIS_REPLY_NIL){
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
     freeReplyObject(reply);
     return ERR_OK;
 }
