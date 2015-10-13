@@ -5,16 +5,17 @@ use strict;
 
 my $time = 5;
 my $readFraction = 0.9;
-my $prefix = "logthroughput";
+my $prefix = "throughputlog";
+my $errPrefix = "throughputerror";
 my $concurrency = "transaction";
 my $server = "localhost";
 
 for (my $numClients = 1; $numClients < 20; $numClients++) {
-    system("rm $prefix.*");
-    system("rm error.*");
+    system("rm $prefix*");
+    system("rm $errPrefix*");
 
     for (my $i = 0; $i < $numClients; $i++) {
-        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i 2>error.$i &");
+        system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.txt 2> $errPrefix.$i.txt &");
     }
 
     sleep($time + 5);
@@ -24,7 +25,7 @@ for (my $numClients = 1; $numClients < 20; $numClients++) {
 
     for (my $i = 0; $i < $numClients; $i++) {
         my $lines = 0;
-        open(LOG, "$prefix.$i");
+        open(LOG, "$prefix.$i.txt");
         while(<LOG>) {
             chomp;
             my @lineSplit = split(/\s+/);
