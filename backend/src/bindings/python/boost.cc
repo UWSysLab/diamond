@@ -159,6 +159,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Erase", &DStringList::Erase)
         .def("Remove", &DStringList::Remove)
         .def("Clear", &DStringList::Clear)
+        .def("Size", &DStringList::Size)
     ;
 }
 

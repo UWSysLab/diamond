@@ -83,6 +83,7 @@ public:
     int Lrange(const std::string &key, long start, long end, std::vector<std::string> &value);
     int Lindex(const std::string &key, long index, std::string &value);
     int Llen(const std::string &key, long &value);
+    int Lrem(const std::string &key, long count, const std::string &value);
     int Del(const std::string &key);
 
     int RunOnServer(const std::string &script, const std::string &resource, const std::string &value);
