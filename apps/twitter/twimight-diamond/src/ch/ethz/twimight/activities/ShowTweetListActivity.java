@@ -272,12 +272,13 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	
 	public static void doBenchmark(Context c) {
 		final long TOTAL_REPS = 1000;
+		//String uid = LoginActivity.getTwitterId(c);
+		String uid = "3";
+		String timelineKey = "twitter:uid:" + uid + ":timeline";
 		long totalTime = 0;
 		long numReps = 0;
 		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.currentTimeMillis();
-			String uid = LoginActivity.getTwitterId(c);
-			String timelineKey = "twitter:uid:" + uid + ":timeline";
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
 			for (int i = 0; i < tweetList.Size(); i++) {
