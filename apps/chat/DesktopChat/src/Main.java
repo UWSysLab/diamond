@@ -153,9 +153,9 @@ public class Main {
 		Diamond.DObject.Map(messageList, chatLogKey);
 		
 		Random rand = new Random();
-		
+				
 		// Take 200 initial actions to warm up the JVM
-		for (int i = 0; i < 200; i++) {
+		/*for (int i = 0; i < 200; i++) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
@@ -173,9 +173,11 @@ public class Main {
 					writeMessageAtomic(MESSAGE);
 				}
 			}
-		}
+		}*/
 		
 		long startTime = System.currentTimeMillis();
+		long timeOnBreak = 0;
+		long prevTime = 0;
 		
 		long numActions = 0;
 		long totalTime = 0;
@@ -205,7 +207,9 @@ public class Main {
 			}
 			numActions++;
 			long currentTime = System.currentTimeMillis();
-			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 > runNumber) {
+			prevTime = timeOnBreak;
+			timeOnBreak = currentTime - startTime;
+			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 >= runNumber) {
 				break;
 			}
 			if (runType.equals(RUN_FIXED) && numActions >= runNumber) {
@@ -213,8 +217,11 @@ public class Main {
 			}
 		}
 		
+		long endTime = System.currentTimeMillis();
+		long elapsedTime = endTime - startTime;
+		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
+		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTime + "\t" + timeOnBreak + "\t" + prevTime + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
 			System.out.print("\t" + averageAborts);

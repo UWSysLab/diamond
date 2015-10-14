@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 my $time = 5;
+my $maxClients = 20;
 my $readFraction = 0.9;
 my $prefix = "throughput";
 
@@ -22,8 +23,8 @@ $concurrency = "atomic";
 $log = "desktopchat-throughput-atomic-log.txt";
 $throughputFile = "desktopchat-throughput-atomic.txt";
 
-doExperiment();
-parseThroughputs();
+#doExperiment();
+#parseThroughputs();
 
 sub parseThroughputs {
     system("cat $log | awk '
@@ -42,16 +43,16 @@ sub parseAbortRates {
 
 sub doExperiment {
     open(FILE, "> $log");
-    for (my $numClients = 1; $numClients < 20; $numClients++) {
+    for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency verbose $server client$i throughputroom > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + 5);
+        sleep($time + 1);
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
@@ -61,18 +62,20 @@ sub doExperiment {
             open(LOG, "$prefix.$i.log");
             while(<LOG>) {
                 chomp;
-                my @lineSplit = split(/\s+/);
-                my $numActions = $lineSplit[3];
-                $totalNumActions += $numActions;
-                if ($concurrency eq "transaction") {
-                    my $abortRate = $lineSplit[6];
-                    $abortRateSum += $abortRate;
+                if ($_ =~ /Summary:/) {
+                    my @lineSplit = split(/\s+/);
+                    my $numActions = $lineSplit[3];
+                    $totalNumActions += $numActions;
+                    if ($concurrency eq "transaction") {
+                        my $abortRate = $lineSplit[9];
+                        $abortRateSum += $abortRate;
+                    }
                 }
                 $lines = $lines + 1;
             }
             close(LOG);
             if ($lines != 1) {
-                die "Error: log file $i has $lines lines";
+                #die "Error: log file $i has $lines lines";
             }
         }
 
