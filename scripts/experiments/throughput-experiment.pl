@@ -5,8 +5,7 @@ use strict;
 
 my $time = 5;
 my $readFraction = 0.9;
-my $prefix = "throughputlog";
-my $errPrefix = "throughput";
+my $prefix = "throughput";
 
 my $server = "localhost";
 
@@ -47,10 +46,9 @@ sub doExperiment {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
-        system("rm $errPrefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.txt 2> $errPrefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
         sleep($time + 5);
@@ -60,7 +58,7 @@ sub doExperiment {
 
         for (my $i = 0; $i < $numClients; $i++) {
             my $lines = 0;
-            open(LOG, "$prefix.$i.txt");
+            open(LOG, "$prefix.$i.log");
             while(<LOG>) {
                 chomp;
                 my @lineSplit = split(/\s+/);
