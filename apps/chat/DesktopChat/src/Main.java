@@ -17,6 +17,7 @@ public class Main {
 	static String chatroomName = "defaultroom";
 	static String userName = "defaultclient";
 	static String serverName = "coldwater.cs.washington.edu";
+	static boolean verbose;
 	
 	private static Diamond.DStringList messageList;
 	
@@ -39,8 +40,12 @@ public class Main {
 			}
 		}
 		writeTimeEnd = System.currentTimeMillis();
+		long time = writeTimeEnd - writeTimeStart;
+		if (verbose) {
+			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
+		}
 		long[] ret = new long[2];
-		ret[0] = writeTimeEnd - writeTimeStart;
+		ret[0] = time;
 		ret[1] = numAborts;
 		return ret;
 	}
@@ -55,7 +60,11 @@ public class Main {
 			messageList.Erase(0);
 		}
 		writeTimeEnd = System.currentTimeMillis();
-		return (writeTimeEnd - writeTimeStart);
+		long time = writeTimeEnd - writeTimeStart;
+		if (verbose) {
+			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "atomic");
+		}
+		return (time);
 	}
 	
 	public static long[] readMessagesTransaction() {
@@ -74,8 +83,12 @@ public class Main {
 			}
 		}
 		readTimeEnd = System.currentTimeMillis();
+		long time = readTimeEnd - readTimeStart;
+		if (verbose) {
+			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
+		}
 		long[] ret = new long[2];
-		ret[0] = readTimeEnd - readTimeStart;
+		ret[0] = time;
 		ret[1] = numAborts;
 		return ret;
 	}
@@ -87,16 +100,21 @@ public class Main {
 		readTimeStart = System.currentTimeMillis();
 		result = messageList.Members();
 		readTimeEnd = System.currentTimeMillis();
+		long time = readTimeEnd - readTimeStart;
+		if (verbose) {
+			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "atomic");
+		}
 		return (readTimeEnd - readTimeStart);
 	}
 	
 	public static void main(String[] args) {
-		String usage = "usage: java Main run_type run_number read_fraction concurrency server_url client_name chatroom_name\n"
+		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
-		 			 + "    concurrency: transaction or atomic";
-		if (args.length < 7) {
+		 			 + "    concurrency: transaction or atomic\n"
+		 			 + "    verbosity: concise or verbose\n";
+		if (args.length < 8) {
 			System.err.println(usage);
 			System.exit(0);
 		}
@@ -104,9 +122,10 @@ public class Main {
 		int runNumber = Integer.parseInt(args[1]);
 		double readFraction = Double.parseDouble(args[2]);
 		String concurrency = args[3];
-		serverName = args[4];
-		userName = args[5];
-		chatroomName = args[6];
+		String verbosity = args[4];
+		serverName = args[5];
+		userName = args[6];
+		chatroomName = args[7];
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
 			System.err.println(usage);
 			System.exit(0);
@@ -119,6 +138,12 @@ public class Main {
 			System.err.println(usage);
 			System.exit(0);
 		}
+		if (!(verbosity.equals("verbose") || verbosity.equals("concise"))) {
+			System.err.println(usage);
+			System.exit(0);
+		}
+		
+		verbose = (verbosity.equals("verbose"));
 		
 		Diamond.DiamondInit(serverName);
 		
@@ -189,7 +214,7 @@ public class Main {
 		}
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print(userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
+		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
 			System.out.print("\t" + averageAborts);

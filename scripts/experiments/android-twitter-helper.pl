@@ -3,13 +3,17 @@
 use warnings;
 use strict;
 
-my $endString = "average read latency";
+my $END_STR = "average read latency";
 
-open(OUT, "> android-twitter-log.txt");
+die "usage: ./android-twitter-helper.pl log_file" unless @ARGV == 1;
+
+my $log = shift;
+
+open(OUT, "> $log");
 
 while(<STDIN>) {
     print OUT $_;
-    if ($_ =~ /$endString/) {
+    if ($_ =~ /$END_STR/) {
         last;
     }
 }
