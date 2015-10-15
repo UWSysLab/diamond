@@ -38,6 +38,8 @@ namespace diamond {
 
 using namespace std;
 
+#define MAX_STALEREADS_VIEWS 20
+
 typedef struct struct_StaleView
 {
     long timestamp;
@@ -59,6 +61,8 @@ public:
     bool GetLastView(set<string> keys, StaleView* &result);
 
     StaleView* GetCurrentView(void);
+    bool IsViewInUse(StaleView * v);
+    bool IsLastViewInconsistent(void);
 
 
     void SetStaleness(bool enable);
@@ -76,6 +80,7 @@ public:
 private:
     std::list<StaleView> _views;
     std::map<long, StaleView*> _currentViews; // tid - > StaleView
+    std::map<long, bool> _lastAttemptFailed; // tid - > StaleView
 
 
 };

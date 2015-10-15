@@ -48,6 +48,32 @@ Stalestorage::GetCurrentView(void)
     }
 }
 
+bool
+Stalestorage::IsViewInUse(StaleView * v){
+    auto it = _currentViews.begin();
+
+    for(;it!=_currentViews.end();it++){
+        if(v == it->second){
+            return true;
+        }
+    }
+    return false;
+}
+
+bool 
+Stalestorage::IsLastViewInconsistent(void)
+{
+    long tid = getThreadID();
+
+    auto la = _lastAttemptFailed.find(tid);
+    if(la == _lastAttemptFailed.end()){
+        return NULL;
+    }else{
+        return la->second;
+    }
+}
+
+
 // Return true if during this view all values read were from a consistent view
 bool
 Stalestorage::ViewEnd(){
@@ -84,6 +110,17 @@ Stalestorage::ViewAdd(map<string, string> keyValues){
         LOG_STALEREADS_DUMP();
 
         _views.push_back(sv);
+
+        while(_views.size() > MAX_STALEREADS_VIEWS){
+            // Should check that nobody is using this view
+            StaleView *sv = &_views.front();
+            if(IsViewInUse(sv)){
+                // Only do garbage collection if other transactions are not using the view about to be deleted
+                break;
+            }
+            LOG_STALEREADS("ViewAdd: removing older element\n");
+            _views.pop_front();
+        }
     }
 }
 
