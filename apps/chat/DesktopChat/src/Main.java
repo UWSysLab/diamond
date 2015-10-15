@@ -21,14 +21,14 @@ public class Main {
 	
 	private static Diamond.DStringList messageList;
 	
-	public static long[] writeMessageTransaction(String msg) {
+	public static double[] writeMessageTransaction(String msg) {
 		String fullMsg = userName + ": " + msg;
 		int committed = 0;
 		int numAborts = 0;
 		long writeTimeStart = 0;
 		long writeTimeEnd = 1000 * 1000 * 1000;
 		while(committed == 0) {
-			writeTimeStart = System.currentTimeMillis();
+			writeTimeStart = System.nanoTime();
 			Diamond.DObject.TransactionBegin();
 			messageList.Append(fullMsg);
 			if (messageList.Size() > MESSAGE_LIST_SIZE) {
@@ -39,42 +39,42 @@ public class Main {
 				numAborts++;
 			}
 		}
-		writeTimeEnd = System.currentTimeMillis();
-		long time = writeTimeEnd - writeTimeStart;
+		writeTimeEnd = System.nanoTime();
+		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
 		}
-		long[] ret = new long[2];
+		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
 		return ret;
 	}
 	
-	public static long writeMessageAtomic(String msg) {
+	public static double writeMessageAtomic(String msg) {
 		String fullMsg = userName + ": " + msg;
 		long writeTimeStart = 0;
 		long writeTimeEnd = 1000 * 1000 * 1000;
-		writeTimeStart = System.currentTimeMillis();
+		writeTimeStart = System.nanoTime();
 		messageList.Append(fullMsg);
 		if (messageList.Size() > MESSAGE_LIST_SIZE) {
 			messageList.Erase(0);
 		}
-		writeTimeEnd = System.currentTimeMillis();
-		long time = writeTimeEnd - writeTimeStart;
+		writeTimeEnd = System.nanoTime();
+		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "atomic");
 		}
 		return (time);
 	}
 	
-	public static long[] readMessagesTransaction() {
+	public static double[] readMessagesTransaction() {
 		List<String> result = null;
 		int committed = 0;
 		int numAborts = 0;
 		long readTimeStart = 0;
 		long readTimeEnd = 1000 * 1000 * 1000;
 		while (committed == 0) {
-			readTimeStart = System.currentTimeMillis();
+			readTimeStart = System.nanoTime();
 			Diamond.DObject.TransactionBegin();
 			result = messageList.Members();
 			committed = Diamond.DObject.TransactionCommit();
@@ -82,29 +82,29 @@ public class Main {
 				numAborts++;
 			}
 		}
-		readTimeEnd = System.currentTimeMillis();
-		long time = readTimeEnd - readTimeStart;
+		readTimeEnd = System.nanoTime();
+		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
 		}
-		long[] ret = new long[2];
+		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
 		return ret;
 	}
 	
-	public static long readMessagesAtomic() {
+	public static double readMessagesAtomic() {
 		List<String> result = null;
 		long readTimeStart = 0;
 		long readTimeEnd = 1000 * 1000 * 1000;
-		readTimeStart = System.currentTimeMillis();
+		readTimeStart = System.nanoTime();
 		result = messageList.Members();
-		readTimeEnd = System.currentTimeMillis();
-		long time = readTimeEnd - readTimeStart;
+		readTimeEnd = System.nanoTime();
+		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "atomic");
 		}
-		return (readTimeEnd - readTimeStart);
+		return time;
 	}
 	
 	public static void main(String[] args) {
@@ -175,22 +175,22 @@ public class Main {
 			}
 		}*/
 		
-		long startTime = System.currentTimeMillis();
+		long startTime = System.nanoTime();
 		
 		long numActions = 0;
-		long totalTime = 0;
-		long totalNumAborts = 0;
+		double totalTime = 0;
+		double totalNumAborts = 0;
 
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
-					long[] ret = readMessagesTransaction();
+					double[] ret = readMessagesTransaction();
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
 				else {
-					long[] ret = writeMessageTransaction(MESSAGE);
+					double[] ret = writeMessageTransaction(MESSAGE);
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
@@ -204,8 +204,9 @@ public class Main {
 				}
 			}
 			numActions++;
-			long currentTime = System.currentTimeMillis();
-			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 >= runNumber) {
+			long currentTime = System.nanoTime();
+			double elapsedTimeMillis = ((double)(currentTime - startTime)) / (1000 * 1000);
+			if (runType.equals(RUN_TIMED) && elapsedTimeMillis / 1000 >= runNumber) {
 				break;
 			}
 			if (runType.equals(RUN_FIXED) && numActions >= runNumber) {
@@ -213,11 +214,11 @@ public class Main {
 			}
 		}
 		
-		long endTime = System.currentTimeMillis();
-		long elapsedTime = endTime - startTime;
+		long endTime = System.nanoTime();
+		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTime + "\t" + concurrency);
+		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
 			System.out.print("\t" + averageAborts);
