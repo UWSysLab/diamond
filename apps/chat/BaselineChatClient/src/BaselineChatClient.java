@@ -34,7 +34,6 @@ public class BaselineChatClient {
 		long startTime = System.nanoTime();
 		try {
 			URL serverURL = new URL(serverURLString);
-			System.out.println("Server URL: " + serverURLString);
 			HttpURLConnection connection = (HttpURLConnection)serverURL.openConnection();
 			connection.setRequestMethod("POST");
 			connection.setDoOutput(true);
@@ -74,7 +73,6 @@ public class BaselineChatClient {
 			for (int i = 0; i < jsonArray.size(); i++) {
 				JsonElement item = jsonArray.get(i);
 				result.add(item.getAsString());
-				System.out.println(item.getAsString());
 			}
 			in.close();
 			responseCode = connection.getResponseCode();
