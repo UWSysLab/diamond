@@ -7,9 +7,10 @@ import edu.washington.cs.diamond.Diamond.DString;
 public class Main {
 	public static void main(String[] args) {
 		Diamond.DiamondInit();
+		basicTest();
 		//threadTest();
 		//memoryTest();
-		unallocatedVariableTest();
+		//unallocatedVariableTest();
 	}
 	
 	public static void unallocatedVariableTest() {

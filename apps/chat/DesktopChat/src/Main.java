@@ -176,8 +176,6 @@ public class Main {
 		}*/
 		
 		long startTime = System.currentTimeMillis();
-		long timeOnBreak = 0;
-		long prevTime = 0;
 		
 		long numActions = 0;
 		long totalTime = 0;
@@ -207,8 +205,6 @@ public class Main {
 			}
 			numActions++;
 			long currentTime = System.currentTimeMillis();
-			prevTime = timeOnBreak;
-			timeOnBreak = currentTime - startTime;
 			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 >= runNumber) {
 				break;
 			}
@@ -221,7 +217,7 @@ public class Main {
 		long elapsedTime = endTime - startTime;
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTime + "\t" + timeOnBreak + "\t" + prevTime + "\t" + concurrency);
+		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTime + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
 			System.out.print("\t" + averageAborts);
