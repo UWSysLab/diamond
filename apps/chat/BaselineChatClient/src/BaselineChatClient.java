@@ -1,7 +1,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -18,7 +17,7 @@ import com.google.gson.JsonParser;
 public class BaselineChatClient {
 	
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
-	static final int PORT = 8004;
+	static final int PORT = 9000;
 	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
