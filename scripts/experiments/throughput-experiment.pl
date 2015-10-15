@@ -67,7 +67,7 @@ sub doExperiment {
                     my $numActions = $lineSplit[3];
                     $totalNumActions += $numActions;
                     if ($concurrency eq "transaction") {
-                        my $abortRate = $lineSplit[9];
+                        my $abortRate = $lineSplit[7];
                         $abortRateSum += $abortRate;
                     }
                 }
