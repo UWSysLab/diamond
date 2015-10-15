@@ -52,6 +52,9 @@ public:
     static void SetNetworkConnectivity(bool connectivity);
     std::string GetKey(void);
 
+    static void SetGlobalStaleness(bool enable);
+    static void SetGlobalMaxStaleness(long maxStalenessMs);
+
 protected:
     DObject() : _key("dummykey") {};
     DObject(const std::string &key) : _key(key) {};
@@ -72,8 +75,6 @@ private:
     int PushAlways();
     int PullAlways();
     int PullAlwaysWatch();
-
-
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);

@@ -1,5 +1,6 @@
 
 #include "storage/cloud.h"
+#include "storage/stalestorage.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"
@@ -33,6 +34,8 @@ long profileEnterTs[MAX_THREAD_ID];
 bool networkConnectivity = false;
 
 Cloud* cloudstore = NULL;
+Stalestorage stalestorage;
+
 
 void DiamondInit(const std::string &server) {
     cloudstore = Cloud::Instance(server);
@@ -70,14 +73,22 @@ DObject::PullAlways(){
     string value;
     LOG_RC("PullAlways()"); 
 
-    int ret = cloudstore->Read(_key, value);
-    if (ret != ERR_EMPTY && ret != ERR_OK) {
-        return ret;
+    int ret;
+    
+    ret = stalestorage.Read(_key,value);
+    if(ret == ERR_NOTFOUND){
+        // If it's not on the stalestore
+
+        int ret = cloudstore->Read(_key, value);
+        if (ret != ERR_EMPTY && ret != ERR_OK) {
+            return ret;
+        }
+
+        if (ret == ERR_EMPTY) {
+            value = "";
+        }
     }
 
-    if (ret == ERR_EMPTY) {
-        value = "";
-    }
     Deserialize(value);
     return 0;
 }
@@ -88,14 +99,22 @@ DObject::PullAlwaysWatch(){
     string value;
     LOG_RC("PullAlwaysWatch()"); 
 
-    int ret = cloudstore->WatchRead(_key, value);
-    if (ret != ERR_EMPTY && ret != ERR_OK) {
-        return ret;
+    int ret;
+    
+    ret = stalestorage.Read(_key,value);
+    if(ret == ERR_NOTFOUND){
+        // If it's not on the stalestore
+
+        ret = cloudstore->WatchRead(_key, value);
+        if (ret != ERR_EMPTY && ret != ERR_OK) {
+            return ret;
+        }
+    
+        if (ret == ERR_EMPTY) {
+            value = "";
+        }
     }
 
-    if (ret == ERR_EMPTY) {
-        value = "";
-    }
     Deserialize(value);
     return 0;
 }
@@ -514,6 +533,7 @@ DObject::TransactionBegin(void)
     LOG_TX("TRANSACTION BEGIN");
 
     SetTransactionInProgress(true);
+    stalestorage.ViewBegin();
 
     pthread_mutex_unlock(&transactionMutex);
 
@@ -573,8 +593,17 @@ DObject::TransactionCommit(void)
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
 
+
+    bool consistent = stalestorage.ViewEnd();
+    if(!consistent){
+        LOG_TX("TRANSACTION COMMIT -> aborted (inconsistent reads)");
+        SetTransactionInProgress(false);
+        pthread_mutex_unlock(&transactionMutex);
+        return false;
+    }
+
 // WITH BATCHING
-    std::map<string, string> keyValues;
+    std::map<string, string> keyValuesWS;
     std::map<string, string >* locals = GetTransactionLocals();
     std::set<string>* txWS = GetTransactionWS();
     auto it = txWS->begin();
@@ -582,10 +611,10 @@ DObject::TransactionCommit(void)
         // Push our local Tx values for all objects in our WS
         string key = *it;
         string value = (*locals)[key];
-        keyValues[key] = value;
+        keyValuesWS[key] = value;
     }     
     
-    int res = cloudstore->MultiWriteExec(keyValues);
+    int res = cloudstore->MultiWriteExec(keyValuesWS);
 
 
 // WITHOUT BATCHING
@@ -611,16 +640,31 @@ DObject::TransactionCommit(void)
 //     // Try to commit the storage transaction
 //     res = cloudstore->Exec();
  
-    SetTransactionInProgress(false);
 
-    pthread_mutex_unlock(&transactionMutex);
 
     if(res == ERR_EMPTY){
         // XXX: Need to revert the changes to the WS
         LOG_TX("TRANSACTION COMMIT -> aborted");
+        SetTransactionInProgress(false);
+        pthread_mutex_unlock(&transactionMutex);
         return false;
     }else{
+        std::map<string, string> keyValuesRS;
+        std::map<string, string >* locals = GetTransactionLocals();
+        std::set<string>* txRS = GetTransactionRS();
+        auto it = txRS->begin();
+        for (; it != txRS->end(); it++) {
+            // Push our local Tx values for all objects in our RS
+            string key = *it;
+            string value = (*locals)[key];
+            keyValuesRS[key] = value;
+        }     
+        stalestorage.ViewAdd(keyValuesRS, keyValuesWS);
+        stalestorage.DebugDump();
+
         LOG_TX("TRANSACTION COMMIT -> committed");
+        SetTransactionInProgress(false);
+        pthread_mutex_unlock(&transactionMutex);
         return true;
     }
 }
@@ -685,6 +729,17 @@ DObject::SetNetworkConnectivity(bool connectivity)
 
 
 
+void 
+DObject::SetGlobalStaleness(bool enable)
+{
+    stalestorage.SetStaleness(enable);
+}
+
+void
+DObject::SetGlobalMaxStaleness(long maxStalenessMs)
+{
+    stalestorage.SetMaxStaleness(maxStalenessMs);
+}
 
 std::string
 DObject::GetKey(){

@@ -115,7 +115,9 @@ set(SRC_DIAMOND_LIB
     ${DIAMOND_SOURCE_DIR}/lib/message.cc)
 
 # Diamond data store client
-set(SRC_DIAMOND_CLOUD_STORE ${DIAMOND_SOURCE_DIR}/storage/cloud.cc)
+set(SRC_DIAMOND_CLOUD_STORE 
+    ${DIAMOND_SOURCE_DIR}/storage/cloud.cc
+    ${DIAMOND_SOURCE_DIR}/storage/stalestorage.cc)
 
 # Diamond data structure implementations
 set(SRC_DIAMOND_DATA_TYPES
