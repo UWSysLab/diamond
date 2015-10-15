@@ -28,10 +28,10 @@ public class BaselineChatClient {
 	static String userName;
 	static boolean verbose;
 	
-	public static long writeMessage(String msg) {
+	public static double writeMessage(String msg) {
 		String fullMsg = userName + ": " + msg;
 		int responseCode = -1;
-		long startTime = System.currentTimeMillis();
+		long startTime = System.nanoTime();
 		try {
 			URL serverURL = new URL(serverURLString);
 			System.out.println("Server URL: " + serverURLString);
@@ -53,16 +53,16 @@ public class BaselineChatClient {
 			System.out.println("HTTP error: " + responseCode);
 			System.exit(1);
 		}
-		long endTime = System.currentTimeMillis();
-		long time = endTime - startTime;
+		long endTime = System.nanoTime();
+		double time = ((double)(endTime - startTime)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\twrite\t" + time);
 		}
 		return time;
 	}
-	public static long readMessages() {
+	public static double readMessages() {
 		int responseCode = -1;
-		long startTime = System.currentTimeMillis();
+		long startTime = System.nanoTime();
 		try {
 			URL serverURL = new URL(serverURLString);			
 			HttpURLConnection connection = (HttpURLConnection)serverURL.openConnection();
@@ -89,8 +89,8 @@ public class BaselineChatClient {
 			System.out.println("HTTP error: " + responseCode);
 			System.exit(1);
 		}
-		long endTime = System.currentTimeMillis();
-		long time = endTime - startTime;
+		long endTime = System.nanoTime();
+		double time = ((double)(endTime - startTime)) / (1000 * 1000);
 		if (verbose) {
 			System.out.println(userName + "\tread\t" + time);
 		}
@@ -133,10 +133,10 @@ public class BaselineChatClient {
 
 		Random rand = new Random();
 		
-		long startTime = System.currentTimeMillis();
+		long startTime = System.nanoTime();
 		
 		long numActions = 0;
-		long totalTime = 0;
+		double totalTime = 0;
 
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
@@ -147,8 +147,9 @@ public class BaselineChatClient {
 				totalTime += writeMessage(MESSAGE);
 			}
 			numActions++;
-			long currentTime = System.currentTimeMillis();
-			if (runType.equals(RUN_TIMED) && (currentTime - startTime) / 1000 >= runNumber) {
+			long currentTime = System.nanoTime();
+			double elapsedTimeMillis = ((double)(currentTime - startTime)) / (1000 * 1000);
+			if (runType.equals(RUN_TIMED) && elapsedTimeMillis / 1000 >= runNumber) {
 				break;
 			}
 			if (runType.equals(RUN_FIXED) && numActions >= runNumber) {
@@ -156,11 +157,11 @@ public class BaselineChatClient {
 			}
 		}
 		
-		long endTime = System.currentTimeMillis();
-		long elapsedTime = endTime - startTime;
+		long endTime = System.nanoTime();
+		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print("Summary: " + userName + "\t" + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTime);
+		System.out.print("Summary: " + userName + "\t" + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis);
 		System.out.println();
 	}
 }
