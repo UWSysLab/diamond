@@ -61,10 +61,11 @@ public class BaselineChatClient {
 		return time;
 	}
 	public static long readMessages() {
+		int responseCode = -1;
 		long startTime = System.currentTimeMillis();
 		try {
 			URL serverURL = new URL(serverURLString);			
-			URLConnection connection = serverURL.openConnection();
+			HttpURLConnection connection = (HttpURLConnection)serverURL.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 			String jsonStr = in.readLine();
 			JsonParser parser = new JsonParser();
@@ -76,11 +77,16 @@ public class BaselineChatClient {
 				System.out.println(item.getAsString());
 			}
 			in.close();
+			responseCode = connection.getResponseCode();
 		} catch (MalformedURLException e) {
 			System.out.println("Error: malformed URL");
 			System.exit(1);
 		} catch (IOException e) {
 			System.out.println("Error connecting to server");
+			System.exit(1);
+		}
+		if (responseCode != 200) {
+			System.out.println("HTTP error: " + responseCode);
 			System.exit(1);
 		}
 		long endTime = System.currentTimeMillis();
