@@ -660,7 +660,7 @@ DObject::TransactionCommit(void)
             keyValuesRS[key] = value;
         }     
         stalestorage.ViewAdd(keyValuesRS, keyValuesWS);
-        stalestorage.DebugDump();
+        //stalestorage.DebugDump();
 
         LOG_TX("TRANSACTION COMMIT -> committed");
         SetTransactionInProgress(false);
