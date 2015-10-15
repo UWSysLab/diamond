@@ -5,6 +5,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -21,22 +23,32 @@ class ChatHandler implements HttpHandler {
 		String method = exchange.getRequestMethod();
 		if (method.equals("GET")) {
 			
+			JsonArray responseJson = new JsonArray();
+			
+			for (int i = 0; i < chatLog.size(); i++) {
+				responseJson.add(new JsonPrimitive(chatLog.get(i)));
+			}
+			
+			exchange.sendResponseHeaders(200, 0);
+			OutputStream os = exchange.getResponseBody();
+			os.write(responseJson.toString().getBytes());
+			os.close();
 		}
 		else if (method.equals("POST")) {
 			InputStream requestBody = exchange.getRequestBody();
 			byte[] bodyArray = new byte[requestBody.available()];
 			requestBody.read(bodyArray);
 			String bodyString = new String(bodyArray, "UTF-8");
-			System.out.println("Received new message: " + bodyString);
+			
 			chatLog.add(bodyString);
 			if (chatLog.size() >= Main.MAX_SIZE) {
 				chatLog.remove(0);
 			}
+			
+			exchange.sendResponseHeaders(200, 0);
+			OutputStream os = exchange.getResponseBody();
+			os.close();
 		}
-		System.out.println("Method: " + method);
-		exchange.sendResponseHeaders(200, 0);
-		OutputStream os = exchange.getResponseBody();
-		os.close();
 	}
 }
 
