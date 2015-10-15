@@ -21,6 +21,7 @@ class ChatHandler implements HttpHandler {
 	@Override
 	public void handle(HttpExchange exchange) throws IOException {
 		String method = exchange.getRequestMethod();
+		System.out.println("Method: " + method);
 		if (method.equals("GET")) {
 			
 			JsonArray responseJson = new JsonArray();
@@ -40,6 +41,8 @@ class ChatHandler implements HttpHandler {
 			requestBody.read(bodyArray);
 			String bodyString = new String(bodyArray, "UTF-8");
 			
+			System.out.println("Debug: " + bodyString);
+			
 			chatLog.add(bodyString);
 			if (chatLog.size() >= Main.MAX_SIZE) {
 				chatLog.remove(0);
@@ -55,6 +58,7 @@ class ChatHandler implements HttpHandler {
 public class Main {
 
 	static final long MAX_SIZE = 100;
+	static final int PORT = 8004;
 	
 	static List<String> chatLog;
 	
@@ -62,7 +66,7 @@ public class Main {
 		chatLog = new ArrayList<String>();
 		HttpServer server = null;
 		try {
-			server = HttpServer.create(new InetSocketAddress(9000), 0);
+			server = HttpServer.create(new InetSocketAddress(PORT), 0);
 			server.createContext("/chat", new ChatHandler(chatLog));
 			server.setExecutor(null);
 			server.start();
