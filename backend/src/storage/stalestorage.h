@@ -61,15 +61,17 @@ public:
     StaleView* GetCurrentView(void);
 
 
-    static void SetStaleness(bool enable);
-    static void SetMaxStaleness(long maxStalenessMs);
+    void SetStaleness(bool enable);
+    void SetMaxStaleness(long maxStalenessMs);
 
     void DebugDump();
 
     int Read(std::string key, std::string& value);
+    bool IsEnabled(void);
 
-    static bool enabled;
-    static long maxStalenessMs; 
+
+    bool enabled = false;
+    long maxStalenessMs = 100; 
 
 private:
     std::list<StaleView> _views;
