@@ -149,6 +149,9 @@ public class Diamond {
         public static native int TransactionCommit();
         public static native void TransactionRollback();
         public static native void TransactionRetry();
+
+        public static native void SetGlobalStaleness(boolean enable);
+        public static native void SetGlobalMaxStaleness(long maxStalenessMs);
     }
    
    public static class DString extends DObject {
