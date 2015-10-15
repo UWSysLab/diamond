@@ -102,7 +102,7 @@ Stalestorage::ViewAdd(map<string, string> keyValues){
     if(IsEnabled()){
         StaleView sv;
 
-        sv.timestamp = getTimestamp();
+        sv.timestamp = getTimeMillis();
         sv.keyValues = keyValues;
         assert(keyValues.size() > 0 );
 
@@ -129,7 +129,7 @@ bool
 Stalestorage::GetLastView(set<string> keys, StaleView* &result){
     auto it = _views.rbegin();
     assert(keys.size() > 0);
-    long minTimestamp = getTimestamp() - maxStalenessMs; 
+    long minTimestamp = getTimeMillis() - maxStalenessMs; 
 
     // Find the most recent view that contains all the keys
     for(;it != _views.rend();it++){
