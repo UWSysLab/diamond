@@ -1,0 +1,62 @@
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+class ChatHandler implements HttpHandler {
+	List<String> chatLog;
+	
+	public ChatHandler(List<String> inLog) {
+		chatLog = inLog;
+	}
+	
+	@Override
+	public void handle(HttpExchange exchange) throws IOException {
+		String method = exchange.getRequestMethod();
+		if (method.equals("GET")) {
+			
+		}
+		else if (method.equals("POST")) {
+			InputStream requestBody = exchange.getRequestBody();
+			byte[] bodyArray = new byte[requestBody.available()];
+			requestBody.read(bodyArray);
+			String bodyString = new String(bodyArray, "UTF-8");
+			System.out.println("Received new message: " + bodyString);
+			chatLog.add(bodyString);
+			if (chatLog.size() >= Main.MAX_SIZE) {
+				chatLog.remove(0);
+			}
+		}
+		System.out.println("Method: " + method);
+		exchange.sendResponseHeaders(200, 0);
+		OutputStream os = exchange.getResponseBody();
+		os.close();
+	}
+}
+
+public class Main {
+
+	static final long MAX_SIZE = 100;
+	
+	static List<String> chatLog;
+	
+	public static void main(String[] args) {
+		chatLog = new ArrayList<String>();
+		HttpServer server = null;
+		try {
+			server = HttpServer.create(new InetSocketAddress(9000), 0);
+			server.createContext("/chat", new ChatHandler(chatLog));
+			server.setExecutor(null);
+			server.start();
+		}
+		catch (IOException e) {
+			System.err.println(e);
+		}
+	}
+}
