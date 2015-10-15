@@ -1,2 +1,6 @@
-logthroughput.*
-error.*
+*.log
+*.error
+*.txt
+*.pdf
+*.Rout
+*.Rdata
