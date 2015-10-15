@@ -16,7 +16,7 @@ diamond$system = "diamond"
 data <- rbind(original, diamond)
 data <- rename(data, c("V1" = "latency"))
 
-pdf("R-plots.pdf")
+pdf("twitter-latency-plots.pdf")
 
 ggplot(data, aes(x=latency, color=factor(system))) + stat_ecdf()
 ggplot(data, aes(x=latency, color=factor(system))) + stat_ecdf() + coord_cartesian(xlim = c(0, 50))
