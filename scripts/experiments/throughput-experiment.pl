@@ -49,7 +49,7 @@ sub doExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency verbose $server client$i throughputroom > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
         sleep($time + 1);
@@ -75,7 +75,7 @@ sub doExperiment {
             }
             close(LOG);
             if ($lines != 1) {
-                #die "Error: log file $i has $lines lines";
+                die "Error: log file $i has $lines lines";
             }
         }
 
