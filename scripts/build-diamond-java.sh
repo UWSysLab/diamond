@@ -7,14 +7,6 @@ if [ $# -ne 2 ]
     exit
 fi
 
-# build Java binaries
-cd $DIAMOND_BACKEND_DIR/build
-make
-
-# build Java bindings
-cd $DIAMOND_BACKEND_DIR/src/bindings/java
-mvn package
-
 # copy libraries and JARs into the Java project
 mkdir -p $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/build/libdiamond.so $PROJECT_DIR/libs
