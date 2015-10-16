@@ -13,20 +13,25 @@ my $prefix = "$dir/run";
 my $server = "localhost";
 
 my $concurrency = "transaction";
-my $log = "$dir/overall-log.txt";
-my $throughputFile = "$dir/throughput-results.txt";
-my $abortRateFile = "$dir/abortrate-results.txt";
+my $staleness = "nostale";
+my $stalelimit = "0";
+my $log = "$dir/nostale-log.txt";
+my $throughputFile = "$dir/nostale-results.txt";
+my $abortRateFile = "$dir/nostale-abortrate.txt";
 
 doExperiment();
 parseThroughputs();
 parseAbortRates();
 
-$concurrency = "atomic";
-$log = "desktopchat-throughput-atomic-log.txt";
-$throughputFile = "desktopchat-throughput-atomic.txt";
+$staleness = "stale";
+$stalelimit = "100";
+$log = "$dir/stale-log.txt";
+$throughputFile = "$dir/stale-results.txt";
+$abortRateFile = "$dir/stale-abortrate.txt";
 
-#doExperiment();
-#parseThroughputs();
+doExperiment();
+parseThroughputs();
+parseAbortRates();
 
 sub parseThroughputs {
     system("cat $log | awk '
@@ -51,7 +56,7 @@ sub doExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom stale 100 > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom $staleness $stalelimit > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
         sleep($time + 1);
