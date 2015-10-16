@@ -29,6 +29,17 @@ enum txResult {COMMIT, ROLLBACK, RETRY};
 void DiamondInit();
 void DiamondInit(const std::string &server);
 
+
+typedef struct structTransactionState {
+    int cloudReadCount; // Counts the reads that hit the redis server
+    int cloudWriteCount; // Counts the writes that ???
+
+    std::set<std::string> rs; 
+    std::set<std::string> ws; 
+    std::map<std::string, std::string > localView; // Content of the values read/written inside the transaction
+
+} TransactionState;
+
 class DObject
 {
 public:
@@ -43,6 +54,7 @@ public:
 
     void SetGlobalConsistency(enum DConsistency dc);
 
+    
     static void TransactionBegin(void);
     static int TransactionCommit(void);
     static void TransactionRollback(void);
@@ -76,11 +88,14 @@ private:
     int PullAlways();
     int PullAlwaysWatch();
 
-    static bool IsTransactionInProgress(void);
-    static void SetTransactionInProgress(bool res);
-    static std::set<std::string>* GetTransactionRS(void);
-    static std::set<std::string>* GetTransactionWS(void);
-    static std::map<std::string, std::string >* GetTransactionLocals(void);
+     static bool IsTransactionInProgress(void);
+     static void SetTransactionInProgress(bool res);
+//     static std::set<std::string>* GetTransactionRS(void);
+//     static std::set<std::string>* GetTransactionWS(void);
+//     static std::map<std::string, std::string >* GetTransactionLocals(void);
+
+    static TransactionState* GetTransactionState(void);
+  
 };
 
 

@@ -15,23 +15,29 @@ namespace diamond {
 
 using namespace std;
 
+// Obsolete: Used for the release consistency 
 static std::set<DObject*> rcRS;
 static std::set<DObject*> rcWS;
 static enum DConsistency globalConsistency = SEQUENTIAL_CONSISTENCY;
 
 
-static std::set<int> transationsTID; // set with the TIDs of the running transactions
-static std::map<int, std::set<string> > transactionsRS; // map with the RS for each transaction
-static std::map<int, std::set<string> > transactionsWS; // map with the WS for each transaction
-static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
+// static std::set<int> transationsTID; // set with the TIDs of the running transactions
+// static std::map<int, std::set<string> > transactionsRS; // map with the RS for each transaction
+// static std::map<int, std::set<string> > transactionsWS; // map with the WS for each transaction
+// static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
+
+// Keeps all the state for the transactions in progress (per thread)
+static std::map<long, TransactionState> transactionStates;
+
 pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
 
 // Used by diamond_profile.h macros
 pthread_mutex_t  profileMutex = PTHREAD_MUTEX_INITIALIZER;
 long profileEnterTs[MAX_THREAD_ID];
 
-// Used to simulate that the network if offline
+// Used to simulate that the network is offline
 bool networkConnectivity = false;
+
 
 Cloud* cloudstore = NULL;
 Stalestorage stalestorage;
@@ -103,13 +109,16 @@ DObject::PullAlwaysWatch(){
     
     ret = stalestorage.Read(_key,value);
     if(ret == ERR_NOTFOUND){
+        TransactionState *ts  = GetTransactionState();
         // If it's not on the stalestore
 
         ret = cloudstore->WatchRead(_key, value);
         if (ret != ERR_EMPTY && ret != ERR_OK) {
             return ret;
         }
-    
+   
+        ts->cloudReadCount++;
+
         if (ret == ERR_EMPTY) {
             value = "";
         }
@@ -129,8 +138,10 @@ DObject::Pull(){
     // XXX: use the tx lock
 
     if(IsTransactionInProgress()){
-        std::set<string>* txRS = GetTransactionRS();
-        std::set<string>* txWS = GetTransactionWS();
+        TransactionState *ts  = GetTransactionState();
+        std::set<string>* txRS = &ts->rs;
+        std::set<string>* txWS = &ts->ws;
+        std::map<string, string >* locals = &ts->localView;
 
         if((txRS->find(this->GetKey()) != txRS->end()) || (txWS->find(this->GetKey()) != txWS->end())){
             // Don't pull if the object is already in our WS or our RS
@@ -139,7 +150,6 @@ DObject::Pull(){
 
             // Use our local TX value
             string value;
-            std::map<string, string >* locals = GetTransactionLocals();
             value = (*locals)[this->GetKey()];
             Deserialize(value);
             return 0;
@@ -149,6 +159,8 @@ DObject::Pull(){
         // WITHOUT BATCHING
         //cloudstore->Watch(this->GetKey());
         //int res = PullAlways();
+        // WITHOUT BATCHING
+
 
         // WITH BATCHING
         int res = PullAlwaysWatch();
@@ -156,7 +168,6 @@ DObject::Pull(){
         // Add new value to our local TX view
         string value;
         value = Serialize();
-        std::map<string, string >* locals = GetTransactionLocals();
         (*locals)[this->GetKey()]=value;
 
         return res;
@@ -199,8 +210,9 @@ int
 DObject::Push(){
 
     if(IsTransactionInProgress()){
+        TransactionState *ts = GetTransactionState();
         // Add object to our WS
-        std::set<string>* txWS = GetTransactionWS();
+        std::set<string>* txWS = &ts->ws;
         txWS->insert(this->GetKey());
 
         cloudstore->Watch(this->GetKey());  // PF: Watch probably can be avoided on writes; if read-after-writes deals with it properly
@@ -208,7 +220,7 @@ DObject::Push(){
         // Add new value to our local TX view
         string value;
         value = Serialize();
-        std::map<string, string >* locals = GetTransactionLocals();
+        std::map<string, string >* locals = &ts->localView;
         (*locals)[this->GetKey()]=value;
 
         // Do not push to storage yet, wait for commit
@@ -460,8 +472,8 @@ DObject::IsTransactionInProgress(void)
 {
     long threadID = getThreadID();
 
-    auto find = transationsTID.find(threadID);
-    if(find != transationsTID.end()){
+    auto find = transactionStates.find(threadID);
+    if(find != transactionStates.end()){
         return true;
     }else{
         return false;
@@ -473,55 +485,87 @@ DObject::SetTransactionInProgress(bool inProgress)
 {
     long threadID = getThreadID();
 
-    auto find = transationsTID.find(threadID);
-    if(find == transationsTID.end()){
+    if(!IsTransactionInProgress()){
         LOG_TX("change state to \"transaction in progress\"");
         assert(inProgress);
-        transationsTID.insert(threadID);
+        TransactionState ts;
+        transactionStates[threadID] = ts;
     }else{
         LOG_TX("change state to \"transaction not in progress\"");
         assert(!inProgress);
-        transationsTID.erase(threadID);
+        transactionStates.erase(threadID);
+        return;
     }
 
-    auto txWS = GetTransactionWS();
-    auto txRS = GetTransactionRS();
-    auto locals = GetTransactionLocals();
 
-    txWS->clear();
-    txRS->clear();
-    locals->clear();
-}
-
-
-std::set<string>*
-DObject::GetTransactionRS(void){
-    long tid = getThreadID();
+    TransactionState *ts = GetTransactionState();
     
-    std::set<string> *s;
-    s = &transactionsRS[tid];
-    return s;
+    ts->cloudReadCount = 0;
+    ts->cloudWriteCount = 0;
+    ts->rs.clear();
+    ts->ws.clear();
+    ts->localView.clear();
+
+//     auto txWS = GetTransactionWS();
+//     auto txRS = GetTransactionRS();
+//     auto locals = GetTransactionLocals();
+// 
+//     txWS->clear();
+//     txRS->clear();
+//     locals->clear();
 }
 
-std::set<string>*
-DObject::GetTransactionWS(void){
+TransactionState*
+DObject::GetTransactionState(void){
     long tid = getThreadID();
-    
-    std::set<string> *s;
-    s = &transactionsWS[tid];
-    return s;
-}
+   
+    if(!IsTransactionInProgress()){
+        return NULL;
+    }
 
-std::map<string, string >*
-DObject::GetTransactionLocals(void){
-    long tid = getThreadID();
-    
-    std::map<string, string >* m;
-    m = &transactionsLocal[tid];
-    return m;
+    TransactionState *ts;
+    ts = &transactionStates[tid];
+    return ts;
 }
 
 
+// DObject::GetTransactionRS(void){
+//     long tid = getThreadID();
+//     
+//     std::set<string> *s;
+//     s = &transactionsRS[tid];
+//     return s;
+// }
+// 
+// 
+// std::set<string>*
+// DObject::GetTransactionRS(void){
+//     long tid = getThreadID();
+//     
+//     std::set<string> *s;
+//     s = &transactionsRS[tid];
+//     return s;
+// }
+// 
+// std::set<string>*
+// DObject::GetTransactionWS(void){
+//     long tid = getThreadID();
+//     
+//     std::set<string> *s;
+//     s = &transactionsWS[tid];
+//     return s;
+// }
+// 
+// std::map<string, string >*
+// DObject::GetTransactionLocals(void){
+//     long tid = getThreadID();
+//     
+//     std::map<string, string >* m;
+//     m = &transactionsLocal[tid];
+//     return m;
+// }
+// 
+// 
 
 // XXX: Ensure that it's ok to call the Begin, Commit, Rollback and Retry concurrently from different threads
 
@@ -593,7 +637,6 @@ DObject::TransactionCommit(void)
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
 
-
     bool consistent = stalestorage.ViewEnd();
     if(!consistent){
         LOG_TX("TRANSACTION COMMIT -> aborted (inconsistent reads)");
@@ -604,20 +647,34 @@ DObject::TransactionCommit(void)
 
 // WITH BATCHING
     std::map<string, string> keyValuesWS;
-    std::map<string, string >* locals = GetTransactionLocals();
-    std::set<string>* txWS = GetTransactionWS();
+    TransactionState *ts = GetTransactionState();
+
+    std::map<string, string >* locals = &ts->localView;
+    std::set<string>* txWS = &ts->ws;
     auto it = txWS->begin();
     for (; it != txWS->end(); it++) {
         // Push our local Tx values for all objects in our WS
         string key = *it;
         string value = (*locals)[key];
         keyValuesWS[key] = value;
-    }     
-    
-    int res = cloudstore->MultiWriteExec(keyValuesWS);
+    }
+    int res;
+    if((keyValuesWS.size() > 0) || (ts->cloudReadCount > 1)){
+        // If one or more writes were made -> send to the cloud
+        // If two or more reads -> send to the cloud for consistency check (and unwatch them)
+        res = cloudstore->MultiWriteExec(keyValuesWS);
+    }else if(ts->cloudReadCount == 1){
+        // If one read was made -> unwatch it
+        res = cloudstore->Unwatch();
+    }else{
+        // If there were no writes and no read hit the cloud -> do nothing
+        res = ERR_OK;
+    }
 
 
-// WITHOUT BATCHING
+
+
+// <WITHOUT BATCHING>
 //     // Begin storage transaction 
 //     // (the Watch commands executed earlier detect the conflicts)
 //     int res = cloudstore->Multi();
@@ -639,6 +696,7 @@ DObject::TransactionCommit(void)
 // 
 //     // Try to commit the storage transaction
 //     res = cloudstore->Exec();
+// </WITHOUT BATCHING>
  
 
 
@@ -650,8 +708,10 @@ DObject::TransactionCommit(void)
         return false;
     }else{
         std::map<string, string> keyValuesRS;
-        std::map<string, string >* locals = GetTransactionLocals();
-        std::set<string>* txRS = GetTransactionRS();
+        TransactionState *ts = GetTransactionState();
+
+        std::map<string, string >* locals = &ts->localView;
+        std::set<string>* txRS = &ts->rs;
         auto it = txRS->begin();
         for (; it != txRS->end(); it++) {
             // Push our local Tx values for all objects in our RS
@@ -696,8 +756,9 @@ DObject::TransactionRetry(void)
 
     pthread_mutex_lock(&transactionMutex);
 
-    std::set<string>* txRS = GetTransactionRS();
-    std::map<string, string >* locals = GetTransactionLocals();
+    TransactionState *ts = GetTransactionState();
+    std::set<string>* txRS = &ts->rs;
+    std::map<string, string >* locals = &ts->localView;
 
     int res = cloudstore->Unwatch(); 
     assert(res == ERR_OK); // Is this assert really necessary?
