@@ -108,13 +108,15 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name\n"
+		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name staleness stalelimit\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
 		 			 + "    concurrency: transaction or atomic\n"
-		 			 + "    verbosity: concise or verbose\n";
-		if (args.length < 8) {
+		 			 + "    verbosity: concise or verbose\n"
+		 			 + "    staleness: stale or nostale\n"
+		 			 + "    stalelimit: stale read allowance in ms (0 means no limit)\n";
+		if (args.length < 10) {
 			System.err.println(usage);
 			System.exit(0);
 		}
@@ -126,6 +128,8 @@ public class Main {
 		serverName = args[5];
 		userName = args[6];
 		chatroomName = args[7];
+		String staleness = args[8];
+		long stalelimit = Long.parseLong(args[9]);
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
 			System.err.println(usage);
 			System.exit(0);
@@ -142,13 +146,18 @@ public class Main {
 			System.err.println(usage);
 			System.exit(0);
 		}
+		if (!(staleness.equals("stale") || staleness.equals("nostale"))) {
+			System.err.println(usage);
+			System.exit(0);
+		}
 		
 		verbose = (verbosity.equals("verbose"));
 		
 		Diamond.DiamondInit(serverName);
+		Diamond.DObject.SetGlobalStaleness(staleness.equals("stale"));
+		Diamond.DObject.SetGlobalMaxStaleness(stalelimit);
 		
 		String chatLogKey = "dimessage:" + chatroomName + ":chatlog";
-		
 		messageList = new Diamond.DStringList();
 		Diamond.DObject.Map(messageList, chatLogKey);
 		
