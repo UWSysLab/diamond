@@ -32,7 +32,6 @@ void DiamondInit(const std::string &server);
 
 typedef struct structTransactionState {
     int cloudReadCount; // Counts the reads that hit the redis server
-    int cloudWriteCount; // Counts the writes that ???
 
     std::set<std::string> rs; 
     std::set<std::string> ws; 

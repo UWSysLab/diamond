@@ -81,11 +81,13 @@ DObject::PullAlways(){
 
     int ret;
     
-    ret = stalestorage.Read(_key,value);
-    if(ret == ERR_NOTFOUND){
+    // Disable stale reads for now
+    // ret = stalestorage.Read(_key,value);
+    // if(ret == ERR_NOTFOUND){
+
         // If it's not on the stalestore
 
-        int ret = cloudstore->Read(_key, value);
+        ret = cloudstore->Read(_key, value);
         if (ret != ERR_EMPTY && ret != ERR_OK) {
             return ret;
         }
@@ -93,7 +95,7 @@ DObject::PullAlways(){
         if (ret == ERR_EMPTY) {
             value = "";
         }
-    }
+    // }
 
     Deserialize(value);
     return 0;
@@ -501,7 +503,6 @@ DObject::SetTransactionInProgress(bool inProgress)
     TransactionState *ts = GetTransactionState();
     
     ts->cloudReadCount = 0;
-    ts->cloudWriteCount = 0;
     ts->rs.clear();
     ts->ws.clear();
     ts->localView.clear();
