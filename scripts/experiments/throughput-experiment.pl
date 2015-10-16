@@ -6,14 +6,16 @@ use strict;
 my $time = 5;
 my $maxClients = 20;
 my $readFraction = 0.9;
-my $prefix = "throughput";
+
+my $dir = "desktopchat-throughput";
+my $prefix = "$dir/run";
 
 my $server = "localhost";
 
 my $concurrency = "transaction";
-my $log = "desktopchat-throughput-transaction-log.txt";
-my $throughputFile = "desktopchat-throughput-transaction.txt";
-my $abortRateFile = "desktopchat-throughput-transaction-abortrates.txt";
+my $log = "$dir/overall-log.txt";
+my $throughputFile = "$dir/throughput-results.txt";
+my $abortRateFile = "$dir/abortrate-results.txt";
 
 doExperiment();
 parseThroughputs();
