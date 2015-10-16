@@ -16,62 +16,86 @@
 
 #include "includes/profile.h"
 
-
 namespace diamond {
 
 using namespace std;
 
 
-//bool Stalestorage::enabled = false;
-//long Stalestorage::maxStalenessMs = 100;
+static pthread_mutex_t  stalestorageMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
+
 
 void
 Stalestorage::ViewBegin(void)
 {
     //long threadID = getThreadID();
     if(IsEnabled()){
-        long tid = getThreadID();
-        _currentViews[tid] = NULL;
         LOG_STALEREADS("ViewBegin\n");
+
+        TransactionView *tv = GetTransactionView();
+        if(tv==NULL){
+            long tid = getThreadID();
+            _transactionViews[tid] = TransactionView();
+            tv = GetTransactionView();
+            assert(tv);
+            // previousInconsistent is only initialized here the first time a thread executes a transaction
+            // in subsequent transactions its initialized by the ViewEnd()
+            tv->previousInconsistent = false;
+        }
+        tv->stalestorageRead = false; 
+        tv->currenConsistent = true;
+        tv->sv = NULL;
     }
 }
 
-StaleView* 
-Stalestorage::GetCurrentView(void)
+TransactionView*
+Stalestorage::GetTransactionView(void)
 {
     long tid = getThreadID();
-    auto cv = _currentViews.find(tid);
-    if(cv == _currentViews.end()){
+    auto cv = _transactionViews.find(tid);
+    if(cv == _transactionViews.end()){
         return NULL;
     }else{
-        return cv->second;
+        return &cv->second;
     }
 }
+
+
+// StaleView* 
+// Stalestorage::GetCurrentView(void)
+// {
+//     long tid = getThreadID();
+//     auto cv = _currentViews.find(tid);
+//     if(cv == _currentViews.end()){
+//         return NULL;
+//     }else{
+//         return cv->second;
+//     }
+// }
 
 bool
 Stalestorage::IsViewInUse(StaleView * v){
-    auto it = _currentViews.begin();
+    auto it = _transactionViews.begin();
 
-    for(;it!=_currentViews.end();it++){
-        if(v == it->second){
+    for(;it!=_transactionViews.end();it++){
+        if(v == it->second.sv){
             return true;
         }
     }
     return false;
 }
 
-bool 
-Stalestorage::IsLastViewInconsistent(void)
-{
-    long tid = getThreadID();
-
-    auto la = _lastAttemptFailed.find(tid);
-    if(la == _lastAttemptFailed.end()){
-        return NULL;
-    }else{
-        return la->second;
-    }
-}
+// bool 
+// Stalestorage::IsLastViewInconsistent(void)
+// {
+//     long tid = getThreadID();
+// 
+//     auto la = _lastAttemptFailed.find(tid);
+//     if(la == _lastAttemptFailed.end()){
+//         return NULL;
+//     }else{
+//         return la->second;
+//     }
+// }
 
 
 // Return true if during this view all values read were from a consistent view
@@ -80,7 +104,9 @@ Stalestorage::ViewEnd(){
     // XXX: TODO
     if(IsEnabled()){
         LOG_STALEREADS("ViewEnd\n");
-        return true;
+        TransactionView *tv = GetTransactionView();
+        tv->previousInconsistent = !tv->currenConsistent;
+        return tv->currenConsistent;
     }
     return true;
 }
@@ -100,6 +126,18 @@ Stalestorage::ViewAdd(map<string, string> rs, map<string, string> ws){
 void
 Stalestorage::ViewAdd(map<string, string> keyValues){
     if(IsEnabled()){
+        TransactionView * tv = GetTransactionView();
+        if(tv->currenConsistent == false){
+            // Don't store view if tx didn't see a consistent view 
+            LOG_STALEREADS("ViewAdd: not storing because view was not consistent\n");
+            return;
+        }
+        if(tv->stalestorageRead == true){
+            // Don't store view if the tx used the consistent store (otherwise we would extend beyond the staleness limit)
+            LOG_STALEREADS("ViewAdd: not storing because stalestorage was read\n");
+            return;
+        }
+
         StaleView sv;
 
         sv.timestamp = getTimeMillis();
@@ -111,6 +149,8 @@ Stalestorage::ViewAdd(map<string, string> keyValues){
 
         _views.push_back(sv);
 
+        // GC
+        // XXX: this could be improved by taking out only useless stale views
         while(_views.size() > MAX_STALEREADS_VIEWS){
             // Should check that nobody is using this view
             StaleView *sv = &_views.front();
@@ -159,7 +199,14 @@ int
 Stalestorage::Read(string key, string& value)
 {
     if(IsEnabled()){
-        StaleView *current = GetCurrentView();
+        TransactionView *tv = GetTransactionView();
+        assert(tv);  // Not inside a transaction?!?
+        StaleView *current = tv->sv;
+
+        if(tv->previousInconsistent){
+            LOG_STALEREADS("Read: Don't use stalestorage because previous tx saw inconsistent reads\n");
+            return ERR_NOTFOUND;
+        }
 
         if(current==NULL){
             // If we don't have a view yet (i.e., we haven't made stale reads yet)
@@ -173,8 +220,8 @@ Stalestorage::Read(string key, string& value)
                 return ERR_NOTFOUND;
             }else{
                 value = last->keyValues[key];
-                long tid = getThreadID();
-                _currentViews[tid] = last;
+                tv->sv = last;
+                tv->stalestorageRead = true;
                 LOG_STALEREADS_ARGS("Read: First stale (key: \'%s\' value: \'%s\')\n", key.c_str(), value.c_str());
                 return ERR_OK;
             }
@@ -187,6 +234,7 @@ Stalestorage::Read(string key, string& value)
                 return ERR_NOTFOUND;
             }
             value = exists->second;
+            tv->stalestorageRead = true;
             LOG_STALEREADS_ARGS("Read: Consistent stale (key: \'%s\' value: \'%s\')\n", key.c_str(), value.c_str());
             return ERR_OK;
         }

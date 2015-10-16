@@ -40,11 +40,19 @@ using namespace std;
 
 #define MAX_STALEREADS_VIEWS 20
 
-typedef struct struct_StaleView
+typedef struct StructStaleView
 {
     long timestamp;
     std::map<std::string, std::string> keyValues;
 } StaleView;
+
+
+typedef struct StructTransactionView{
+    StaleView *sv;
+    bool currenConsistent;
+    bool previousInconsistent;      // Prevents us from going into an infinite cycle because of stale
+    bool stalestorageRead;
+} TransactionView;
 
 
 class Stalestorage
@@ -60,10 +68,10 @@ public:
     void ViewAdd(map<string, string> keyValues);
     bool GetLastView(set<string> keys, StaleView* &result);
 
+    TransactionView* GetTransactionView(void);
     StaleView* GetCurrentView(void);
     bool IsViewInUse(StaleView * v);
     bool IsLastViewInconsistent(void);
-
 
     void SetStaleness(bool enable);
     void SetMaxStaleness(long maxStalenessMs);
@@ -79,10 +87,9 @@ public:
 
 private:
     std::list<StaleView> _views;
-    std::map<long, StaleView*> _currentViews; // tid - > StaleView
-    std::map<long, bool> _lastAttemptFailed; // tid - > StaleView
-
-
+    std::map<long, TransactionView> _transactionViews; // tid - > StaleView
+//    std::map<long, StaleView*> _currentViews; // tid - > StaleView
+//    std::map<long, bool> _lastAttemptFailed; // tid - > StaleView
 };
 
 
