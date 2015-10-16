@@ -1,14 +1,8 @@
 library(ggplot2)
 library(plyr)
 
-args <- commandArgs(TRUE)
-if (length(args) != 2) {
-    print("Usage: Rscript plot-twitter-latencies.R original_latencies diamond_latencies")
-    q()
-}
-
-original <- read.table(args[1])
-diamond <- read.table(args[2])
+original <- read.table("twitter-latency/original-data.txt")
+diamond <- read.table("twitter-latency/diamond-data.txt")
 
 original$system = "original"
 diamond$system = "diamond"
