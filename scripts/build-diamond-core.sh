@@ -15,4 +15,5 @@ make
 
 # build Java bindings
 cd $DIAMOND_BACKEND_DIR/src/bindings/java
+mvn clean
 mvn package
