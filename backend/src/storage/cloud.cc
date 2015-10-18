@@ -170,11 +170,14 @@ Cloud::MultiGet(const vector<string> & keys, vector<string> & values, vector<boo
     if (reply == NULL){
         Panic("reply == null");
     }
+
     if(reply->type != REDIS_REPLY_ARRAY) {
         Panic("MultiGet reply is not an array");
         freeReplyObject(reply);
         return ERR_EMPTY;
     }
+
+    assert(reply->elements == keys.size());
 
     for (size_t i = 0; i < reply->elements; i++) {
         redisReply *subreply = reply->element[i];
