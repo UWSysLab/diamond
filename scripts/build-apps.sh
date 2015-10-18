@@ -1,9 +1,4 @@
-DIAMOND_SRC_DIR=$1
-
-if [ $# -ne 1 ]
-    then echo "usage: ./build-apps.sh <diamond-src-dir>"
-    exit
-fi
+DIAMOND_SRC_DIR=..
 
 ./build-diamond-java.sh $DIAMOND_SRC_DIR $DIAMOND_SRC_DIR/apps/test-apps/DiamondJavaTest
 ./build-diamond-java.sh $DIAMOND_SRC_DIR $DIAMOND_SRC_DIR/apps/twitter/backend-diamond
