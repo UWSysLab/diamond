@@ -66,6 +66,8 @@ public:
     static void SetGlobalStaleness(bool enable);
     static void SetGlobalMaxStaleness(long maxStalenessMs);
 
+    static void DebugSleep(long seconds);
+
 protected:
     DObject() : _key("dummykey") {};
     DObject(const std::string &key) : _key(key) {};

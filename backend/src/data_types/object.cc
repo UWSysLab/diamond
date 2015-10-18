@@ -808,6 +808,13 @@ DObject::GetKey(){
     return _key;
 }
 
+void
+DObject::DebugSleep(long seconds){
+    Notice("Sleeping for %ld seconds\n", seconds);
+    sleep(seconds);
+}
+
+
 } // namespace diamond
 
 
