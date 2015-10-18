@@ -20,12 +20,6 @@ static std::set<DObject*> rcRS;
 static std::set<DObject*> rcWS;
 static enum DConsistency globalConsistency = SEQUENTIAL_CONSISTENCY;
 
-
-// static std::set<int> transationsTID; // set with the TIDs of the running transactions
-// static std::map<int, std::set<string> > transactionsRS; // map with the RS for each transaction
-// static std::map<int, std::set<string> > transactionsWS; // map with the WS for each transaction
-// static std::map<int, std::map<string, string > > transactionsLocal; // map with the local values of the objects for each tx
-
 // Keeps all the state for the transactions in progress (per thread)
 static std::map<long, TransactionState> transactionStates;
 
@@ -38,6 +32,8 @@ long profileEnterTs[MAX_THREAD_ID];
 // Used to simulate that the network is offline
 bool networkConnectivity = false;
 
+// Prefetch
+bool DObject::prefetchEnabled = true;
 
 Cloud* cloudstore = NULL;
 Stalestorage stalestorage;
@@ -81,7 +77,7 @@ DObject::PullAlways(){
 
     int ret;
     
-    // Disable stale reads for now
+    // Disable stale reads outside of transactions for now
     // ret = stalestorage.Read(_key,value);
     // if(ret == ERR_NOTFOUND){
 
@@ -529,61 +525,51 @@ DObject::GetTransactionState(void){
     return ts;
 }
 
-
-// DObject::GetTransactionRS(void){
-//     long tid = getThreadID();
-//     
-//     std::set<string> *s;
-//     s = &transactionsRS[tid];
-//     return s;
-// }
-// 
-// 
-// std::set<string>*
-// DObject::GetTransactionRS(void){
-//     long tid = getThreadID();
-//     
-//     std::set<string> *s;
-//     s = &transactionsRS[tid];
-//     return s;
-// }
-// 
-// std::set<string>*
-// DObject::GetTransactionWS(void){
-//     long tid = getThreadID();
-//     
-//     std::set<string> *s;
-//     s = &transactionsWS[tid];
-//     return s;
-// }
-// 
-// std::map<string, string >*
-// DObject::GetTransactionLocals(void){
-//     long tid = getThreadID();
-//     
-//     std::map<string, string >* m;
-//     m = &transactionsLocal[tid];
-//     return m;
-// }
-// 
-// 
+void
+DObject::SetTransactionPrefetchSet(set<string> &txPrefetchSet)
+{
+    TransactionState *ts = GetTransactionState();
+    ts->txPrefetchSet = txPrefetchSet;
+}
 
 // XXX: Ensure that it's ok to call the Begin, Commit, Rollback and Retry concurrently from different threads
 
 void
 DObject::TransactionBegin(void)
 {
+    set<string> txPrefetchEmpty;
+
+    TransactionBegin(txPrefetchEmpty);
+}
+
+void
+DObject::TransactionBegin(set<DObject*> &txPrefetchSet)
+{
+    set<string> tpsString;
+
+    auto it = txPrefetchSet.begin();
+
+    for(;it!=txPrefetchSet.end();it++){
+        tpsString.insert((*it)->GetKey());
+    }
+
+    TransactionBegin(tpsString);
+}
+
+void
+DObject::TransactionBegin(set<string> &txPrefetchSet)
+{
     pthread_mutex_lock(&transactionMutex);
 
     LOG_TX("TRANSACTION BEGIN");
 
     SetTransactionInProgress(true);
+    SetTransactionPrefetchSet(txPrefetchSet);
     stalestorage.ViewBegin();
 
     pthread_mutex_unlock(&transactionMutex);
 
     // XXX: Prevent locks from being acquired during a Tx
-
 }
 
 
@@ -752,7 +738,6 @@ DObject::TransactionRetry(void)
 {
     // Implement with pooling for now
 
-
     LOG_TX("TRANSACTION RETRY");
 
     pthread_mutex_lock(&transactionMutex);
@@ -776,6 +761,52 @@ DObject::TransactionRetry(void)
 
 }
 
+
+void 
+DObject::TransactionLearnPrefetchSet(void)
+{
+    Panic("NYI");
+}
+
+
+void 
+DObject::PrefetchGlobalAddSet(set<DObject*> &prefetchSet)
+{
+    set<string> keysPrefetchSet = GetKeys(prefetchSet);
+    PrefetchGlobalAddSet(keysPrefetchSet);
+}
+
+void 
+DObject::PrefetchGlobalAddSet(set<string> &prefetchSet){
+    Panic("NYI");
+}
+
+void 
+DObject::PrefetchGlobalRemoveSet(set<DObject*> &prefetchSet)
+{
+    set<string> keysPrefetchSet = GetKeys(prefetchSet);
+    PrefetchGlobalRemoveSet(keysPrefetchSet);
+}
+
+void 
+DObject::PrefetchGlobalRemoveSet(set<string> &prefetchSet)
+{
+    Panic("NYI");
+}
+
+set<string>
+DObject::GetKeys(set<DObject*> &objs){
+    set<string> keys;
+    
+    auto it = objs.begin();
+
+    for(;it!=objs.end();it++){
+        keys.insert((*it)->GetKey());
+    }
+    return keys;
+}
+
+
 // used to simulate an offline situation
 void
 DObject::SetNetworkConnectivity(bool connectivity)
@@ -790,6 +821,11 @@ DObject::SetNetworkConnectivity(bool connectivity)
 }
 
 
+void 
+DObject::SetGlobalPrefetch(bool enable)
+{
+    DObject::prefetchEnabled = enable;
+}
 
 void 
 DObject::SetGlobalStaleness(bool enable)

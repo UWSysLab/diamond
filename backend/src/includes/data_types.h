@@ -21,6 +21,8 @@
 
 namespace diamond {
 
+using namespace std;
+
 #define LOCK_DURATION_MS (5*1000)
 
 enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
@@ -37,6 +39,7 @@ typedef struct structTransactionState {
     std::set<std::string> ws; 
     std::map<std::string, std::string > localView; // Content of the values read/written inside the transaction
 
+    std::set<string> txPrefetchSet; // User-specified set of keys that are expected to be used together in this specific transaction
 } TransactionState;
 
 class DObject
@@ -51,20 +54,28 @@ public:
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
 
-    void SetGlobalConsistency(enum DConsistency dc);
 
-    
     static void TransactionBegin(void);
+    static void TransactionBegin(set<string> &txPrefetchSet);
+    static void TransactionBegin(set<DObject*> &txPrefetchSet);
     static int TransactionCommit(void);
     static void TransactionRollback(void);
     static void TransactionRetry(void);
     static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
+    static void TransactionLearnPrefetchSet();
+
+    static void PrefetchGlobalAddSet(set<DObject*> &prefetchSet); 
+    static void PrefetchGlobalAddSet(set<string> &prefetchSet); 
+    static void PrefetchGlobalRemoveSet(set<DObject*> &prefetchSet); 
+    static void PrefetchGlobalRemoveSet(set<string> &prefetchSet); 
 
     static void SetNetworkConnectivity(bool connectivity);
     std::string GetKey(void);
 
+    static void SetGlobalPrefetch(bool enable);
     static void SetGlobalStaleness(bool enable);
     static void SetGlobalMaxStaleness(long maxStalenessMs);
+    void SetGlobalConsistency(enum DConsistency dc); // Made obsolete by the transactions?!
 
     static void DebugSleep(long seconds);
 
@@ -83,17 +94,19 @@ protected:
 private:
 	uint64_t _lockid = 0;
 	long _locked = 0;
+
+    static bool prefetchEnabled;
+
 	void LockNotProtected(); // Callee should hold the _objectMutex
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
     int PullAlways();
     int PullAlwaysWatch();
 
-     static bool IsTransactionInProgress(void);
-     static void SetTransactionInProgress(bool res);
-//     static std::set<std::string>* GetTransactionRS(void);
-//     static std::set<std::string>* GetTransactionWS(void);
-//     static std::map<std::string, std::string >* GetTransactionLocals(void);
+    static bool IsTransactionInProgress(void);
+    static void SetTransactionInProgress(bool res);
+    static void SetTransactionPrefetchSet(set<string> &txPrefetchSet);
+    static set<string> GetKeys(set<DObject*> &objs);
 
     static TransactionState* GetTransactionState(void);
   
