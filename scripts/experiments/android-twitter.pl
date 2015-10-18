@@ -5,9 +5,14 @@ use strict;
 
 my $ANDROID_DIR = "/home/nl35/research/android-sdk-linux/platform-tools";
 
-die "usage: ./android-twitter.pl data_file log_file" unless @ARGV == 2;
+die "usage: ./android-twitter.pl name" unless @ARGV == 1;
 
-my ($dataFile, $logFile) = @ARGV;
+my $name = shift;
+
+my $dir = "twitter-latency";
+
+my $dataFile = "$dir/$name-data.txt";
+my $logFile = "$dir/$name-log.txt";
 
 #system("$ANDROID_DIR/adb logcat -c");
 #system("$ANDROID_DIR/adb logcat | ./android-twitter-helper.pl");

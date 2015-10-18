@@ -14,12 +14,12 @@ transactionReader$client = "TransactionReader";
 data <- rbind(atomicWriter, atomicReader, transactionWriter, transactionReader)
 data <- rename(data, c("V1" = "latency"))
 
-pdf("desktopchat-plots.pdf")
+pdf("desktop-chat-latency-plots.pdf")
 
-ggplot(data, aes(x=latency, color=factor(client))) + stat_ecdf()
 ggplot(data, aes(x=latency, color=factor(client))) + stat_ecdf() + coord_cartesian(xlim=c(0, 0.5))
+ggplot(data, aes(x=latency, color=factor(client))) + stat_ecdf()
 
-ggplot(data, aes(x=factor(client), y=latency)) + geom_boxplot()
 ggplot(data, aes(x=factor(client), y=latency)) + geom_boxplot() + coord_cartesian(ylim=c(0, 0.5))
+ggplot(data, aes(x=factor(client), y=latency)) + geom_boxplot()
 
 dev.off()

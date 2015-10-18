@@ -50,6 +50,7 @@ DCounter & DCounter::operator++()
 { 
     pthread_mutex_lock(&_objectMutex); 
 
+    Pull();
     SetNotProtected(_counter + 1); 
 
     pthread_mutex_unlock(&_objectMutex); 
@@ -60,6 +61,7 @@ DCounter & DCounter::operator--()
 { 
     pthread_mutex_lock(&_objectMutex); 
 
+    Pull();
     SetNotProtected(_counter - 1); 
 
     pthread_mutex_unlock(&_objectMutex); 
@@ -70,6 +72,7 @@ DCounter & DCounter::operator+=(const uint64_t i)
 { 
     pthread_mutex_lock(&_objectMutex); 
 
+    Pull();
     SetNotProtected(_counter + i); 
 
     pthread_mutex_unlock(&_objectMutex); 
@@ -80,6 +83,7 @@ DCounter & DCounter::operator-=(const uint64_t i)
 { 
     pthread_mutex_lock(&_objectMutex); 
 
+    Pull();
     SetNotProtected(_counter - i); 
 
     pthread_mutex_unlock(&_objectMutex); 
