@@ -1,4 +1,4 @@
-DIAMOND_SRC_DIR=..
+DIAMOND_SRC_DIR=$(cd ..; pwd)
 DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/backend"
 
 # build binaries

@@ -1,4 +1,4 @@
-DIAMOND_SRC_DIR=..
+DIAMOND_SRC_DIR=$(cd ..; pwd)
 
 ./build-diamond-java.sh $DIAMOND_SRC_DIR $DIAMOND_SRC_DIR/apps/test-apps/DiamondJavaTest
 ./build-diamond-java.sh $DIAMOND_SRC_DIR $DIAMOND_SRC_DIR/apps/twitter/backend-diamond
