@@ -35,4 +35,7 @@ param9=$9
 shift
 param10=$9
 
-$JAVA_BINARY -cp $classpath -Djava.library.path=$nativePath Main $param1 $param2 $param3 $param4 $param5 $param6 $param7 $param8 $param9 $param10
+shift
+param11=$9
+
+$JAVA_BINARY -cp $classpath -Djava.library.path=$nativePath Main $param1 $param2 $param3 $param4 $param5 $param6 $param7 $param8 $param9 $param10 $param11

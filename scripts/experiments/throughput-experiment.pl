@@ -4,6 +4,7 @@ use warnings;
 use strict;
 
 my $time = 5;
+my $warmupTimeMs = 1000;
 my $maxClients = 20;
 my $readFraction = 0.9;
 
@@ -62,10 +63,10 @@ sub doExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom $staleness $stalelimit > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom $staleness $stalelimit $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + 1);
+        sleep($time + ($warmupTimeMs / 1000) + 1);
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
@@ -121,10 +122,10 @@ sub doBaselineExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server client$i > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + 1);
+        sleep($time + ($warmupTimeMs / 1000) + 1);
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;

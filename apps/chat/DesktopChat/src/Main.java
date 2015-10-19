@@ -99,16 +99,17 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name staleness stalelimit\n"
+		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name staleness stalelimit warmup_time\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
 		 			 + "    concurrency: transaction or atomic\n"
 		 			 + "    verbosity: concise or verbose\n"
 		 			 + "    staleness: stale or nostale\n"
-		 			 + "    stalelimit: stale read allowance in ms (0 means no limit)\n";
-		if (args.length < 10) {
-			System.err.println(usage);
+		 			 + "    stalelimit: stale read allowance in ms (0 means no limit)\n"
+		 			 + "    warmup_time: warmup time in ms\n";
+		if (args.length < 11) {
+			System.err.print(usage);
 			System.exit(0);
 		}
 		String runType = args[0];
@@ -121,24 +122,25 @@ public class Main {
 		chatroomName = args[7];
 		String staleness = args[8];
 		long stalelimit = Long.parseLong(args[9]);
+		int warmupTime = Integer.parseInt(args[10]);
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
-			System.err.println(usage);
+			System.err.println("Error: run_type must be timed or fixed");
 			System.exit(0);
 		}
 		if (readFraction > 1.0 || readFraction < 0.0) {
-			System.err.println(usage);
+			System.err.println("Error: read_fraction must be between 0 and 1");
 			System.exit(0);
 		}
 		if (!(concurrency.equals("transaction") || concurrency.equals("atomic"))) {
-			System.err.println(usage);
+			System.err.println("Error: concurrency must be transaction or atomic");
 			System.exit(0);
 		}
 		if (!(verbosity.equals("verbose") || verbosity.equals("concise"))) {
-			System.err.println(usage);
+			System.err.println("Error: verbosity must be concise or verbose");
 			System.exit(0);
 		}
 		if (!(staleness.equals("stale") || staleness.equals("nostale"))) {
-			System.err.println(usage);
+			System.err.println("Error: staleness must be stale or nostale");
 			System.exit(0);
 		}
 		
@@ -153,9 +155,10 @@ public class Main {
 		Diamond.DObject.Map(messageList, chatLogKey);
 		
 		Random rand = new Random();
-				
-		// Take 200 initial actions to warm up the JVM
-		/*for (int i = 0; i < 200; i++) {
+		
+		//warm up the JVM
+		long warmupStartTime = System.nanoTime();
+		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
@@ -173,8 +176,13 @@ public class Main {
 					writeMessageAtomic(MESSAGE);
 				}
 			}
-		}*/
-		
+			long currentTime = System.nanoTime();
+			double elapsedTimeMillis = ((double)(currentTime - warmupStartTime)) / (1000 * 1000);
+			if (elapsedTimeMillis >= warmupTime) {
+				break;
+			}
+		}		
+
 		long startTime = System.nanoTime();
 		
 		long numActions = 0;
