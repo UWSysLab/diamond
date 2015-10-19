@@ -7,11 +7,19 @@ SERVER=localhost
 
 DIR="desktopchat-latency"
 
-echo Transaction
+echo TransactionStale
 
-./desktop-chat-wrapper.sh timed 5 0 transaction verbose $SERVER writer latencyroom stale 100 1000 > $DIR/transaction-writer.log 2> $DIR/transaction-writer.error &
+./desktop-chat-wrapper.sh timed 5 0 transaction verbose $SERVER writer latencyroom stale 100 1000 > $DIR/transaction-stale-writer.log 2> $DIR/transaction-stale-writer.error &
 PID1=$!
-./desktop-chat-wrapper.sh timed 5 1.0 transaction verbose $SERVER reader latencyroom stale 100 1000 > $DIR/transaction-reader.log 2> $DIR/transaction-reader.error &
+./desktop-chat-wrapper.sh timed 5 1.0 transaction verbose $SERVER reader latencyroom stale 100 1000 > $DIR/transaction-stale-reader.log 2> $DIR/transaction-stale-reader.error &
+PID2=$!
+wait $PID1 $PID2
+
+echo TransactionNostale
+
+./desktop-chat-wrapper.sh timed 5 0 transaction verbose $SERVER writer latencyroom nostale 0 1000 > $DIR/transaction-nostale-writer.log 2> $DIR/transaction-nostale-writer.error &
+PID1=$!
+./desktop-chat-wrapper.sh timed 5 1.0 transaction verbose $SERVER reader latencyroom nostale 0 1000 > $DIR/transaction-nostale-reader.log 2> $DIR/transaction-nostale-reader.error &
 PID2=$!
 wait $PID1 $PID2
 
@@ -40,8 +48,10 @@ PID2=$!
 wait $PID1 $PID2
 kill $PID_SERVER
 
-cat $DIR/transaction-writer.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-writer-latencies.txt
-cat $DIR/transaction-reader.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-reader-latencies.txt
+cat $DIR/transaction-stale-writer.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-stale-writer-latencies.txt
+cat $DIR/transaction-stale-reader.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-stale-reader-latencies.txt
+cat $DIR/transaction-nostale-writer.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-nostale-writer-latencies.txt
+cat $DIR/transaction-nostale-reader.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/transaction-nostale-reader-latencies.txt
 cat $DIR/atomic-writer.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/atomic-writer-latencies.txt
 cat $DIR/atomic-reader.log | awk '$1 !~ /Summary/ { print $4 }' > $DIR/atomic-reader-latencies.txt
 cat $DIR/baseline-writer.log | awk '$1 !~ /Summary/ { print $3 }' > $DIR/baseline-writer-latencies.txt
