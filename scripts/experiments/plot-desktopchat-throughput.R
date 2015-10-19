@@ -5,13 +5,15 @@ nostaleData <- read.table("desktopchat-throughput/nostale-results.txt", header =
 nostaleAbortRates <- read.table("desktopchat-throughput/nostale-abortrate.txt", header = TRUE)
 staleData <- read.table("desktopchat-throughput/stale-results.txt", header = TRUE)
 staleAbortRates <- read.table("desktopchat-throughput/stale-abortrate.txt", header = TRUE)
+baselineData <- read.table("desktopchat-throughput/baseline-results.txt", header = TRUE)
 
 nostaleData$staleness = "no stale"
 nostaleAbortRates$staleness = "no stale"
 staleData$staleness = "stale"
 staleAbortRates$staleness = "stale"
+baselineData$staleness = "baseline"
 
-throughputs = rbind(nostaleData, staleData)
+throughputs = rbind(nostaleData, staleData, baselineData)
 abortRates = rbind(nostaleAbortRates, staleAbortRates)
 
 pdf("desktop-chat-throughput-plots.pdf")

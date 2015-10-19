@@ -33,6 +33,12 @@ doExperiment();
 parseThroughputs();
 parseAbortRates();
 
+$log = "$dir/baseline-log.txt";
+$throughputFile = "$dir/baseline-results.txt";
+
+doBaselineExperiment();
+parseThroughputs();
+
 sub parseThroughputs {
     system("cat $log | awk '
         BEGIN { print \"clients\tthroughput\" }
@@ -95,4 +101,56 @@ sub doExperiment {
         print(FILE "\n");
     }
     close(FILE);
+}
+
+sub doBaselineExperiment {
+    my $DIAMOND_SRC = "/home/nl35/research/diamond-src";
+    my $PROJECT_DIR = "$DIAMOND_SRC/apps/chat/BaselineChatServer";
+    my $JAVA_BINARY = "/home/nl35/research/jdk1.8.0_60/jre/bin/java";
+    my $classpath = "$PROJECT_DIR/bin:$PROJECT_DIR/libs/gson-2.3.1.jar:$PROJECT_DIR/libs/commons-pool2-2.0.jar:$PROJECT_DIR/libs/jedis-2.4.2.jar";
+    my $cmd = "$JAVA_BINARY -cp $classpath Main 2> $dir/baseline-server.error &";
+    system("$cmd");
+    sleep(1);
+    my $serverPid = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
+    chomp($serverPid);
+
+    open(FILE, "> $log");
+    for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
+        print("Experiment: $log Clients: $numClients\n");
+
+        system("rm $prefix.*");
+
+        for (my $i = 0; $i < $numClients; $i++) {
+            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server client$i > $prefix.$i.log 2> $prefix.$i.error &");
+        }
+
+        sleep($time + 1);
+
+        my $totalNumActions = 0;
+        my $abortRateSum = 0;
+
+        for (my $i = 0; $i < $numClients; $i++) {
+            my $lines = 0;
+            open(LOG, "$prefix.$i.log");
+            while(<LOG>) {
+                chomp;
+                if ($_ =~ /Summary:/) {
+                    my @lineSplit = split(/\s+/);
+                    my $numActions = $lineSplit[2];
+                    $totalNumActions += $numActions;
+                }
+                $lines = $lines + 1;
+            }
+            close(LOG);
+            if ($lines != 1) {
+                die "Error: log file $i has $lines lines";
+            }
+        }
+
+        my $throughput = $totalNumActions / $time;
+        print(FILE "Num clients: $numClients\tThroughput: $throughput\tConcurrency: $concurrency\n");
+    }
+    close(FILE);
+
+    system("kill $serverPid");
 }
