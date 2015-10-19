@@ -337,6 +337,7 @@ Cloud::Read(const string &key, string &value)
         freeReplyObject(reply);
         return ERR_EMPTY;
     }
+    Panic("Bad reply type");
     freeReplyObject(reply);
     return ERR_OK;
 }
