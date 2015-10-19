@@ -509,6 +509,9 @@ DObject::SetTransactionInProgress(bool inProgress)
     ts->rs.clear();
     ts->ws.clear();
     ts->localView.clear();
+    ts->txPrefetchKeys.clear();
+    ts->txPrefetchKeyValues.clear();
+    ts->optionLearnPrefetchSet = false;
 
 //     auto txWS = GetTransactionWS();
 //     auto txRS = GetTransactionRS();
@@ -615,7 +618,6 @@ void
 DObject::TransactionBegin(void)
 {
     set<string> txPrefetchEmpty;
-
     TransactionBegin(txPrefetchEmpty);
 }
 
@@ -623,9 +625,7 @@ void
 DObject::TransactionBegin(set<DObject*> &txPrefetch)
 {
     set<string> txPrefetchKeys;
-
     auto it = txPrefetch.begin();
-
     for(;it!=txPrefetch.end();it++){
         txPrefetchKeys.insert((*it)->GetKey());
     }
