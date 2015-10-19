@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -8,6 +9,8 @@ public class Main {
 	static final int MESSAGE_LIST_SIZE = 100;
 	static final int NUM_ACTIONS = 1000;
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
+	
+	static final int INITIAL_CAPACITY = 20000;
 	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
@@ -41,9 +44,6 @@ public class Main {
 		}
 		writeTimeEnd = System.nanoTime();
 		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
-		}
 		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
@@ -61,9 +61,6 @@ public class Main {
 		}
 		writeTimeEnd = System.nanoTime();
 		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "atomic");
-		}
 		return (time);
 	}
 	
@@ -84,9 +81,6 @@ public class Main {
 		}
 		readTimeEnd = System.nanoTime();
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
-		}
 		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
@@ -101,9 +95,6 @@ public class Main {
 		result = messageList.Members();
 		readTimeEnd = System.nanoTime();
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "atomic");
-		}
 		return time;
 	}
 	
@@ -189,27 +180,43 @@ public class Main {
 		long numActions = 0;
 		double totalTime = 0;
 		double totalNumAborts = 0;
+		
+		List<Double> times = new ArrayList<Double>(INITIAL_CAPACITY);
+		List<String> actions = new ArrayList<String>(INITIAL_CAPACITY);
+		List<Double> numAborts = new ArrayList<Double>(INITIAL_CAPACITY);
 
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
 					double[] ret = readMessagesTransaction();
+					times.add(ret[0]);
+					actions.add("read");
+					numAborts.add(ret[1]);
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
 				else {
 					double[] ret = writeMessageTransaction(MESSAGE);
+					times.add(ret[0]);
+					actions.add("write");
+					numAborts.add(ret[1]);
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
 			}
 			else if (concurrency.equals("atomic")) {
 				if (action == ACTION_READ) {
-					totalTime += readMessagesAtomic();
+					double time = readMessagesAtomic();
+					times.add(time);
+					actions.add("read");
+					totalTime += time;
 				}
 				else {
-					totalTime += writeMessageAtomic(MESSAGE);
+					double time = writeMessageAtomic(MESSAGE);
+					times.add(time);
+					actions.add("write");
+					totalTime += time;
 				}
 			}
 			numActions++;
@@ -227,6 +234,17 @@ public class Main {
 		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
+		
+		if (verbose) {
+			for (int i = 0; i < times.size(); i++) {
+				System.out.print(userName + "\t" + chatroomName + "\t" + actions.get(i) + "\t" + times.get(i) + "\t" + concurrency);
+				if (concurrency.equals("transaction")) {
+					System.out.print("\t" + numAborts.get(i));
+				}
+				System.out.println();
+			}
+		}
+		
 		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;

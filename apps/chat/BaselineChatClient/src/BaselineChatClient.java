@@ -19,6 +19,8 @@ public class BaselineChatClient {
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
 	static final int PORT = 9000;
 	
+	static final int INITIAL_CAPACITY = 20000;
+	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
 	static final String RUN_TIMED = "timed";
@@ -54,9 +56,6 @@ public class BaselineChatClient {
 		}
 		long endTime = System.nanoTime();
 		double time = ((double)(endTime - startTime)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\twrite\t" + time);
-		}
 		return time;
 	}
 	public static double readMessages() {
@@ -89,9 +88,6 @@ public class BaselineChatClient {
 		}
 		long endTime = System.nanoTime();
 		double time = ((double)(endTime - startTime)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\tread\t" + time);
-		}
 		return time;
 	}
 
@@ -135,14 +131,22 @@ public class BaselineChatClient {
 		
 		long numActions = 0;
 		double totalTime = 0;
+		
+		List<Double> times = new ArrayList<Double>(INITIAL_CAPACITY);
+		List<String> actions = new ArrayList<String>(INITIAL_CAPACITY);
 
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (action == ACTION_READ) {
-				totalTime += readMessages();
+				double time = readMessages();
+				times.add(time);
+				actions.add("read");
+				totalTime += time;
 			}
 			else {
-				totalTime += writeMessage(MESSAGE);
+				double time = writeMessage(MESSAGE);
+				actions.add("write");
+				totalTime += time;
 			}
 			numActions++;
 			long currentTime = System.nanoTime();
@@ -159,7 +163,14 @@ public class BaselineChatClient {
 		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
-		System.out.print("Summary: " + userName + "\t" + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis);
+		
+		if (verbose) {
+			for (int i = 0; i < times.size(); i++) {
+				System.out.println(userName + "\t" + actions.get(i) + "\t" + times.get(i));
+			}
+		}
+		
+		System.out.print("Summary: " + userName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis);
 		System.out.println();
 	}
 }
