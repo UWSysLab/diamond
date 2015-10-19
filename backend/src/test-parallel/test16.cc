@@ -4,41 +4,60 @@
 #include "includes/data_types.h"
 #include "test.h"
 
-// Tests the performance of stale reads 
+// Tests the prefetching  
 // 
 // Run this process
 // Sucess if both clients print that the test passed
 //
 // Usage:
-//   $ ./test15
+//   $ ./test16
 // 
 
-#define TEST_NAME "Test 15"
+#define TEST_NAME "Test 16"
 
 void* thread1(void* arg);
 void* thread2(void* arg);
 
-DLong a,b;
+DLong a,b,c;
 
 enum txResult thread1TxABwrite(void * arg){
+    DObject::TransactionOptionLearnPrefetchSet(true);
     a = 1;
     b = 2;
+    c = 3;
     return COMMIT;
 }
 
 
 enum txResult thread1TxA(void * arg){
+
+    DObject::TransactionOptionLearnPrefetchSet(true);
     int local_a = a.Value();
+
 
     printf("Tx1: a=%d, b=---\n", local_a);
     return COMMIT;
 }
 
 enum txResult thread1TxAB(void * arg){
+    DObject::TransactionOptionLearnPrefetchSet(true);
+
     int local_a = a.Value();
     int local_b = b.Value();
 
     printf("Tx1: a=%d, b=%d\n", local_a, local_b);
+
+    return COMMIT;
+}
+
+enum txResult thread1TxABC(void * arg){
+    DObject::TransactionOptionLearnPrefetchSet(true);
+
+    int local_a = a.Value();
+    int local_b = b.Value();
+    int local_c = c.Value();
+
+    printf("Tx1: a=%d, b=%d, c=%d\n", local_a, local_b, local_c);
 
     return COMMIT;
 }
@@ -49,20 +68,23 @@ void* thread1(void* arg ){
 
     committed = DObject::TransactionExecute(thread1TxABwrite, NULL, 4);
     EXPECT_TRUE(committed);
-    sleep(1);
 
     int i;
-    for(i=0;i<10000;i++){
+    for(i=0;i<3;i++){
         committed = DObject::TransactionExecute(thread1TxA, NULL, 4);
         EXPECT_TRUE(committed);
     }
-    sleep(1);
 
-    for(i=0;i<10000;i++){
+    for(i=0;i<3;i++){
         committed = DObject::TransactionExecute(thread1TxAB, NULL, 4);
         EXPECT_TRUE(committed);
     }
-    sleep(2);
+
+    for(i=0;i<3;i++){
+        committed = DObject::TransactionExecute(thread1TxABC, NULL, 4);
+        EXPECT_TRUE(committed);
+    }
+
 
     printf("Client 1 (%s) passed the test !\n", TEST_NAME);
     return 0;
@@ -71,11 +93,7 @@ void* thread1(void* arg ){
 
 
 
-
-
 void* thread2(void *arg){
-    bool committed;
-
     printf("Client 2 (%s) passed the test!\n", TEST_NAME);
     return 0;
 }
@@ -89,9 +107,8 @@ int main(void){
 
     ret = DLong::Map(a, std::string("a123"));
     ret = DLong::Map(b, std::string("b123"));
+    ret = DLong::Map(c, std::string("c123"));
 
-    DLong::SetGlobalStaleness(true);
-    DLong::SetGlobalMaxStaleness(1000);
 
     ret = pthread_create(&t1, NULL, thread1, NULL);
     assert(ret == 0);

@@ -27,7 +27,8 @@ static pthread_mutex_t  stalestorageMutex = PTHREAD_MUTEX_INITIALIZER; // Protec
 void
 Stalestorage::ViewBegin(void)
 {
-    //long threadID = getThreadID();
+    pthread_mutex_lock(&stalestorageMutex);
+    
     if(IsEnabled()){
         LOG_STALEREADS("ViewBegin\n");
 
@@ -45,6 +46,7 @@ Stalestorage::ViewBegin(void)
         tv->currenConsistent = true;
         tv->sv = NULL;
     }
+    pthread_mutex_unlock(&stalestorageMutex);
 }
 
 TransactionView*
@@ -59,19 +61,6 @@ Stalestorage::GetTransactionView(void)
     }
 }
 
-
-// StaleView* 
-// Stalestorage::GetCurrentView(void)
-// {
-//     long tid = getThreadID();
-//     auto cv = _currentViews.find(tid);
-//     if(cv == _currentViews.end()){
-//         return NULL;
-//     }else{
-//         return cv->second;
-//     }
-// }
-
 bool
 Stalestorage::IsViewInUse(StaleView * v){
     auto it = _transactionViews.begin();
@@ -84,30 +73,20 @@ Stalestorage::IsViewInUse(StaleView * v){
     return false;
 }
 
-// bool 
-// Stalestorage::IsLastViewInconsistent(void)
-// {
-//     long tid = getThreadID();
-// 
-//     auto la = _lastAttemptFailed.find(tid);
-//     if(la == _lastAttemptFailed.end()){
-//         return NULL;
-//     }else{
-//         return la->second;
-//     }
-// }
-
-
 // Return true if during this view all values read were from a consistent view
 bool
 Stalestorage::ViewEnd(){
-    // XXX: TODO
+    pthread_mutex_lock(&stalestorageMutex);
     if(IsEnabled()){
         LOG_STALEREADS("ViewEnd\n");
         TransactionView *tv = GetTransactionView();
         tv->previousInconsistent = !tv->currenConsistent;
+
+        pthread_mutex_unlock(&stalestorageMutex);
         return tv->currenConsistent;
     }
+
+    pthread_mutex_unlock(&stalestorageMutex);
     return true;
 }
 
@@ -125,16 +104,20 @@ Stalestorage::ViewAdd(map<string, string> rs, map<string, string> ws){
 
 void
 Stalestorage::ViewAdd(map<string, string> keyValues){
+    pthread_mutex_lock(&stalestorageMutex);
+
     if(IsEnabled()){
         TransactionView * tv = GetTransactionView();
         if(tv->currenConsistent == false){
             // Don't store view if tx didn't see a consistent view 
             LOG_STALEREADS("ViewAdd: not storing because view was not consistent\n");
+            pthread_mutex_unlock(&stalestorageMutex);
             return;
         }
         if(tv->stalestorageRead == true){
             // Don't store view if the tx used the consistent store (otherwise we would extend beyond the staleness limit)
             LOG_STALEREADS("ViewAdd: not storing because stalestorage was read\n");
+            pthread_mutex_unlock(&stalestorageMutex);
             return;
         }
 
@@ -162,6 +145,8 @@ Stalestorage::ViewAdd(map<string, string> keyValues){
             _views.pop_front();
         }
     }
+
+    pthread_mutex_unlock(&stalestorageMutex);
 }
 
 
@@ -198,6 +183,8 @@ Stalestorage::GetLastView(set<string> keys, StaleView* &result){
 int
 Stalestorage::Read(string key, string& value)
 {
+    pthread_mutex_lock(&stalestorageMutex);
+
     if(IsEnabled()){
         TransactionView *tv = GetTransactionView();
         assert(tv);  // Not inside a transaction?!?
@@ -205,6 +192,8 @@ Stalestorage::Read(string key, string& value)
 
         if(tv->previousInconsistent){
             LOG_STALEREADS("Read: Don't use stalestorage because previous tx saw inconsistent reads\n");
+
+            pthread_mutex_unlock(&stalestorageMutex);
             return ERR_NOTFOUND;
         }
 
@@ -217,12 +206,16 @@ Stalestorage::Read(string key, string& value)
             bool found = GetLastView(keys, last);
             if(!found){
                 LOG_STALEREADS("Read: Stale not found\n");
+
+                pthread_mutex_unlock(&stalestorageMutex);
                 return ERR_NOTFOUND;
             }else{
                 value = last->keyValues[key];
                 tv->sv = last;
                 tv->stalestorageRead = true;
                 LOG_STALEREADS_ARGS("Read: First stale (key: \'%s\' value: \'%s\')\n", key.c_str(), value.c_str());
+
+                pthread_mutex_unlock(&stalestorageMutex);
                 return ERR_OK;
             }
 
@@ -231,39 +224,38 @@ Stalestorage::Read(string key, string& value)
             auto exists = current->keyValues.find(key);
             if(exists == current->keyValues.end()){
                 LOG_STALEREADS_ARGS("Read: Consistent stale not found (key: \'%s\' value: \'%s\')\n", key.c_str(), value.c_str());
+
+                pthread_mutex_unlock(&stalestorageMutex);
                 return ERR_NOTFOUND;
             }
             value = exists->second;
             tv->stalestorageRead = true;
             LOG_STALEREADS_ARGS("Read: Consistent stale (key: \'%s\' value: \'%s\')\n", key.c_str(), value.c_str());
+
+            pthread_mutex_unlock(&stalestorageMutex);
             return ERR_OK;
         }
     }else{
+        pthread_mutex_unlock(&stalestorageMutex);
         return ERR_NOTFOUND;
     }
 }
 
-
-// int 
-// Stalestorage::WatchRead(string key, string& value)
-// {
-// 
-// 
-// }
-
-
-
 void
 Stalestorage::SetStaleness(bool e)
 {
+    pthread_mutex_lock(&stalestorageMutex);
     enabled = e;
+    pthread_mutex_unlock(&stalestorageMutex);
 }
 
 
 void
 Stalestorage::SetMaxStaleness(long max)
 {
+    pthread_mutex_lock(&stalestorageMutex);
     maxStalenessMs = max;
+    pthread_mutex_unlock(&stalestorageMutex);
 }
 
 bool
