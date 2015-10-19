@@ -1,3 +1,4 @@
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -8,6 +9,8 @@ public class Main {
 	static final int MESSAGE_LIST_SIZE = 100;
 	static final int NUM_ACTIONS = 1000;
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
+	
+	static final int INITIAL_CAPACITY = 20000;
 	
 	static final int ACTION_READ = 0;
 	static final int ACTION_WRITE = 1;
@@ -41,9 +44,6 @@ public class Main {
 		}
 		writeTimeEnd = System.nanoTime();
 		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
-		}
 		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
@@ -61,9 +61,6 @@ public class Main {
 		}
 		writeTimeEnd = System.nanoTime();
 		double time = ((double)(writeTimeEnd - writeTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "write" + "\t" + time + "\t" + "atomic");
-		}
 		return (time);
 	}
 	
@@ -84,9 +81,6 @@ public class Main {
 		}
 		readTimeEnd = System.nanoTime();
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "transaction" + "\t" + numAborts);
-		}
 		double[] ret = new double[2];
 		ret[0] = time;
 		ret[1] = numAborts;
@@ -101,23 +95,21 @@ public class Main {
 		result = messageList.Members();
 		readTimeEnd = System.nanoTime();
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
-		if (verbose) {
-			System.out.println(userName + "\t" + chatroomName + "\t" + "read" + "\t" + time + "\t" + "atomic");
-		}
 		return time;
 	}
 	
 	public static void main(String[] args) {
-		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name staleness stalelimit\n"
+		String usage = "usage: java Main run_type run_number read_fraction concurrency verbosity server_url client_name chatroom_name staleness stalelimit warmup_time\n"
 					 + "    run_type: timed or fixed\n"
 					 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 		 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
 		 			 + "    concurrency: transaction or atomic\n"
 		 			 + "    verbosity: concise or verbose\n"
 		 			 + "    staleness: stale or nostale\n"
-		 			 + "    stalelimit: stale read allowance in ms (0 means no limit)\n";
-		if (args.length < 10) {
-			System.err.println(usage);
+		 			 + "    stalelimit: stale read allowance in ms (0 means no limit)\n"
+		 			 + "    warmup_time: warmup time in ms\n";
+		if (args.length < 11) {
+			System.err.print(usage);
 			System.exit(0);
 		}
 		String runType = args[0];
@@ -130,24 +122,25 @@ public class Main {
 		chatroomName = args[7];
 		String staleness = args[8];
 		long stalelimit = Long.parseLong(args[9]);
+		int warmupTime = Integer.parseInt(args[10]);
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
-			System.err.println(usage);
+			System.err.println("Error: run_type must be timed or fixed");
 			System.exit(0);
 		}
 		if (readFraction > 1.0 || readFraction < 0.0) {
-			System.err.println(usage);
+			System.err.println("Error: read_fraction must be between 0 and 1");
 			System.exit(0);
 		}
 		if (!(concurrency.equals("transaction") || concurrency.equals("atomic"))) {
-			System.err.println(usage);
+			System.err.println("Error: concurrency must be transaction or atomic");
 			System.exit(0);
 		}
 		if (!(verbosity.equals("verbose") || verbosity.equals("concise"))) {
-			System.err.println(usage);
+			System.err.println("Error: verbosity must be concise or verbose");
 			System.exit(0);
 		}
 		if (!(staleness.equals("stale") || staleness.equals("nostale"))) {
-			System.err.println(usage);
+			System.err.println("Error: staleness must be stale or nostale");
 			System.exit(0);
 		}
 		
@@ -162,9 +155,10 @@ public class Main {
 		Diamond.DObject.Map(messageList, chatLogKey);
 		
 		Random rand = new Random();
-				
-		// Take 200 initial actions to warm up the JVM
-		/*for (int i = 0; i < 200; i++) {
+		
+		//warm up the JVM
+		long warmupStartTime = System.nanoTime();
+		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
@@ -182,34 +176,55 @@ public class Main {
 					writeMessageAtomic(MESSAGE);
 				}
 			}
-		}*/
-		
+			long currentTime = System.nanoTime();
+			double elapsedTimeMillis = ((double)(currentTime - warmupStartTime)) / (1000 * 1000);
+			if (elapsedTimeMillis >= warmupTime) {
+				break;
+			}
+		}		
+
 		long startTime = System.nanoTime();
 		
 		long numActions = 0;
 		double totalTime = 0;
 		double totalNumAborts = 0;
+		
+		List<Double> times = new ArrayList<Double>(INITIAL_CAPACITY);
+		List<String> actions = new ArrayList<String>(INITIAL_CAPACITY);
+		List<Double> numAborts = new ArrayList<Double>(INITIAL_CAPACITY);
 
 		while (true) {
 			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
 			if (concurrency.equals("transaction")) {
 				if (action == ACTION_READ) {
 					double[] ret = readMessagesTransaction();
+					times.add(ret[0]);
+					actions.add("read");
+					numAborts.add(ret[1]);
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
 				else {
 					double[] ret = writeMessageTransaction(MESSAGE);
+					times.add(ret[0]);
+					actions.add("write");
+					numAborts.add(ret[1]);
 					totalTime += ret[0];
 					totalNumAborts += ret[1];
 				}
 			}
 			else if (concurrency.equals("atomic")) {
 				if (action == ACTION_READ) {
-					totalTime += readMessagesAtomic();
+					double time = readMessagesAtomic();
+					times.add(time);
+					actions.add("read");
+					totalTime += time;
 				}
 				else {
-					totalTime += writeMessageAtomic(MESSAGE);
+					double time = writeMessageAtomic(MESSAGE);
+					times.add(time);
+					actions.add("write");
+					totalTime += time;
 				}
 			}
 			numActions++;
@@ -227,6 +242,17 @@ public class Main {
 		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
+		
+		if (verbose) {
+			for (int i = 0; i < times.size(); i++) {
+				System.out.print(userName + "\t" + chatroomName + "\t" + actions.get(i) + "\t" + times.get(i) + "\t" + concurrency);
+				if (concurrency.equals("transaction")) {
+					System.out.print("\t" + numAborts.get(i));
+				}
+				System.out.println();
+			}
+		}
+		
 		System.out.print("Summary: " + userName + "\t" + chatroomName + "\t" + numActions + "\t" + averageTime + "\t" + elapsedTimeMillis + "\t" + concurrency);
 		if (concurrency.equals("transaction")) {
 			double averageAborts = ((double)totalNumAborts) / numActions;
