@@ -145,6 +145,7 @@ public class BaselineChatClient {
 			}
 			else {
 				double time = writeMessage(MESSAGE);
+				times.add(time);
 				actions.add("write");
 				totalTime += time;
 			}
