@@ -465,6 +465,91 @@ Cloud::WatchRead(const std::string &key, std::string &value)
     return ERR_OK;
 }
 
+int
+Cloud::MultiWatchRead(const vector<string> & keys, vector<string> & values)
+{
+    vector<bool> exist;
+    return MultiWatchRead(keys, values, exist);    
+}
+
+int
+Cloud::MultiWatchRead(const vector<string> & keys, vector<string> & values, vector<bool> & exist) 
+{
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+    redisContext* context = GetRedisContext();    
+
+
+    values.resize(keys.size());
+    exist.resize(keys.size());
+
+    vector<const char *> argv(keys.size() + 1);
+    vector<size_t> argvlen(keys.size() + 1);
+
+    string watchCmd("WATCH");
+    argv[0] = watchCmd.c_str();
+    argvlen[0] = watchCmd.size();
+
+    for (size_t i = 0; i < keys.size(); i++) {
+        argv[i + 1] = keys.at(i).c_str();
+        argvlen[i + 1] = keys.at(i).size();
+    }
+
+    // Send the requests
+    LOG_REQUEST("MULTI-WATCH-READ BATCH", "");
+    // Watch command
+    redisAppendCommandArgv(context, keys.size() + 1, &(argv[0]), &(argvlen[0]));
+    // Get command
+    string mgetCmd("MGET");
+    argv[0] = mgetCmd.c_str();
+    argvlen[0] = mgetCmd.size();
+    redisAppendCommandArgv(context, keys.size() + 1, &(argv[0]), &(argvlen[0]));
+    LOG_REPLY("MULTI-WATCH-READ BATCH", reply);
+
+
+    // Get the replies
+    redisGetReply(context,(void **)&reply); // reply for WATCH
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+    freeReplyObject(reply);
+
+
+    redisGetReply(context,(void **)&reply); // reply for MGET
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+
+    if(reply->type != REDIS_REPLY_ARRAY) {
+        Panic("MultiGet reply is not an array");
+        freeReplyObject(reply);
+        return ERR_EMPTY;
+    }
+
+    assert(reply->elements == keys.size());
+
+    for (size_t i = 0; i < reply->elements; i++) {
+        redisReply *subreply = reply->element[i];
+        if (subreply->type == REDIS_REPLY_STRING) {
+            values.at(i) = string(subreply->str);
+            exist.at(i) = true;
+        }
+        else if (subreply->type == REDIS_REPLY_NIL) {
+            values.at(i) = "";
+            exist.at(i) = false;
+        }
+    }
+
+    freeReplyObject(reply);
+    return ERR_OK;
+
+}
+
+
 
 
 

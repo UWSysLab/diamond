@@ -33,7 +33,8 @@ long profileEnterTs[MAX_THREAD_ID];
 bool networkConnectivity = false;
 
 // Prefetch
-bool DObject::prefetchEnabled = true;
+static bool globalPrefetchEnabled = true;
+static set<set<string>> globalPrefetchSets; //XXX: Optimize the lookup? and the insertion?
 
 Cloud* cloudstore = NULL;
 Stalestorage stalestorage;
@@ -100,6 +101,7 @@ DObject::PullAlways(){
 // BATCHING VERSION
 int
 DObject::PullAlwaysWatch(){
+    // Function always used inside a transaction
     string value;
     LOG_RC("PullAlwaysWatch()"); 
 
@@ -107,12 +109,17 @@ DObject::PullAlwaysWatch(){
     
     ret = stalestorage.Read(_key,value);
     if(ret == ERR_NOTFOUND){
+        // If it's not on the stale store
         TransactionState *ts  = GetTransactionState();
-        // If it's not on the stalestore
+        
+        ret = Prefetch(_key, value);
+        if(ret == ERR_NOTFOUND){
+            // If we still dont have the contents 
 
-        ret = cloudstore->WatchRead(_key, value);
-        if (ret != ERR_EMPTY && ret != ERR_OK) {
-            return ret;
+            ret = cloudstore->WatchRead(_key, value);
+            if (ret != ERR_EMPTY && ret != ERR_OK) {
+                return ret;
+            }
         }
    
         ts->cloudReadCount++;
@@ -526,13 +533,83 @@ DObject::GetTransactionState(void){
 }
 
 void
-DObject::SetTransactionPrefetchSet(set<string> &txPrefetchSet)
+DObject::SetTransactionPrefetchKeys(set<string> &txPrefetchKeys)
 {
     TransactionState *ts = GetTransactionState();
-    ts->txPrefetchSet = txPrefetchSet;
+    ts->txPrefetchKeys = txPrefetchKeys;
 }
 
-// XXX: Ensure that it's ok to call the Begin, Commit, Rollback and Retry concurrently from different threads
+
+void 
+DObject::PrefetchKeySet(string& key, string &value, const set<string>& keySet){
+    vector<string> keys;
+    vector<string> values;
+
+    // convert set to vector
+    std::copy(keySet.begin(), keySet.end(), std::back_inserter(keys));
+
+    int res = cloudstore->MultiWatchRead(keys, values);
+    assert(res == ERR_OK);
+    assert(keys.size() == values.size());
+
+    TransactionState *ts = GetTransactionState();
+    unsigned int i; 
+    for(i = 0;i<keys.size();i++){
+        ts->txPrefetchKeyValues[keys.at(i)] = values.at(i);
+    }
+
+    value = ts->txPrefetchKeyValues[key];
+}
+
+// XXX: Initialize all the prefetch structures
+int
+DObject::Prefetch(string key, string &value)
+{
+    if(!globalPrefetchEnabled){
+        return ERR_NOTFOUND;
+    }
+
+    TransactionState *ts = GetTransactionState();
+
+    // Check if we have already prefetched this key
+    auto prefetchKeyValue = ts->txPrefetchKeyValues.find(key);
+    if(prefetchKeyValue != ts->txPrefetchKeyValues.end()){
+        value = prefetchKeyValue->second;
+        return ERR_OK;
+    }
+
+    if(ts->cloudReadCount == 0){
+        // Consider pre-fetching
+        // If prefetching fails, it will only fail once because the cloud read will bump the cloudReadCount 
+        
+        // 1. First consider prefetching using the TX specific prefetchKeys
+        auto prefetchKey = ts->txPrefetchKeys.find(key);
+        if(prefetchKey != ts->txPrefetchKeys.end()){
+            LOG_PREFETCH_ARGS("Prefetching %ld keys (tx option)\n", ts->txPrefetchKeys.size())
+
+            PrefetchKeySet(key, value, ts->txPrefetchKeys);
+            return ERR_OK;
+        }
+
+        // 2. Consider prefetcing using the global associations
+        const set<string> * bestMatch = NULL;
+        auto itPrefetchSet = globalPrefetchSets.begin();
+        for(;itPrefetchSet!=globalPrefetchSets.end();itPrefetchSet++){
+            auto keyMatch = itPrefetchSet->find(key);
+            if((keyMatch != itPrefetchSet->end()) && ((bestMatch == NULL) || (itPrefetchSet->size()>bestMatch->size()))){
+                // Try to find the biggest match
+                // XXX: Is this the best heuristic
+                bestMatch = (&*itPrefetchSet);
+            }
+        }
+        if(bestMatch != NULL){
+            LOG_PREFETCH_ARGS("Prefetching %ld keys (best match from global set)\n", bestMatch->size())
+            PrefetchKeySet(key, value, *bestMatch);
+            return ERR_OK;
+        }
+    }
+    return ERR_NOTFOUND;
+}
 
 void
 DObject::TransactionBegin(void)
@@ -543,28 +620,28 @@ DObject::TransactionBegin(void)
 }
 
 void
-DObject::TransactionBegin(set<DObject*> &txPrefetchSet)
+DObject::TransactionBegin(set<DObject*> &txPrefetch)
 {
-    set<string> tpsString;
+    set<string> txPrefetchKeys;
 
-    auto it = txPrefetchSet.begin();
+    auto it = txPrefetch.begin();
 
-    for(;it!=txPrefetchSet.end();it++){
-        tpsString.insert((*it)->GetKey());
+    for(;it!=txPrefetch.end();it++){
+        txPrefetchKeys.insert((*it)->GetKey());
     }
 
-    TransactionBegin(tpsString);
+    TransactionBegin(txPrefetchKeys);
 }
 
 void
-DObject::TransactionBegin(set<string> &txPrefetchSet)
+DObject::TransactionBegin(set<string> &txPrefetchKeys)
 {
     pthread_mutex_lock(&transactionMutex);
 
     LOG_TX("TRANSACTION BEGIN");
 
     SetTransactionInProgress(true);
-    SetTransactionPrefetchSet(txPrefetchSet);
+    SetTransactionPrefetchKeys(txPrefetchKeys);
     stalestorage.ViewBegin();
 
     pthread_mutex_unlock(&transactionMutex);
@@ -709,6 +786,8 @@ DObject::TransactionCommit(void)
         stalestorage.ViewAdd(keyValuesRS, keyValuesWS);
         //stalestorage.DebugDump();
 
+        PrefetchLearn(*txRS);
+
         LOG_TX("TRANSACTION COMMIT -> committed");
         SetTransactionInProgress(false);
         pthread_mutex_unlock(&transactionMutex);
@@ -761,11 +840,24 @@ DObject::TransactionRetry(void)
 
 }
 
+void
+DObject::PrefetchLearn(set<string> &rs){
+    TransactionState* ts = GetTransactionState();
+    if((ts->optionLearnPrefetchSet) && (rs.size()>1)){
+        LOG_PREFETCH_ARGS("Learning prefetchset with %ld keys\n", rs.size())
+        globalPrefetchSets.insert(rs);
+    }
+}
 
+// Should be called within a transaction
 void 
-DObject::TransactionLearnPrefetchSet(void)
+DObject::TransactionOptionLearnPrefetchSet(bool enable)
 {
-    Panic("NYI");
+    if(!IsTransactionInProgress()){
+        Panic("TransactionOptionsLearnPrefetchSet() should be called inside a transaction");
+    }
+    TransactionState* ts = GetTransactionState();
+    ts->optionLearnPrefetchSet = enable;
 }
 
 
@@ -776,9 +868,10 @@ DObject::PrefetchGlobalAddSet(set<DObject*> &prefetchSet)
     PrefetchGlobalAddSet(keysPrefetchSet);
 }
 
+
 void 
 DObject::PrefetchGlobalAddSet(set<string> &prefetchSet){
-    Panic("NYI");
+    globalPrefetchSets.insert(prefetchSet);
 }
 
 void 
@@ -791,7 +884,7 @@ DObject::PrefetchGlobalRemoveSet(set<DObject*> &prefetchSet)
 void 
 DObject::PrefetchGlobalRemoveSet(set<string> &prefetchSet)
 {
-    Panic("NYI");
+    globalPrefetchSets.erase(prefetchSet);
 }
 
 set<string>
@@ -824,7 +917,7 @@ DObject::SetNetworkConnectivity(bool connectivity)
 void 
 DObject::SetGlobalPrefetch(bool enable)
 {
-    DObject::prefetchEnabled = enable;
+    globalPrefetchEnabled = enable;
 }
 
 void 

@@ -39,7 +39,10 @@ typedef struct structTransactionState {
     std::set<std::string> ws; 
     std::map<std::string, std::string > localView; // Content of the values read/written inside the transaction
 
-    std::set<string> txPrefetchSet; // User-specified set of keys that are expected to be used together in this specific transaction
+    std::set<string> txPrefetchKeys; // User-specified set of keys that are expected to be used together in this specific transaction
+    std::map<string, string> txPrefetchKeyValues;
+    bool optionLearnPrefetchSet;
+
 } TransactionState;
 
 class DObject
@@ -62,7 +65,13 @@ public:
     static void TransactionRollback(void);
     static void TransactionRetry(void);
     static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
-    static void TransactionLearnPrefetchSet();
+
+    static void TransactionOptionLearnPrefetchSet(bool enable);
+
+
+    static void PrefetchKeySet(string& key, string &value, const set<string>& keySet);
+    static int Prefetch(string key, string &value);
+    static void PrefetchLearn(std::set<string> &rs);
 
     static void PrefetchGlobalAddSet(set<DObject*> &prefetchSet); 
     static void PrefetchGlobalAddSet(set<string> &prefetchSet); 
@@ -95,8 +104,6 @@ private:
 	uint64_t _lockid = 0;
 	long _locked = 0;
 
-    static bool prefetchEnabled;
-
 	void LockNotProtected(); // Callee should hold the _objectMutex
 	void UnlockNotProtected(); // Callee should hold the _objectMutex
     int PushAlways();
@@ -105,7 +112,7 @@ private:
 
     static bool IsTransactionInProgress(void);
     static void SetTransactionInProgress(bool res);
-    static void SetTransactionPrefetchSet(set<string> &txPrefetchSet);
+    static void SetTransactionPrefetchKeys(set<string> &txPrefetchSet);
     static set<string> GetKeys(set<DObject*> &objs);
 
     static TransactionState* GetTransactionState(void);
@@ -345,6 +352,21 @@ private:
 #define LOG_TX_DUMP_RS() {}
 #define LOG_TX_DUMP_WS() {}
 #endif // DEBUG_TX
+
+
+
+//#define DEBUG_PREFETCH
+#ifdef DEBUG_PREFETCH
+#define LOG_PREFETCH(str){\
+    Notice("%s", str);\
+}
+#define LOG_PREFETCH_ARGS(fmt,...){\
+    Notice(fmt, __VA_ARGS__);\
+}
+#else
+#define LOG_PREFETCH(str) {}
+#define LOG_PREFETCH_ARGS(fmt,...){}
+#endif
 
 
 

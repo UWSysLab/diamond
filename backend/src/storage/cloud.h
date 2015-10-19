@@ -62,7 +62,6 @@ public:
     static void SetConnected(bool);
     static bool GetConnected();
 
-
     int Connect(const std::string &host);
     int Reconnect(const std::string &host);
     bool IsConnected();
@@ -92,6 +91,8 @@ public:
     // Pipelining methods
     int MultiWriteExec(std::map<std::string, std::string >& keyValues);
     int WatchRead(const std::string &key, std::string &value);
+    int MultiWatchRead(const std::vector<std::string> & keys, std::vector<std::string> & values);
+    int MultiWatchRead(const std::vector<std::string> & keys, std::vector<std::string> & values, std::vector<bool>& exist);
 
 
     redisContext* GetRedisContext();
