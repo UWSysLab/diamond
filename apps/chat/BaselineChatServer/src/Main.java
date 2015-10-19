@@ -56,6 +56,7 @@ class ChatHandler implements HttpHandler {
 			exchange.sendResponseHeaders(200, responseJson.toString().getBytes().length);
 			OutputStream os = exchange.getResponseBody();
 			os.write(responseJson.toString().getBytes());
+			os.write('\n');
 			os.close();
 		}
 		else if (method.equals("POST")) {
