@@ -13,7 +13,7 @@
 //   $ ./test15
 // 
 
-#define TEST_NAME "Test 14"
+#define TEST_NAME "Test 15"
 
 void* thread1(void* arg);
 void* thread2(void* arg);
