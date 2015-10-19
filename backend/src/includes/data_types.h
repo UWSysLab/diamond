@@ -33,7 +33,9 @@ void DiamondInit(const std::string &server);
 
 
 typedef struct structTransactionState {
-    int cloudReadCount; // Counts the reads that hit the redis server
+    // Counts the number of atomic reads that hit the redis server (multiple reads count as one if they're atomic)
+    // If the value of cloudAtomicReadCount is one by the end of the transaction, we know there weren't inconsistent reads
+    int cloudAtomicReadCount; 
 
     std::set<std::string> rs; 
     std::set<std::string> ws; 

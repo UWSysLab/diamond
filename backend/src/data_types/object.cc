@@ -86,6 +86,9 @@ DObject::PullAlways(){
 
         ret = cloudstore->Read(_key, value);
         if (ret != ERR_EMPTY && ret != ERR_OK) {
+            // Bad reply case
+            Panic("Unable to pull");
+            value = "";
             return ret;
         }
 
@@ -118,11 +121,12 @@ DObject::PullAlwaysWatch(){
 
             ret = cloudstore->WatchRead(_key, value);
             if (ret != ERR_EMPTY && ret != ERR_OK) {
+                Panic("Unable to pull");
                 return ret;
             }
+            ts->cloudAtomicReadCount++;
         }
    
-        ts->cloudReadCount++;
 
         if (ret == ERR_EMPTY) {
             value = "";
@@ -505,7 +509,7 @@ DObject::SetTransactionInProgress(bool inProgress)
 
     TransactionState *ts = GetTransactionState();
     
-    ts->cloudReadCount = 0;
+    ts->cloudAtomicReadCount = 0;
     ts->rs.clear();
     ts->ws.clear();
     ts->localView.clear();
@@ -547,6 +551,7 @@ void
 DObject::PrefetchKeySet(string& key, string &value, const set<string>& keySet){
     vector<string> keys;
     vector<string> values;
+    TransactionState *ts = GetTransactionState();
 
     // convert set to vector
     std::copy(keySet.begin(), keySet.end(), std::back_inserter(keys));
@@ -555,7 +560,8 @@ DObject::PrefetchKeySet(string& key, string &value, const set<string>& keySet){
     assert(res == ERR_OK);
     assert(keys.size() == values.size());
 
-    TransactionState *ts = GetTransactionState();
+    ts->cloudAtomicReadCount++;
+
     unsigned int i; 
     for(i = 0;i<keys.size();i++){
         ts->txPrefetchKeyValues[keys.at(i)] = values.at(i);
@@ -581,9 +587,9 @@ DObject::Prefetch(string key, string &value)
         return ERR_OK;
     }
 
-    if(ts->cloudReadCount == 0){
+    if(ts->cloudAtomicReadCount == 0){
         // Consider pre-fetching
-        // If prefetching fails, it will only fail once because the cloud read will bump the cloudReadCount 
+        // If prefetching fails, it will only fail once because the cloud read will bump the cloudAtomicReadCount 
         
         // 1. First consider prefetching using the TX specific prefetchKeys
         auto prefetchKey = ts->txPrefetchKeys.find(key);
@@ -723,11 +729,11 @@ DObject::TransactionCommit(void)
         keyValuesWS[key] = value;
     }
     int res;
-    if((keyValuesWS.size() > 0) || (ts->cloudReadCount > 1)){
+    if((keyValuesWS.size() > 0) || (ts->cloudAtomicReadCount > 1)){
         // If one or more writes were made -> send to the cloud
         // If two or more reads -> send to the cloud for consistency check (and unwatch them)
         res = cloudstore->MultiWriteExec(keyValuesWS);
-    }else if(ts->cloudReadCount == 1){
+    }else if(ts->cloudAtomicReadCount == 1){
         // If one read was made -> unwatch it
         res = cloudstore->Unwatch();
     }else{
