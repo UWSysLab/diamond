@@ -66,12 +66,6 @@ public:
 
     void ViewAdd(std::map<std::string, std::string> rs, std::map<std::string, std::string> ws);
     void ViewAdd(map<string, string> keyValues);
-    bool GetLastView(set<string> keys, StaleView* &result);
-
-    TransactionView* GetTransactionView(void);
-    StaleView* GetCurrentView(void);
-    bool IsViewInUse(StaleView * v);
-    bool IsLastViewInconsistent(void);
 
     void SetStaleness(bool enable);
     void SetMaxStaleness(long maxStalenessMs);
@@ -79,17 +73,20 @@ public:
     void DebugDump();
 
     int Read(std::string key, std::string& value);
-    bool IsEnabled(void);
-
 
     bool enabled = false;
     long maxStalenessMs = 100; 
 
 private:
+    TransactionView* GetTransactionView(void);
+    StaleView* GetCurrentView(void);
+    bool IsViewInUse(StaleView * v);
+    bool IsLastViewInconsistent(void);
+    bool GetLastView(set<string> keys, StaleView* &result);
+    bool IsEnabled(void);
+
     std::list<StaleView> _views;
     std::map<long, TransactionView> _transactionViews; // tid - > StaleView
-//    std::map<long, StaleView*> _currentViews; // tid - > StaleView
-//    std::map<long, bool> _lastAttemptFailed; // tid - > StaleView
 };
 
 
@@ -99,7 +96,7 @@ private:
 
 
 
-#define DEBUG_STALEREADS
+//#define DEBUG_STALEREADS
 
 #ifdef DEBUG_STALEREADS
 
