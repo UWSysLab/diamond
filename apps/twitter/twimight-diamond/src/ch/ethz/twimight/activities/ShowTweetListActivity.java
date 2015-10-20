@@ -283,6 +283,17 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
+				String tweetText = tweet.text.Value();
+				String screenname = tweet.screenname.Value();
+				long createdAt = tweet.createdAt.Value();
+				long userId = tweet.userid.Value();
+				
+				String retweetedBy = tweet.getRetweetedBy();
+				long numMentions = tweet.getMentions();
+				
+				//String inReplyToStatusId = tweet.inReplyToStatusId.Value();
+				//long numFavorites = tweet.numFavorites.Value();
+				//String name = tweet.name.Value();
 			}
 			long endTime = System.nanoTime();
 			double time = ((double)(endTime - startTime))/(1000 * 1000);

@@ -15,6 +15,8 @@ public class DiamondTweet {
 	public DLong id;
 	public DCounter numFavorites;
 	public DString name;
+	public DLong numMentions;
+	public DString retweetedBy;
 	
 	public DiamondTweet() {
 		text = new DString();
@@ -25,6 +27,8 @@ public class DiamondTweet {
 		id = new DLong();
 		numFavorites = new DCounter();
 		name = new DString();
+		numMentions = new DLong();
+		retweetedBy = new DString();
 	}
 	
 	public String getScreenname() {
@@ -87,7 +91,17 @@ public class DiamondTweet {
 	}
 	
 	public String getRetweetedBy() {
-		return null;
+		return retweetedBy.Value();
+	}
+	public void setRetweetedBy(String s) {
+		retweetedBy.Set(s);
+	}
+	
+	public long getMentions() {
+		return numMentions.Value();
+	}
+	public void setMentions(long l) {
+		numMentions.Set(l);
 	}
 	
 	public long getNumRetweets() {
@@ -96,9 +110,5 @@ public class DiamondTweet {
 	
 	public boolean getToFavorite() {
 		return false;
-	}
-	
-	public long getMentions() {
-		return 0;
 	}
 }
