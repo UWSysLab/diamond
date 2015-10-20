@@ -18,7 +18,9 @@ abortRates = rbind(nostaleAbortRates, staleAbortRates)
 
 pdf("desktop-chat-throughput-plots.pdf")
 
-ggplot(throughputs, aes(x=clients, y=throughput, color=staleness)) + geom_line() + coord_fixed(ratio=0.0004) + labs(x = "Number of clients", y = "Throughput (actions/sec)", color = "")
-ggplot(abortRates, aes(x=clients, y=abortrate, color=staleness)) + geom_line() + coord_fixed(ratio=10) + labs(x = "Number of clients", y = "Abort rate", color = "")
+ggplot(throughputs, aes(x=clients, y=throughput, color=staleness, linetype=staleness)) + geom_line() + coord_fixed(ratio=0.0004) +
+    labs(x = "Number of clients", y = "Throughput (actions/sec)") + theme_bw() + theme(legend.title = element_blank())
+ggplot(abortRates, aes(x=clients, y=abortrate, color=staleness, linetype=staleness)) + geom_line() + coord_fixed(ratio=10) +
+    labs(x = "Number of clients", y = "Abort rate") + theme_bw() + theme(legend.title = element_blank())
 
 dev.off()

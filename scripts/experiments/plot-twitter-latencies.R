@@ -12,7 +12,8 @@ data <- rename(data, c("V1" = "latency"))
 
 pdf("android-twitter-latency-plots.pdf")
 
-ggplot(data, aes(x=latency, color=factor(system))) + stat_ecdf() + coord_fixed(ratio = 30, xlim = c(0, 70)) + labs(x = "Latency (ms)", y = "CDF", color = "")
+ggplot(data, aes(x=latency, linetype=factor(system), color=factor(system))) + stat_ecdf() + coord_fixed(ratio = 30, xlim = c(0, 70)) +
+    labs(x = "Latency (ms)", y = "CDF") + theme_bw() + theme(legend.title = element_blank())
 ggplot(data, aes(x=latency, color=factor(system))) + stat_ecdf() + coord_fixed(ratio = 100, xlim = c(0, 300))
 ggplot(data, aes(x=latency, color=factor(system))) + stat_ecdf()
 
