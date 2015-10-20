@@ -889,6 +889,15 @@ DObject::PrefetchLearn(set<string> &rs){
 
 // Option methods should be called from within a transaction
 void
+DObject::TransactionOptionPrefetch(vector<string> &txPrefetchKeys)
+{
+    set<string> prefetchSet;
+    for (auto it = txPrefetchKeys.begin(); it != txPrefetchKeys.end(); it++) {
+        prefetchSet.add(*it);
+    }
+    TransactionOptionPrefetch(prefetchSet);
+}
+void
 DObject::TransactionOptionPrefetch(set<string> &txPrefetchKeys)
 {
     if(!IsTransactionInProgress()){
