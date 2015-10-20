@@ -216,21 +216,27 @@ public class MainActivity extends ActionBarActivity {
 		
 		for (int i = 0; i < timesWriteTrans.size(); i++) {
 			Log.i("BENCHMARK", "data:\twrite\ttransaction\t" + timesWriteTrans.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		for (int i = 0; i < timesReadTrans.size(); i++) {
 			Log.i("BENCHMARK", "data:\tread\ttransaction\t" + timesReadTrans.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		for (int i = 0; i < timesWriteStale.size(); i++) {
 			Log.i("BENCHMARK", "data:\twrite\tstale\t" + timesWriteStale.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		for (int i = 0; i < timesReadStale.size(); i++) {
 			Log.i("BENCHMARK", "data:\tread\tstale\t" + timesReadStale.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		for (int i = 0; i < timesWriteAtomic.size(); i++) {
 			Log.i("BENCHMARK", "data:\twrite\tatomic\t" + timesWriteAtomic.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		for (int i = 0; i < timesReadAtomic.size(); i++) {
 			Log.i("BENCHMARK", "data:\tread\tatomic\t" + timesReadAtomic.get(i));
+			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		
 		Log.i("BENCHMARK", "Done with Diamond experiment");
