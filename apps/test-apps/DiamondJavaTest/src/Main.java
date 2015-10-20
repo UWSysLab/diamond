@@ -7,9 +7,9 @@ import edu.washington.cs.diamond.Diamond.DString;
 public class Main {
 	public static void main(String[] args) {
 		Diamond.DiamondInit();
-		basicTest();
+		//basicTest();
 		//threadTest();
-		//memoryTest();
+		memoryTest();
 		//unallocatedVariableTest();
 	}
 	
@@ -25,6 +25,7 @@ public class Main {
 	public static void memoryTest() {
 		Diamond.DString testString = new Diamond.DString();
 		Diamond.DObject.Map(testString, "a");
+		System.out.println("Test: " + testString.Value() + " Length: " + testString.Value().length());
 		System.out.println("Didn't crash");
 	}
 	
