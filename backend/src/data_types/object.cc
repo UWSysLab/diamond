@@ -696,7 +696,7 @@ bool
 DObject::TransactionExecute(enum txFinishAction (*tx)(void*), 
                             enum txInterruptAction (*disconnected)(void*), 
                             enum txInterruptAction (*timedOut)(void*), 
-                            void * txArg, unsigned int maxAttempts, unsigned int timeoutMs)
+                            void * txArg, unsigned int maxAttempts, unsigned long timeoutMs)
 {
     unsigned int attempts = 0;
     int committed = 0;
