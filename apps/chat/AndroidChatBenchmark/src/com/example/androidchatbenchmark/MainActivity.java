@@ -215,23 +215,25 @@ public class MainActivity extends ActionBarActivity {
 		double averageTimeWriteAtomic = ((double)totalTimeWriteAtomic) / NUM_ACTIONS;
 		
 		for (int i = 0; i < timesWriteTrans.size(); i++) {
-			Log.i("BENCHMARK", "write\ttransaction\t" + timesWriteTrans.get(i));
+			Log.i("BENCHMARK", "data:\twrite\ttransaction\t" + timesWriteTrans.get(i));
 		}
 		for (int i = 0; i < timesReadTrans.size(); i++) {
-			Log.i("BENCHMARK", "read\ttransaction\t" + timesReadTrans.get(i));
+			Log.i("BENCHMARK", "data:\tread\ttransaction\t" + timesReadTrans.get(i));
 		}
 		for (int i = 0; i < timesWriteStale.size(); i++) {
-			Log.i("BENCHMARK", "write\tstale\t" + timesWriteStale.get(i));
+			Log.i("BENCHMARK", "data:\twrite\tstale\t" + timesWriteStale.get(i));
 		}
 		for (int i = 0; i < timesReadStale.size(); i++) {
-			Log.i("BENCHMARK", "read\tstale\t" + timesReadStale.get(i));
+			Log.i("BENCHMARK", "data:\tread\tstale\t" + timesReadStale.get(i));
 		}
 		for (int i = 0; i < timesWriteAtomic.size(); i++) {
-			Log.i("BENCHMARK", "write\tatomic\t" + timesWriteAtomic.get(i));
+			Log.i("BENCHMARK", "data:\twrite\tatomic\t" + timesWriteAtomic.get(i));
 		}
 		for (int i = 0; i < timesReadAtomic.size(); i++) {
-			Log.i("BENCHMARK", "read\tatomic\t" + timesReadAtomic.get(i));
+			Log.i("BENCHMARK", "data:\tread\tatomic\t" + timesReadAtomic.get(i));
 		}
+		
+		Log.i("BENCHMARK", "Done with Diamond experiment");
 		
 		textBox.setText("Transaction read: " + averageTimeReadTrans + "\n"
 						+ "Transaction write: " + averageTimeWriteTrans + "\n"
@@ -240,7 +242,7 @@ public class MainActivity extends ActionBarActivity {
 						+ "Atomic read: " + averageTimeReadAtomic + "\n"
 						+ "Atomic write: " + averageTimeWriteAtomic + "\n");
 		
-		Log.i("BENCHMARK", "Done");
+		Log.i("BENCHMARK", "Why doesn't this show up");
 	}
 
 	@Override
