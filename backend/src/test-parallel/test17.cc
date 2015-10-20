@@ -8,12 +8,14 @@
 // 
 // Run this process
 // Sucess if both clients print that the test passed
+// Note: Should also run "redis-cli MONITOR" and check that there were 
+//   multi gets and multi watches issued for the last 3 TXs
 //
 // Usage:
-//   $ ./test16
+//   $ ./test17
 // 
 
-#define TEST_NAME "Test 16"
+#define TEST_NAME "Test 17"
 
 void* thread1(void* arg);
 void* thread2(void* arg);
@@ -21,7 +23,8 @@ void* thread2(void* arg);
 DLong a,b,c;
 
 enum txResult thread1TxABwrite(void * arg){
-    DObject::TransactionOptionPrefetchAuto(true);
+    set<DObject*> prefetch = {&a, &b, &c};
+    DObject::TransactionOptionPrefetch(prefetch);
     a = 1;
     b = 2;
     c = 3;
@@ -30,7 +33,8 @@ enum txResult thread1TxABwrite(void * arg){
 
 
 enum txResult thread1TxA(void * arg){
-    DObject::TransactionOptionPrefetchAuto(true);
+    set<DObject*> prefetch = {&a, &b, &c};
+    DObject::TransactionOptionPrefetch(prefetch);
 
     int local_a = a.Value();
 
@@ -39,8 +43,6 @@ enum txResult thread1TxA(void * arg){
 }
 
 enum txResult thread1TxAB(void * arg){
-    DObject::TransactionOptionPrefetchAuto(true);
-
     int local_a = a.Value();
     int local_b = b.Value();
 
@@ -50,8 +52,6 @@ enum txResult thread1TxAB(void * arg){
 }
 
 enum txResult thread1TxABC(void * arg){
-    DObject::TransactionOptionPrefetchAuto(true);
-
     int local_a = a.Value();
     int local_b = b.Value();
     int local_c = c.Value();
@@ -73,6 +73,9 @@ void* thread1(void* arg ){
         committed = DObject::TransactionExecute(thread1TxA, NULL, 4);
         EXPECT_TRUE(committed);
     }
+
+    set<DObject*> prefetch = {&a, &b, &c};
+    DObject::PrefetchGlobalAddSet(prefetch);
 
     for(i=0;i<3;i++){
         committed = DObject::TransactionExecute(thread1TxAB, NULL, 4);
