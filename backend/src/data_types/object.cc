@@ -644,7 +644,7 @@ DObject::TransactionBegin(void)
 //  - txHandler does not need to worry about control-flow issues related to 
 //  - txHandler should just use local values
 bool
-DObject::TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts)
+DObject::TransactionExecute(enum txFinishAction (*tx)(void*), void * txArg, unsigned int maxAttempts)
 {
     unsigned int attempts = 0;
     int committed = 0;
@@ -654,7 +654,59 @@ DObject::TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, uns
     while((attempts < maxAttempts) && (maxAttempts > 0)){
         attempts++;
         TransactionBegin();
-        int ret = txHandler(txArg);
+        int ret = tx(txArg);
+        switch(ret){
+            case COMMIT:
+                committed = TransactionCommit();
+                if(committed){
+                    Notice("Committed after %d tries\n", attempts);
+                    return true;
+                }
+                // Just continue
+                break;
+            case ROLLBACK:
+                Notice("Rollbacked after %d tries\n", attempts);
+                return false; 
+                break;
+            case RETRY:
+                TransactionRetry();
+                // Just continue
+                break;
+        }
+    }
+    Notice("Give up after %d tries (max retries: %d)\n", attempts, maxAttempts);
+    return false;
+}
+
+
+void
+DObject::TransactionHandleDisconnect(void){
+
+
+}
+
+void
+DObject::TransactionHandleTimeout(void){
+
+
+}
+
+
+bool
+DObject::TransactionExecute(enum txFinishAction (*tx)(void*), 
+                            enum txInterruptAction (*disconnected)(void*), 
+                            enum txInterruptAction (*timedOut)(void*), 
+                            void * txArg, unsigned int maxAttempts, unsigned int timeoutMs)
+{
+    unsigned int attempts = 0;
+    int committed = 0;
+    
+    Notice("Executing transaction\n");
+
+    while((attempts < maxAttempts) && (maxAttempts > 0)){
+        attempts++;
+        TransactionBegin();
+        int ret = tx(txArg);
         switch(ret){
             case COMMIT:
                 committed = TransactionCommit();

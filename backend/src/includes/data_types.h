@@ -26,7 +26,8 @@ using namespace std;
 #define LOCK_DURATION_MS (5*1000)
 
 enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
-enum txResult {COMMIT, ROLLBACK, RETRY};
+enum txFinishAction {COMMIT, ROLLBACK, RETRY};
+enum txInterruptAction {CONTINUE, STOP};
 
 void DiamondInit();
 void DiamondInit(const std::string &server);
@@ -64,12 +65,19 @@ public:
     static int TransactionCommit(void);
     static void TransactionRollback(void);
     static void TransactionRetry(void);
-    static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
+    static bool TransactionExecute(enum txFinishAction (*tx)(void*), void * txArg, unsigned int maxAttempts);
+    static bool TransactionExecute(enum txFinishAction (*tx)(void*), 
+                                    enum txInterruptAction (*disconnected)(void*), 
+                                    enum txInterruptAction (*timedOut)(void*), 
+                                    void * txArg, unsigned int maxAttempts, unsigned long timeoutMs);
+    
+    static void TransactionHandleTimeout(void);
+    static void TransactionHandleDisconnect(void);
+
 
     static void TransactionOptionPrefetch(set<string> &txPrefetchKeys);
     static void TransactionOptionPrefetch(set<DObject*> &txPrefetch);
     static void TransactionOptionPrefetchAuto(bool enable);
-
 
     static void PrefetchKeySet(string& key, string &value, const set<string>& keySet);
     static int Prefetch(string key, string &value);

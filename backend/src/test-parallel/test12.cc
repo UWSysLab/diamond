@@ -21,7 +21,7 @@ void* thread2(void* arg);
 DLong a,b;
 
 
-enum txResult thread1Tx(void * arg){
+enum txFinishAction thread1Tx(void * arg){
     
     if(a.Value() != 2 || b.Value() != 2){
     //if(b.Value() != 2 || a.Value() != 2){
@@ -42,18 +42,18 @@ void* thread1(void* arg ){
 
 
 
-enum txResult thread2Tx1(void * arg){
+enum txFinishAction thread2Tx1(void * arg){
     a = a.Value() + 1;
     return COMMIT;
 }
 
-enum txResult thread2Tx2(void * arg){
+enum txFinishAction thread2Tx2(void * arg){
     a = a.Value() + 1;
     b = b.Value() + 1;
     return COMMIT;
 }
 
-enum txResult thread2Tx3(void * arg){
+enum txFinishAction thread2Tx3(void * arg){
     b = b.Value() + 1;
     return COMMIT;
 }

@@ -21,7 +21,7 @@ void* thread2(void* arg);
 DLong a,b;
 
 
-enum txResult thread1Tx(void * arg){
+enum txFinishAction thread1Tx(void * arg){
     
     if(a.Value() != 1){
         return RETRY;
@@ -41,7 +41,7 @@ void* thread1(void* arg ){
 
 
 
-enum txResult thread2Tx(void * arg){
+enum txFinishAction thread2Tx(void * arg){
     b = 1;
     return COMMIT;
 }

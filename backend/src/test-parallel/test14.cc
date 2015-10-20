@@ -20,7 +20,7 @@ void* thread2(void* arg);
 
 DLong a,b;
 
-enum txResult thread1TxA(void * arg){
+enum txFinishAction thread1TxA(void * arg){
     int local_a = a.Value();
 
     printf("Tx1: a=%d, b=---\n", local_a);
@@ -28,7 +28,7 @@ enum txResult thread1TxA(void * arg){
     return COMMIT;
 }
 
-enum txResult thread1TxAB(void * arg){
+enum txFinishAction thread1TxAB(void * arg){
     int local_a = a.Value();
     int local_b = b.Value();
 
@@ -37,7 +37,7 @@ enum txResult thread1TxAB(void * arg){
     return COMMIT;
 }
 
-enum txResult thread1TxB(void * arg){
+enum txFinishAction thread1TxB(void * arg){
     int local_b = b.Value();
 
     printf("Tx1: a=---, b=%d\n", local_b);
@@ -71,28 +71,28 @@ void* thread1(void* arg ){
 
 
 
-enum txResult thread2Tx1(void * arg){
+enum txFinishAction thread2Tx1(void * arg){
     a = 1; 
     b = 1;
     return COMMIT;
 }
 
 
-enum txResult thread2Tx2(void * arg){
+enum txFinishAction thread2Tx2(void * arg){
     a = 2;
     b = 3;
     return COMMIT;
 }
 
 
-enum txResult thread2Tx3(void * arg){
+enum txFinishAction thread2Tx3(void * arg){
     b = 5;
     return COMMIT;
 }
 
 
 
-enum txResult thread2Tx4(void * arg){
+enum txFinishAction thread2Tx4(void * arg){
     a = 4;
     return COMMIT;
 }
