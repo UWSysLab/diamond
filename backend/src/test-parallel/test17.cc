@@ -22,7 +22,7 @@ void* thread2(void* arg);
 
 DLong a,b,c;
 
-enum txResult thread1TxABwrite(void * arg){
+enum txFinishAction thread1TxABwrite(void * arg){
     set<DObject*> prefetch = {&a, &b, &c};
     DObject::TransactionOptionPrefetch(prefetch);
     a = 1;
@@ -32,7 +32,7 @@ enum txResult thread1TxABwrite(void * arg){
 }
 
 
-enum txResult thread1TxA(void * arg){
+enum txFinishAction thread1TxA(void * arg){
     set<DObject*> prefetch = {&a, &b, &c};
     DObject::TransactionOptionPrefetch(prefetch);
 
@@ -42,7 +42,7 @@ enum txResult thread1TxA(void * arg){
     return COMMIT;
 }
 
-enum txResult thread1TxAB(void * arg){
+enum txFinishAction thread1TxAB(void * arg){
     int local_a = a.Value();
     int local_b = b.Value();
 
@@ -51,7 +51,7 @@ enum txResult thread1TxAB(void * arg){
     return COMMIT;
 }
 
-enum txResult thread1TxABC(void * arg){
+enum txFinishAction thread1TxABC(void * arg){
     int local_a = a.Value();
     int local_b = b.Value();
     int local_c = c.Value();
