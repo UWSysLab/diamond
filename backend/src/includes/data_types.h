@@ -61,14 +61,14 @@ public:
 
 
     static void TransactionBegin(void);
-    static void TransactionBegin(set<string> &txPrefetchSet);
-    static void TransactionBegin(set<DObject*> &txPrefetchSet);
     static int TransactionCommit(void);
     static void TransactionRollback(void);
     static void TransactionRetry(void);
     static bool TransactionExecute(enum txResult (*txHandler)(void*), void * txArg, unsigned int maxAttempts);
 
-    static void TransactionOptionLearnPrefetchSet(bool enable);
+    static void TransactionOptionPrefetch(set<string> &txPrefetchKeys);
+    static void TransactionOptionPrefetch(set<DObject*> &txPrefetch);
+    static void TransactionOptionPrefetchAuto(bool enable);
 
 
     static void PrefetchKeySet(string& key, string &value, const set<string>& keySet);

@@ -623,31 +623,11 @@ DObject::Prefetch(string key, string &value)
 void
 DObject::TransactionBegin(void)
 {
-    set<string> txPrefetchEmpty;
-    TransactionBegin(txPrefetchEmpty);
-}
-
-void
-DObject::TransactionBegin(set<DObject*> &txPrefetch)
-{
-    set<string> txPrefetchKeys;
-    auto it = txPrefetch.begin();
-    for(;it!=txPrefetch.end();it++){
-        txPrefetchKeys.insert((*it)->GetKey());
-    }
-
-    TransactionBegin(txPrefetchKeys);
-}
-
-void
-DObject::TransactionBegin(set<string> &txPrefetchKeys)
-{
     pthread_mutex_lock(&transactionMutex);
 
     LOG_TX("TRANSACTION BEGIN");
 
     SetTransactionInProgress(true);
-    SetTransactionPrefetchKeys(txPrefetchKeys);
     stalestorage.ViewBegin();
 
     pthread_mutex_unlock(&transactionMutex);
@@ -855,12 +835,45 @@ DObject::PrefetchLearn(set<string> &rs){
     }
 }
 
-// Should be called within a transaction
-void 
-DObject::TransactionOptionLearnPrefetchSet(bool enable)
+// Option methods should be called from within a transaction
+void
+DObject::TransactionOptionPrefetch(set<string> &txPrefetchKeys)
 {
     if(!IsTransactionInProgress()){
-        Panic("TransactionOptionsLearnPrefetchSet() should be called inside a transaction");
+        Panic("TransactionOptionPrefetch() should be called inside a transaction");
+    }
+    TransactionState *ts = GetTransactionState();
+    if((ts->rs.size() > 0) || (ts->ws.size() > 0)){
+        Panic("TransactionOptionPrefetch() should be called inside a transaction before any read/write are performed");
+    }
+    SetTransactionPrefetchKeys(txPrefetchKeys);
+}
+
+void
+DObject::TransactionOptionPrefetch(set<DObject*> &txPrefetch)
+{
+    if(!IsTransactionInProgress()){
+        Panic("TransactionOptionPrefetch() should be called inside a transaction");
+    }
+    TransactionState *ts = GetTransactionState();
+    if((ts->rs.size() > 0) || (ts->ws.size() > 0)){
+        Panic("TransactionOptionPrefetch() should be called inside a transaction before any read/write are performed");
+    }
+
+    set<string> txPrefetchKeys;
+    auto it = txPrefetch.begin();
+    for(;it!=txPrefetch.end();it++){
+        txPrefetchKeys.insert((*it)->GetKey());
+    }
+
+    SetTransactionPrefetchKeys(txPrefetchKeys);
+}
+
+void 
+DObject::TransactionOptionPrefetchAuto(bool enable)
+{
+    if(!IsTransactionInProgress()){
+        Panic("TransactionOptionPrefetchAuto() should be called inside a transaction");
     }
     TransactionState* ts = GetTransactionState();
     ts->optionLearnPrefetchSet = enable;
