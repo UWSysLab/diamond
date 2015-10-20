@@ -21,7 +21,7 @@ void* thread2(void* arg);
 DLong a,b,c;
 
 enum txResult thread1TxABwrite(void * arg){
-    DObject::TransactionOptionLearnPrefetchSet(true);
+    DObject::TransactionOptionPrefetchAuto(true);
     a = 1;
     b = 2;
     c = 3;
@@ -30,17 +30,16 @@ enum txResult thread1TxABwrite(void * arg){
 
 
 enum txResult thread1TxA(void * arg){
+    DObject::TransactionOptionPrefetchAuto(true);
 
-    DObject::TransactionOptionLearnPrefetchSet(true);
     int local_a = a.Value();
-
 
     printf("Tx1: a=%d, b=---\n", local_a);
     return COMMIT;
 }
 
 enum txResult thread1TxAB(void * arg){
-    DObject::TransactionOptionLearnPrefetchSet(true);
+    DObject::TransactionOptionPrefetchAuto(true);
 
     int local_a = a.Value();
     int local_b = b.Value();
@@ -51,7 +50,7 @@ enum txResult thread1TxAB(void * arg){
 }
 
 enum txResult thread1TxABC(void * arg){
-    DObject::TransactionOptionLearnPrefetchSet(true);
+    DObject::TransactionOptionPrefetchAuto(true);
 
     int local_a = a.Value();
     int local_b = b.Value();
