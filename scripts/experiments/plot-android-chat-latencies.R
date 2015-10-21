@@ -37,7 +37,76 @@ writers <- rename(writers, c("V1" = "latency"))
 readers <- rbind(atomicReader, transactionStaleReader, transactionNostaleReader, baselineReader)
 readers <- rename(readers, c("V1" = "latency"))
 
+client <- c("AtomicWriter",
+    "AtomicReader",
+    "StaleWriter",
+    "StaleReader",
+    "TransactionWriter",
+    "TransactionReader",
+    "BaselineWriter",
+    "BaselineReader")
+avgLatency <- c(mean(atomicWriter$V1),
+    mean(atomicReader$V1),
+    mean(transactionStaleWriter$V1),
+    mean(transactionStaleReader$V1),
+    mean(transactionNostaleWriter$V1),
+    mean(transactionNostaleReader$V1),
+    mean(baselineWriter$V1),
+    mean(baselineReader$V1))
+barGraphData <- data.frame(client, avgLatency)
+
+readerClient <- c(
+"AtomicReader",
+"StaleReader",
+"TransactionReader",
+"BaselineReader"
+)
+readerAvgLatency <- c(
+mean(atomicReader$V1),
+mean(transactionStaleReader$V1),
+mean(transactionNostaleReader$V1),
+mean(baselineReader$V1)
+)
+readerBarGraphData <- data.frame(readerClient, readerAvgLatency)
+
+writerClient <- c(
+"AtomicWriter",
+"StaleWriter",
+"TransactionWriter",
+"BaselineWriter"
+)
+writerAvgLatency <- c(
+mean(atomicWriter$V1),
+mean(transactionStaleWriter$V1),
+mean(transactionNostaleWriter$V1),
+mean(baselineWriter$V1)
+)
+writerBarGraphData <- data.frame(writerClient, writerAvgLatency)
+
 pdf("android-chat-latency-plots.pdf")
+
+ggplot(barGraphData, aes(x=client, y=avgLatency, fill=client)) +
+    geom_bar(stat="identity") +
+    coord_cartesian() +
+    labs(x = "Action", y = "Latency (ms)") +
+    theme_bw() +
+    theme(legend.title = element_blank())
+
+ggplot(readerBarGraphData, aes(x=readerClient, y=readerAvgLatency, fill=readerClient)) +
+    geom_bar(stat="identity") +
+    coord_cartesian() +
+    labs(x = "Reader type", y = "Latency (ms)") +
+    theme_bw() +
+    theme(legend.title = element_blank()) +
+    guides(fill=FALSE)
+
+ggplot(writerBarGraphData, aes(x=writerClient, y=writerAvgLatency, fill=writerClient)) +
+    geom_bar(stat="identity") +
+    coord_cartesian() +
+    labs(x = "Writer type", y = "Latency (ms)") +
+    theme_bw() +
+    theme(legend.title = element_blank()) +
+    guides(fill=FALSE)
 
 ggplot(data, aes(x=latency, color=factor(client), linetype=factor(client))) +
     stat_ecdf() +
@@ -45,6 +114,7 @@ ggplot(data, aes(x=latency, color=factor(client), linetype=factor(client))) +
     labs(x = "Latency (ms)", y = "CDF") +
     theme_bw() +
     theme(legend.title = element_blank())
+
 
 ggplot(readers, aes(x=latency, color=factor(client), linetype=factor(client))) +
     stat_ecdf() +
