@@ -1,7 +1,7 @@
 package com.example.diamondandroidtest;
 
 import android.support.v7.app.ActionBarActivity;
-
+import android.util.Log;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
@@ -29,12 +29,14 @@ public class MainActivity extends ActionBarActivity {
 		
 		Diamond.DString testString = new Diamond.DString();
 		Diamond.DObject.Map(testString, "a");
+		Log.e("DEBUG", "String: " + testString.Value());
+		Log.e("DEBUG", "String: " + testString.Value());
 		//Diamond.DString testString = new Diamond.DString("Testing", "a");
-		testString.Set("Testing");
-		TextView testTextBox = new TextView(getBaseContext());
-		testTextBox.setText(testString.Value());
-		testTextBox.setTextColor(Color.BLACK);
-		setContentView(testTextBox);
+		//testString.Set("Testing");
+		//TextView testTextBox = new TextView(getBaseContext());
+		//testTextBox.setText(testString.Value());
+		//testTextBox.setTextColor(Color.BLACK);
+		//setContentView(testTextBox);
 		
 		//setContentView(R.layout.activity_main);
 	}
