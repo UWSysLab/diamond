@@ -73,6 +73,10 @@ public class BaselineChatClient {
 				JsonElement item = jsonArray.get(i);
 				result.add(item.getAsString());
 			}
+			if (result.get(0).indexOf(MESSAGE) == -1) {
+				System.err.println("Error: first item of chat log is " + result.get(0));
+				System.exit(1);
+			}
 			in.close();
 			responseCode = connection.getResponseCode();
 		} catch (MalformedURLException e) {
