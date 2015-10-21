@@ -112,11 +112,11 @@ sub doBaselineExperiment {
     my $PROJECT_DIR = "$DIAMOND_SRC/apps/chat/BaselineChatServer";
     my $JAVA_BINARY = "/home/nl35/research/jdk1.8.0_60/jre/bin/java";
     my $classpath = "$PROJECT_DIR/bin:$PROJECT_DIR/libs/gson-2.3.1.jar:$PROJECT_DIR/libs/commons-pool2-2.0.jar:$PROJECT_DIR/libs/jedis-2.4.2.jar";
-    my $cmd = "$JAVA_BINARY -cp $classpath Main 9000 2> $dir/baseline-server.error &";
-    system("$cmd");
+    system("$JAVA_BINARY -cp $classpath Main 9000 2> $dir/baseline-server-0.error &");
+    system("$JAVA_BINARY -cp $classpath Main 9001 2> $dir/baseline-server-1.error &");
+    system("$JAVA_BINARY -cp $classpath Main 9002 2> $dir/baseline-server-2.error &");
+    system("$JAVA_BINARY -cp $classpath Main 9003 2> $dir/baseline-server-3.error &");
     sleep(1);
-    my $serverPid = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
-    chomp($serverPid);
 
     # fill chat log
     system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $server 9000 filler 0");
@@ -128,7 +128,8 @@ sub doBaselineExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server 9000 client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
+            my $port = 9000 + $i % 4;
+            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server $port client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
         sleep($time + ($warmupTimeMs / 1000) + 1);
@@ -159,5 +160,9 @@ sub doBaselineExperiment {
     }
     close(FILE);
 
-    system("kill $serverPid");
+    my $pids = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
+    my @pids = split(/\s+/, $pids);
+    for my $pid (@pids) {
+        system("kill $pid");
+    }
 }
