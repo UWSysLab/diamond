@@ -889,15 +889,6 @@ DObject::PrefetchLearn(set<string> &rs){
 
 // Option methods should be called from within a transaction
 void
-DObject::TransactionOptionPrefetch(vector<string> &txPrefetchKeys)
-{
-    set<string> prefetchSet;
-    for (auto it = txPrefetchKeys.begin(); it != txPrefetchKeys.end(); it++) {
-        prefetchSet.add(*it);
-    }
-    TransactionOptionPrefetch(prefetchSet);
-}
-void
 DObject::TransactionOptionPrefetch(set<string> &txPrefetchKeys)
 {
     if(!IsTransactionInProgress()){
@@ -908,6 +899,16 @@ DObject::TransactionOptionPrefetch(set<string> &txPrefetchKeys)
         Panic("TransactionOptionPrefetch() should be called inside a transaction before any read/write are performed");
     }
     SetTransactionPrefetchKeys(txPrefetchKeys);
+}
+
+void
+DObject::TransactionOptionPrefetch(vector<DObject *> &txPrefetch)
+{
+    set<DObject *> prefetchSet;
+    for (auto it = txPrefetch.begin(); it != txPrefetch.end(); it++) {
+        prefetchSet.insert(*it);
+    }
+    TransactionOptionPrefetch(prefetchSet);
 }
 
 void
