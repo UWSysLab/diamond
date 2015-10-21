@@ -56,6 +56,9 @@ sub parseAbortRates {
 
 
 sub doExperiment {
+    # fill chat log
+    system("./desktop-chat-wrapper.sh fixed 200 0.0 transaction concise $server filler throughputroom nostale 0 0");
+
     open(FILE, "> $log");
     for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
         print("Experiment: $log Clients: $numClients\n");
@@ -114,6 +117,9 @@ sub doBaselineExperiment {
     sleep(1);
     my $serverPid = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
     chomp($serverPid);
+
+    # fill chat log
+    system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $server filler 0");
 
     open(FILE, "> $log");
     for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
