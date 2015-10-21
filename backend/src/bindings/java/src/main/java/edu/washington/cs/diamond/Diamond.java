@@ -150,6 +150,8 @@ public class Diamond {
         public static native void TransactionRollback();
         public static native void TransactionRetry();
 
+        public static native void TransactionOptionPrefetch(@ByRef DiamondUtil.DObjectVector txPrefetch);
+
         public static native void SetGlobalStaleness(boolean enable);
         public static native void SetGlobalMaxStaleness(long maxStalenessMs);
     }
