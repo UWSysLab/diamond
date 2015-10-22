@@ -63,6 +63,7 @@ DObject::Map(DObject &addr, const string &key)
     }
     
     int res = addr.Pull();
+    //int res = 0;
 
     pthread_mutex_unlock(&addr._objectMutex);
     PROFILE_EXIT("MAP");
@@ -230,7 +231,10 @@ DObject::Push(){
         std::set<string>* txWS = &ts->ws;
         txWS->insert(this->GetKey());
 
-        cloudstore->Watch(this->GetKey());  // PF: Watch probably can be avoided on writes; if read-after-writes deals with it properly
+        // PF: Writes don't require WATCH because they are delayed till 
+        //     the write and atomically performed (with the guarantee that 
+        //     the rs has not changed)
+        //cloudstore->Watch(this->GetKey());  
 
         // Add new value to our local TX view
         string value;
