@@ -282,7 +282,10 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		String twitterUrl = LoginActivity.getTwitterUrl(c);
 		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
 		for (int i = 0; i < WARMUP_REPS; i++) {
-			twitter.getHomeTimeline();
+			List<winterwell.jtwitter.Status> timeline = twitter.getHomeTimeline();
+			if (!timeline.get(0).getText().equals("Old James Bond movies are better")) {
+				Log.i("BENCHMARK", "Error: sanity check failed: string is " + timeline.get(0).getText());
+			}
 		}
 		double totalTime = 0;
 		long numReps = 0;
