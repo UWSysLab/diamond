@@ -56,10 +56,10 @@ avgLatency <- c(mean(atomicWriter$V1),
 barGraphData <- data.frame(client, avgLatency)
 
 readerClient <- c(
-"AtomicReader",
-"StaleReader",
-"TransactionReader",
-"BaselineReader"
+"Atomic",
+"Stale",
+"Transaction",
+"Baseline"
 )
 readerAvgLatency <- c(
 mean(atomicReader$V1),
@@ -68,66 +68,77 @@ mean(transactionNostaleReader$V1),
 mean(baselineReader$V1)
 )
 readerBarGraphData <- data.frame(readerClient, readerAvgLatency)
+readerBarGraphData$readerClient <- factor(readerBarGraphData$readerClient, levels = c("Baseline", "Atomic", "Transaction", "Stale"))
 
 writerClient <- c(
-"AtomicWriter",
-"StaleWriter",
-"TransactionWriter",
-"BaselineWriter"
+"Atomic",
+"Transaction",
+"Baseline"
 )
 writerAvgLatency <- c(
 mean(atomicWriter$V1),
-mean(transactionStaleWriter$V1),
 mean(transactionNostaleWriter$V1),
 mean(baselineWriter$V1)
 )
 writerBarGraphData <- data.frame(writerClient, writerAvgLatency)
+writerBarGraphData$writerClient <- factor(writerBarGraphData$writerClient, levels = c("Baseline", "Atomic", "Transaction"))
 
-pdf("android-chat-latency-plots.pdf")
+#pdf("android-chat-latency-plots.pdf")
+#
+#ggplot(barGraphData, aes(x=client, y=avgLatency, fill=client)) +
+#    geom_bar(stat="identity") +
+#    coord_cartesian() +
+#    labs(x = "Action", y = "Latency (ms)") +
+#    theme_bw() +
+#    theme(legend.title = element_blank())
+#
+#dev.off()
 
-ggplot(barGraphData, aes(x=client, y=avgLatency, fill=client)) +
-    geom_bar(stat="identity") +
-    coord_cartesian() +
-    labs(x = "Action", y = "Latency (ms)") +
-    theme_bw() +
-    theme(legend.title = element_blank())
+
+pdf("android-chat-latency-readers.pdf")
 
 ggplot(readerBarGraphData, aes(x=readerClient, y=readerAvgLatency, fill=readerClient)) +
     geom_bar(stat="identity") +
     coord_cartesian() +
-    labs(x = "Reader type", y = "Latency (ms)") +
+    labs(y = "Latency (ms)") +
     theme_bw() +
-    theme(legend.title = element_blank()) +
+    theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
     guides(fill=FALSE)
+
+dev.off()
+
+pdf("android-chat-latency-writers.pdf")
 
 ggplot(writerBarGraphData, aes(x=writerClient, y=writerAvgLatency, fill=writerClient)) +
     geom_bar(stat="identity") +
     coord_cartesian() +
-    labs(x = "Writer type", y = "Latency (ms)") +
+    labs(y = "Latency (ms)") +
     theme_bw() +
-    theme(legend.title = element_blank()) +
+    theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
     guides(fill=FALSE)
 
-ggplot(data, aes(x=latency, color=factor(client), linetype=factor(client))) +
-    stat_ecdf() +
-    coord_fixed(ratio=40, xlim=c(-10, 75)) +
-    labs(x = "Latency (ms)", y = "CDF") +
-    theme_bw() +
-    theme(legend.title = element_blank())
-
-
-ggplot(readers, aes(x=latency, color=factor(client), linetype=factor(client))) +
-    stat_ecdf() +
-    coord_fixed(ratio=40, xlim=c(-10, 75)) +
-    labs(x = "Latency (ms)", y = "CDF") +
-    theme_bw() +
-    theme(legend.title = element_blank())
-
-ggplot(writers, aes(x=latency, color=factor(client), linetype=factor(client))) +
-    stat_ecdf() +
-    coord_fixed(ratio=40, xlim=c(-10, 75)) +
-    labs(x = "Latency (ms)", y = "CDF") +
-    theme_bw() +
-    theme(legend.title = element_blank())
-
 dev.off()
+
+#ggplot(data, aes(x=latency, color=factor(client), linetype=factor(client))) +
+#    stat_ecdf() +
+#    coord_fixed(ratio=40, xlim=c(-10, 75)) +
+#    labs(x = "Latency (ms)", y = "CDF") +
+#    theme_bw() +
+#    theme(legend.title = element_blank())
+#
+#
+#ggplot(readers, aes(x=latency, color=factor(client), linetype=factor(client))) +
+#    stat_ecdf() +
+#    coord_fixed(ratio=40, xlim=c(-10, 75)) +
+#    labs(x = "Latency (ms)", y = "CDF") +
+#    theme_bw() +
+#    theme(legend.title = element_blank())
+#
+#ggplot(writers, aes(x=latency, color=factor(client), linetype=factor(client))) +
+#    stat_ecdf() +
+#    coord_fixed(ratio=40, xlim=c(-10, 75)) +
+#    labs(x = "Latency (ms)", y = "CDF") +
+#    theme_bw() +
+#    theme(legend.title = element_blank())
+#
+#dev.off()
