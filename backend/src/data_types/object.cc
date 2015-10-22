@@ -580,6 +580,8 @@ DObject::PrefetchKeySet(string& key, string &value, const set<string>& keySet){
     }
 
     value = ts->txPrefetchKeyValues[key];
+
+    stalestorage.ViewAdd(ts->txPrefetchKeyValues);
 }
 
 // XXX: Initialize all the prefetch structures
