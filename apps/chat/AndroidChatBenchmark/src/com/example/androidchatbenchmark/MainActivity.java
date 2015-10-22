@@ -24,7 +24,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	static String chatroomName = "androidbenchmark";
 	static String userName = "android";
-	static String serverName = "coldwater.cs.washington.edu";
+	static String serverName = "moranis.cs.washington.edu";
 	
 	private Diamond.DStringList messageList;
 	

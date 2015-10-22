@@ -408,7 +408,7 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
+		JedisPool pool = new JedisPool(new JedisPoolConfig(), "moranis.cs.washington.edu");
 		Jedis jedis = null;
 		HttpServer server = null;
 		
