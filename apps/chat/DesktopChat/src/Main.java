@@ -155,6 +155,7 @@ public class Main {
 		verbose = (verbosity.equals("verbose"));
 		
 		Diamond.DiamondInit(serverName);
+		Diamond.DObject.SetGlobalRedisWait(true, 1, 3);
 		Diamond.DObject.SetGlobalStaleness(staleness.equals("stale"));
 		Diamond.DObject.SetGlobalMaxStaleness(stalelimit);
 		

@@ -413,7 +413,8 @@ public class Main {
 		HttpServer server = null;
 		
 		Diamond.DiamondInit("moranis.cs.washington.edu");
-		
+		Diamond.DObject.SetGlobalRedisWait(true, 1, 3);
+
 		try {
 			jedis = pool.getResource();
 			

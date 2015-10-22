@@ -128,6 +128,7 @@ public class LoginActivity extends Activity implements OnClickListener, LoginDia
 
 			//TODO: Niel begin changes
 			Diamond.DiamondInit("moranis.cs.washington.edu");
+			Diamond.DObject.SetGlobalRedisWait(true, 1, 3);
 			if (hasTwitterId(this.getBaseContext())) {
 				hackStartTimeline();
 			}
