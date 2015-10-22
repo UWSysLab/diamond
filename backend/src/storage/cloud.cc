@@ -51,7 +51,7 @@ void pubsubAsync(uv_async_t *handle);
 void pubsubAsync(uv_async_t *handle, int v);
 #endif
 
-static bool redisWaitEnabled = true;
+static bool redisWaitEnabled = false;
 static int redisWaitReplicas = 0;
 static int redisWaitTimeout = 0;
 
@@ -645,7 +645,7 @@ Cloud::WriteWait(const std::string &key, const std::string &value)
 
     // Send the requests
     LOG_REQUEST("WRITE-WAIT BATCH", "");
-    redisAppendCommand(context, "SET %s %d", key.c_str(), value.c_str());
+    redisAppendCommand(context, "SET %s %s", key.c_str(), value.c_str());
     redisAppendCommand(context, "WAIT %d %d", redisWaitReplicas, redisWaitTimeout);
     LOG_REPLY("WRITE-WAIT BATCH", reply);
 
