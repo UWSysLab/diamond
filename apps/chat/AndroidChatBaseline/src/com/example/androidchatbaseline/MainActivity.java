@@ -52,16 +52,17 @@ public class MainActivity extends ActionBarActivity {
 		} catch (IOException e) {
 			Log.e("BENCHMARK", "Error: could not connect to server: " + e);
 		}
+		long endTime = System.nanoTime();
 		if (responseCode != 200) {
 			Log.e("BENCHMARK", "Error: response code not 200: " + responseCode);
 		}
-		long endTime = System.nanoTime();
 		double time = ((double)(endTime - startTime)) / (1000 * 1000);
 		return time;
 	}
 	
 	public static double readMessages() {
 		int responseCode = -1;
+		List<String> result = new ArrayList<String>();
 		long startTime = System.nanoTime();
 		try {
 			URL serverURL = new URL(serverURLString);			
@@ -70,7 +71,6 @@ public class MainActivity extends ActionBarActivity {
 			String jsonStr = in.readLine();
 			JsonParser parser = new JsonParser();
 			JsonArray jsonArray = parser.parse(jsonStr).getAsJsonArray();
-			List<String> result = new ArrayList<String>();
 			for (int i = 0; i < jsonArray.size(); i++) {
 				JsonElement item = jsonArray.get(i);
 				result.add(item.getAsString());
@@ -82,10 +82,13 @@ public class MainActivity extends ActionBarActivity {
 		} catch (IOException e) {
 			Log.e("BENCHMARK", "Error: could not connect to server: " + e);
 		}
+		long endTime = System.nanoTime();
 		if (responseCode != 200) {
 			Log.e("BENCHMARK", "Error: response code not 200: " + responseCode);
 		}
-		long endTime = System.nanoTime();
+		if (result.get(0).indexOf(MESSAGE) == -1) {
+			Log.i("BENCHMARK", "Error: first item of chat log is " + result.get(0));
+		}
 		double time = ((double)(endTime - startTime)) / (1000 * 1000);
 		return time;
 	}
