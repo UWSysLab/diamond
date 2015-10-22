@@ -89,6 +89,7 @@ public:
 
     static void PrefetchGlobalAddSet(set<DObject*> &prefetchSet); 
     static void PrefetchGlobalAddSet(set<string> &prefetchSet); 
+    static void PrefetchGlobalAddSet(vector<DObject*> &prefetchSet); 
     static void PrefetchGlobalAddSet(vector<string> &prefetchSet); 
     static void PrefetchGlobalRemoveSet(set<DObject*> &prefetchSet); 
     static void PrefetchGlobalRemoveSet(set<string> &prefetchSet); 

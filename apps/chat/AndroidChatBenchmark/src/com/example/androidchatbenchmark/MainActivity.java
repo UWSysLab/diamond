@@ -84,6 +84,9 @@ public class MainActivity extends ActionBarActivity {
 			}
 		}
 		readTimeEnd = System.nanoTime();
+		if (result.get(0).indexOf(MESSAGE) == -1) {
+			Log.i("BENCHMARK", "Error: first item of chat log is " + result.get(0));
+		}
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
 		double[] ret = new double[2];
 		ret[0] = time;
@@ -98,6 +101,9 @@ public class MainActivity extends ActionBarActivity {
 		readTimeStart = System.nanoTime();
 		result = messageList.Members();
 		readTimeEnd = System.nanoTime();
+		if (result.get(0).indexOf(MESSAGE) == -1) {
+			Log.i("BENCHMARK", "Error: first item of chat log is " + result.get(0));
+		}
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
 		return time;
 	}
