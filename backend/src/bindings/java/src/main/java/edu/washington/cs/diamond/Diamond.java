@@ -106,6 +106,29 @@ public class Diamond {
         }
     }
 
+    // UNTESTED
+    public static void prefetchMappedObject(Object obj) {
+        DiamondUtil.DObjectVector objVector = new DiamondUtil.DObjectVector();
+        int ovIndex = 0;
+        Field[] fields = obj.getClass().getDeclaredFields();
+        objVector.resize(fields.length);
+        try {
+            for (int i = 0; i < fields.length; i++) {
+                Field curField = fields[i];
+                if (isDiamondType(curField)) {
+                    DObject dobj = (DObject)curField.get(obj);
+                    objVector.put(ovIndex, dobj);
+                    ovIndex++;
+                }
+            }
+        }
+        catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
+        DObject.PrefetchGlobalAddSet(objVector);
+    }
+
     public static void MapObject(Object obj, String key) {
         MapObject(obj, key, new DefaultMapObjectFunction());
     }
@@ -191,6 +214,7 @@ public class Diamond {
         public static native void TransactionOptionPrefetch(@ByRef DiamondUtil.DObjectVector txPrefetch);
 
         public static native void PrefetchGlobalAddSet(@ByRef DiamondUtil.StringVector prefetchSet);
+        public static native void PrefetchGlobalAddSet(@ByRef DiamondUtil.DObjectVector prefetchSet);
 
         public static native void SetGlobalStaleness(boolean enable);
         public static native void SetGlobalMaxStaleness(long maxStalenessMs);

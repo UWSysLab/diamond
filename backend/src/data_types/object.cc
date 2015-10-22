@@ -992,6 +992,16 @@ DObject::PrefetchGlobalAddSet(set<DObject*> &prefetchSet)
 }
 
 void 
+DObject::PrefetchGlobalAddSet(vector<DObject*> &prefetchSet)
+{
+    set<DObject*> pfSet;
+    for (auto it = prefetchSet.begin(); it != prefetchSet.end(); it++) {
+        pfSet.insert(*it);
+    }
+    PrefetchGlobalAddSet(pfSet);
+}
+
+void 
 DObject::PrefetchGlobalAddSet(vector<string> &prefetchSet)
 {
     set<string> pfSet;
