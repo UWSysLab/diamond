@@ -11,9 +11,9 @@ then
     exit
 fi
 
-if [ ! -e "$PROJECT_DIR/bin/Main.class" ]
+if [ ! -e "$PROJECT_DIR/bin/DesktopChatClient.class" ]
 then
-    echo "Error: DesktopChat has not been compiled"
+    echo "Error: DesktopChatClient has not been compiled"
     exit
 fi
 
@@ -38,4 +38,4 @@ param10=$9
 shift
 param11=$9
 
-$JAVA_BINARY -cp $classpath -Djava.library.path=$nativePath Main $param1 $param2 $param3 $param4 $param5 $param6 $param7 $param8 $param9 $param10 $param11
+$JAVA_BINARY -cp $classpath -Djava.library.path=$nativePath DesktopChatClient $param1 $param2 $param3 $param4 $param5 $param6 $param7 $param8 $param9 $param10 $param11

@@ -54,6 +54,18 @@ sub checkBaselineServers {
     }
 }
 
+sub getNumDiamondClients {
+    my $pids = `ps aux | grep -v grep | grep DesktopChatClient | awk '{ print \$2 }'`;
+    my @pids = split(/\s+/, $pids);
+    return scalar(@pids);
+}
+
+sub getNumBaselineClients {
+    my $pids = `ps aux | grep -v grep | grep BaselineChatClient | awk '{ print \$2 }'`;
+    my @pids = split(/\s+/, $pids);
+    return scalar(@pids);
+}
+
 sub parseThroughputs {
     system("cat $log | awk '
         BEGIN { print \"clients\tthroughput\" }
@@ -83,7 +95,17 @@ sub doExperiment {
             system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $diamondServer client$i throughputroom $staleness $stalelimit $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + ($warmupTimeMs / 1000) + $slopTime);
+        my $done = 0;
+        my $startTime = time();
+        while (!$done) {
+            if (getNumDiamondClients() == 0) {
+                $done = 1;
+            }
+            sleep(1);
+        }
+        my $endTime = time();
+        my $waitTime = $endTime - $startTime;
+        print("Waited for $waitTime seconds\n");
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
@@ -146,7 +168,17 @@ sub doBaselineExperiment {
             system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $baselineServer $port client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + ($warmupTimeMs / 1000) + $slopTime);
+        my $done = 0;
+        my $startTime = time();
+        while (!$done) {
+            if (getNumBaselineClients() == 0) {
+                $done = 1;
+            }
+            sleep(1);
+        }
+        my $endTime = time();
+        my $waitTime = $endTime - $startTime;
+        print("Waited for $waitTime seconds\n");
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
