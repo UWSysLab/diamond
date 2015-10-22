@@ -412,7 +412,7 @@ public class Main {
 		Jedis jedis = null;
 		HttpServer server = null;
 		
-		Diamond.DiamondInit();
+		Diamond.DiamondInit("moranis.cs.washington.edu");
 		
 		try {
 			jedis = pool.getResource();
