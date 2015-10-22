@@ -102,6 +102,7 @@ public:
     void SetGlobalConsistency(enum DConsistency dc); // Made obsolete by the transactions?!
 
     static void DebugSleep(long seconds);
+    static void DebugMultiMapIndividualSet(bool enable);
 
 protected:
     DObject() : _key("dummykey") {};

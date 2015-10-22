@@ -39,6 +39,7 @@ static set<set<string>> globalPrefetchSets; //XXX: Optimize the lookup? and the 
 Cloud* cloudstore = NULL;
 Stalestorage stalestorage;
 
+bool debugMultiMapIndividual = false;
 
 void DiamondInit(const std::string &server) {
     cloudstore = Cloud::Instance(server);
@@ -262,6 +263,15 @@ DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
 
     if (keys.size() != objects.size()) {
         Panic("Mismatch between number of keys and DObjects");
+    }
+
+    // Just for debugging
+    if(debugMultiMapIndividual){
+        for (size_t i = 0; i < keys.size(); i++) {
+            string currentKey = keys.at(i);
+            Map(*objects.at(i), currentKey);
+        }
+        return 0;
     }
 
     vector<string> values;
@@ -1065,6 +1075,11 @@ DObject::DebugSleep(long seconds){
     sleep(seconds);
 }
 
+void
+DObject::DebugMultiMapIndividualSet(bool enable){
+    debugMultiMapIndividual = enable;
+
+}
 
 } // namespace diamond
 
