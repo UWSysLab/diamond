@@ -71,6 +71,7 @@ class ChatHandler implements HttpHandler {
 				chatLog.remove(0);
 			}
 			jedis.set("baselinechat:chatlog", serializeList(chatLog));
+			jedis.waitReplicas(1, 3);
 			
 			exchange.sendResponseHeaders(200, 0);
 			OutputStream os = exchange.getResponseBody();
