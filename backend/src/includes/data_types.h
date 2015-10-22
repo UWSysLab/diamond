@@ -47,6 +47,12 @@ typedef struct structTransactionState {
     bool optionLearnPrefetchSet;
     bool optionReadLocalOnly;
 
+    unsigned long timeoutNextMs;
+    unsigned long timeoutPeriodMs;
+    enum txInterruptAction (*disconnectHandler)(void*);
+    enum txInterruptAction (*timeoutHandler)(void*);
+    void * txArg;
+
     bool aborted;
 } TransactionState;
 
