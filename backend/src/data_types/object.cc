@@ -111,7 +111,10 @@ DObject::PullAlwaysWatch(){
     LOG_RC("PullAlwaysWatch()"); 
 
     int ret;
-    
+   
+    TransactionHandleDisconnect();
+    TransactionHandleTimeout();
+
     ret = stalestorage.Read(_key,value);
     if(ret == ERR_NOTFOUND){
         // If it's not on the stale store
@@ -539,6 +542,13 @@ DObject::SetTransactionInProgress(bool inProgress)
     ts->optionReadLocalOnly = false;
     ts->aborted = false;
 
+    ts->timeoutNextMs = 0;
+    ts->timeoutPeriodMs = 0;
+    ts->disconnectHandler = NULL;
+    ts->timeoutHandler = NULL;
+    ts->txArg = 0; 
+
+
 //     auto txWS = GetTransactionWS();
 //     auto txRS = GetTransactionRS();
 //     auto locals = GetTransactionLocals();
@@ -703,23 +713,45 @@ DObject::TransactionExecute(enum txFinishAction (*tx)(void*), void * txArg, unsi
 }
 
 
+// TODO: Need to test this code
 void
 DObject::TransactionHandleDisconnect(void){
+    TransactionState *ts = GetTransactionState();
+    
+    if((!networkConnectivity) && ts->disconnectHandler){
 
+        // call the diconnect tx handler
+        enum txInterruptAction timeoutAction = (*ts->disconnectHandler)(ts->txArg);
+       
+        // XXX: Should we can diconnect Handler just once per transactions 
+        if(timeoutAction == STOP){
+            ts->aborted = true;
+        }
+    }
 
 }
 
+// TODO: Need to test this code
 void
 DObject::TransactionHandleTimeout(void){
+    TransactionState *ts = GetTransactionState();
+    if((ts->timeoutHandler) && (ts->timeoutNextMs < getTimeMillis())){
+        // update the timeout
+        ts->timeoutNextMs = getTimeMillis() + ts->timeoutPeriodMs;
 
-
+        // call the timeout tx handler
+        enum txInterruptAction timeoutAction = (*ts->timeoutHandler)(ts->txArg);
+        if(timeoutAction == STOP){
+            ts->aborted = true;
+        }
+    }
 }
 
 
 bool
 DObject::TransactionExecute(enum txFinishAction (*tx)(void*), 
-                            enum txInterruptAction (*disconnected)(void*), 
-                            enum txInterruptAction (*timedOut)(void*), 
+                            enum txInterruptAction (*disconnectHandler)(void*), 
+                            enum txInterruptAction (*timeoutHandler)(void*), 
                             void * txArg, unsigned int maxAttempts, unsigned long timeoutMs)
 {
     unsigned int attempts = 0;
@@ -727,9 +759,20 @@ DObject::TransactionExecute(enum txFinishAction (*tx)(void*),
     
     Notice("Executing transaction\n");
 
+    long timeoutNextMs = getTimeMillis() + timeoutMs;
+
+    // XXX: Should we stop looping if the transaction aborts because of timeouts/diconnects?
     while((attempts < maxAttempts) && (maxAttempts > 0)){
         attempts++;
         TransactionBegin();
+
+        TransactionState *ts = GetTransactionState();
+        ts->timeoutNextMs = timeoutNextMs;
+        ts->timeoutPeriodMs = timeoutMs;
+        ts->disconnectHandler = disconnectHandler;
+        ts->timeoutHandler = timeoutHandler;
+        ts->txArg = txArg;
+
         int ret = tx(txArg);
         switch(ret){
             case COMMIT:
