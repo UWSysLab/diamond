@@ -188,6 +188,24 @@ public class BaselineChatClient {
 		
 		double averageTime = ((double)totalTime) / numActions;
 		
+		//kill time for the throughput experiment
+		int cooldownTime = warmupTime;
+		long cooldownStartTime = System.nanoTime();
+		while (true) {
+			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
+			if (action == ACTION_READ) {
+				readMessages();
+			}
+			else {
+				writeMessage(MESSAGE);
+			}
+			long currentTime = System.nanoTime();
+			double cooldownElapsedTimeMillis = ((double)(currentTime - cooldownStartTime)) / (1000 * 1000);
+			if (cooldownElapsedTimeMillis >= cooldownTime) {
+				break;
+			}
+		}
+		
 		if (verbose) {
 			for (int i = 0; i < times.size(); i++) {
 				System.out.println(userName + "\t" + actions.get(i) + "\t" + times.get(i));
