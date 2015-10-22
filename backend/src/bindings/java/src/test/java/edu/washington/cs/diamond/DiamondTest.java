@@ -339,10 +339,24 @@ public class DiamondTest
         TestObject testObjA2 = objList2.Get(0);
         TestObject testObjB2 = objList2.Get(1);
 
-        assert(testObjA2.dstr.Value().equals("testA"));
-        assert(testObjA2.dl.Value() == 16);
-        assert(testObjB2.dstr.Value().equals("testB"));
-        assert(testObjB2.dl.Value() == 17);
+        int committed = 0;
+        String a2str = null;
+        long a2l = 0;
+        String b2str = null;
+        long b2l = 0;
+        while (committed == 0) {
+            Diamond.DObject.TransactionBegin();
+            a2str = testObjA2.dstr.Value();
+            a2l = testObjA2.dl.Value();
+            b2str = testObjB2.dstr.Value();
+            b2l = testObjB2.dl.Value();
+            committed = Diamond.DObject.TransactionCommit();
+        }
+
+        assert(a2str.equals("testA"));
+        assert(a2l == 16);
+        assert(b2str.equals("testB"));
+        assert(b2l == 17);
         assert(objList2.Size() == 3);
     }
 
