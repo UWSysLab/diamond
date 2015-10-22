@@ -408,12 +408,13 @@ public class Main {
 	}
 	
 	public static void main(String[] args) {
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
+		JedisPool pool = new JedisPool(new JedisPoolConfig(), "moranis.cs.washington.edu");
 		Jedis jedis = null;
 		HttpServer server = null;
 		
-		Diamond.DiamondInit();
-		
+		Diamond.DiamondInit("moranis.cs.washington.edu");
+		Diamond.DObject.SetGlobalRedisWait(true, 1, 3);
+
 		try {
 			jedis = pool.getResource();
 			

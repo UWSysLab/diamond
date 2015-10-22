@@ -107,7 +107,7 @@ public:
     static void SetGlobalStaleness(bool enable);
     static void SetGlobalMaxStaleness(long maxStalenessMs);
     void SetGlobalConsistency(enum DConsistency dc); // Made obsolete by the transactions?!
-    void SetGlobalRedisWait(bool enable, int replicas, int timeout);
+    static void SetGlobalRedisWait(bool enable, int replicas, int timeout);
 
 
     static void DebugSleep(long seconds);

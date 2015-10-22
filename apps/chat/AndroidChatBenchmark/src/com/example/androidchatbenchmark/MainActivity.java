@@ -24,7 +24,7 @@ public class MainActivity extends ActionBarActivity {
 	
 	static String chatroomName = "androidbenchmark";
 	static String userName = "android";
-	static String serverName = "coldwater.cs.washington.edu";
+	static String serverName = "moranis.cs.washington.edu";
 	
 	private Diamond.DStringList messageList;
 	
@@ -118,6 +118,7 @@ public class MainActivity extends ActionBarActivity {
 		setContentView(textBox);
 		
 		Diamond.DiamondInit(serverName);
+		Diamond.DObject.SetGlobalRedisWait(true, 1, 3);
 		String chatLogKey = "dimessage:" + chatroomName + ":chatlog";
 		messageList = new Diamond.DStringList();
 		Diamond.DObject.Map(messageList, chatLogKey);
