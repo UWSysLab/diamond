@@ -102,7 +102,7 @@ ggplot(readerBarGraphData, aes(x=readerClient, y=readerAvgLatency, fill=readerCl
     coord_cartesian() +
     labs(y = "Latency (ms)") +
     theme_bw() +
-    theme(legend.title = element_blank(), axis.title.x = element_blank()) +
+    theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
     guides(fill=FALSE)
 
 dev.off()
@@ -114,7 +114,7 @@ ggplot(writerBarGraphData, aes(x=writerClient, y=writerAvgLatency, fill=writerCl
     coord_cartesian() +
     labs(y = "Latency (ms)") +
     theme_bw() +
-    theme(legend.title = element_blank(), axis.title.x = element_blank()) +
+    theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
     guides(fill=FALSE)
 
 dev.off()
