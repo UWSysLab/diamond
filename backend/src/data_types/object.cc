@@ -63,6 +63,7 @@ DObject::Map(DObject &addr, const string &key)
     }
     
     int res = addr.Pull();
+    //int res = 0;
 
     pthread_mutex_unlock(&addr._objectMutex);
     PROFILE_EXIT("MAP");
@@ -114,7 +115,13 @@ DObject::PullAlwaysWatch(){
     if(ret == ERR_NOTFOUND){
         // If it's not on the stale store
         TransactionState *ts  = GetTransactionState();
-        
+
+        if(ts->optionReadLocalOnly || ts->aborted){
+            // If the transaction is read-local then never contact the servers
+            ts->aborted = true;
+            return 0;
+        }
+
         ret = Prefetch(_key, value);
         if(ret == ERR_NOTFOUND){
             // If we still dont have the contents 
@@ -224,7 +231,10 @@ DObject::Push(){
         std::set<string>* txWS = &ts->ws;
         txWS->insert(this->GetKey());
 
-        cloudstore->Watch(this->GetKey());  // PF: Watch probably can be avoided on writes; if read-after-writes deals with it properly
+        // PF: Writes don't require WATCH because they are delayed till 
+        //     the write and atomically performed (with the guarantee that 
+        //     the rs has not changed)
+        //cloudstore->Watch(this->GetKey());  
 
         // Add new value to our local TX view
         string value;
@@ -516,6 +526,8 @@ DObject::SetTransactionInProgress(bool inProgress)
     ts->txPrefetchKeys.clear();
     ts->txPrefetchKeyValues.clear();
     ts->optionLearnPrefetchSet = false;
+    ts->optionReadLocalOnly = false;
+    ts->aborted = false;
 
 //     auto txWS = GetTransactionWS();
 //     auto txRS = GetTransactionRS();
@@ -736,6 +748,7 @@ DObject::TransactionCommit(void)
 {
     pthread_mutex_lock(&transactionMutex);
 
+    TransactionState *ts = GetTransactionState();
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
 
@@ -747,9 +760,15 @@ DObject::TransactionCommit(void)
         return false;
     }
 
+    if(ts->aborted){
+        LOG_TX("TRANSACTION COMMIT -> aborted (read-local only)");
+        SetTransactionInProgress(false);
+        pthread_mutex_unlock(&transactionMutex);
+        return false;
+    }
+
 // WITH BATCHING
     std::map<string, string> keyValuesWS;
-    TransactionState *ts = GetTransactionState();
 
     std::map<string, string >* locals = &ts->localView;
     std::set<string>* txWS = &ts->ws;
@@ -930,6 +949,18 @@ DObject::TransactionOptionPrefetch(set<DObject*> &txPrefetch)
 
     SetTransactionPrefetchKeys(txPrefetchKeys);
 }
+
+
+void 
+DObject::TransactionOptionLocalOnly(bool enable)
+{
+    if(!IsTransactionInProgress()){
+        Panic("TransactionOptionPrefetchAuto() should be called inside a transaction");
+    }
+    TransactionState* ts = GetTransactionState();
+    ts->optionReadLocalOnly = enable;
+}
+
 
 void 
 DObject::TransactionOptionPrefetchAuto(bool enable)
