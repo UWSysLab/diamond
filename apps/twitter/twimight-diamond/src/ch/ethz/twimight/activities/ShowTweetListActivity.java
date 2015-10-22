@@ -316,8 +316,8 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	}
 	
 	public static void doBenchmark(Context c) {
-		final int TOTAL_REPS = 10;
-		final int WARMUP_REPS = 1;
+		final int TOTAL_REPS = 200;
+		final int WARMUP_REPS = 20;
 		//String uid = LoginActivity.getTwitterId(c);
 		String uid = "3";
 		String timelineKey = "twitter:uid:" + uid + ":timeline";
