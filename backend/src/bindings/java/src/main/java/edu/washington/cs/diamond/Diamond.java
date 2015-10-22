@@ -194,6 +194,8 @@ public class Diamond {
 
         public static native void SetGlobalStaleness(boolean enable);
         public static native void SetGlobalMaxStaleness(long maxStalenessMs);
+
+        public static native void DebugMultiMapIndividualSet(boolean enable);
     }
    
    public static class DString extends DObject {

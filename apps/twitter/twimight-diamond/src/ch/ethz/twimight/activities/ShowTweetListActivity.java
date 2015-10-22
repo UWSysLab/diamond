@@ -278,7 +278,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, prefetch, 0, 9);
 			for (int i = 0; i < tweetList.Size(); i++) {
-				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
 				String tweetText= null;
 				String screenname = null;
@@ -288,6 +287,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				long numMentions = 0;
 				while (committed == 0) {
 					Diamond.DObject.TransactionBegin();
+					DiamondTweet tweet = tweetList.Get(i);
 					tweetText = tweet.text.Value();
 					screenname = tweet.screenname.Value();
 					createdAt = tweet.createdAt.Value();
@@ -334,7 +334,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		//Prefetching and stale reads
 		Diamond.DObject.SetGlobalStaleness(true);
 		Diamond.DObject.SetGlobalMaxStaleness(200);
-		//Diamond.DObject.DebugMultiMapIndividualSet(true);
+		Diamond.DObject.DebugMultiMapIndividualSet(true);
 		benchmarkHelper(timelineKey, TOTAL_REPS, true, "Prefetchstale");
 		
 		Log.i("BENCHMARK", "Done with Diamond experiment");
