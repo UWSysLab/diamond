@@ -219,6 +219,8 @@ public class Diamond {
         public static native void SetGlobalStaleness(boolean enable);
         public static native void SetGlobalMaxStaleness(long maxStalenessMs);
 
+        public static native void SetGlobalRedisWait(boolean enable, int replicas, int timeout);
+
         public static native void DebugMultiMapIndividualSet(boolean enable);
     }
    
