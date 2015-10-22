@@ -44,12 +44,12 @@ public class ShowTweetActivity extends TwimightBaseActivity implements OnTweetDe
 			String uid = LoginActivity.getTwitterId(this.getBaseContext());
 			String timelineKey = "twitter:uid:" + uid + ":timeline";
 			tweetList = new MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, true);
 			break;
 		case TweetListFragment.SEARCH_TWEETS:
 			String globalTimelineKey = "twitter:timeline";
 			tweetList = new MappedObjectList<DiamondTweet>(globalTimelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, true);
 			break;
 		}
 		if (tweetList != null) {			

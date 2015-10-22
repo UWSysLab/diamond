@@ -281,7 +281,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		//JVM warmup
 		for (int rep = 0; rep < WARMUP_REPS; rep++) {
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, false);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
@@ -303,7 +303,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.nanoTime();
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, false, 0, 9);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
@@ -331,7 +331,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.nanoTime();
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, true, 0, 9);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
