@@ -296,6 +296,42 @@ private:
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
+class DStringQueue : public DObject
+{
+public:
+    DStringQueue() {};
+    DStringQueue(const std::string &key) : DObject(key) {};
+    ~DStringQueue() {};
+    void Queue(const std::string val);
+    void Dequeue(const std::string val); /* Removes the first copy of val, if present */
+    int Size();
+    int Clear();
+//    DStringQueue & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+    
+private:
+    DStringList list;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+};
+
+
+class DID : public DObject 
+{
+public:
+    DID() : DObject(), _s("dummystring") {};
+    DID(const std::string &s, const std::string &key) : DObject(key), _s(s) {};
+    ~DID() {};
+    std::string Value();
+    void Generate();
+        
+private:
+    std::string _s;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+};
+
 class DRedisStringList
 {
 public:
