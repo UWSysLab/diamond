@@ -45,7 +45,9 @@ typedef struct structTransactionState {
     std::set<string> txPrefetchKeys; // User-specified set of keys that are expected to be used together in this specific transaction
     std::map<string, string> txPrefetchKeyValues;
     bool optionLearnPrefetchSet;
+    bool optionReadLocalOnly;
 
+    bool aborted;
 } TransactionState;
 
 class DObject
@@ -78,6 +80,7 @@ public:
     static void TransactionOptionPrefetch(set<string> &txPrefetchKeys);
     static void TransactionOptionPrefetch(set<DObject*> &txPrefetch);
     static void TransactionOptionPrefetchAuto(bool enable);
+    static void TransactionOptionLocalOnly(bool enable);
 
     static void PrefetchKeySet(string& key, string &value, const set<string>& keySet);
     static int Prefetch(string key, string &value);

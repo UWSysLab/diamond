@@ -114,7 +114,13 @@ DObject::PullAlwaysWatch(){
     if(ret == ERR_NOTFOUND){
         // If it's not on the stale store
         TransactionState *ts  = GetTransactionState();
-        
+
+        if(ts->optionReadLocalOnly || ts->aborted){
+            // If the transaction is read-local then never contact the servers
+            ts->aborted = true;
+            return 0;
+        }
+
         ret = Prefetch(_key, value);
         if(ret == ERR_NOTFOUND){
             // If we still dont have the contents 
@@ -516,6 +522,8 @@ DObject::SetTransactionInProgress(bool inProgress)
     ts->txPrefetchKeys.clear();
     ts->txPrefetchKeyValues.clear();
     ts->optionLearnPrefetchSet = false;
+    ts->optionReadLocalOnly = false;
+    ts->aborted = false;
 
 //     auto txWS = GetTransactionWS();
 //     auto txRS = GetTransactionRS();
@@ -736,6 +744,7 @@ DObject::TransactionCommit(void)
 {
     pthread_mutex_lock(&transactionMutex);
 
+    TransactionState *ts = GetTransactionState();
     LOG_TX_DUMP_RS()
     LOG_TX_DUMP_WS()
 
@@ -747,9 +756,15 @@ DObject::TransactionCommit(void)
         return false;
     }
 
+    if(ts->aborted){
+        LOG_TX("TRANSACTION COMMIT -> aborted (read-local only)");
+        SetTransactionInProgress(false);
+        pthread_mutex_unlock(&transactionMutex);
+        return false;
+    }
+
 // WITH BATCHING
     std::map<string, string> keyValuesWS;
-    TransactionState *ts = GetTransactionState();
 
     std::map<string, string >* locals = &ts->localView;
     std::set<string>* txWS = &ts->ws;
@@ -920,6 +935,18 @@ DObject::TransactionOptionPrefetch(set<DObject*> &txPrefetch)
 
     SetTransactionPrefetchKeys(txPrefetchKeys);
 }
+
+
+void 
+DObject::TransactionOptionLocalOnly(bool enable)
+{
+    if(!IsTransactionInProgress()){
+        Panic("TransactionOptionPrefetchAuto() should be called inside a transaction");
+    }
+    TransactionState* ts = GetTransactionState();
+    ts->optionReadLocalOnly = enable;
+}
+
 
 void 
 DObject::TransactionOptionPrefetchAuto(bool enable)
