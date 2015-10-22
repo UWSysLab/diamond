@@ -4,8 +4,7 @@ use warnings;
 use strict;
 
 my $time = 5;
-my $slopTime = 2;
-my $warmupTimeMs = 1000;
+my $warmupTimeMs = 5000;
 my $maxClients = 40;
 my $numClientsStep = 5;
 my $readFraction = 0.9;

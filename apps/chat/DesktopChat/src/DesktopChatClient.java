@@ -4,7 +4,7 @@ import java.util.Random;
 
 import edu.washington.cs.diamond.Diamond;
 
-public class Main {
+public class DesktopChatClient {
 	
 	static final int MESSAGE_LIST_SIZE = 100;
 	static final int NUM_ACTIONS = 1000;
@@ -251,6 +251,34 @@ public class Main {
 		double elapsedTimeMillis = ((double)(endTime - startTime)) / (1000 * 1000);
 		
 		double averageTime = ((double)totalTime) / numActions;
+		
+		//kill time at the end for the sake of the throughput experiment
+		int cooldownTime = warmupTime;
+		long cooldownStartTime = System.nanoTime();
+		while (true) {
+			int action = rand.nextDouble() < readFraction ? ACTION_READ : ACTION_WRITE;
+			if (concurrency.equals("transaction")) {
+				if (action == ACTION_READ) {
+					readMessagesTransaction();
+				}
+				else {
+					writeMessageTransaction(MESSAGE);
+				}
+			}
+			else if (concurrency.equals("atomic")) {
+				if (action == ACTION_READ) {
+					readMessagesAtomic();
+				}
+				else {
+					writeMessageAtomic(MESSAGE);
+				}
+			}
+			long currentTime = System.nanoTime();
+			double cooldownElapsedTimeMillis = ((double)(currentTime - cooldownStartTime)) / (1000 * 1000);
+			if (cooldownElapsedTimeMillis >= cooldownTime) {
+				break;
+			}
+		}
 		
 		if (verbose) {
 			for (int i = 0; i < times.size(); i++) {
