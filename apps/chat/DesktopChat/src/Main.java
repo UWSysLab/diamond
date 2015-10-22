@@ -74,6 +74,10 @@ public class Main {
 			readTimeStart = System.nanoTime();
 			Diamond.DObject.TransactionBegin();
 			result = messageList.Members();
+			if (result.get(0).indexOf(MESSAGE) == -1) {
+				System.err.println("Error: first item of chat log is " + result.get(0));
+				System.exit(1);
+			}
 			committed = Diamond.DObject.TransactionCommit();
 			if (committed == 0) {
 				numAborts++;
@@ -93,6 +97,10 @@ public class Main {
 		long readTimeEnd = 1000 * 1000 * 1000;
 		readTimeStart = System.nanoTime();
 		result = messageList.Members();
+		if (result.get(0).indexOf(MESSAGE) == -1) {
+			System.err.println("Error: first item of chat log is " + result.get(0));
+			System.exit(1);
+		}
 		readTimeEnd = System.nanoTime();
 		double time = ((double)(readTimeEnd - readTimeStart)) / (1000 * 1000);
 		return time;

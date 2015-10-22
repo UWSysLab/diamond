@@ -917,6 +917,16 @@ DObject::TransactionOptionPrefetch(set<string> &txPrefetchKeys)
 }
 
 void
+DObject::TransactionOptionPrefetch(vector<DObject *> &txPrefetch)
+{
+    set<DObject *> prefetchSet;
+    for (auto it = txPrefetch.begin(); it != txPrefetch.end(); it++) {
+        prefetchSet.insert(*it);
+    }
+    TransactionOptionPrefetch(prefetchSet);
+}
+
+void
 DObject::TransactionOptionPrefetch(set<DObject*> &txPrefetch)
 {
     if(!IsTransactionInProgress()){

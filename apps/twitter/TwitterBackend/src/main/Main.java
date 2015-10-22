@@ -380,6 +380,14 @@ public class Main {
 		jedisTwitter.createFriendship("a", jedisTwitter.getUid("dcraig"));
 		jedisTwitter.updateStatus("sconnery", "Old James Bond movies are better", null, System.currentTimeMillis());
 		jedisTwitter.updateStatus("dcraig", "@sconnery No, newer James Bond movies are best", "1", System.currentTimeMillis());
+		jedisTwitter.updateStatus("sconnery", "Hello", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "This is a tweet", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("sconnery", "We are famous James Bond actors", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "I like pretending to hate the franchise during contract negotations", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("sconnery", "Diamonds are Forever", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("sconnery", "Was that a Timothy Dalton movie?", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "We need two more tweets", null, System.currentTimeMillis());
+		jedisTwitter.updateStatus("dcraig", "Last", null, System.currentTimeMillis());
 	}
 	
 	public static void main(String[] args) {

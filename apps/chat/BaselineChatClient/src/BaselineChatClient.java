@@ -17,7 +17,6 @@ import com.google.gson.JsonParser;
 public class BaselineChatClient {
 	
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
-	static final int PORT = 9000;
 	
 	static final int INITIAL_CAPACITY = 20000;
 	
@@ -73,6 +72,10 @@ public class BaselineChatClient {
 				JsonElement item = jsonArray.get(i);
 				result.add(item.getAsString());
 			}
+			if (result.get(0).indexOf(MESSAGE) == -1) {
+				System.err.println("Error: first item of chat log is " + result.get(0));
+				System.exit(1);
+			}
 			in.close();
 			responseCode = connection.getResponseCode();
 		} catch (MalformedURLException e) {
@@ -93,13 +96,13 @@ public class BaselineChatClient {
 
 	
 	public static void main(String[] args) {
-		String usage = "usage: java BaselineChatClient run_type run_number read_fraction verbosity server_url user_name warmup_time\n"
+		String usage = "usage: java BaselineChatClient run_type run_number read_fraction verbosity server_url port user_name warmup_time\n"
 				 + "    run_type: timed or fixed\n"
 				 + "    run_number: the number of seconds (if timed) or the number of actions (if fixed)\n"
 	 			 + "    read_fraction: decimal between 0 and 1 giving proportion of reads\n"
 	 			 + "    verbosity: concise or verbose\n"
 	 			 + "    warmup_time: warmup time in ms";
-		if (args.length < 7) {
+		if (args.length < 8) {
 			System.err.println(usage);
 			System.exit(0);
 		}
@@ -108,8 +111,9 @@ public class BaselineChatClient {
 		double readFraction = Double.parseDouble(args[2]);
 		String verbosity = args[3];
 		String serverName = args[4];
-		userName = args[5];
-		int warmupTime = Integer.parseInt(args[6]);
+		int port = Integer.parseInt(args[5]);
+		userName = args[6];
+		int warmupTime = Integer.parseInt(args[7]);
 		
 		if (!(runType.equals(RUN_TIMED) || runType.equals(RUN_FIXED))) {
 			System.err.println(usage);
@@ -125,7 +129,7 @@ public class BaselineChatClient {
 		}
 		
 		verbose = (verbosity.equals("verbose"));
-		serverURLString = "http://" + serverName + ":" + PORT + "/chat";
+		serverURLString = "http://" + serverName + ":" + port + "/chat";
 
 		Random rand = new Random();
 		

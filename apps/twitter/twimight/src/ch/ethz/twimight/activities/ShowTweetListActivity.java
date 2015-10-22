@@ -276,10 +276,14 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	}
 
 	public static void doBenchmark(Context c) {
-		final long TOTAL_REPS = 1000;
+		final long TOTAL_REPS = 200;
+		final long WARMUP_REPS = 20;
 		String screenName = LoginActivity.getTwitterScreenname(c);
 		String twitterUrl = LoginActivity.getTwitterUrl(c);
 		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
+		for (int i = 0; i < WARMUP_REPS; i++) {
+			twitter.getHomeTimeline();
+		}
 		double totalTime = 0;
 		long numReps = 0;
 		for (int i = 0; i < TOTAL_REPS; i++) {
@@ -295,6 +299,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		}
 		double avgLatency = totalTime / numReps;
 		Log.i("BENCHMARK", "OG twimight timeline average read latency: " + avgLatency + " reps: " + numReps);
+		Log.i("BENCHMARK", "Done with Diamond experiment");
 	}
 	
 	class BenchmarkTask extends AsyncTask<Void, Void, Void> {

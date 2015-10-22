@@ -37,13 +37,13 @@ DIAMOND_SRC="/home/nl35/research/diamond-src"
 PROJECT_DIR="$DIAMOND_SRC/apps/chat/BaselineChatServer"
 JAVA_BINARY="/home/nl35/research/jdk1.8.0_60/jre/bin/java"
 classpath="$PROJECT_DIR/bin:$PROJECT_DIR/libs/gson-2.3.1.jar:$PROJECT_DIR/libs/commons-pool2-2.0.jar:$PROJECT_DIR/libs/jedis-2.4.2.jar"
-$JAVA_BINARY -cp $classpath Main 2> $DIR/baseline-server.error &
+$JAVA_BINARY -cp $classpath Main 9000 2> $DIR/baseline-server.error &
 PID_SERVER=$!
 sleep 1
 
-./baseline-chat-client-wrapper.sh timed 5 0 verbose localhost writer 1000 > $DIR/baseline-writer.log 2> $DIR/baseline-writer.error &
+./baseline-chat-client-wrapper.sh timed 5 0 verbose localhost 9000 writer 1000 > $DIR/baseline-writer.log 2> $DIR/baseline-writer.error &
 PID1=$!
-./baseline-chat-client-wrapper.sh timed 5 1.0 verbose localhost reader 1000 > $DIR/baseline-reader.log 2> $DIR/baseline-reader.error &
+./baseline-chat-client-wrapper.sh timed 5 1.0 verbose localhost 9000 reader 1000 > $DIR/baseline-reader.log 2> $DIR/baseline-reader.error &
 PID2=$!
 wait $PID1 $PID2
 kill $PID_SERVER

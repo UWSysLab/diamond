@@ -26,5 +26,6 @@ param4=$4
 param5=$5
 param6=$6
 param7=$7
+param8=$8
 
-$JAVA_BINARY -cp $classpath BaselineChatClient $param1 $param2 $param3 $param4 $param5 $param6 $param7
+$JAVA_BINARY -cp $classpath BaselineChatClient $param1 $param2 $param3 $param4 $param5 $param6 $param7 $param8

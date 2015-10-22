@@ -59,7 +59,13 @@ public class JedisTwitter {
 		tweet.setScreenname(screenName);
 		tweet.setId(pid);
 		tweet.setName(poster.getName());
-		//tweet.setInReplyToStatusId(replyIdString);
+		if (replyIdString == null) {
+			replyIdString = new String("");
+		}
+		tweet.setInReplyToStatusId(replyIdString);
+		tweet.numFavorites.Set(0);
+		tweet.setMentions(0);
+		tweet.setRetweetedBy("");
 		
 		//add to user and home timeline of poster
 		poster.posts.Append(postKey);
@@ -105,6 +111,7 @@ public class JedisTwitter {
 			user.following.Clear();
 			user.posts.Clear();
 			user.favorites.Clear();
+			user.timeline.Clear();
 			
 			DStringList userList = new DStringList();
 			DObject.Map(userList, "twitter:users");

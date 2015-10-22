@@ -79,6 +79,7 @@ public:
 
     static void TransactionOptionPrefetch(set<string> &txPrefetchKeys);
     static void TransactionOptionPrefetch(set<DObject*> &txPrefetch);
+    static void TransactionOptionPrefetch(vector<DObject *> &txPrefetch);
     static void TransactionOptionPrefetchAuto(bool enable);
     static void TransactionOptionLocalOnly(bool enable);
 

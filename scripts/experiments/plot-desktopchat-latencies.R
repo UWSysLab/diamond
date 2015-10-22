@@ -41,17 +41,11 @@ pdf("desktop-chat-latency-plots.pdf")
 
 ggplot(data, aes(x=latency, color=factor(client), linetype=factor(client))) + stat_ecdf() + coord_fixed(ratio=0.33, xlim=c(0, 0.7)) + labs(x = "Latency (ms)", y = "CDF") +
     theme_bw() + theme(legend.title = element_blank())
-#ggplot(data, aes(x=latency, color=factor(client))) + stat_ecdf()
 
-ggplot(readers, aes(x=latency, color=factor(client), linetype=factor(client))) + stat_ecdf() + coord_fixed(ratio=0.33, xlim=c(0, 0.7)) + labs(x = "Latency (ms)", y = "CDF") +
+ggplot(readers, aes(x=latency, color=factor(client), linetype=factor(client))) + stat_ecdf() + coord_fixed(ratio=0.33, xlim=c(0, 0.7)) + labs(x = "Latency (ms)", y = "CDF", title = "Readers") +
     theme_bw() + theme(legend.title = element_blank())
-#ggplot(readers, aes(x=latency, color=factor(client))) + stat_ecdf()
 
-ggplot(writers, aes(x=latency, color=factor(client), linetype=factor(client))) + stat_ecdf() + coord_fixed(ratio=0.33, xlim=c(0, 0.7)) + labs(x = "Latency (ms)", y = "CDF") +
+ggplot(writers, aes(x=latency, color=factor(client), linetype=factor(client))) + stat_ecdf() + coord_fixed(ratio=0.33, xlim=c(0, 0.7)) + labs(x = "Latency (ms)", y = "CDF", title = "Writers") +
     theme_bw() + theme(legend.title = element_blank())
-#ggplot(writers, aes(x=latency, color=factor(client))) + stat_ecdf()
-
-#ggplot(data, aes(x=factor(client), y=latency)) + geom_boxplot() + coord_cartesian(ylim=c(0, 0.5))
-#ggplot(data, aes(x=factor(client), y=latency)) + geom_boxplot()
 
 dev.off()

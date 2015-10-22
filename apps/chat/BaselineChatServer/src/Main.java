@@ -82,9 +82,15 @@ class ChatHandler implements HttpHandler {
 public class Main {
 
 	static final long MAX_SIZE = 100;
-	static final int PORT = 9000;
 		
 	public static void main(String[] args) {
+		if (args.length < 1) {
+			System.err.println("usage: java Main port");
+			System.exit(0);
+		}
+		
+		int port = Integer.parseInt(args[0]);
+		
 		HttpServer server = null;
 		
 		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
@@ -93,7 +99,7 @@ public class Main {
 		try {
 			jedis = pool.getResource();
 			
-			server = HttpServer.create(new InetSocketAddress(PORT), 0);
+			server = HttpServer.create(new InetSocketAddress(port), 0);
 			server.createContext("/chat", new ChatHandler(jedis));
 			server.setExecutor(null);
 			server.start();

@@ -34,6 +34,7 @@ import ch.ethz.twimight.location.LocationHelper;
 import ch.ethz.twimight.net.twitter.DiamondTweet;
 import ch.ethz.twimight.util.Constants;
 import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.DiamondUtil;
 
 
 
@@ -271,29 +272,98 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	}
 	
 	public static void doBenchmark(Context c) {
-		final long TOTAL_REPS = 1000;
+		final long TOTAL_REPS = 200;
+		final long WARMUP_REPS = 20;
 		//String uid = LoginActivity.getTwitterId(c);
 		String uid = "3";
 		String timelineKey = "twitter:uid:" + uid + ":timeline";
+		
+		//JVM warmup
+		for (int rep = 0; rep < WARMUP_REPS; rep++) {
+			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+			for (int i = 0; i < tweetList.Size(); i++) {
+				DiamondTweet tweet = tweetList.Get(i);
+				int committed = 0;
+				while (committed == 0) {
+					Diamond.DObject.TransactionBegin();
+					String tweetText = tweet.text.Value();
+					String screenname = tweet.screenname.Value();
+					long createdAt = tweet.createdAt.Value();
+					long userId = tweet.userid.Value();
+					String retweetedBy = tweet.retweetedBy.Value();
+					long numMentions = tweet.numMentions.Value();
+					committed = Diamond.DObject.TransactionCommit();
+				}
+			}
+		}
+		
+		//Non-prefetching reads
 		double totalTime = 0;
-		long numReps = 0;
 		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.nanoTime();
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
+				int committed = 0;
+				while (committed == 0) {
+					Diamond.DObject.TransactionBegin();
+					String tweetText = tweet.text.Value();
+					String screenname = tweet.screenname.Value();
+					long createdAt = tweet.createdAt.Value();
+					long userId = tweet.userid.Value();
+					String retweetedBy = tweet.retweetedBy.Value();
+					long numMentions = tweet.numMentions.Value();
+					committed = Diamond.DObject.TransactionCommit();
+				}
 			}
 			long endTime = System.nanoTime();
 			double time = ((double)(endTime - startTime))/(1000 * 1000);
-			if (rep >= TOTAL_REPS / 10 && rep <= 9 * TOTAL_REPS / 10) {
-				totalTime += time;
-				numReps++;
-			}
+			totalTime += time;
 			Log.i("BENCHMARK", "Diamond timeline read time: " + time);
 		}
-		double avgLatency = totalTime / numReps;
-		Log.i("BENCHMARK", "Diamond timeline average read latency: " + avgLatency + " reps: " + numReps);
+		double avgLatency = totalTime / TOTAL_REPS;
+		Log.i("BENCHMARK", "Diamond timeline average read latency: " + avgLatency + " reps: " + TOTAL_REPS);
+		
+		//Prefetching reads
+		double prefetchTotalTime = 0;
+		for (int rep = 0; rep < TOTAL_REPS; rep++) {
+			long startTime = System.nanoTime();
+			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class);
+			for (int i = 0; i < tweetList.Size(); i++) {
+				DiamondTweet tweet = tweetList.Get(i);
+				int committed = 0;
+				while (committed == 0) {
+					Diamond.DObject.TransactionBegin();
+					DiamondUtil.DObjectVector objVector = new DiamondUtil.DObjectVector();
+					objVector.resize(6);
+					objVector.put(0, tweet.text);
+					objVector.put(1, tweet.screenname);
+					objVector.put(2, tweet.createdAt);
+					objVector.put(3, tweet.userid);
+					objVector.put(4, tweet.retweetedBy);
+					objVector.put(5, tweet.numMentions);
+					Diamond.DObject.TransactionOptionPrefetch(objVector);
+					String tweetText = tweet.text.Value();
+					String screenname = tweet.screenname.Value();
+					long createdAt = tweet.createdAt.Value();
+					long userId = tweet.userid.Value();
+					String retweetedBy = tweet.retweetedBy.Value();
+					long numMentions = tweet.numMentions.Value();
+					committed = Diamond.DObject.TransactionCommit();
+				}
+			}
+			long endTime = System.nanoTime();
+			double time = ((double)(endTime - startTime))/(1000 * 1000);
+			prefetchTotalTime += time;
+			Log.i("BENCHMARK", "Prefetch timeline read time: " + time);
+		}
+		double prefetchAvgLatency = prefetchTotalTime / TOTAL_REPS;
+		Log.i("BENCHMARK", "Prefetch timeline average read latency: " + prefetchAvgLatency + " reps: " + TOTAL_REPS);
+		
+		Log.i("BENCHMARK", "Done with Diamond experiment");
 	}
 
 	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
