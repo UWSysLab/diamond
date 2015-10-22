@@ -51,6 +51,9 @@ void pubsubAsync(uv_async_t *handle);
 void pubsubAsync(uv_async_t *handle, int v);
 #endif
 
+static bool redisWaitEnabled = true;
+static int redisWaitReplicas = 0;
+static int redisWaitTimeout = 0;
 
 Cloud::Cloud(const string &server)
 {
@@ -348,6 +351,10 @@ Cloud::Write(const string &key, const string &value)
 {
     redisReply *reply;
 
+    if(redisWaitEnabled){
+        return WriteWait(key, value);
+    }
+
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
@@ -386,6 +393,11 @@ Cloud::MultiWriteExec(std::map<string, string >& keyValues)
         redisAppendCommand(context, "SET %s %s", key.c_str(), value.c_str());
     }
     redisAppendCommand(context,  "EXEC");
+
+    if(redisWaitEnabled){
+        redisAppendCommand(context,  "WAIT %d %d", redisWaitReplicas, redisWaitTimeout);
+    }
+
     LOG_REPLY("MULTIWRITE-EXEC BATCH", reply);
 
 
@@ -409,16 +421,26 @@ Cloud::MultiWriteExec(std::map<string, string >& keyValues)
     if (reply == NULL) {
         Panic("reply == null");
     }
+    
+    int res;
 
     if(reply->type == REDIS_REPLY_NIL){
         // Transaction failed
-        freeReplyObject(reply);
-        return ERR_EMPTY;
+        res = ERR_EMPTY;
+    }else{
+        // Transaction succeded
+        res = ERR_OK;
     }
-
-    // Transaction succeded
     freeReplyObject(reply);
-    return ERR_OK;
+
+    if(redisWaitEnabled){
+        redisGetReply(context,(void **)&reply); // reply for EXECs
+        if (reply == NULL) {
+            Panic("reply == null");
+        }
+        freeReplyObject(reply);
+    }
+    return res;
 }
 
 
@@ -559,6 +581,11 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
 {
     redisReply *reply;
 
+    if(redisWaitEnabled){
+        assert(write_cond == WRITE_ALWAYS);
+        return WriteWait(key, value);
+    }
+
     if (!_connected) {
         return ERR_UNAVAILABLE;
     }
@@ -603,6 +630,59 @@ Cloud::Write(const string &key, const string &value, int write_cond, long expire
     }
 }
 
+
+int 
+Cloud::WriteWait(const std::string &key, const std::string &value)
+{
+    assert(redisWaitEnabled);
+
+    redisReply *reply;
+
+    if (!_connected) {
+        return ERR_UNAVAILABLE;
+    }
+    redisContext* context = GetRedisContext();    
+
+    // Send the requests
+    LOG_REQUEST("WRITE-WAIT BATCH", "");
+    redisAppendCommand(context, "SET %s %d", key.c_str(), value.c_str());
+    redisAppendCommand(context, "WAIT %d %d", redisWaitReplicas, redisWaitTimeout);
+    LOG_REPLY("WRITE-WAIT BATCH", reply);
+
+
+    // Get the replies
+
+    redisGetReply(context,(void **)&reply); // reply for PUT
+
+    if (reply == NULL){
+        Panic("reply == null");
+    }
+
+    int res;
+    if (reply->type != REDIS_REPLY_NIL){
+        res = ERR_OK;
+    }else{
+        Panic("Unable to read");
+    }
+    freeReplyObject(reply);
+
+
+    redisGetReply(context,(void **)&reply); // reply for WATCH
+    if (reply == NULL) {
+        Panic("reply == null");
+    }
+    freeReplyObject(reply);
+
+    return res;
+}
+
+
+void
+Cloud::RedisWaitSet(bool enable, int replicas, int timeout){
+    redisWaitEnabled = enable;
+    redisWaitReplicas = replicas;
+    redisWaitTimeout = timeout;
+}
 
 int 
 Cloud::RunOnServer(const string &script, const string &resource, const string &value)
