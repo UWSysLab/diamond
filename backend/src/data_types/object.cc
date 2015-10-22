@@ -1069,6 +1069,14 @@ DObject::GetKey(){
     return _key;
 }
 
+
+void
+DObject::SetGlobalRedisWait(bool enable, int replicas, int timeout)
+{
+    cloudstore->RedisWaitSet(enable, replicas, timeout);
+}
+
+
 void
 DObject::DebugSleep(long seconds){
     Notice("Sleeping for %ld seconds\n", seconds);

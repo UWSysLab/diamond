@@ -94,6 +94,10 @@ public:
     int MultiWatchRead(const std::vector<std::string> & keys, std::vector<std::string> & values);
     int MultiWatchRead(const std::vector<std::string> & keys, std::vector<std::string> & values, std::vector<bool>& exist);
 
+    int WriteWait(const std::string &key, const std::string &value);
+
+    // Enable the wait request after writes 
+    void RedisWaitSet(bool enable, int replicas, int timeout);
 
     redisContext* GetRedisContext();
 
