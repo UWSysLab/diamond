@@ -136,19 +136,16 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		
 		boolean retweeted = false;
 		//add the retweet message in case it is a retweet
-		if (tweet.getRetweetedBy() != null) {
-			String retweeted_by = tweet.getRetweetedBy();
-			
-			if (retweeted_by != null) {
-				holder.textRetweeted_by.setText(context.getString(R.string.retweeted_by) + " " + retweeted_by);		
-				holder.textRetweeted_by.setVisibility(View.VISIBLE);	
-				retweeted = true;
-			}
-			else {
-				
-				holder.textRetweeted_by.setVisibility(View.GONE);		
-			}
-		}		
+		String retweeted_by = tweet.getRetweetedBy();
+		if (!retweeted_by.equals("")) {
+			holder.textRetweeted_by.setText(context.getString(R.string.retweeted_by) + " " + retweeted_by);		
+			holder.textRetweeted_by.setVisibility(View.VISIBLE);	
+			retweeted = true;
+		}
+		else {
+
+			holder.textRetweeted_by.setVisibility(View.GONE);		
+		}
 		
 		//long disId = cursor.getLong(cursor.getColumnIndex(Tweets.COL_DISASTERID));	
 		
