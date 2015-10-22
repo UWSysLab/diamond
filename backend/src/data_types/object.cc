@@ -972,7 +972,6 @@ DObject::TransactionOptionPrefetchAuto(bool enable)
     ts->optionLearnPrefetchSet = enable;
 }
 
-
 void 
 DObject::PrefetchGlobalAddSet(set<DObject*> &prefetchSet)
 {
@@ -980,6 +979,15 @@ DObject::PrefetchGlobalAddSet(set<DObject*> &prefetchSet)
     PrefetchGlobalAddSet(keysPrefetchSet);
 }
 
+void 
+DObject::PrefetchGlobalAddSet(vector<string> &prefetchSet)
+{
+    set<string> pfSet;
+    for (auto it = prefetchSet.begin(); it != prefetchSet.end(); it++) {
+        pfSet.insert(*it);
+    }
+    PrefetchGlobalAddSet(pfSet);
+}
 
 void 
 DObject::PrefetchGlobalAddSet(set<string> &prefetchSet){
