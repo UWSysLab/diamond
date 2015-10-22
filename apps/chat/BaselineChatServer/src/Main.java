@@ -94,7 +94,7 @@ public class Main {
 		
 		HttpServer server = null;
 		
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
+		JedisPool pool = new JedisPool(new JedisPoolConfig(), "moranis.cs.washington.edu");
 		Jedis jedis = null;
 		
 		try {
