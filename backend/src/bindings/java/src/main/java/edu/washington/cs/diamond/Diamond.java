@@ -27,6 +27,7 @@ public class Diamond {
         int start;
         int end;
         boolean mapWholeList;
+        String key; // key of keyList
 
         public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch, int rangeStart, int rangeEnd) {
             this(key, f, c, prefetch);
@@ -35,7 +36,8 @@ public class Diamond {
             mapWholeList = false;
         }
 
-        public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch) {
+        public MappedObjectList(String inKey, MapObjectFunction f, Class c, boolean prefetch) {
+            key = inKey;
             keyList = new DStringList();
             DObject.Map(keyList, key);
             func = f;
@@ -62,7 +64,10 @@ public class Diamond {
                 }
             }
 
-            keyVector.resize(diamondFieldNames.size() * members.size());
+            keyVector.resize(diamondFieldNames.size() * members.size() + 1);
+
+            keyVector.put(svIndex, key);
+            svIndex++;
 
             for (int i = 0; i < members.size(); i++) {
                 String objKey = members.get(i);
