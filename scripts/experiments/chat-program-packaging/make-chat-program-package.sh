@@ -15,4 +15,4 @@ cp baseline-server-package-wrapper.sh chat-program-package/baseline-server
 
 tar cf chat-program-package.tar chat-program-package
 gzip chat-program-package.tar
-rm -r chat-program-package
+rm -rf chat-program-package
