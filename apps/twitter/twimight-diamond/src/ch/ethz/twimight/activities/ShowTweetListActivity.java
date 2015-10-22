@@ -271,92 +271,71 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	}
 	
-	public static void doBenchmark(Context c) {
-		final long TOTAL_REPS = 200;
-		final long WARMUP_REPS = 20;
-		//String uid = LoginActivity.getTwitterId(c);
-		String uid = "3";
-		String timelineKey = "twitter:uid:" + uid + ":timeline";
-		
-		//JVM warmup
-		for (int rep = 0; rep < WARMUP_REPS; rep++) {
-			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, false);
-			for (int i = 0; i < tweetList.Size(); i++) {
-				DiamondTweet tweet = tweetList.Get(i);
-				int committed = 0;
-				while (committed == 0) {
-					Diamond.DObject.TransactionBegin();
-					String tweetText = tweet.text.Value();
-					String screenname = tweet.screenname.Value();
-					long createdAt = tweet.createdAt.Value();
-					long userId = tweet.userid.Value();
-					String retweetedBy = tweet.retweetedBy.Value();
-					long numMentions = tweet.numMentions.Value();
-					committed = Diamond.DObject.TransactionCommit();
-				}
-			}
-		}
-		
-		//Non-prefetching reads
+	private static void benchmarkHelper(String timelineKey, int numReps, boolean prefetch, String outputPrefix) {
 		double totalTime = 0;
-		for (int rep = 0; rep < TOTAL_REPS; rep++) {
+		for (int rep = 0; rep < numReps; rep++) {
 			long startTime = System.nanoTime();
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, false, 0, 9);
+					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, prefetch, 0, 9);
 			for (int i = 0; i < tweetList.Size(); i++) {
 				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
+				String tweetText= null;
+				String screenname = null;
+				long createdAt = 0;
+				long userId = 0;
+				String retweetedBy = null;
+				long numMentions = 0;
 				while (committed == 0) {
 					Diamond.DObject.TransactionBegin();
-					String tweetText = tweet.text.Value();
-					String screenname = tweet.screenname.Value();
-					long createdAt = tweet.createdAt.Value();
-					long userId = tweet.userid.Value();
-					String retweetedBy = tweet.retweetedBy.Value();
-					long numMentions = tweet.numMentions.Value();
+					tweetText = tweet.text.Value();
+					screenname = tweet.screenname.Value();
+					createdAt = tweet.createdAt.Value();
+					userId = tweet.userid.Value();
+					retweetedBy = tweet.retweetedBy.Value();
+					numMentions = tweet.numMentions.Value();
 					committed = Diamond.DObject.TransactionCommit();
+				}
+				if (i == 0 && !tweetText.equals("Old James Bond movies are better")) {
+					Log.e("BENCHMARK", "Error: sanity check failed: string is " + tweetText);
 				}
 			}
 			long endTime = System.nanoTime();
 			double time = ((double)(endTime - startTime))/(1000 * 1000);
 			totalTime += time;
-			Log.i("BENCHMARK", "Diamond timeline read time: " + time);
-		}
-		double avgLatency = totalTime / TOTAL_REPS;
-		Log.i("BENCHMARK", "Diamond timeline average read latency: " + avgLatency + " reps: " + TOTAL_REPS);
-		
-		//Prefetching reads
-		Diamond.DObject.SetGlobalStaleness(true);
-		Diamond.DObject.SetGlobalMaxStaleness(200);
-		double prefetchTotalTime = 0;
-		for (int rep = 0; rep < TOTAL_REPS; rep++) {
-			long startTime = System.nanoTime();
-			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
-					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, true, 0, 9);
-			for (int i = 0; i < tweetList.Size(); i++) {
-				int committed = 0;
-				while (committed == 0) {
-					Diamond.DObject.TransactionBegin();
-					DiamondTweet tweet = tweetList.Get(i);
-					String tweetText = tweet.text.Value();
-					String screenname = tweet.screenname.Value();
-					long createdAt = tweet.createdAt.Value();
-					long userId = tweet.userid.Value();
-					String retweetedBy = tweet.retweetedBy.Value();
-					long numMentions = tweet.numMentions.Value();
-					committed = Diamond.DObject.TransactionCommit();
-				}
+			if (outputPrefix != null) {
+				Log.i("BENCHMARK", outputPrefix + " timeline read time: " + time);
 			}
-			long endTime = System.nanoTime();
-			double time = ((double)(endTime - startTime))/(1000 * 1000);
-			prefetchTotalTime += time;
-			Log.i("BENCHMARK", "Prefetch timeline read time: " + time);
 			
 			try { Thread.sleep(1000); } catch(InterruptedException e) {}
 		}
-		double prefetchAvgLatency = prefetchTotalTime / TOTAL_REPS;
-		Log.i("BENCHMARK", "Prefetch timeline average read latency: " + prefetchAvgLatency + " reps: " + TOTAL_REPS);
+		double avgLatency = totalTime / numReps;
+		if (outputPrefix != null) {
+			Log.i("BENCHMARK", outputPrefix + " timeline average read latency: " + avgLatency + " reps: " + numReps);
+		}
+	}
+	
+	public static void doBenchmark(Context c) {
+		final int TOTAL_REPS = 10;
+		final int WARMUP_REPS = 1;
+		//String uid = LoginActivity.getTwitterId(c);
+		String uid = "3";
+		String timelineKey = "twitter:uid:" + uid + ":timeline";
+		
+		//JVM warmup
+		benchmarkHelper(timelineKey, WARMUP_REPS, false, null);
+		
+		//Non-prefetching reads
+		benchmarkHelper(timelineKey, TOTAL_REPS, false, "Diamond");
+		
+		//Prefetching reads
+		benchmarkHelper(timelineKey, TOTAL_REPS, true, "Prefetch");
+		
+		//Prefetching and stale reads
+		Diamond.DObject.SetGlobalStaleness(true);
+		Diamond.DObject.SetGlobalMaxStaleness(200);
+		//Diamond.DObject.DebugMultiMapIndividualSet(true);
+		benchmarkHelper(timelineKey, TOTAL_REPS, true, "Prefetchstale");
 		
 		Log.i("BENCHMARK", "Done with Diamond experiment");
 	}
