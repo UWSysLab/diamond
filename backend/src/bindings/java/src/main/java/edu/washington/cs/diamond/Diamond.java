@@ -28,14 +28,14 @@ public class Diamond {
         int end;
         boolean mapWholeList;
 
-        public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
-            this(key, f, c);
+        public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch, int rangeStart, int rangeEnd) {
+            this(key, f, c, prefetch);
             start = rangeStart;
             end = rangeEnd;
             mapWholeList = false;
         }
 
-        public MappedObjectList(String key, MapObjectFunction f, Class c) {
+        public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch) {
             keyList = new DStringList();
             DObject.Map(keyList, key);
             func = f;
@@ -43,6 +43,9 @@ public class Diamond {
             start = 0;
             end = keyList.Size();
             mapWholeList = true;
+            if (prefetch) {
+                prefetchItems();
+            }
         }
 
         public void prefetchItems() {
