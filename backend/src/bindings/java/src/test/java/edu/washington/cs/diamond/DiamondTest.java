@@ -259,13 +259,14 @@ public class DiamondTest
         String key = "javatest:objectlist";
         Diamond.DStringList keyList = new Diamond.DStringList();
         Diamond.DObject.Map(keyList, key);
+        keyList.Clear();
         keyList.Append("testobjectA");
         keyList.Append("testobjectB");
         keyList.Append("testobjectC");
 
         // Set objects A and B
         Diamond.MappedObjectList<TestObject> objList1 = 
-            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 0, 2);
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, false, 0, 2);
         TestObject testObjA1 = objList1.Get(0);
         TestObject testObjB1 = objList1.Get(1);
 
@@ -283,7 +284,7 @@ public class DiamondTest
 
         // Read object B and set object C
         Diamond.MappedObjectList<TestObject> objList2 = 
-            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 1, 3);
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, false, 1, 3);
         TestObject testObjB2 = objList2.Get(0);
         TestObject testObjC2 = objList2.Get(1);
 
@@ -298,7 +299,7 @@ public class DiamondTest
 
         // Read objects A, B, and C
         Diamond.MappedObjectList<TestObject> objList3 = 
-            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, 0, 3);
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, false, 0, 3);
         TestObject testObjA3 = objList3.Get(0);
         TestObject testObjB3 = objList3.Get(1);
         TestObject testObjC3 = objList3.Get(2);
@@ -310,6 +311,53 @@ public class DiamondTest
         assert(testObjC3.dstr.Value().equals("testC"));
         assert(testObjC3.dl.Value() == 18);
         assert(objList3.Size() == 3);
+    }
+
+    // This test is just a basic sanity check and should not be used as an example of anything
+    public void testPrefetchMapObjectRange() {
+        String key = "javatest:prefetch:objectlist";
+        Diamond.DStringList keyList = new Diamond.DStringList();
+        Diamond.DObject.Map(keyList, key);
+        keyList.Clear();
+        keyList.Append("testobjectA");
+        keyList.Append("testobjectB");
+        keyList.Append("testobjectC");
+
+        // Set objects A and B
+        Diamond.MappedObjectList<TestObject> objList1 = 
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, true, 0, 2);
+        TestObject testObjA1 = objList1.Get(0);
+        TestObject testObjB1 = objList1.Get(1);
+
+        testObjA1.dstr.Set("testA");
+        testObjA1.dl.Set(16);
+        testObjB1.dstr.Set("testB");
+        testObjB1.dl.Set(17);
+
+        Diamond.MappedObjectList<TestObject> objList2 = 
+            new Diamond.MappedObjectList<TestObject>(key, new TestObjectFunction(), TestObject.class, true);
+        TestObject testObjA2 = objList2.Get(0);
+        TestObject testObjB2 = objList2.Get(1);
+
+        int committed = 0;
+        String a2str = null;
+        long a2l = 0;
+        String b2str = null;
+        long b2l = 0;
+        while (committed == 0) {
+            Diamond.DObject.TransactionBegin();
+            a2str = testObjA2.dstr.Value();
+            a2l = testObjA2.dl.Value();
+            b2str = testObjB2.dstr.Value();
+            b2l = testObjB2.dl.Value();
+            committed = Diamond.DObject.TransactionCommit();
+        }
+
+        assert(a2str.equals("testA"));
+        assert(a2l == 16);
+        assert(b2str.equals("testB"));
+        assert(b2l == 17);
+        assert(objList2.Size() == 3);
     }
 
 //    class TransactionTestRunnable implements Runnable {

@@ -28,14 +28,14 @@ public class Diamond {
         int end;
         boolean mapWholeList;
 
-        public MappedObjectList(String key, MapObjectFunction f, Class c, int rangeStart, int rangeEnd) {
-            this(key, f, c);
+        public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch, int rangeStart, int rangeEnd) {
+            this(key, f, c, prefetch);
             start = rangeStart;
             end = rangeEnd;
             mapWholeList = false;
         }
 
-        public MappedObjectList(String key, MapObjectFunction f, Class c) {
+        public MappedObjectList(String key, MapObjectFunction f, Class c, boolean prefetch) {
             keyList = new DStringList();
             DObject.Map(keyList, key);
             func = f;
@@ -43,6 +43,38 @@ public class Diamond {
             start = 0;
             end = keyList.Size();
             mapWholeList = true;
+            if (prefetch) {
+                prefetchItems();
+            }
+        }
+
+        public void prefetchItems() {
+            List<String> members = keyList.Members();
+            DiamondUtil.StringVector keyVector = new DiamondUtil.StringVector();
+            int svIndex = 0;
+
+            List<String> diamondFieldNames = new ArrayList<String>();
+            Field[] fields = objClass.getDeclaredFields();
+            for (int i = 0; i < fields.length; i++) {
+                Field curField = fields[i];
+                if (isDiamondType(curField)) {
+                    diamondFieldNames.add(curField.getName());
+                }
+            }
+
+            keyVector.resize(diamondFieldNames.size() * members.size());
+
+            for (int i = 0; i < members.size(); i++) {
+                String objKey = members.get(i);
+                for (int j = 0; j < diamondFieldNames.size(); j++) {
+                    String fieldName = diamondFieldNames.get(j);
+                    String dObjectKey = func.function(objKey, fieldName);
+                    keyVector.put(svIndex, dObjectKey);
+                    svIndex++;
+                }
+            }
+
+            DObject.PrefetchGlobalAddSet(keyVector);
         }
 
         public int Size() {
@@ -99,6 +131,7 @@ public class Diamond {
             || f.getType().equals(Diamond.DLong.class)
             || f.getType().equals(Diamond.DCounter.class)
             || f.getType().equals(Diamond.DSet.class)
+            || f.getType().equals(Diamond.DStringSet.class)
             || f.getType().equals(Diamond.DStringList.class)
             || f.getType().equals(Diamond.DList.class)) {
             return true;
@@ -151,6 +184,8 @@ public class Diamond {
         public static native void TransactionRetry();
 
         public static native void TransactionOptionPrefetch(@ByRef DiamondUtil.DObjectVector txPrefetch);
+
+        public static native void PrefetchGlobalAddSet(@ByRef DiamondUtil.StringVector prefetchSet);
 
         public static native void SetGlobalStaleness(boolean enable);
         public static native void SetGlobalMaxStaleness(long maxStalenessMs);
