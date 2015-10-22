@@ -327,25 +327,18 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		Log.i("BENCHMARK", "Diamond timeline average read latency: " + avgLatency + " reps: " + TOTAL_REPS);
 		
 		//Prefetching reads
+		Diamond.DObject.SetGlobalStaleness(true);
+		Diamond.DObject.SetGlobalMaxStaleness(200);
 		double prefetchTotalTime = 0;
 		for (int rep = 0; rep < TOTAL_REPS; rep++) {
 			long startTime = System.nanoTime();
 			Diamond.MappedObjectList<DiamondTweet> tweetList = new Diamond.MappedObjectList<DiamondTweet>(timelineKey,
 					new Diamond.DefaultMapObjectFunction(), DiamondTweet.class, true, 0, 9);
 			for (int i = 0; i < tweetList.Size(); i++) {
-				DiamondTweet tweet = tweetList.Get(i);
 				int committed = 0;
 				while (committed == 0) {
 					Diamond.DObject.TransactionBegin();
-					DiamondUtil.DObjectVector objVector = new DiamondUtil.DObjectVector();
-					objVector.resize(6);
-					objVector.put(0, tweet.text);
-					objVector.put(1, tweet.screenname);
-					objVector.put(2, tweet.createdAt);
-					objVector.put(3, tweet.userid);
-					objVector.put(4, tweet.retweetedBy);
-					objVector.put(5, tweet.numMentions);
-					Diamond.DObject.TransactionOptionPrefetch(objVector);
+					DiamondTweet tweet = tweetList.Get(i);
 					String tweetText = tweet.text.Value();
 					String screenname = tweet.screenname.Value();
 					long createdAt = tweet.createdAt.Value();
@@ -359,6 +352,8 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			double time = ((double)(endTime - startTime))/(1000 * 1000);
 			prefetchTotalTime += time;
 			Log.i("BENCHMARK", "Prefetch timeline read time: " + time);
+			
+			try { Thread.sleep(1000); } catch(InterruptedException e) {}
 		}
 		double prefetchAvgLatency = prefetchTotalTime / TOTAL_REPS;
 		Log.i("BENCHMARK", "Prefetch timeline average read latency: " + prefetchAvgLatency + " reps: " + TOTAL_REPS);
