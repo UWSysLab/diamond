@@ -4,14 +4,17 @@ use warnings;
 use strict;
 
 my $time = 5;
+my $slopTime = 2;
 my $warmupTimeMs = 1000;
-my $maxClients = 20;
+my $maxClients = 40;
+my $numClientsStep = 5;
 my $readFraction = 0.9;
 
 my $dir = "desktopchat-throughput";
 my $prefix = "$dir/run";
 
-my $server = "localhost";
+my $diamondServer = "moranis.cs.washington.edu";
+my $baselineServer = "localhost";
 
 my $concurrency = "transaction";
 my $staleness = "nostale";
@@ -19,6 +22,8 @@ my $stalelimit = "0";
 my $log = "$dir/nostale-log.txt";
 my $throughputFile = "$dir/nostale-results.txt";
 my $abortRateFile = "$dir/nostale-abortrate.txt";
+
+checkBaselineServers();
 
 doExperiment();
 parseThroughputs();
@@ -40,6 +45,15 @@ $throughputFile = "$dir/baseline-results.txt";
 doBaselineExperiment();
 parseThroughputs();
 
+sub checkBaselineServers {
+    my $pids = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
+    my @pids = split(/\s+/, $pids);
+    my $numServers = scalar(@pids);
+    if ($numServers > 0) {
+        die "Error: some baseline chat servers from the last round are still alive";
+    }
+}
+
 sub parseThroughputs {
     system("cat $log | awk '
         BEGIN { print \"clients\tthroughput\" }
@@ -57,19 +71,19 @@ sub parseAbortRates {
 
 sub doExperiment {
     # fill chat log
-    system("./desktop-chat-wrapper.sh fixed 200 0.0 transaction concise $server filler throughputroom nostale 0 0");
+    system("./desktop-chat-wrapper.sh fixed 200 0.0 transaction concise $diamondServer filler throughputroom nostale 0 0");
 
     open(FILE, "> $log");
-    for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
+    for (my $numClients = $numClientsStep; $numClients <= $maxClients; $numClients += $numClientsStep) {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $server client$i throughputroom $staleness $stalelimit $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $diamondServer client$i throughputroom $staleness $stalelimit $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + ($warmupTimeMs / 1000) + 1);
+        sleep($time + ($warmupTimeMs / 1000) + $slopTime);
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
@@ -119,20 +133,20 @@ sub doBaselineExperiment {
     sleep(1);
 
     # fill chat log
-    system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $server 9000 filler 0");
+    system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $baselineServer 9000 filler 0");
 
     open(FILE, "> $log");
-    for (my $numClients = 1; $numClients < $maxClients; $numClients++) {
+    for (my $numClients = $numClientsStep; $numClients <= $maxClients; $numClients += $numClientsStep) {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
             my $port = 9000 + $i % 4;
-            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $server $port client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
+            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $baselineServer $port client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
-        sleep($time + ($warmupTimeMs / 1000) + 1);
+        sleep($time + ($warmupTimeMs / 1000) + $slopTime);
 
         my $totalNumActions = 0;
         my $abortRateSum = 0;
