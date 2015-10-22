@@ -42,6 +42,7 @@ import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
 import ch.ethz.twimight.data.HtmlPagesDbHelper;
 import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DObject;
 
 
 
@@ -120,23 +121,41 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		
 		DiamondTweet tweet = objects.Get(position);
 		
+		long createdAt = 0;
+		String retweeted_by = null;
+		String tweetText = null;
+		long userid = 0;
+		long mentions = 0;
+		String screenname = null;
+		
+		int committed = 0;
+		while (committed == 0) {
+			DObject.TransactionBegin();
+			createdAt = tweet.getCreatedAt();
+			retweeted_by = tweet.getRetweetedBy();
+			tweetText = tweet.getText();
+			userid = tweet.getUserId();
+			mentions = tweet.getMentions();
+			screenname = tweet.getScreenname();
+			committed = DObject.TransactionCommit();
+		}
+		
 		// if we don't have a real name, we use the screen name
 		//if(tweet.name==null){			
-			holder.usernameTextView.setText("@" + tweet.getScreenname());
+			holder.usernameTextView.setText("@" + screenname);
 		//}
-		
-		long createdAt = tweet.getCreatedAt();
+
+
 		
 		holder.textCreatedAt.setText(DateUtils.getRelativeTimeSpanString(createdAt));		
 		// here, we don't want the entities to be clickable, so we use the standard tag handler
 		
 		
-		holder.tweetText.setText(tweet.getText());
+		holder.tweetText.setText(tweetText);
 		//Log.i(TAG, "text: " + cursor.getString(cursor.getColumnIndex(Tweets.COL_TEXT_PLAIN)));
 		
 		boolean retweeted = false;
 		//add the retweet message in case it is a retweet
-		String retweeted_by = tweet.getRetweetedBy();
 		if (!retweeted_by.equals("")) {
 			holder.textRetweeted_by.setText(context.getString(R.string.retweeted_by) + " " + retweeted_by);		
 			holder.textRetweeted_by.setVisibility(View.VISIBLE);	
@@ -226,11 +245,11 @@ public class DiamondTweetAdapter extends BaseAdapter {
 		boolean favorited = (( (buffer & Tweets.BUFFER_FAVORITES) != 0) 
 								&& ((flags & Tweets.FLAG_TO_UNFAVORITE)==0))
 								|| ((flags & Tweets.FLAG_TO_FAVORITE)>0);*/
-		if(tweet.getToFavorite()){
-			holder.favoriteStar.setVisibility(ImageView.VISIBLE);
-		} else {
+		//if(tweet.getToFavorite()){
+		//	holder.favoriteStar.setVisibility(ImageView.VISIBLE);
+		//} else {
 			holder.favoriteStar.setVisibility(ImageView.GONE);
-		}
+		//}
 		
 		
 		// disaster info		
@@ -244,12 +263,12 @@ public class DiamondTweetAdapter extends BaseAdapter {
 			} else {
 				holder.verifiedImage.setImageResource(android.R.drawable.ic_partial_secure);
 			}
-		} else*/ if(Long.toString(tweet.getUserId()).equals(LoginActivity.getTwitterId(context))) {
+		} else*/ if(Long.toString(userid).equals(LoginActivity.getTwitterId(context))) {
 			
 			holder.rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);
 			
-		} else if(tweet.getMentions() > 0){
+		} else if(mentions > 0){
 			
 			holder.rowLayout.setBackgroundResource(R.drawable.mention_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);			
