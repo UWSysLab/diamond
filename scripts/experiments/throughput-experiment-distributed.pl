@@ -16,8 +16,8 @@ my $prefix = "$dir/run";
 my $diamondServer = "moranis.cs.washington.edu";
 
 my @baselineServers = ("spyhunter.cs.washington.edu", "breakout.cs.washington.edu", "tradewars.cs.washington.edu", "zork.cs.washington.edu");
-my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu", "mandel.cs.washington.edu", "thompson.cs.washington.edu",
-                      "toronto.cs.washington.edu", "short.cs.washington.edu", "chong.cs.washington.edu", "foley.cs.washington.edu");
+my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu",
+                      "tetris.cs.washington.edu", "charlottetown.cs.washington.edu", "nethack.cs.washington.edu");
 my $SERVERS_PER_MACHINE = 8;
 
 my $concurrency = "transaction";
