@@ -115,6 +115,8 @@ sub doExperiment {
             system("ssh $clientMachine \"research/chat-program-package/diamond-client/diamond-client-package-wrapper.sh timed $time $readFraction $concurrency concise $diamondServer client$i throughputroom $staleness $stalelimit $warmupTimeMs research/chat-program-package\" > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
+        sleep(1);
+
         my $done = 0;
         my $startTime = time();
         while (!$done) {
