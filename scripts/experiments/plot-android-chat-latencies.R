@@ -99,7 +99,7 @@ pdf("android-chat-latency-readers.pdf")
 
 ggplot(readerBarGraphData, aes(x=readerClient, y=readerAvgLatency, fill=readerClient)) +
     geom_bar(stat="identity") +
-    coord_cartesian() +
+    coord_cartesian(ylim = c(-2, 35)) +
     labs(y = "Latency (ms)") +
     theme_bw() +
     theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
@@ -111,7 +111,7 @@ pdf("android-chat-latency-writers.pdf")
 
 ggplot(writerBarGraphData, aes(x=writerClient, y=writerAvgLatency, fill=writerClient)) +
     geom_bar(stat="identity") +
-    coord_cartesian() +
+    coord_cartesian(ylim = c(-2, 35)) +
     labs(y = "Latency (ms)") +
     theme_bw() +
     theme(legend.title = element_blank(), axis.title.x = element_blank(), axis.text = element_text(size=22), axis.title = element_text(size=26)) +
