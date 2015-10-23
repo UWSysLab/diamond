@@ -7,6 +7,7 @@ my $time = 5;
 my $warmupTimeMs = 5000;
 my $maxClients = 40;
 my $numClientsStep = 5;
+my $startingNumClients = 5;
 my $readFraction = 0.9;
 
 my $dir = "desktopchat-throughput";
@@ -86,7 +87,7 @@ sub doExperiment {
     system("./desktop-chat-wrapper.sh fixed 200 0.0 transaction concise $diamondServer filler throughputroom nostale 0 0");
 
     open(FILE, "> $log");
-    for (my $numClients = $numClientsStep; $numClients <= $maxClients; $numClients += $numClientsStep) {
+    for (my $numClients = $startingNumClients; $numClients <= $maxClients; $numClients += $numClientsStep) {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
@@ -156,7 +157,7 @@ sub doBaselineExperiment {
     system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $baselineServer 9000 filler 0");
 
     open(FILE, "> $log");
-    for (my $numClients = $numClientsStep; $numClients <= $maxClients; $numClients += $numClientsStep) {
+    for (my $numClients = $startingNumClients; $numClients <= $maxClients; $numClients += $numClientsStep) {
         print("Experiment: $log Clients: $numClients\n");
 
         system("rm $prefix.*");
