@@ -5,9 +5,9 @@ use strict;
 
 my $time = 5;
 my $warmupTimeMs = 5000;
-my $maxClients = 40;
+my $maxClients = 11;
 my $numClientsStep = 5;
-my $startingNumClients = 5;
+my $startingNumClients = 10;
 my $readFraction = 0.9;
 
 my $dir = "desktopchat-throughput";
@@ -16,6 +16,7 @@ my $prefix = "$dir/run";
 my $diamondServer = "moranis.cs.washington.edu";
 
 my $baselineServer = "spyhunter.cs.washington.edu";
+my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu");
 
 my $concurrency = "transaction";
 my $staleness = "nostale";
@@ -26,9 +27,9 @@ my $abortRateFile = "$dir/nostale-abortrate.txt";
 
 checkBaselineServers();
 
-doExperiment();
-parseThroughputs();
-parseAbortRates();
+#doExperiment();
+#parseThroughputs();
+#parseAbortRates();
 
 $staleness = "stale";
 $stalelimit = "100";
@@ -36,9 +37,9 @@ $log = "$dir/stale-log.txt";
 $throughputFile = "$dir/stale-results.txt";
 $abortRateFile = "$dir/stale-abortrate.txt";
 
-doExperiment();
-parseThroughputs();
-parseAbortRates();
+#doExperiment();
+#parseThroughputs();
+#parseAbortRates();
 
 $log = "$dir/baseline-log.txt";
 $throughputFile = "$dir/baseline-results.txt";
@@ -56,15 +57,32 @@ sub checkBaselineServers {
 }
 
 sub getNumDiamondClients {
-    my $pids = `ps aux | grep -v grep | grep DesktopChatClient | awk '{ print \$2 }'`;
-    my @pids = split(/\s+/, $pids);
-    return scalar(@pids);
+    my $total = 0;
+    for my $machine (@clientMachines) {
+        my $pids = `ssh $machine ps aux | grep -v grep | grep DesktopChatClient | awk '{ print \$2 }'`;
+        my @pids = split(/\s+/, $pids);
+        $total = $total + @pids;
+    }
+    print("Total num Diamond clients running: $total\n");
+    return $total;
 }
 
 sub getNumBaselineClients {
-    my $pids = `ps aux | grep -v grep | grep BaselineChatClient | awk '{ print \$2 }'`;
+    my $total = 0;
+    for my $machine (@clientMachines) {
+        my $pids = `ssh $machine ps aux | grep -v grep | grep BaselineChatClient | awk '{ print \$2 }'`;
+        my @pids = split(/\s+/, $pids);
+        $total = $total + @pids;
+    }
+    return $total;
+}
+
+sub killBaselineServers {
+    my $pids = `ssh $baselineServer ps aux | grep baseline-server | grep java | awk '{print \$2}'`;
     my @pids = split(/\s+/, $pids);
-    return scalar(@pids);
+    for my $pid (@pids) {
+        system("ssh $baselineServer kill $pid");
+    }
 }
 
 sub parseThroughputs {
@@ -151,10 +169,10 @@ sub doBaselineExperiment {
     system("ssh $baselineServer /homes/sys/nl35/research/chat-program-package/baseline-server/baseline-server-package-wrapper.sh 9002 /homes/sys/nl35/research/chat-program-package &");
     system("ssh $baselineServer /homes/sys/nl35/research/chat-program-package/baseline-server/baseline-server-package-wrapper.sh 9003 /homes/sys/nl35/research/chat-program-package &");
 
-    sleep(5);
+    sleep(1);
 
     # fill chat log
-    system("./baseline-chat-client-wrapper.sh fixed 200 0.0 concise $baselineServer 9000 filler 0");
+    system("ssh $clientMachines[0] research/chat-program-package/baseline-client/baseline-client-package-wrapper.sh fixed 200 0.0 concise $baselineServer 9000 filler 0 research/chat-program-package");
 
     open(FILE, "> $log");
     for (my $numClients = $startingNumClients; $numClients <= $maxClients; $numClients += $numClientsStep) {
@@ -164,8 +182,11 @@ sub doBaselineExperiment {
 
         for (my $i = 0; $i < $numClients; $i++) {
             my $port = 9000 + $i % 4;
-            system("./baseline-chat-client-wrapper.sh timed $time $readFraction concise $baselineServer $port client$i $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
+            my $clientMachine = @clientMachines[$i % scalar(@clientMachines)];
+            system("ssh $clientMachine \"research/chat-program-package/baseline-client/baseline-client-package-wrapper.sh timed $time $readFraction concise $baselineServer $port client$i $warmupTimeMs research/chat-program-package\" > $prefix.$i.log 2> $prefix.$i.error &");
         }
+
+        sleep(1);
 
         my $done = 0;
         my $startTime = time();
@@ -196,6 +217,7 @@ sub doBaselineExperiment {
             }
             close(LOG);
             if ($lines != 1) {
+                killBaselineServers();
                 die "Error: log file $i has $lines lines";
             }
         }
@@ -205,9 +227,5 @@ sub doBaselineExperiment {
     }
     close(FILE);
 
-    my $pids = `ssh $baselineServer ps aux | grep baseline-server | grep java | awk '{print \$2}'`;
-    my @pids = split(/\s+/, $pids);
-    for my $pid (@pids) {
-        system("ssh $baselineServer kill $pid");
-    }
+    killBaselineServers();
 }
