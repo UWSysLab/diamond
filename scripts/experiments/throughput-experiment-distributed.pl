@@ -5,9 +5,9 @@ use strict;
 
 my $time = 5;
 my $warmupTimeMs = 5000;
-my $startingNumClients = 5;
-my $maxClients = 40;
-my $numClientsStep = 5;
+my $startingNumClients = 10;
+my $maxClients = 70;
+my $numClientsStep = 10;
 my $readFraction = 0.9;
 
 my $dir = "desktopchat-throughput";
