@@ -123,16 +123,6 @@ public class JedisTwitter {
 		return result;
 	}
 
-	public JsonElement getHomeTimeline(String screenName) {
-		String uidString = jedis.get("user:" + screenName + ":uid");
-		JsonArray result = new JsonArray();
-		List<String> timelinePids = jedis.lrange("uid:" + uidString + ":timeline", 0, -1);
-		for (int i = 0; i < timelinePids.size(); i++) {
-			result.add(getTweet(Long.parseLong(timelinePids.get(i)), screenName));
-		}
-		return result;
-	}
-
 	public JsonElement getUserTimeline(long uid, boolean includeRetweets) {
 		List<String> pids = jedis.lrange("uid:" + uid + ":posts", 0, -1);
 		
@@ -140,20 +130,12 @@ public class JedisTwitter {
 		for (int i = 0; i < pids.size(); i++) {
 			boolean isRetweet = (jedis.hget("pid:" + i, "retweet") != null);
 			if (includeRetweets || !isRetweet) {
-				result.add(getTweet(Long.parseLong(pids.get(i)), null));
+				//result.add(getTweet(Long.parseLong(pids.get(i)), null));
+				long noOp; //NO-OP line for fair LOC comparison
 			}
 		}
 		
 		return result;
-	}
-
-	public JsonElement destroyFriendship(String screenName, long toUnfollowUid) {
-		String unfollowerUidString = jedis.get("user:" + screenName + ":uid");
-		
-		jedis.srem("uid:" + unfollowerUidString + ":following", String.valueOf(toUnfollowUid));
-		jedis.srem("uid:" + toUnfollowUid + ":followers", unfollowerUidString);
-		
-		return getUser(toUnfollowUid, screenName);
 	}
 
 	//Changed to Diamond
@@ -174,98 +156,98 @@ public class JedisTwitter {
 		return new JsonObject();
 	}
 
-	public JsonObject getUser(long uid, String authScreenName) {
-		String userKey = "uid:" + uid;
-		String name = jedis.hget(userKey, "name");
-		String screenName = jedis.hget(userKey, "screen_name");
-		
-		JsonObject user = new JsonObject();
-		user.add("id", new JsonPrimitive(uid));
-		user.add("id_str", new JsonPrimitive(String.valueOf(uid)));
-		user.add("screen_name", new JsonPrimitive(screenName));
-		user.add("name", new JsonPrimitive(name));
-		
-		user.add("friends_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":following")));
-		user.add("followers_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":followers")));
-		
-		if (authScreenName != null) {
-			String authUidString = jedis.get("user:" + authScreenName + ":uid");
-			if (authUidString != null) {
-				if (jedis.sismember("uid:" + authUidString + ":following", String.valueOf(uid))) {
-					user.add("following", new JsonPrimitive(true));
-				}
-			}
-		}
-		
-		return user;
-	}
+//	public JsonObject getUser(long uid, String authScreenName) {
+//		String userKey = "uid:" + uid;
+//		String name = jedis.hget(userKey, "name");
+//		String screenName = jedis.hget(userKey, "screen_name");
+//		
+//		JsonObject user = new JsonObject();
+//		user.add("id", new JsonPrimitive(uid));
+//		user.add("id_str", new JsonPrimitive(String.valueOf(uid)));
+//		user.add("screen_name", new JsonPrimitive(screenName));
+//		user.add("name", new JsonPrimitive(name));
+//		
+//		user.add("friends_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":following")));
+//		user.add("followers_count", new JsonPrimitive(jedis.scard("uid:" + uid + ":followers")));
+//		
+//		if (authScreenName != null) {
+//			String authUidString = jedis.get("user:" + authScreenName + ":uid");
+//			if (authUidString != null) {
+//				if (jedis.sismember("uid:" + authUidString + ":following", String.valueOf(uid))) {
+//					user.add("following", new JsonPrimitive(true));
+//				}
+//			}
+//		}
+//		
+//		return user;
+//	}
 	
-	public JsonObject getTweet(long pid, String authScreenName) {
-		String postKey = "pid:" + pid;
-		
-		String content = jedis.hget(postKey, "content");
-		String time = jedis.hget(postKey, "time");
-		int uid = Integer.parseInt(jedis.hget(postKey, "uid"));
-		JsonElement user = getUser(uid, authScreenName);
-
-		JsonObject tweet = new JsonObject();
-		tweet.add("text", new JsonPrimitive(content));
-		tweet.add("id", new JsonPrimitive(pid));
-		tweet.add("id_str", new JsonPrimitive(String.valueOf(pid)));
-		tweet.add("created_at", new JsonPrimitive(time));
-		tweet.add("user", user);
-		
-		String replyIdString = jedis.hget(postKey, "reply");
-		long replyPid = -1;
-		if (replyIdString != null) {
-			replyPid = Long.parseLong(replyIdString);
-		}
-		if (replyPid >= 1) {
-			String replyUidString = jedis.hget("pid:" + replyIdString, "uid");
-			long replyUid = Long.parseLong(replyUidString);
-			String replyScreenName = jedis.hget("uid:" + replyUidString, "screen_name");
-			
-			tweet.add("in_reply_to_screen_name", new JsonPrimitive(replyScreenName));
-			tweet.add("in_reply_to_status_id", new JsonPrimitive(replyPid));
-			tweet.add("in_reply_to_status_id_str", new JsonPrimitive(replyIdString));
-			tweet.add("in_reply_to_user_id", new JsonPrimitive(replyUid));
-			tweet.add("in_reply_to_user_id_str", new JsonPrimitive(replyUidString));
-		}
-		
-		//TODO: Make sure this recursive logic is correct
-		// The idea is that if we make sure a second-level retweet grabs the original tweet
-		// from the first-level retweet, an nth-level retweet will always be able to grab
-		// the original tweet from the (n-1)th-level retweet
-		
-		String retweetIdString = jedis.hget(postKey, "retweet");
-		if (retweetIdString != null) {
-			JsonObject originalTweet = getTweet(Long.parseLong(retweetIdString), authScreenName);
-			if (originalTweet.get("retweeted_status") != null) {
-				originalTweet = originalTweet.get("retweeted_status").getAsJsonObject();
-			}
-			tweet.add("retweeted_status", originalTweet);
-		}
-		
-		String retweeterSetKey = "pid:" + pid + ":retweeters";	
-		long numRetweets = jedis.scard(retweeterSetKey);
-		tweet.add("retweet_count", new JsonPrimitive(numRetweets));
-		
-		String favoriterSetKey = "pid:" + pid + ":favoriters";
-		long numFavorites = jedis.scard(favoriterSetKey);
-		tweet.add("favorite_count", new JsonPrimitive(numFavorites));
-		
-		String authUidString = jedis.get("user:" + authScreenName + ":uid");
-		boolean retweeted = false;
-		boolean favorited = false;
-		if (authUidString != null) {
-			retweeted = jedis.sismember(retweeterSetKey, authUidString);
-			favorited = jedis.sismember(favoriterSetKey, authUidString);
-		}
-		tweet.add("retweeted", new JsonPrimitive(retweeted));
-		tweet.add("favorited", new JsonPrimitive(favorited));
-
-		return tweet;
-	}
+//	public JsonObject getTweet(long pid, String authScreenName) {
+//		String postKey = "pid:" + pid;
+//		
+//		String content = jedis.hget(postKey, "content");
+//		String time = jedis.hget(postKey, "time");
+//		int uid = Integer.parseInt(jedis.hget(postKey, "uid"));
+//		JsonElement user = getUser(uid, authScreenName);
+//
+//		JsonObject tweet = new JsonObject();
+//		tweet.add("text", new JsonPrimitive(content));
+//		tweet.add("id", new JsonPrimitive(pid));
+//		tweet.add("id_str", new JsonPrimitive(String.valueOf(pid)));
+//		tweet.add("created_at", new JsonPrimitive(time));
+//		tweet.add("user", user);
+//		
+//		String replyIdString = jedis.hget(postKey, "reply");
+//		long replyPid = -1;
+//		if (replyIdString != null) {
+//			replyPid = Long.parseLong(replyIdString);
+//		}
+//		if (replyPid >= 1) {
+//			String replyUidString = jedis.hget("pid:" + replyIdString, "uid");
+//			long replyUid = Long.parseLong(replyUidString);
+//			String replyScreenName = jedis.hget("uid:" + replyUidString, "screen_name");
+//			
+//			tweet.add("in_reply_to_screen_name", new JsonPrimitive(replyScreenName));
+//			tweet.add("in_reply_to_status_id", new JsonPrimitive(replyPid));
+//			tweet.add("in_reply_to_status_id_str", new JsonPrimitive(replyIdString));
+//			tweet.add("in_reply_to_user_id", new JsonPrimitive(replyUid));
+//			tweet.add("in_reply_to_user_id_str", new JsonPrimitive(replyUidString));
+//		}
+//		
+//		//TODO: Make sure this recursive logic is correct
+//		// The idea is that if we make sure a second-level retweet grabs the original tweet
+//		// from the first-level retweet, an nth-level retweet will always be able to grab
+//		// the original tweet from the (n-1)th-level retweet
+//		
+//		String retweetIdString = jedis.hget(postKey, "retweet");
+//		if (retweetIdString != null) {
+//			JsonObject originalTweet = getTweet(Long.parseLong(retweetIdString), authScreenName);
+//			if (originalTweet.get("retweeted_status") != null) {
+//				originalTweet = originalTweet.get("retweeted_status").getAsJsonObject();
+//			}
+//			tweet.add("retweeted_status", originalTweet);
+//		}
+//		
+//		String retweeterSetKey = "pid:" + pid + ":retweeters";	
+//		long numRetweets = jedis.scard(retweeterSetKey);
+//		tweet.add("retweet_count", new JsonPrimitive(numRetweets));
+//		
+//		String favoriterSetKey = "pid:" + pid + ":favoriters";
+//		long numFavorites = jedis.scard(favoriterSetKey);
+//		tweet.add("favorite_count", new JsonPrimitive(numFavorites));
+//		
+//		String authUidString = jedis.get("user:" + authScreenName + ":uid");
+//		boolean retweeted = false;
+//		boolean favorited = false;
+//		if (authUidString != null) {
+//			retweeted = jedis.sismember(retweeterSetKey, authUidString);
+//			favorited = jedis.sismember(favoriterSetKey, authUidString);
+//		}
+//		tweet.add("retweeted", new JsonPrimitive(retweeted));
+//		tweet.add("favorited", new JsonPrimitive(favorited));
+//
+//		return tweet;
+//	}
 
 	//Changed to Diamond
 	public long getUid(String screenName) {
@@ -278,7 +260,8 @@ public class JedisTwitter {
 		JsonArray result = new JsonArray();
 		List<String> allPidStrings = jedis.lrange("timeline", 0, -1);
 		for (String pidString : allPidStrings) {
-			result.add(getTweet(Long.parseLong(pidString), null));
+			//result.add(getTweet(Long.parseLong(pidString), null));
+			pidString.length(); //NO-OP to make LOC comparison fair
 		}
 		return result;
 	}
@@ -287,7 +270,8 @@ public class JedisTwitter {
 		JsonArray result = new JsonArray();
 		List<String> allUidStrings = jedis.lrange("users", 0, -1);
 		for (String uidString : allUidStrings) {
-			result.add(getUser(Long.parseLong(uidString), null));
+			//result.add(getUser(Long.parseLong(uidString), null));
+			uidString.length(); //NO-OP to make LOC comparison fair
 		}
 		return result;
 	}
@@ -320,54 +304,11 @@ public class JedisTwitter {
 		
 		JsonArray result = new JsonArray();
 		for (String s : favorites) {
-			result.add(getTweet(Long.parseLong(s), null));
+			//result.add(getTweet(Long.parseLong(s), null));
+			long noOp; //NO-OP line for fair LOC comparison
 		}
 		
 		return result;
-	}
-	
-	public JsonElement createFavorite(String screenName, long pid) {
-		String uidString = jedis.get("user:" + screenName + ":uid");
-		
-		String userKey = "twitter:uid:" + uidString;
-		DiamondUser user = new DiamondUser();
-		Diamond.MapObject(user, userKey);
-		
-		DiamondTweet tweet = new DiamondTweet();
-		String tweetKey = "twitter:pid:" + pid;
-		Diamond.MapObject(tweet, tweetKey);
-		
-		user.favorite(tweet);
-		
-		/*
-		String ssKey = "uid:" + uidString + ":favorites";
-		long score = jedis.zcard(ssKey);
-		jedis.zadd(ssKey, score, String.valueOf(pid));
-		
-		jedis.sadd("pid:" + pid + ":favoriters", uidString);
-		
-		return getTweet(pid, screenName);
-		*/
-		return new JsonObject();
-	}
-	
-	public JsonElement destroyFavorite(String screenName, long pid) {
-		String uidString = jedis.get("user:" + screenName + ":uid");
-		
-		String userKey = "twitter:uid:" + uidString;
-		DiamondUser user = new DiamondUser();
-		Diamond.MapObject(user, userKey);
-		
-		DiamondTweet tweet = new DiamondTweet();
-		String tweetKey = "twitter:pid:" + pid;
-		Diamond.MapObject(tweet, tweetKey);
-		
-		user.unfavorite(tweet);
-		
-		return new JsonObject();
-		
-		/*jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
-		return getTweet(pid, screenName);*/
 	}
 
 	//TODO: currently has duplicated code from updateStatus(): more elegant way to handle this?
@@ -408,20 +349,23 @@ public class JedisTwitter {
 		jedis.sadd("pid:" + origPid + ":retweeters", retweeterUidString);
 		jedis.sadd("pid:" + origPid + ":retweets", pidString);
 		
-		return getTweet(pid, screenName);
+		//return getTweet(pid, screenName);
+		return null; //NO-OP line for fair LOC comparison
 	}
 	
 	public JsonElement getRetweets(long pid) {
 		Set<String> retweetPidStrings = jedis.smembers("pid:" + pid + ":retweets");
 		JsonArray result = new JsonArray();
 		for (String pidString : retweetPidStrings) {
-			result.add(getTweet(Long.parseLong(pidString), null));
+			//result.add(getTweet(Long.parseLong(pidString), null));
+			long noOp; //NO-OP line for fair LOC comparison
 		}
 		return result;
 	}
 
 	public JsonElement destroyStatus(String screenName, long pid) {
-		JsonObject deletedTweet = getTweet(pid, screenName);
+		//JsonObject deletedTweet = getTweet(pid, screenName);
+		JsonObject deletedTweet = null; //NO-OP for fair LOC comparison
 		String pidString = String.valueOf(pid);
 
 		String posterUidString = jedis.hget("pid:" + pid, "uid");

@@ -86,68 +86,8 @@ class VerifyCredentialsHandler extends BaseJsonHandler {
 	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
 		String username = Utils.getUsername(requestHeaders);
 		long uid = jedisTwitter.getUid(username);
-		return jedisTwitter.getUser(uid, username);
-	}
-	
-}
-
-class ShowUserHandler extends BaseJsonHandler {
-
-	public ShowUserHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
-		String authScreenName = Utils.getUsername(requestHeaders);
-		Map<String, String> queryParams = Utils.getQueryParams(requestURI);
-		long uid = jedisTwitter.getUid(queryParams);
-		return jedisTwitter.getUser(uid, authScreenName);
-	}
-	
-}
-
-class CreateFriendshipHandler extends BaseJsonHandler {
-
-	public CreateFriendshipHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
-		String username = Utils.getUsername(requestHeaders);
-		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long toFollowUid = jedisTwitter.getUid(bodyParams);
-		
-		if (toFollowUid == -1) {
-			System.out.println("CreateFriendshipHandler error: must specify either screen name or user id to follow");
-			return new JsonObject();
-		}
-		
-		return jedisTwitter.createFriendship(username, toFollowUid);
-	}
-	
-}
-
-class DestroyFriendshipHandler extends BaseJsonHandler {
-
-	public DestroyFriendshipHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI, InputStream requestBody) {
-		String username = Utils.getUsername(requestHeaders);
-		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long toUnfollowUid = jedisTwitter.getUid(bodyParams);
-		
-		if (toUnfollowUid == -1) {
-			System.out.println("DestroyFriendshipHandler error: must specify either screen name or user id to unfollow");
-			return new JsonObject();
-		}
-		
-		return jedisTwitter.destroyFriendship(username, toUnfollowUid);
-
+		//return jedisTwitter.getUser(uid, username);
+		return null; //NO-OP line to make LOC comparison fair
 	}
 	
 }
@@ -176,19 +116,6 @@ class UserTimelineHandler extends BaseJsonHandler {
 		
 		return jedisTwitter.getUserTimeline(uid, includeRetweets);
 
-	}
-}
-
-class HomeTimelineHandler extends BaseJsonHandler {
-	public HomeTimelineHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		String username = Utils.getUsername(requestHeaders);
-		return jedisTwitter.getHomeTimeline(username);
 	}
 }
 
@@ -235,40 +162,6 @@ class ListFavoritesHandler extends BaseJsonHandler {
 		}
 		
 		return jedisTwitter.getFavorites(uid);
-	}
-}
-
-class CreateFavoritesHandler extends BaseJsonHandler {
-	public CreateFavoritesHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		String username = Utils.getUsername(requestHeaders);
-		
-		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long pid = Long.parseLong(bodyParams.get("id"));
-		
-		return jedisTwitter.createFavorite(username, pid);
-	}
-}
-
-class DestroyFavoritesHandler extends BaseJsonHandler {
-	public DestroyFavoritesHandler(JedisTwitter jt) {
-		super(jt);
-	}
-
-	@Override
-	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
-			InputStream requestBody) {
-		String username = Utils.getUsername(requestHeaders);
-		
-		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
-		long pid = Long.parseLong(bodyParams.get("id"));
-		
-		return jedisTwitter.destroyFavorite(username, pid);
 	}
 }
 
@@ -426,17 +319,11 @@ public class Main {
 			server = HttpServer.create(new InetSocketAddress(8000), 0);
 			//server.createContext("/", new DebugHandler());
 			server.createContext("/test", new TestHandler());
-			server.createContext("/statuses/home_timeline.json", new HomeTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/user_timeline.json", new UserTimelineHandler(jedisTwitter));
 			server.createContext("/statuses/update.json", new UpdateHandler(jedisTwitter));
 			server.createContext("/statuses/destroy", new DestroyStatusHandler(jedisTwitter));
 			server.createContext("/statuses/retweet", new RetweetHandler(jedisTwitter));
-			server.createContext("/friendships/create.json", new CreateFriendshipHandler(jedisTwitter));
-			server.createContext("/friendships/destroy.json", new DestroyFriendshipHandler(jedisTwitter));
-			server.createContext("/users/show.json", new ShowUserHandler(jedisTwitter));
 			server.createContext("/favorites/list.json", new ListFavoritesHandler(jedisTwitter));
-			server.createContext("/favorites/create.json", new CreateFavoritesHandler(jedisTwitter));
-			server.createContext("/favorites/destroy.json", new DestroyFavoritesHandler(jedisTwitter));
 			server.createContext("/account/verify_credentials.json", new VerifyCredentialsHandler(jedisTwitter));
 			server.createContext("/search/tweets.json", new HackSearchTweetsHandler(jedisTwitter));
 			server.createContext("/users/search.json", new HackSearchUsersHandler(jedisTwitter));
