@@ -5,9 +5,9 @@ use strict;
 
 my $time = 5;
 my $warmupTimeMs = 5000;
-my $maxClients = 11;
+my $maxClients = 40;
 my $numClientsStep = 5;
-my $startingNumClients = 10;
+my $startingNumClients = 5;
 my $readFraction = 0.9;
 
 my $dir = "desktopchat-throughput";
@@ -16,7 +16,8 @@ my $prefix = "$dir/run";
 my $diamondServer = "moranis.cs.washington.edu";
 
 my $baselineServer = "spyhunter.cs.washington.edu";
-my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu");
+my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu", "mandel.cs.washington.edu", "thompson.cs.washington.edu",
+                      "toronto.cs.washington.edu", "zork.cs.washington.edu", "chong.cs.washington.edu", "foley.cs.washington.edu");
 
 my $concurrency = "transaction";
 my $staleness = "nostale";
@@ -27,9 +28,9 @@ my $abortRateFile = "$dir/nostale-abortrate.txt";
 
 checkBaselineServers();
 
-#doExperiment();
-#parseThroughputs();
-#parseAbortRates();
+doExperiment();
+parseThroughputs();
+parseAbortRates();
 
 $staleness = "stale";
 $stalelimit = "100";
@@ -37,9 +38,9 @@ $log = "$dir/stale-log.txt";
 $throughputFile = "$dir/stale-results.txt";
 $abortRateFile = "$dir/stale-abortrate.txt";
 
-#doExperiment();
-#parseThroughputs();
-#parseAbortRates();
+doExperiment();
+parseThroughputs();
+parseAbortRates();
 
 $log = "$dir/baseline-log.txt";
 $throughputFile = "$dir/baseline-results.txt";
@@ -63,7 +64,6 @@ sub getNumDiamondClients {
         my @pids = split(/\s+/, $pids);
         $total = $total + @pids;
     }
-    print("Total num Diamond clients running: $total\n");
     return $total;
 }
 
@@ -102,7 +102,7 @@ sub parseAbortRates {
 
 sub doExperiment {
     # fill chat log
-    system("./desktop-chat-wrapper.sh fixed 200 0.0 transaction concise $diamondServer filler throughputroom nostale 0 0");
+    system("ssh $clientMachines[0] research/chat-program-package/diamond-client/diamond-client-package-wrapper.sh fixed 200 0.0 transaction concise $diamondServer filler throughputroom nostale 0 0 research/chat-program-package");
 
     open(FILE, "> $log");
     for (my $numClients = $startingNumClients; $numClients <= $maxClients; $numClients += $numClientsStep) {
@@ -111,7 +111,8 @@ sub doExperiment {
         system("rm $prefix.*");
 
         for (my $i = 0; $i < $numClients; $i++) {
-            system("./desktop-chat-wrapper.sh timed $time $readFraction $concurrency concise $diamondServer client$i throughputroom $staleness $stalelimit $warmupTimeMs > $prefix.$i.log 2> $prefix.$i.error &");
+            my $clientMachine = @clientMachines[$i % scalar(@clientMachines)];
+            system("ssh $clientMachine \"research/chat-program-package/diamond-client/diamond-client-package-wrapper.sh timed $time $readFraction $concurrency concise $diamondServer client$i throughputroom $staleness $stalelimit $warmupTimeMs research/chat-program-package\" > $prefix.$i.log 2> $prefix.$i.error &");
         }
 
         my $done = 0;
