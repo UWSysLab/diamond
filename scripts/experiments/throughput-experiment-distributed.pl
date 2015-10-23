@@ -18,6 +18,7 @@ my $diamondServer = "moranis.cs.washington.edu";
 my @baselineServers = ("spyhunter.cs.washington.edu", "breakout.cs.washington.edu", "tradewars.cs.washington.edu", "zork.cs.washington.edu");
 my @clientMachines = ("qbert.cs.washington.edu", "pitfall.cs.washington.edu", "mandel.cs.washington.edu", "thompson.cs.washington.edu",
                       "toronto.cs.washington.edu", "short.cs.washington.edu", "chong.cs.washington.edu", "foley.cs.washington.edu");
+my $SERVERS_PER_MACHINE = 8;
 
 my $concurrency = "transaction";
 my $staleness = "nostale";
@@ -173,7 +174,7 @@ sub doExperiment {
 sub doBaselineExperiment {
     print("Starting baseline servers\n");
     for (my $i = 0; $i < @baselineServers; $i++) {
-        for (my $j = 0; $j < 4; $j++) {
+        for (my $j = 0; $j < $SERVERS_PER_MACHINE; $j++) {
             my $server = $baselineServers[$i];
             my $port = 9000 + $j;
             system("ssh $server /homes/sys/nl35/research/chat-program-package/baseline-server/baseline-server-package-wrapper.sh $port /homes/sys/nl35/research/chat-program-package &");
@@ -193,7 +194,7 @@ sub doBaselineExperiment {
 
         for (my $i = 0; $i < $numClients; $i++) {
             my $serverNum = $i % @baselineServers;
-            my $portOffset = ($i / @baselineServers) % 4;
+            my $portOffset = ($i / @baselineServers) % $SERVERS_PER_MACHINE;
             my $server = $baselineServers[$serverNum];
             my $port = 9000 + $portOffset;
             my $clientMachine = @clientMachines[$i % scalar(@clientMachines)];
