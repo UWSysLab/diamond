@@ -127,35 +127,35 @@ class CommandCreator(object):
         
         return self.parser.parseChatCommand( ['', CHAT_USERS, users] )
     
-    def createGameDiamondRefreshCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_DIAMOND_REFRESH, gameId, data] )
-    
-    def createGameDiamondRequestRefreshCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_DIAMOND_REQUEST_REFRESH, gameId, data] )
-    
-    def createGetLettersCommand(self, gameId, numLetters):
-        '''
-        
-        @param gameId:
-        @param numLetters:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_GET_LETTERS, gameId, numLetters] )
+#    def createGameDiamondRefreshCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_DIAMOND_REFRESH, gameId, data] )
+#    
+#    def createGameDiamondRequestRefreshCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_DIAMOND_REQUEST_REFRESH, gameId, data] )
+#    
+#    def createGetLettersCommand(self, gameId, numLetters):
+#        '''
+#        
+#        @param gameId:
+#        @param numLetters:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_GET_LETTERS, gameId, numLetters] )
     
     def createGetGameListCommand(self, data=''):
         '''
@@ -186,15 +186,15 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_USER_LIST, gameId, data] )
     
-    def createGameStartCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_START, gameId, data] )
+#    def createGameStartCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_START, gameId, data] )
     
     def createGameLeaveCommand(self, gameId, data=''):
         '''
@@ -206,25 +206,25 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_LEAVE, gameId, data] )
     
-    def createGameTurnCurrentCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_TURN_CURRENT, gameId, data] )
-    
-    def createGameTurnOtherCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_TURN_OTHER, gameId, data] )
+#    def createGameTurnCurrentCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_TURN_CURRENT, gameId, data] )
+#    
+#    def createGameTurnOtherCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_TURN_OTHER, gameId, data] )
     
     def createGameErrorCommand(self, gameId, data=''):
         '''
@@ -236,25 +236,25 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_ERROR, gameId, data] )
     
-    def createGameSendMoveCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_SEND_MOVE, gameId, data] )
-    
-    def createGameAcceptMoveCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_ACCEPT_MOVE, gameId, data] )
+#    def createGameSendMoveCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_SEND_MOVE, gameId, data] )
+#    
+#    def createGameAcceptMoveCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data:
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_ACCEPT_MOVE, gameId, data] )
     
     def createCreateGameCommand(self, gameId, data=''):
         '''
@@ -306,15 +306,15 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_UNPAUSE, gameId, data] )
     
-    def createGameTradeLettersCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data: List of Letters
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_TRADE_LETTERS, gameId, data] )
+#    def createGameTradeLettersCommand(self, gameId, data=''):
+#        '''
+#        
+#        @param gameId:
+#        @param data: List of Letters
+#        @return: GameCommand
+#        '''
+#        
+#        return self.parser.parseGameCommand( [GAME_TRADE_LETTERS, gameId, data] )
     
     def createGameChatMessageCommand(self, gameId, data=''):
         '''
@@ -452,14 +452,14 @@ class CommandCreator(object):
         '''
         return self.parser.parseGameCommand ( [GAME_SEND_OPTIONS, gameId, data] )
     
-    def createGameOverCommand(self, gameId, data=''):
-        '''
-        Game Over
-        
-        @param gameId: Game ID
-        @param data:
-        '''
-        return self.parser.parseGameCommand ( [GAME_OVER, gameId, data] )
+#    def createGameOverCommand(self, gameId, data=''):
+#        '''
+#        Game Over
+#        
+#        @param gameId: Game ID
+#        @param data:
+#        '''
+#        return self.parser.parseGameCommand ( [GAME_OVER, gameId, data] )
     
     def createGameTimeExpireCommand(self, gameId, data=''):
         '''
