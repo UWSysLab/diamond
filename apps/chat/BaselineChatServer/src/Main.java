@@ -82,7 +82,7 @@ class ChatHandler implements HttpHandler {
 
 public class Main {
 
-	static final long MAX_SIZE = 100;
+	static final long MAX_SIZE = 10;
 		
 	public static void main(String[] args) {
 		if (args.length < 1) {

@@ -6,7 +6,7 @@ import edu.washington.cs.diamond.Diamond;
 
 public class DesktopChatClient {
 	
-	static final int MESSAGE_LIST_SIZE = 100;
+	static final int MESSAGE_LIST_SIZE = 10;
 	static final int NUM_ACTIONS = 1000;
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
 	
