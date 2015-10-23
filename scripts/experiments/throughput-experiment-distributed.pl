@@ -46,7 +46,7 @@ doBaselineExperiment();
 parseThroughputs();
 
 sub checkBaselineServers {
-    my $pids = `ps aux | grep -v grep | grep BaselineChatServer | awk '{ print \$2 }'`;
+    my $pids = `ssh $baselineServer ps aux | grep baseline-server | grep java | awk '{print \$2}'`;
     my @pids = split(/\s+/, $pids);
     my $numServers = scalar(@pids);
     if ($numServers > 0) {
