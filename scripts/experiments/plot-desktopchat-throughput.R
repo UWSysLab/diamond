@@ -10,8 +10,8 @@ baselineData <- read.table("desktopchat-throughput/baseline-results.txt", header
 
 nostaleData$staleness = "Diamond  "
 nostaleAbortRates$staleness = "Diamond  "
-staleData$staleness = "Diamond (stale)  "
-staleAbortRates$staleness = "Diamond (stale)  "
+staleData$staleness = "Diamond + S  "
+staleAbortRates$staleness = "Diamond + S  "
 baselineData$staleness = "baseline  "
 
 throughputs = rbind(nostaleData, baselineData, staleData)
