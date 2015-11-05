@@ -1,7 +1,6 @@
 from twisted.internet import reactor
 from pyscrabble.gui.chat import ChatFrame
 from pyscrabble.gui.game import GameFrame
-from pyscrabble.gui.message import PrivateMessageFrame
 from pyscrabble.constants import *
 from pyscrabble.gtkconstants import *
 from pyscrabble.gui.options import OptionWindow

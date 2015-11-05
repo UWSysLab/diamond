@@ -1,7 +1,6 @@
 from twisted.internet import reactor
 from pyscrabble import gtkutil
 from pyscrabble.gui.info import InfoWindow
-from pyscrabble.gui import message
 from pyscrabble import constants
 from pyscrabble import lookup
 from pyscrabble import manager
@@ -46,9 +45,7 @@ class ChatFrame(gtk.Frame):
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
-        
-        self.client.checkMessages()
-    
+            
     def onRealize_cb(self, widget):
         '''
         Realize the window

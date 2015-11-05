@@ -129,44 +129,7 @@ class ScrabbleClient(object):
         '''
         
         command = self.command.createGetChatUsersCommand()
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-        
-    def getMessages(self):
-        '''
-        Get offline messages
-        '''
-        
-        command = self.command.createGetMessagesCommand()
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def checkMessages(self):
-        '''
-        Check for offline messages
-        '''
-        
-        command = self.command.createCheckMessagesCommand()
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def deleteMessage(self, id):
-        '''
-        Delete an offline message
-        
-        @param id: Message ID
-        '''
-        
-        command = self.command.createDeleteMessageCommand(id)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def postChatMessage(self,  msg):
-        '''
-        Current user posts a server chat message
-        
-        @param msg: Message text
-        '''
-        
-        command = self.command.createPostChatMessageCommand(msg)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
+        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)  
     
     # Game commands
     def getGameList(self):
@@ -285,69 +248,6 @@ class ScrabbleClient(object):
         command = self.command.createGameTradeLettersCommand(gameId, letters)
         self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
     
-    def privateMessage(self, recipient, message):
-        '''
-        Current user sends a private message
-        
-        @param recipient: Username of recipient
-        @param message: Message text
-        '''
-        
-        command = self.command.createPrivateMessageCommand('', util.getUnicode(recipient), message)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatWin.error)
-    
-    def postGameChatMessage(self, gameId, message):
-        '''
-        Send a Game Chat message to the server
-        
-        @param gameId: Game ID
-        @param message: Message
-        '''
-        
-        command = self.command.createGameChatMessageCommand(gameId, message)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
-    
-    
-    def spectateGame(self, gameId):
-        '''
-        Current user asks to spectate game
-        
-        @param gameId: Game ID to spectate
-        '''
-        
-        command = self.command.createGameSpectatorJoinCommand(gameId)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def leaveSpectateGame(self, gameId):
-        '''
-        Current user stops spectating game
-        
-        @param gameId: Game ID to spectate
-        '''
-        
-        command = self.command.createGameSpectatorLeaveCommand(gameId)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def setGameSpectatorChat(self, gameId, flag):
-        '''
-        Set Game Spectator Chat
-        
-        @param gameId: Game ID
-        @param flag: True to enable Game Spectator chat
-        '''
-        command = self.command.createGameSpectatorChatCommand(gameId, flag)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def setGameSpectatorsAllowed(self, gameId, flag):
-        '''
-        Set Game Spectators allowed
-        
-        @param gameId: Game ID
-        @param flag: True to enable Game Spectators
-        '''
-        command = self.command.createGameSpectatorSetCommand(gameId, flag)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
     def requestUserInfo(self, username):
         '''
         Request user information
@@ -429,17 +329,6 @@ class ScrabbleClient(object):
             self.processPrivateMessageCommand(command)
             return
     
-    def processPrivateMessageCommand(self, command):
-        '''
-        Process a PrivateMessageCommand
-        
-        @param command: PrivateMessageCommand
-        @see: L{pyscrabble.command.helper.PrivateMessageCommand}
-        '''
-        
-        if ( command.getCommand() == PRIVATE_MESSAGE_SEND ):
-            self.chatWin.sendPrivateMessage(command.getSender(), command.getData())
-    
     # Protocol response handlers
     def processLoginCommand(self, command):
         '''
@@ -465,40 +354,6 @@ class ScrabbleClient(object):
             return
             
         self.mainWin.error(util.ErrorMessage(command.getData()))
-        
-    def processChatCommand(self, command):
-        '''
-        Process a Game Chat command
-        
-        @param command: ChatCommand
-        @see: L{pyscrabble.command.helper.ChatCommand}
-        '''
-        
-        
-        if (command.getCommand() == CHAT_USERS):
-            users = command.getData()
-            self.chatWin.refreshUserList( users )
-        
-        if (command.getCommand() == CHAT_JOIN):
-            self.chatWin.userJoinChat( command.getUsername() )
-        
-        if (command.getCommand() == CHAT_MESSAGE):
-            self.chatWin.receiveChatMessage( command.getData() )
-        
-        if (command.getCommand() == ERROR):
-            self.chatWin.error( util.ErrorMessage(command.getData()) )
-        
-        if (command.getCommand() == INFO):
-            self.chatWin.infoWindow( command.getData() )
-        
-        if (command.getCommand() == USER_INFO):
-            self.chatWin.showUserInfo( command.getData() )
-        
-        if (command.getCommand() == SERVER_STATS):
-            self.chatWin.showServerStats( command.getData() )
-        
-        if (command.getCommand() == GET_MESSAGES):
-            self.chatWin.showOfflineMessages( command.getData() )
     
     def processGameCommand(self, command):
         '''

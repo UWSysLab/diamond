@@ -102,13 +102,8 @@ class GameFrame(gtk.Frame):
         window.add( self.logWindow )
         window.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
         
-        self.gameEntry = gtk.Entry()
-        self.gameEntry.connect("key-press-event", self.submitChat)
-        self.gameEntry.set_flags ( gtk.CAN_FOCUS )
-        
         box = gtk.VBox(False, 2)
         box.pack_start(window, True, True, 0)
-        box.pack_start(self.gameEntry, False, False, 0)
         
         self.notebook.append_page(box, gtk.Label(_("Chat")))
         self.notebook.append_page(self.getStatWindow(), gtk.Label(_("Info")))
@@ -412,29 +407,7 @@ class GameFrame(gtk.Frame):
                 self.board.put(tile, x, y)
         
         return self.board
-        
-        
-
-
     
-    ### Gameplay ###
-    def submitChat(self, widget, event, data=None):
-        '''
-        Submit chat message to server
-        
-        @param widget:
-        @param event:
-        @param data:
-        '''
-        
-        
-        if (event.keyval == gtk.keysyms.Return):
-            if (self.gameEntry.get_text() != None and len(self.gameEntry.get_text()) > 0):
-                self.client.postGameChatMessage( self.currentGameId, self.gameEntry.get_text() )
-                self.gameEntry.set_text( '' )
-                return True
-        
-        return False
     
     # Trade letters in for new letters
     def tradeLetters(self, button):
