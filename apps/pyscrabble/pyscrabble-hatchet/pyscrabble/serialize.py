@@ -16,7 +16,6 @@ from pyscrabble.game.pieces import Letter, Move
 from pyscrabble.game.game import ScrabbleGameInfo
 from pyscrabble.lookup import ServerMessage
 from pyscrabble.util import Time, TimeDeltaWrapper, ServerBulletin, PrivateMessage, RingList
-from pyscrabble import audit
 from pyscrabble.command import helper
 from time import struct_time
 from datetime import timedelta
@@ -36,7 +35,6 @@ protocol = {
     Time               : "e",
     TimeDeltaWrapper   : "f",
     ScrabbleGameInfo   : "g",
-    audit.Action       : "h",
     RingList           : "i",
     helper.Command     : "j",
     Letter             : "l",
@@ -158,7 +156,6 @@ def enc_bool_type(obj):
 @register_encoder_for_type(PlayerInfo)
 @register_encoder_for_type(Time)
 @register_encoder_for_type(TimeDeltaWrapper)
-@register_encoder_for_type(audit.Action)
 @register_encoder_for_type(RingList)
 @register_encoder_for_type(helper.Command)
 def enc_obj_type(obj):
@@ -325,13 +322,6 @@ def dec_time_type(data):
 def dec_time_delta_wrapper_type(data):
     obj = TimeDeltaWrapper()
     obj.__dict__ = dec_dict_type(data)
-    return obj
-
-@register_decoder_for_type(audit.Action)
-def dec_audit_action_type(data):
-    d = dec_dict_type(data)
-    obj = audit.fromType( d["type"] )
-    obj.__dict__ = d
     return obj
 
 @register_decoder_for_type(RingList)

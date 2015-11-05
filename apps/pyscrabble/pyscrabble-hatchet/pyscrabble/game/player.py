@@ -20,12 +20,7 @@ class User(object):
         self.username = username
         self.password = password
         self.__isAdmin = isAdmin
-        self.createdDate = util.Time(seconds=time.time(), dispDate=True)
-        self.lastLogin = None
-        self.__stats = {}
-        self.__rankName = ''
         self.status = None
-        self._audit = util.RingList(constants.AUDIT_SIZE)
 
     def getUsername(self):
         '''
@@ -69,191 +64,6 @@ class User(object):
         
         self.__isAdmin = isAdmin 
     
-    def addAuditAction(self, action):
-        '''
-        Add audit action
-        
-        @param action:
-        '''
-        
-        self.audit.append( action )
-    
-    def getCreatedDate(self):
-        '''
-        Return timestamp account was created
-        
-        @return: Formatted date string
-        '''
-        
-        if hasattr(self, 'createdDate'):
-            if self.createdDate is not None:
-                if not isinstance(self.createdDate, util.Time):
-                    seconds = time.mktime(self.createdDate) + time.timezone
-                    self.createdDate = util.Time(seconds=seconds, dispDate=True)
-                else:
-                    if not hasattr(self.createdDate, 'dispDate'):
-                        self.createdDate.dispDate = True
-                return self.createdDate
-        
-        return 'N/A'
-    
-    def getLastLoginDate(self):
-        '''
-        Return timestamp user last logged in
-        
-        @return: Formatted date string
-        '''
-        
-        if hasattr(self, 'lastLogin'):
-            if self.lastLogin is not None:
-                if not isinstance(self.lastLogin, util.Time):
-                    seconds = time.mktime(self.lastLogin) + time.timezone
-                    self.lastLogin = util.Time(seconds=seconds, dispDate=True)
-                else:
-                    if not hasattr(self.lastLogin, 'dispDate'):
-                        self.lastLogin.dispDate = True
-                return self.lastLogin
-        
-        return 'N/A'
-    
-    def setLastLogin(self, seconds):
-        '''
-        Set last login date
-        
-        @param date: seconds
-        '''
-        self.lastLogin = util.Time(seconds=seconds, dispDate=True)
-    
-    def addWin(self, players):
-        '''
-        Add a win to the users stats
-        
-        @param players:
-        '''
-        self.stats[constants.STAT_WINS] = self.getNumericStat(constants.STAT_WINS) + 1
-        self.stats[constants.STAT_RANK] = self.getNumericStat(constants.STAT_RANK) + 1
-        for p in players:
-            if p.username != self.username:
-                r = self._getRecordFor( p.username )
-                r["w"] = r["w"] + 1
-    
-    def addLoss(self, winners=None):
-        '''
-        Add a loss to the users stats
-        
-        @param winners:
-        '''
-        self.stats[constants.STAT_LOSSES] = self.getNumericStat(constants.STAT_LOSSES) + 1
-        
-        if winners is not None:
-            for winner in winners:
-                r = self._getRecordFor( winner.username )
-                r["l"] = r["l"] + 1
-    
-    def addTie(self, winners):
-        '''
-        Add a tie to the users stats
-        
-        @param: winners
-        '''
-        self.stats[constants.STAT_TIES] = self.getNumericStat(constants.STAT_TIES) + 1
-        
-        for winner in winners:
-            if winner.username != self.username:
-                r = self._getRecordFor( winner.username )
-                r["t"] = r["t"] + 1
-    
-    def addRank(self, rank):
-        '''
-        Add a value to the users rank
-        
-        @param rank: Numeric value to add.  This can be negative to subtract points
-        '''
-        self.stats[constants.STAT_RANK] = self.getNumericStat(constants.STAT_RANK) + int(rank)
-    
-    def _getRecordFor(self, username):
-        '''
-        Get the record for username
-        
-        @param username:
-        '''
-        if not self.record.has_key(username):
-            self.record[username] = { "w" : 0, "l" : 0, "t" : 0 }
-        return self.record[username]
-    
-    def getNumericStat(self, stat):
-        '''
-        Retrieve a numeric stat
-        
-        @param stat: Stat name
-        @return: Numeric stat value
-        '''
-        if not self.stats.has_key(stat):
-            self.stats[stat] = 0
-        
-        return self.stats[stat]
-        
-    def getStats(self):
-        '''
-        Get stats
-        
-        @return: Stats dict
-        '''
-        try:
-            return self.__stats
-        except AttributeError:
-            self.__stats = {}
-            return self.__stats
-    
-    def getAudit(self):
-        '''
-        Get audit log
-        
-        @return: Audit log
-        '''
-        try:
-            return self._audit
-        except AttributeError:
-            self._audit = util.RingList(constants.AUDIT_SIZE)
-            return self._audit
-    
-    def getRecord(self):
-        '''
-        Get Record data
-        '''
-        try:
-            return self.stats[constants.STAT_RECORD]
-        except KeyError:
-            self.stats[constants.STAT_RECORD] = {}
-            return self.stats[constants.STAT_RECORD]
-    
-    def setRank(self, rank):
-        '''
-        Set rank value
-        
-        @param rank: Rank value
-        '''
-        self.stats[constants.STAT_RANK] = rank
-    
-    def setRankName(self, rank):
-        '''
-        Rank Name
-        
-        @param rank: Name
-        '''
-        self.__rankName = rank
-    
-    def getRankName(self):
-        '''
-        Get Rank Name or '' if not set
-        
-        @return: Rank name
-        '''
-        try:
-            return self.__rankName
-        except:
-            return ''
-    
     def clone(self):
         '''
         Clone user
@@ -264,11 +74,6 @@ class User(object):
         x.__dict__ = self.__dict__.copy()
         return x
     
-    audit = property(getAudit)    
-    stats = property(getStats)
-    rankName = property(getRankName, setRankName)
-    record = property(getRecord)
-
 
 class Player(object):
     '''

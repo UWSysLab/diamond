@@ -5,7 +5,6 @@ from pyscrabble.game.player import Player, User,PlayerInfo
 from pyscrabble.game.game import ScrabbleGame, ScrabbleGameInfo
 from pyscrabble.lookup import *
 from pyscrabble.game import rank
-from pyscrabble import audit
 from pyscrabble import constants
 from pyscrabble import db
 from pyscrabble import exceptions
@@ -88,65 +87,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         for username in self.db.users.keys():
             self.db.users[username].setRank( 0 )
             self.db.users[username].rankName = self.rankings.getMinRank().name
-    
-    def auditUser(self, username, action, sync=True):
-        '''
-        Add an audit action for a user
-        
-        @param username:
-        @param action:
-        @param sync:
-        '''
-        try :
-            u = util.getUnicode(username)
-            self.db.users[u].addAuditAction( action )
-            if sync:
-                self.db.sync()
-        except KeyError:
-            pass
-    
-    def getServerBulletins(self):
-        '''
-        Return list of ServerBulletins
-        '''
-        if not self.db.messages.has_key(constants.SERVER_MESSAGE_KEY):
-            return []
-        else:
-            return self.db.messages[constants.SERVER_MESSAGE_KEY]
-        
-    
-    def addServerBulletin(self, message):
-        '''
-        Add server bulletin
-        
-        @param message: Bulletin message
-        '''
-        
-        if not self.db.messages.has_key(constants.SERVER_MESSAGE_KEY):
-            l = []
-        else:
-            l = self.db.messages[constants.SERVER_MESSAGE_KEY]
-        
-        b = self.createServerInfoMessage(message)
-        l.append( util.ServerBulletin(data=b, id=util.getRandomId(), seconds=time.time()) )
-        
-        self.db.messages[constants.SERVER_MESSAGE_KEY] = l
-        self.db.sync()
-        
-        for c in self.clients:
-            c.postChatMessage( (b, True) )
-    
-    def deleteServerBulletin(self, id):
-        '''
-        Delete Server bulletin
-        
-        @param id: Bulletin ID
-        '''
-        l = self.db.messages[constants.SERVER_MESSAGE_KEY]
-        key = int(id)
-        l = [ m for m in l if m.id != key ]
-        self.db.messages[constants.SERVER_MESSAGE_KEY] = l
-        self.db.sync()
     
     def isLoggedIn(self, player):
         '''
@@ -426,20 +366,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         return False
     
-    def sendGameStats(self, gameId):
-        '''
-        Send game statistics to each person in the game
-        
-        @param gameId: Game ID
-        '''
-        game = self.gameList[ gameId ]
-        
-        for p in game.getPlayers():
-            c = self.getPlayerClient(p)
-            if c:
-                c.sendGameStats(gameId, game.getStats())
-        
-    
     def sendGameInfoMessage(self, gameId, message, client=None, level=constants.GAME_LEVEL):
         print "Tried to send a game info message"
         
@@ -475,54 +401,8 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         self.clients[client] = player
         
-        self.db.users[player.getUsername()].setLastLogin( time.time() )
-        self.db.sync()
-        
         if len(self.clients) > self.maxUsersLoggedIn:
             self.maxUsersLoggedIn = len(self.clients)
-    
-    def handlePrivateMessageCommand(self, command, client):
-        '''
-        Send a private message
-        
-        @param command:
-        @param client:
-        '''
-        
-        
-        if not self.db.users.has_key(command.getRecipient()):
-            client.showError( ServerMessage([command.getRecipient(), DOES_NOT_EXIST]) )
-            return
-        
-        p = Player( command.getRecipient() )
-        c = self.getPlayerClient(p)
-        
-        sender = self.clients[client].getUsername()
-        recipient = command.getRecipient()
-        data = command.getData()
-        
-        if c is None:
-            if not self.db.messages.has_key(recipient):
-                l = []
-            else:
-                l = self.db.messages[recipient]
-                self.db.messages[recipient] = []
-            
-            num = util.getRandomId()
-            msg = util.PrivateMessage(sender, data, num, time=util.Time(seconds=time.time(), dispDate=True))
-            
-            l.append( msg )
-            self.db.messages[recipient] = l
-            self.db.sync()
-            
-            client.sendPrivateMessage(recipient, self.createChatMessage(sender, data))
-            client.showInfo( ServerMessage([MESSAGE_SENT, ': %s' % recipient]) )
-            
-            return
-            
-        msg = self.createChatMessage(sender, data)    
-        c.sendPrivateMessage(sender, msg)
-        client.sendPrivateMessage(recipient, msg)
         
 
     def handleGameCommand(self, command, client):
@@ -668,7 +548,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.sendGameScores(game.getGameId())
         
         client.sendMoves( game.getGameId(), game.getMoves() )
-        client.sendGameStats( game.getGameId(), game.getStats() )
         client.gameInfo( game.getGameId(), game.getLog() )
         client.sendGameOptions( game.getGameId(), game.getOptions() )
         
@@ -751,7 +630,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                 _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
         
         self.sendGameInfoMessage(gameId, [player.getUsername(),TURN], client=None, level=constants.GAME_LEVEL)
-        self.sendGameStats(gameId)
         if game.options[OPTION_SHOW_COUNT]:
             self.sendLetterDistribution(gameId)
     
@@ -807,57 +685,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         self.refreshGameList()
         
-    
-    def checkServerStats(self, player, moves):
-        '''
-        Check if this move is a new server stat
-        
-        @param player: Player
-        @param moves: Moves
-        '''
-        
-        score = 0
-        allDisp = ''
-        for move in moves:
-            score = score + move.getScore()
-            newdisp = '%s (%s) by %s' % (move.getWord(), str(move.getScore()), player.getUsername())
-            if self.db.stats.has_key(STAT_HIGHEST_SCORING_WORD):
-                data,disp = self.db.stats[STAT_HIGHEST_SCORING_WORD]
-                if (move.getScore() > data.getScore()):
-                    self.db.stats[STAT_HIGHEST_SCORING_WORD] = move,newdisp
-            else:
-                self.db.stats[STAT_HIGHEST_SCORING_WORD] = move,newdisp
-            
-            newdisp = '%s (%s) by %s' % (move.getWord(), str(move.length()), player.getUsername())
-            if self.db.stats.has_key(STAT_LONGEST_WORD):
-                data,disp = self.db.stats[STAT_LONGEST_WORD]
-                if (move.length() > data.length()):
-                    self.db.stats[STAT_LONGEST_WORD] = move,newdisp
-            else:
-                self.db.stats[STAT_LONGEST_WORD] = move,newdisp
-            allDisp = allDisp + '%s (%s) ' % (move.getWord(), str(move.getScore()))
-        
-        allDisp = allDisp + 'by %s' % player.getUsername()
-        d = allDisp
-        d = '%s, ' % str(score) + d
-        if self.db.stats.has_key(STAT_HIGHEST_SCORING_MOVE):
-            data, disp = self.db.stats[STAT_HIGHEST_SCORING_MOVE]
-            if score > data:
-                self.db.stats[STAT_HIGHEST_SCORING_MOVE] = score, d
-        else:
-            self.db.stats[STAT_HIGHEST_SCORING_MOVE] = score, d
-        
-        d = allDisp
-        d = '%s, ' % str(len(moves)) + d
-        if self.db.stats.has_key(STAT_MOST_WORDS_IN_MOVE):
-            data, disp = self.db.stats[STAT_MOST_WORDS_IN_MOVE]
-            if len(moves) > data:
-                self.db.stats[STAT_MOST_WORDS_IN_MOVE] = len(moves), d
-        else:
-            self.db.stats[STAT_MOST_WORDS_IN_MOVE] = len(moves), d
-        
-        self.db.sync()
-        
 
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves, client):
@@ -906,9 +733,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         game.addMoves(moves, player)
         
         game.resetPassCount()
-        
-        if len(game.getPlayers()) > 1:
-            self.checkServerStats(player, moves)
         
         # If the player used all 7 of his/her letters, give them an extra 50
         if onboard.length() == 7:
@@ -1139,14 +963,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             newdisp = '%s by ' % (winners[0].getScore())
             for w in winners:
                 newdisp = newdisp + w.getUsername() + ' '
-            
-            if len(game.getPlayers()) > 1:    
-                if self.db.stats.has_key(STAT_HIGHEST_TOTAL_SCORE):
-                    data,disp = self.db.stats[STAT_HIGHEST_TOTAL_SCORE]
-                    if (winners[0].getScore() > data):
-                        self.db.stats[STAT_HIGHEST_TOTAL_SCORE] = winners[0].getScore(),newdisp
-                else:
-                    self.db.stats[STAT_HIGHEST_TOTAL_SCORE] = winners[0].getScore(),newdisp
         
         winners = game.getWinners(exclude)
         
@@ -1157,29 +973,17 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             if len(winners) == 1:
                 winner = winners[0]
                 self.sendGameInfoMessage(game.getGameId(), ['%s (%d)' % (winner.username, int(winner.score)), HAS_WON], client=None, level=constants.GAME_LEVEL)
-                if count:
-                    if game.options[OPTION_RANKED]:
-                        self.db.users[ winner.getUsername() ].addWin( game.getPlayers() )
-                        self.setRankForPlayer( winner.getUsername() )
-                        self.auditUser( winner.getUsername(), audit.GameWinAction(winner, game.name, game.getPlayers()), False )
+
             else:
                 msg = ''
                 for winner in winners:
                     msg += '%s (%d)' % (winner.username, int(winner.score))
                     msg += ', '
-                    if count:
-                        if game.options[OPTION_RANKED]:
-                            self.db.users[ winner.getUsername() ].addTie( winners )
-                            self.auditUser( winner.getUsername(), audit.GameTieAction(winner, game.name, winners), False )
+
                 msg = msg[:-2]
                 self.sendGameInfoMessage(game.getGameId(), [msg, HAVE_TIED], client=None, level=constants.GAME_LEVEL)
         
         for p in game.getPlayers():
-            if p not in winners:
-                if count:
-                    if game.options[OPTION_RANKED]:
-                        self.db.users[ p.getUsername() ].addLoss(winners)
-                        self.auditUser( p.getUsername(), audit.GameLossAction(winners, game.name, p), False )
             c = self.getPlayerClient( p )
             c.gameOver( game.getGameId() )
         
@@ -1224,41 +1028,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.sendGameInfoMessage(game.getGameId(), [player.getUsername(),HAS_TRADED, '%s' % str(num), util.ternary(num == 1, LETTER, LETTERS)], client=None, level=constants.GAME_LEVEL)
         
         self.doGameTurn(game.getGameId())
-    
-    def getStats(self):
-        '''
-        Retrieve list of game stats and the list of users
-        
-        @return: List of tuples (stat_name, stat_value), users
-        '''
-        
-        s = []
-        s.append( (ServerMessage([NUMBER_USERS]), str(len(self.db.users))) )
-        s.append( (ServerMessage([MOST_USERS]), str(self.maxUsersLoggedIn)) )
-        s.append( (ServerMessage([UPTIME]), self.startDate) )
-        s.append( (ServerMessage([SERVER_VERSION]), constants.VERSION) )
-        
-        for key,value in self.db.stats.iteritems():
-            data,disp = value
-            s.append ( (ServerMessage([key]), disp) )
-        
-        users = []
-        for user in self.db.users.values():
-            users.append( (user.getUsername(), int(user.getNumericStat(constants.STAT_WINS)), int(user.getNumericStat(constants.STAT_LOSSES)), int(user.getNumericStat(constants.STAT_TIES)), user.rankName) )
-        
-            
-        return s, users, self.rankings.getRankInfo()
-    
-    def setRankForPlayer(self, username):
-        '''
-        Set rank for a player
-        
-        @param username: Username
-        '''
-        u = util.getUnicode(username)
-        r = self.db.users[u].getNumericStat(constants.STAT_RANK)
-        rank = self.rankings.getRankByWins(r)
-        self.db.users[u].rankName = rank.name
     
     def getUserStatus(self, username):
         '''
@@ -1701,16 +1470,6 @@ class ScrabbleServer(NetstringReceiver):
         command = self.command.createBootedCommand()
         self.writeCommand( command )
     
-    def sendGameStats(self, gameId, stats):
-        '''
-        Send Game stats
-        
-        @param gameId: Game ID
-        @param stats: Stats
-        '''
-        command = self.command.createGameStatsCommand(gameId, stats)
-        self.writeCommand( command )
-    
     def sendGameOptions(self, gameId, options):
         '''
         Send Game options
@@ -1737,16 +1496,7 @@ class ScrabbleServer(NetstringReceiver):
         @param user: Username
         '''
         command = self.command.createUserInfoCommand(user.getUsername(), user)
-        self.writeCommand( command )
-    
-    def sendServerStats(self, stats):
-        '''
-        Send Server stats
-        
-        @param stats: Stats
-        '''
-        command = self.command.createServerStatsCommand(stats)
-        self.writeCommand( command )       
+        self.writeCommand( command )   
         
     def writeCommand(self, command):
         '''
