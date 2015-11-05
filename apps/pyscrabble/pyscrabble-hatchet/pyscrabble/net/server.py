@@ -533,15 +533,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         command.setCommand( constants.GAME_JOIN_OK )
         client.acceptJoinGame( command, game.options )
         
-        time = None
-        if game.options.has_key(OPTION_TIMED_GAME):
-            time = int(game.options[OPTION_TIMED_GAME])
-        elif game.options.has_key(OPTION_MOVE_TIME):
-            time = int(game.options[OPTION_MOVE_TIME])
-        
-        if time is not None:
-            p.setInitialTime( time )
-        
         players = game.getPlayers()
         pending = game.getPending()
         
@@ -617,7 +608,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if player is None:
             return
         
-        player.stamp = datetime.datetime.now()
         client = self.getPlayerClient(player)
         
         time = datetime.timedelta(seconds=0)
