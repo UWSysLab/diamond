@@ -31,8 +31,6 @@ class ScrabbleGame:
         self.usedModifiers = []
         self.passedMoves = 0
         self.currentPlayer = None
-        self.spectators = []
-        self.spectatorChatEnabled = True
         self.log = []
         self.pending = []
         self.stats = {}
@@ -408,73 +406,6 @@ class ScrabbleGame:
         @return: True if C{player} is the current player.
         '''
         return self.currentPlayer == player
-    
-    def addSpectator(self, spectator):
-        '''
-        Add a spectator to the game
-        
-        @param spectator: Spectator name
-        '''
-        self.spectators.append(spectator)
-    
-    def getSpectators(self):
-        '''
-        Return a copy of the list of spectors
-        
-        @return: List of Spectator names
-        '''
-        
-        return self.spectators[:]
-    
-    def spectatorLeave(self, spectator):
-        '''
-        Remove a spectator from the game
-        
-        @param spectator: Spectator to remove
-        '''
-        self.spectators.remove(spectator)
-    
-    def hasSpectator(self, spectator):
-        '''
-        Check to see if a spectator is in the game
-        
-        @param spectator: Spectator
-        @return: True if spectator is in the game
-        '''
-        
-        return spectator in self.spectators
-    
-    def isSpectatorChatEnabled(self):
-        '''
-        Check if Spectator Chat is Enabled
-        
-        @return: True if Spectator Chat is enabled for this game
-        '''
-        return self.spectatorChatEnabled
-    
-    def setSpectatorChatEnabled(self, flag):
-        '''
-        Set Spectator Chat Enabled/Disabled
-        
-        @param flag: True to enable Spectator Chat
-        '''
-        self.spectatorChatEnabled = flag
-    
-    def isSpectatorsAllowed(self):
-        '''
-        Check if Spectator Chat is Enabled
-        
-        @return: True if Spectator Chat is enabled for this game
-        '''
-        return self.spectatorsAllowed
-    
-    def setSpectatorsAllowed(self, flag):
-        '''
-        Set Spectators Allowed
-        
-        @param flag: True to allow spectators
-        '''
-        self.spectatorsAllowed = flag
     
     def setComplete(self):
         '''

@@ -375,11 +375,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             c = self.getPlayerClient(player)
             if c:
                 c.gameLeave(gameId, True)
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            if c:
-                c.gameLeave(gameId, True)
     
         if not game.isPaused():
             if len(game.getPlayers()) == 0:
@@ -443,32 +438,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             c = self.getPlayerClient(p)
             if c:
                 c.sendGameStats(gameId, game.getStats())
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            if c:
-                c.sendGameStats(gameId, game.getStats())
-    
-    def sendSpectatorList(self, gameId):
-        '''
-        Send list of spectators
-        
-        @param gameId: Game ID
-        '''
-        game = self.gameList[ gameId ]
-        
-        l = game.getSpectators()
-
-        for p in game.getPlayers():
-            c = self.getPlayerClient(p)
-            if c:
-                c.gameSendSpectators(gameId, l)
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            if c:
-                c.gameSendSpectators(gameId, l)
-        
         
     
     def sendGameInfoMessage(self, gameId, message, client=None, level=constants.GAME_LEVEL):
@@ -625,70 +594,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         if (command.getCommand() == constants.GAME_TRADE_LETTERS):
             self.tradeLetters(command, client)
-        
-        if (command.getCommand() == constants.GAME_CHAT_MESSAGE):
-            _level = constants.GAME_LEVEL
-            game = self.gameList[ command.getGameId() ]
-            if ( game.hasPlayer(self.clients[client]) ):
-                _level = constants.PLAYER_LEVEL
-            elif ( game.hasSpectator(self.clients[client]) ):
-                _level = constants.SPECTATOR_LEVEL
-            
-            if _level == constants.SPECTATOR_LEVEL:
-                if not game.isSpectatorChatEnabled():
-                    command.setCommand( constants.GAME_ERROR )
-                    command.setData( ServerMessage([SPECTATOR_CHAT_DISABLED]) )
-                    client.writeCommand(command)
-                    return
-            
-            self.sendGameInfoMessage(command.getGameId(), command.getData(), self.clients[client], level=_level)
-        
-        if (command.getCommand() == constants.GAME_SPECTATOR_JOIN):
-            game = self.gameList[ command.getGameId() ]
-            if not game.isSpectatorsAllowed():
-                command.setCommand( constants.GAME_JOIN_DENIED )
-                command.setData( ServerMessage([SPECTATORS_BANNED]) )
-                client.denyJoinGame(command)
-                return
-            self.spectatorJoinGame(command, client)
-        
-        if (command.getCommand() == constants.GAME_SPECTATOR_CHAT_SET):
-            game = self.gameList[ command.getGameId() ]
-            game.setSpectatorChatEnabled(command.getData())
-            
-            if game.isSpectatorChatEnabled():
-                self.sendGameInfoMessage(command.getGameId(), [self.clients[client].getUsername(), ENABLE_SPEC_CHAT], client=None, level=constants.GAME_LEVEL)
-            else:
-                self.sendGameInfoMessage(command.getGameId(), [self.clients[client].getUsername(), DISABLE_SPEC_CHAT], client=None, level=constants.GAME_LEVEL)
-            
-            for p in game.getPlayers():
-                c = self.getPlayerClient(p)
-                c.writeCommand(command)
-        
-        if (command.getCommand() == constants.GAME_SPECTATOR_SET):
-            game = self.gameList[ command.getGameId() ]
-            game.setSpectatorsAllowed(command.getData())
-            
-            if game.isSpectatorsAllowed():
-                self.sendGameInfoMessage(command.getGameId(), [self.clients[client].getUsername(), ENABLE_SPEC], client=None, level=constants.GAME_LEVEL)
-            else:
-                self.sendGameInfoMessage(command.getGameId(), [self.clients[client].getUsername(), DISABLE_SPEC], client=None, level=constants.GAME_LEVEL)
-            
-            for p in game.getPlayers():
-                c = self.getPlayerClient(p)
-                c.writeCommand(command)
-            
-            if not game.isSpectatorsAllowed():
-                for s in game.getSpectators():
-                    c = self.getPlayerClient(s)
-                    self.spectatorLeaveGame(command, c)
-                    c.gameBoot(command.getGameId())
-        
-        if (command.getCommand() == constants.GAME_TIME_EXPIRE):
-            self.gameTimeExpired( command.getGameId(), client )
-        
-        if (command.getCommand() == constants.GAME_MOVE_TIME_EXPIRE):
-            self.moveTimeExpired(command.getGameId(), client )
             
     def handleChatCommand(self, command, client):
         print "Received chat command"
@@ -702,35 +607,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         '''
         
         client.sendUserList( [ self.clients[c] for c in self.clients.keys()] )
-    
-    def createServerInfoMessage(self, msg):
-        '''
-        Helper function to create a serverchat message
-        
-        @param msg:
-        '''
-        
-        return ServerMessage([msg,"\n"], util.Time(seconds=time.time(), dispDate=True))
-
-    # Create logout message
-    def createLogoutMessage(self, username):
-        '''
-        Helper function to create a logout message
-        
-        @param username:
-        '''
-        
-        
-        return ServerMessage(["<%s>" % (username), LOGGED_OUT, "\n"], util.Time(seconds=time.time(), dispDate=False))
-    
-    # Create logout message
-    def createLoginMessage(self, username):
-        '''
-        Helper function to create a login message
-        
-        @param username:
-        '''
-        return ServerMessage(["<%s>" % (username), LOGGED_IN, "\n"], util.Time(seconds=time.time(), dispDate=False))
 
     def refreshGameList(self):
         '''
@@ -874,10 +750,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             if (_player != player):
                 _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
         
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            c.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
-        
         self.sendGameInfoMessage(gameId, [player.getUsername(),TURN], client=None, level=constants.GAME_LEVEL)
         self.sendGameStats(gameId)
         if game.options[OPTION_SHOW_COUNT]:
@@ -893,10 +765,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         for p in game.getPlayers():
             c = self.getPlayerClient(p)
-            c.sendLetterDistribution( gameId, game.getDistribution() )
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
             c.sendLetterDistribution( gameId, game.getDistribution() )
 
     # Player leave game
@@ -928,12 +796,10 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.sendGameInfoMessage(gameId, [player.getUsername(),LEFT_GAME], client=None, level=constants.GAME_LEVEL)
 
         # If there are no more players left, remove the game
-        if len(game.getPlayers()) == 0 and len(game.getSpectators()) == 0 and not game.isPaused():
+        if len(game.getPlayers()) == 0 and not game.isPaused():
             #for s in game.getSpectators():
             #    c = self.getPlayerClient( s )
             #    c.gameLeave( game.getGameId() )
-            if game.timer is not None and game.timer.active():
-                game.timer.cancel()
             del self.gameList[ gameId ]
         elif not game.isComplete() and not game.isPaused():
             if game.isCurrentPlayer( player ):
@@ -1052,10 +918,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         for p in game.getPlayers():
             c = self.getPlayerClient(p)
             c.sendMoves( gameId, moves )
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            c.sendMoves( gameId, moves )
             
         for move in moves:
             self.sendGameInfoMessage(gameId, [player.getUsername(), HAS_ADDED, ' %s (%d)' % (move.getWord(), move.getScore())], client=None, level=constants.GAME_LEVEL)
@@ -1097,9 +959,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if game.isBagEmpty() or game.getCountLetters() < 7:
             for p in game.getPlayers():
                 c = self.getPlayerClient(p)
-                c.gameBagEmpty(gameId)
-            for s in game.getSpectators():
-                c = self.getPlayerClient(s)
                 c.gameBagEmpty(gameId)
             
 
@@ -1242,11 +1101,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             c = self.getPlayerClient(p)
             if (c):
                 c.sendGameUserList( game.getGameId(), self.getGamePlayerInfo(gameId, removePending=True) )
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            if (c):
-                c.sendGameUserList( game.getGameId(), self.getGamePlayerInfo(gameId, removePending=False) )
     
     def getGamePlayerInfo(self, gameId, removePending=False):
         '''
@@ -1278,20 +1132,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         @param game: Game
         @param exclude: Player to exclude
         '''
-        
-        if game.timer is not None and game.timer.active():
-            game.timer.cancel()
-        
-        if game.options.has_key(OPTION_TIMED_GAME):
-            for p in game.getPlayers():
-                t = p.time
-                if t.days < 0:
-                    t = -t
-                    mins = math.ceil( (t.seconds / 60.0) )
-                    score = int((mins * constants.OVERTIME_PENALTY) * -1)
-                    p.addScore( score )
-                    msg = '%d points' % score
-                    self.sendGameInfoMessage(game.getGameId(), [p.getUsername(), LOSES, msg], client=None, level=constants.GAME_LEVEL)
             
         winners = game.getWinners(exclude)
         
@@ -1342,10 +1182,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                         self.auditUser( p.getUsername(), audit.GameLossAction(winners, game.name, p), False )
             c = self.getPlayerClient( p )
             c.gameOver( game.getGameId() )
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient( s )
-            c.gameLeave( game.getGameId() )
         
         self.sendGameScores(game.getGameId())
         
@@ -1863,18 +1699,6 @@ class ScrabbleServer(NetstringReceiver):
         '''
         
         command = self.command.createBootedCommand()
-        self.writeCommand( command )
-    
-    def sendPrivateMessage(self, sender, data):
-        '''
-        Send a private message to this user
-        
-        @param sender: Username of the sender
-        @param data: Message text
-        @see: L{pyscrabble.command.helper.PrivateMessageCommand}
-        ''' 
-        
-        command = self.command.createPrivateMessageCommand(sender, '', data)
         self.writeCommand( command )
     
     def sendGameStats(self, gameId, stats):
