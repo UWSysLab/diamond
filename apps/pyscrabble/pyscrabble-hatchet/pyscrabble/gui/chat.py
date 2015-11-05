@@ -38,8 +38,8 @@ class ChatFrame(gtk.Frame):
         self.messageWindowOpen = False
         self.serverInfoWindow = None
         
-        main.pack_start( self.createChatWindow(), True, True, 0 )
-        main.pack_start( self.createEntryWindow(), False, False, 0 )
+        main.pack_start( self.createUsersWindow(), True, True, 0 )
+        main.pack_start( self.createGamesWindow(), True, True, 0 )
         
         self.tips = gtk.Tooltips()
         
@@ -57,48 +57,6 @@ class ChatFrame(gtk.Frame):
         '''
         self.entry.grab_focus()
         self.set_focus_chain([self.entry])
-        
-    
-    def createChatWindow(self):
-        '''
-        Create the chat TextView and User view
-        
-        @return: gtk.HBox containg main chat window and user treeview
-        '''
-        
-        sizer = gtk.HBox( False, 10 )
-        
-        self.chat = gtkutil.TaggableTextView(buffer=None)
-        self.chat.set_editable( False )
-        self.chat.set_cursor_visible( False )
-        self.chat.set_wrap_mode( gtk.WRAP_WORD )
-        
-        window = gtk.ScrolledWindow()
-        window.add( self.chat )
-        window.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
-        sizer.pack_start( window, True, True, 0 )
-        sizer.pack_start( self.createUsersWindow(), False, False, 0 )
-        sizer.pack_start(self.createGamesWindow(), False, False, 0)
-        return sizer
-    
-    def createEntryWindow(self):
-        '''
-        Create the chat entry window
-        
-        @return: gtk.HBox with chat entry window.
-        '''
-        
-        sizer = gtk.HBox( False, 10 )
-        
-        self.entry = gtk.Entry()
-        self.entry.connect("key-press-event", self.submitChat)
-        self.entry.set_flags ( gtk.CAN_FOCUS )
-        self.entry.grab_focus()
-        
-        sizer.pack_start(self.entry, True, True, 0)
-        sizer.set_focus_child(self.entry)
-        
-        return sizer
     
     def createUsersWindow(self):
         '''
@@ -193,13 +151,10 @@ class ChatFrame(gtk.Frame):
         
         bbox = gtk.HButtonBox()
         self.joinButton = gtk.Button(label=_("Join Game"))
-        self.spectateButton = gtk.Button(label=_("Watch Game"))
         
-        self.spectateButton.connect("clicked", self.spectateGame)
         self.joinButton.connect("clicked", self.joinGame_cb)
         
         bbox.add(self.joinButton)
-        bbox.add(self.spectateButton)
         
         window = gtk.ScrolledWindow()
         window.set_policy( gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC )
@@ -228,24 +183,6 @@ class ChatFrame(gtk.Frame):
         self.dialog.connect("response", lambda w,e: self.dialog.destroy())
         self.dialog.show()
         self.dialog.run()
-        
-    def submitChat(self, widget, event, data=None):
-        '''
-        Submit chat message to server
-        
-        @param widget:
-        @param event:
-        @param data:
-        '''
-        
-        
-        if (event.keyval == gtk.keysyms.Return):
-            if (self.entry.get_text() != None and len(self.entry.get_text()) > 0):
-                self.client.postChatMessage( self.entry.get_text() )
-                self.entry.set_text( '' )
-                return True
-        
-        return False
     
     def refreshUserList(self, users):
         '''
@@ -259,36 +196,6 @@ class ChatFrame(gtk.Frame):
         self.userList.clear()
         for player in users:
             self.userList.append( [player.getUsername()] )
-    
-    def userJoinChat(self, user):
-        '''
-        Callback from ScrabbleClient when another user joins the chat room
-        
-        @param user: User joining chat
-        '''
-        o = manager.OptionManager()
-        if not self.mainwindow.is_active():
-            #if o.get_default_bool_option(constants.OPTION_SOUND_NEW_USER, True):
-            #    self.mainwindow.soundmanager.play(constants.SOUND_MSG_OPTION)
-            if o.get_default_bool_option(constants.OPTION_POPUP_NEW_USER, True):
-                p = gtkutil.Popup( title=user, text='%s %s' % (user, lookup.SERVER_MESSAGE_LOOKUP[lookup.LOGGED_IN]))
-        
-        self.userList.append( [user] )
-    
-    def receiveChatMessage(self, msg):
-        '''
-        Callback from ScrabbleClient when a chat message is posted.
-        
-        @param msg: Chat text to post in buffer
-        '''
-        txt,server = msg # Server will be true if its a Server message
-        if server:
-            buf = self.chat.get_buffer()
-            t = buf.create_tag(weight=pango.WEIGHT_BOLD)
-            self.chat.insert_text_with_tags(txt, t)
-        else:
-            self.chat.insert_text(txt)
-        self.mainwindow.notifyChatMessage()
     
     # Join a game
     def joinGame_cb(self, button):
@@ -594,30 +501,6 @@ class ChatFrame(gtk.Frame):
     
     def sendPrivateMessage(self, username, data):
         self.mainwindow.sendPrivateMessage(widget=None, username=username, data=data)
-    
-    
-    def spectateGame(self, button):
-        '''
-        Callback when 'Watch Game' button is clicked.  Send request to the server to watch the game.
-        
-        @param button: Button that was clicked to call this handler.
-        '''
-        
-        self.setGameButtonsState(False)
-        
-        sel = self.gameView.get_selection()
-        model, iter = sel.get_selected()
-        if (iter == None):
-            self.error(util.ErrorMessage(_("Please select a game to join.")),True)
-            return
-        
-        gameName = model.get(iter, 0)[0]
-        
-        if (self.mainwindow.hasJoinedGame(gameName)):
-            self.error(util.ErrorMessage(_("You have already joined that game.")),True)
-            return
-        else:
-            self.client.spectateGame(gameName)
     
     def hasFocus(self, widget=None, event=None):
         '''
