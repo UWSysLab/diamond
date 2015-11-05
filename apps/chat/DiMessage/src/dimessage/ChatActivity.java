@@ -29,7 +29,7 @@ public class ChatActivity extends ActionBarActivity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
-		Diamond.DiamondInit("coldwater.cs.washington.edu");
+		Diamond.DiamondInit("moranis.cs.washington.edu");
 		
 		messageList = new Diamond.DStringList("dimessage:messagelist");
 		
