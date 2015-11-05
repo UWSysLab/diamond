@@ -250,33 +250,6 @@ class MainWindow(gtk.Window):
         
         #button.set_label(label)
         #self.notebook.set_tab_label(widget, button)
-    
-    def notifyChatMessage(self):
-        '''
-        Notify the chat window that a message has been posted.
-        
-        If the window is not in focus, bold the label
-        '''
-        if self.notebook.page_num(self.chatwin) != self.notebook.get_current_page():
-            label = self.notebook.get_tab_label(self.chatwin)
-            label.set_markup("<b>%s</b>" % label.get_text())
-    
-    def notifyPrivateMessage(self, username):
-        '''
-        Notify the chat window that a message has been posted.
-        
-        If the window is not in focus, bold the label
-        '''
-        if self.notebook.page_num(self.messages[username]) != self.notebook.get_current_page():
-            box = self.notebook.get_tab_label(self.messages[username])
-            label = box.get_children().pop(0)
-            label.set_markup("<b>%s</b>" % label.get_text())
-        
-        if not self.is_active():
-            #if self.optionmanager.get_default_bool_option(OPTION_SOUND_MSG, True):
-            #    self.soundmanager.play(SOUND_MSG_OPTION)
-            if self.optionmanager.get_default_bool_option(OPTION_POPUP_MSG, True):
-                p = gtkutil.Popup( title=username, text=_("You have a new private message.") )
 
     def switchPage(self, notebook, page, page_num):
         '''
@@ -356,49 +329,6 @@ class MainWindow(gtk.Window):
         
         return model.get_value(iter, 0)
     
-    def sendPrivateMessage(self, widget, username, data=None):
-        
-        u = util.getUnicode(username)
-        
-        if not self.messages.has_key(u):
-            self.createPrivateMessageWindow(u)
-        
-        if data is not None:
-            self.messages[u].receiveChatMessage(data)
-            
-    
-    def createPrivateMessageWindow(self, username):
-        frame = PrivateMessageFrame(self.client, self, username)
-        
-        self.messages[username] = frame
-        
-        box = gtk.HBox(False, 0)
-        button = gtk.Button(label=None)
-        button.connect("clicked", self.closePrivateMessageWindow, username)
-        button.add( gtk.image_new_from_stock( gtk.STOCK_CLOSE, gtk.ICON_SIZE_MENU ) )
-        button.set_relief( gtk.RELIEF_NONE )
-        
-        focus_pad = button.style_get_property('focus-padding')
-        focus_wid = button.style_get_property('focus-line-width')
-        wid, height = gtk.icon_size_lookup(gtk.ICON_SIZE_MENU)
-        wid += (focus_pad + focus_wid) * 2
-        height += (focus_pad + focus_wid) * 2
-        button.set_size_request( wid, height )
-        
-        s = _("Private Message")
-        box.pack_start(gtk.Label("%s: %s " % (s,username)), False, False, 0)
-        box.pack_start(button, False, False, 0)
-        box.show_all()
-        
-        
-        page_num = self.notebook.append_page( frame , box )
-        self.notebook.set_current_page(page_num)
-        frame.hasFocus()
-    
-    def closePrivateMessageWindow(self, widget, username):
-        self.messages[username].destroy()
-        del self.messages[username]
-    
     def showOptions(self, widget):
         if not self.optionWindowShown:
             self.optionWindowShown = True
@@ -443,19 +373,7 @@ class MainWindow(gtk.Window):
         dialog.destroy()
         
         if name:
-            self.sendPrivateMessage(None, name, data=None)
-            
-    
-    def privateMessageDialogKeypress_cb(self, widget, event, dialog):
-        '''
-        Key press event in private message box
-        
-        @param widget:
-        @param event:
-        @param dialog
-        '''
-        if (event.keyval == gtk.keysyms.Return):
-            dialog.response( gtk.RESPONSE_OK )        
+            self.sendPrivateMessage(None, name, data=None)       
     
     def focus_cb(self, widget, event):
         if not event.in_:

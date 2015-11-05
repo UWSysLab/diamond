@@ -499,9 +499,6 @@ class ChatFrame(gtk.Frame):
         self.client.changePassword(util.hashPassword(oldpassword.get_text()), util.hashPassword(password1.get_text()))
         dialog.destroy()
     
-    def sendPrivateMessage(self, username, data):
-        self.mainwindow.sendPrivateMessage(widget=None, username=username, data=data)
-    
     def hasFocus(self, widget=None, event=None):
         '''
         Callback that the window has focus
