@@ -472,29 +472,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
     
     def sendGameInfoMessage(self, gameId, message, client=None, level=constants.GAME_LEVEL):
-        '''
-        Send an information message to the players of a Game
-        
-        @param gameId: Game ID
-        @param message: Message
-        '''
-        if (client == None):
-            message = self.createServerChatMessage("GAME", message)
-        else:
-            message = self.createChatMessage(client.getUsername(), message)
-        
-        game = self.gameList[ gameId ]
-        for p in game.getPlayers():
-            c = self.getPlayerClient(p)
-            if c:
-                c.gameInfo(game.getGameId(), [(level, message)])
-        
-        for s in game.getSpectators():
-            c = self.getPlayerClient(s)
-            if c:
-                c.gameInfo(game.getGameId(), [(level, message)])
-        
-        game.appendLogMessage( (level, message) )
+        print "Tried to send a game info message"
         
     # Change a users password
     def changePassword(self, command, client):
@@ -526,7 +504,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         @param client:
         '''
         
-        self.joinChat( player, client )
         self.clients[client] = player
         
         self.db.users[player.getUsername()].setLastLogin( time.time() )
@@ -713,140 +690,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if (command.getCommand() == constants.GAME_MOVE_TIME_EXPIRE):
             self.moveTimeExpired(command.getGameId(), client )
             
-
     def handleChatCommand(self, command, client):
-        '''
-        Handle a chat command
-        
-        @param command: ChatCommand
-        @param client: ScrabbleServer Protocol
-        '''
-        
-        if (command.getCommand() == constants.CHAT_JOIN):
-            self.joinChat( self.clients[client], client )
-            
-        if (command.getCommand() == constants.CHAT_LEAVE):
-            if self.clients.has_key(client):
-                player = self.clients[client]
-                
-                # Remove player from game and notify other players
-                for game in self.gameList.values():
-                    if game.hasPlayer( player ):
-                        self.leaveGame( game.getGameId(), client, command.getData() )
-                    
-                    if game.hasSpectator( player ):
-                        cmd = helper.GameCommand(constants.GAME_LEAVE, game.getGameId(), '')
-                        self.spectatorLeaveGame(cmd, client)
-                
-                self.removeClient(client)
-                self.leaveChat( player )
-                client.logout()
-                
-
-        if (command.getCommand() == constants.CHAT_USERS):
-            self.sendUserList(client)
+        print "Received chat command"
     
-        if (command.getCommand() == constants.CHAT_MESSAGE):
-            self.postChatMessage( self.clients[client], command.getData() )
-        
-        if (command.getCommand() == constants.USER_INFO):
-            if not self.db.users.has_key(command.getUsername()):
-                client.showError( ServerMessage([command.getUsername(), DOES_NOT_EXIST]) )
-                return
-            u = self.db.users[command.getUsername()].clone()
-            u.status = self.getUserStatus(command.getUsername())
-            client.sendUserInfo(u)
-        
-        if (command.getCommand() == constants.SERVER_STATS):
-            client.sendServerStats(self.getStats())
-        
-        if (command.getCommand() == constants.CHECK_MESSAGES):
-            # Print server bulletins first
-            if self.db.messages.has_key(constants.SERVER_MESSAGE_KEY):
-                for message in self.db.messages[constants.SERVER_MESSAGE_KEY]:
-                    client.postChatMessage( (message.data, True) )
-            
-            key = self.clients[client].getUsername()
-            if self.db.messages.has_key(key):
-                if len(self.db.messages[key]) > 0:
-                    new = False
-                    for m in self.db.messages[key]:
-                        if not m.read:
-                            new = True
-                    
-                    if new:
-                        client.postChatMessage( (self.createServerInfoMessage(MESSAGES_AVAILABLE), True) )
-                    else:
-                        client.postChatMessage( (self.createServerInfoMessage(OLD_MESSAGES_AVAILABLE), True) )
-                
-        
-        if (command.getCommand() == constants.GET_MESSAGES):
-            key = self.clients[client].getUsername()
-            if self.db.messages.has_key(key):
-                for m in self.db.messages[key]:
-                    m.read = True
-                client.sendOfflineMessages( self.db.messages[key] )
-            else:
-                client.sendOfflineMessages( [] )
-            self.db.sync()
-        
-        if (command.getCommand() == constants.DELETE_MESSAGE):
-            key = self.clients[client].getUsername()
-            l = self.db.messages[key]
-            data = int(command.getData())
-            l = [ m for m in l if m.id != data ]
-            if len(l) != 0:
-                self.db.messages[key] = l
-            else:
-                del self.db.messages[key]
-            self.db.sync()
-
-    # Alert other users that a user has joined
-    def joinChat(self, player, client):
-        '''
-        User joins chat
-        
-        @param player:
-        @param client:
-        '''
-        
-        for c in self.clients.keys():
-            if (c != client):
-                c.joinChat( player.getUsername() )
-        
-        for c in self.clients.keys():
-            c.postChatMessage( (self.createLoginMessage(player.getUsername()), True) )
-        
-        self.auditUser( player.getUsername(), audit.LogonAction(player.getUsername()) )
-
-    # Log a user of the system
-    def leaveChat(self, player):
-        '''
-        User leaves chat
-        
-        @param player:
-        '''
-        
-        for c in self.clients.keys():
-            c.postChatMessage( (self.createLogoutMessage(player.getUsername()),True) )
-                
-        for c in self.clients.keys():
-            self.sendUserList(c)
-        
-        self.auditUser( player.getUsername(), audit.LogoffAction(player.getUsername()) )
-
-    # Post a chat message
-    def postChatMessage(self, player, msg):
-        '''
-        User posts a chat message
-        
-        @param player:
-        @param msg:
-        '''
-        
-        for c in self.clients.keys():
-            c.postChatMessage( (self.createChatMessage(player.getUsername(), msg), False) )
-
     # Send the list of users to the client
     def sendUserList(self, client):
         '''
@@ -856,23 +702,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         '''
         
         client.sendUserList( [ self.clients[c] for c in self.clients.keys()] )
-
-    # Create formatted chat message
-    def createServerChatMessage(self, username, msg_keys):
-        '''
-        Helper function to create a server chat message
-        
-        @param username:
-        @param msg_keys:
-        '''
-        
-        x = []
-        x.append( "<%s>" % (username) )
-        x.extend( msg_keys )
-        x.append( "\n" )
-        
-        
-        return ServerMessage(x, util.Time(seconds=time.time(), dispDate=False))
     
     def createServerInfoMessage(self, msg):
         '''
@@ -882,16 +711,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         '''
         
         return ServerMessage([msg,"\n"], util.Time(seconds=time.time(), dispDate=True))
-
-    # Create formatted chat message
-    def createChatMessage(self, username, msg):
-        '''
-        Helper function to create a chat message
-        
-        @param username:
-        @param msg:
-        '''
-        return ServerMessage(["<%s> %s\n" % (username, util.getUnicode(msg))],util.Time(seconds=time.time(), dispDate=False))
 
     # Create logout message
     def createLogoutMessage(self, username):
@@ -975,11 +794,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         client.sendMoves( game.getGameId(), game.getMoves() )
         client.sendGameStats( game.getGameId(), game.getStats() )
         client.gameInfo( game.getGameId(), game.getLog() )
-        client.gameSendSpectators( game.getGameId(), game.getSpectators() )
         client.sendGameOptions( game.getGameId(), game.getOptions() )
-        
-        client.setSpectatorChatEnabled(game.getGameId(), game.isSpectatorChatEnabled())
-        client.setSpectatorsAllowed(game.getGameId(), game.isSpectatorsAllowed())
         
         if (game.isPaused()):
             client.pauseGame( game.getGameId() )
@@ -1652,57 +1467,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         self.doGameTurn(game.getGameId())
     
-    
-    def spectatorJoinGame(self, command, client):
-        '''
-        Spectator joins the game
-        
-        @param command:
-        @param client:
-        '''
-        game = self.gameList[ command.getGameId() ]
-        
-        command.setCommand( constants.GAME_SPECTATE_JOIN_OK )
-        client.acceptJoinGame( command, game.options  )
-
-        player = self.clients[client].clone()
-        game.addSpectator( player )
-        
-        client.sendGameUserList( game.getGameId(), self.getGamePlayerInfo(game.getGameId()) )
-        client.sendMoves( game.getGameId(), game.getMoves() )
-        client.gameInfo( game.getGameId(), game.getLog() )
-        client.sendGameStats( game.getGameId(), game.getStats() )
-        client.sendGameOptions( game.getGameId(), game.getOptions() )
-        
-        if game.options.has_key(OPTION_TIMED_GAME) or game.options.has_key(OPTION_MOVE_TIME):
-            if not game.isPaused():
-                p = game.getCurrentPlayer()
-                if p is not None:
-                    time = p.time - (datetime.datetime.now() - p.stamp)
-                    time = datetime.timedelta(days=p.time.days, seconds=time.seconds+1 ) # +1 account for error
-                    client.gameTurnOther( game.getGameId(), PlayerInfo(p.getUsername(), p.getScore(), len(p.getLetters()), time ))
-            
-        self.sendGameInfoMessage(game.getGameId(), [player.getUsername(), IS_SPECTATING], client=None, level=constants.GAME_LEVEL)
-        self.sendSpectatorList( game.getGameId() )
-    
-    def spectatorLeaveGame(self, command, client):
-        '''
-        Spectator leaves the game
-        
-        @param command:
-        @param client:
-        '''
-        game = self.gameList[ command.getGameId() ]
-        game.spectatorLeave(self.clients[client])
-        
-        self.sendGameInfoMessage(game.getGameId(), [self.clients[client].getUsername(), NO_LONGER_SPECTATING], client=None, level=constants.GAME_LEVEL)
-        self.sendSpectatorList( game.getGameId() )
-        if len(game.getPlayers()) == 0 and len(game.getSpectators()) == 0 and not game.isPaused():
-            if game.timer is not None and game.timer.active():
-                game.timer.cancel()
-            del self.gameList[ game.getGameId() ]
-            self.refreshGameList()
-    
     def getStats(self):
         '''
         Retrieve list of game stats and the list of users
@@ -1929,16 +1693,6 @@ class ScrabbleServer(NetstringReceiver):
         if (command.getCommand() == constants.CHANGE_PASSWORD):
             self.factory.changePassword(command, self)
             return
-            
-    def joinChat(self, username):
-        '''
-        User joins the chatroom
-        
-        @param username: Username
-        '''
-        
-        command = self.command.createJoinChatCommand(username)
-        self.writeCommand( command )
 
     def sendUserList(self, users):
         '''
@@ -1949,16 +1703,6 @@ class ScrabbleServer(NetstringReceiver):
         '''
         
         command = self.command.createGetChatUsersCommand( users )
-        self.writeCommand( command )
-
-    def postChatMessage(self, message):
-        '''
-        Post a chat message
-        
-        @param message: Message text
-        '''
-        
-        command = self.command.createPostChatMessageCommand(message)
         self.writeCommand( command )
 
     def sendLetters(self, gameId, letters):
@@ -2216,26 +1960,6 @@ class ScrabbleServer(NetstringReceiver):
         command = self.command.createPrivateMessageCommand(sender, '', data)
         self.writeCommand( command )
     
-    def setSpectatorChatEnabled(self, gameId, flag):
-        '''
-        Set Spectator Chat Enabeld
-        
-        @param gameId: Game ID
-        @param flag: True to enable Spectator Chatting
-        '''
-        command = self.command.createGameSpectatorChatCommand(gameId, flag)
-        self.writeCommand( command )
-    
-    def setSpectatorsAllowed(self, gameId, flag):
-        '''
-        Set Spectators allowed
-        
-        @param gameId: Game ID
-        @param flag: True to allow Spectators
-        '''
-        command = self.command.createGameSpectatorSetCommand(gameId, flag)
-        self.writeCommand( command )
-    
     def sendGameStats(self, gameId, stats):
         '''
         Send Game stats
@@ -2265,16 +1989,6 @@ class ScrabbleServer(NetstringReceiver):
         command = self.command.createGameBagEmptyCommand(gameId)
         self.writeCommand( command )
     
-    def gameSendSpectators(self, gameId, list):
-        '''
-        Send the list of spectators in a game
-        
-        @param gameId: Game ID
-        @param list: List
-        '''
-        command = self.command.createGameSendSpectatorsCommand(gameId, list)
-        self.writeCommand( command )
-    
     def sendUserInfo(self, user):
         '''
         Send user info
@@ -2291,17 +2005,7 @@ class ScrabbleServer(NetstringReceiver):
         @param stats: Stats
         '''
         command = self.command.createServerStatsCommand(stats)
-        self.writeCommand( command )
-    
-    def sendOfflineMessages(self, messages):
-        '''
-        Send offline messages
-        
-        @param messages: List of PrivateMessages
-        '''
-        command = self.command.createGetMessagesCommand(messages)
-        self.writeCommand( command )
-        
+        self.writeCommand( command )       
         
     def writeCommand(self, command):
         '''

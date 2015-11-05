@@ -655,7 +655,6 @@ class ChatFrame(gtk.Frame):
         @param flag: Sensitive flag
         '''
         self.joinButton.set_sensitive(flag)
-        self.spectateButton.set_sensitive(flag)
     
     def gameListClicked_cb(self, widget, event):
         '''
