@@ -289,14 +289,6 @@ class Player(object):
         self.letters = []
         self.u_time = None
     
-    def setInitialTime(self, minutes):
-        '''
-        Set initial time
-        
-        @param minutes: Number of minutes
-        '''
-        self.time = datetime.timedelta(minutes=minutes)
-    
     def addScore(self, score):
         '''
         Add C{score} to this players score.

@@ -834,19 +834,11 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             return
 
         game.start()
-        
-        time = None
-        if game.options.has_key(OPTION_TIMED_GAME):
-            time = int(game.options[OPTION_TIMED_GAME])
-        elif game.options.has_key(OPTION_MOVE_TIME):
-            time = int(game.options[OPTION_MOVE_TIME])
             
         for player in game.getPlayers():
             c = self.getPlayerClient(player)
             letters = game.getLetters( player.getNumberOfLettersNeeded() )
             player.addLetters(letters)
-            if time is not None:
-                player.setInitialTime( time )
             c.sendLetters( game.getGameId(), letters )
         
         self.sendGameInfoMessage(gameId, [gameId, STARTED], client=None, level=constants.GAME_LEVEL)
@@ -873,38 +865,18 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         player.stamp = datetime.datetime.now()
         client = self.getPlayerClient(player)
         
-        if game.timer is not None and game.timer.active():
-            game.timer.cancel()
-        
-        time = player.time
-        if game.options.has_key(OPTION_MOVE_TIME):
-            if not wasUnpaused:
-                time = datetime.timedelta(seconds=60 * int(game.options[OPTION_MOVE_TIME]))
-        
-        if game.options.has_key(OPTION_MOVE_TIME):
-            game.timer = reactor.callLater(time.seconds, self.moveTimeExpired, gameId, client)
-        elif game.options.has_key(OPTION_TIMED_GAME):
-            if game.options.has_key(OPTION_TIMED_LIMIT):
-                t = 60 * int(game.options[OPTION_TIMED_LIMIT])
-            else:
-                t = 0
-            x = datetime.timedelta(seconds=t + time.seconds)
-            if game.options.has_key(OPTION_TIMED_LIMIT):
-                if time.days < 0:
-                    x = -time
-                    x = datetime.timedelta(seconds=t - x.seconds )
-            game.timer = reactor.callLater(x.seconds, self.gameTimeExpired, gameId, client)
+        time = datetime.timedelta(seconds=0)
             
         client.gameTurnCurrent(gameId, time)
         
         for _player in game.getPlayers():
             _client = self.getPlayerClient(_player)
             if (_player != player):
-                _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), player.time ))
+                _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
         
         for s in game.getSpectators():
             c = self.getPlayerClient(s)
-            c.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), player.time ))
+            c.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
         
         self.sendGameInfoMessage(gameId, [player.getUsername(),TURN], client=None, level=constants.GAME_LEVEL)
         self.sendGameStats(gameId)
@@ -926,37 +898,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         for s in game.getSpectators():
             c = self.getPlayerClient(s)
             c.sendLetterDistribution( gameId, game.getDistribution() )
-        
-    
-    def moveTimeExpired(self, gameId, client):
-        '''
-        Move time for a player has expired
-        
-        @param gameId:
-        @param client:
-        '''
-        game = self.gameList[ gameId ]
-        player = game.getPlayer( self.clients[client] )
-        player.time = datetime.timedelta(seconds=60 * int(game.options[OPTION_MOVE_TIME]))
-
-        self.sendGameScores(gameId)
-        self.sendGameInfoMessage(gameId, [player.getUsername(),MOVE_OUT_OF_TIME], client=None, level=constants.GAME_LEVEL)
-        self.doGameTurn(gameId)
-    
-    def gameTimeExpired(self, gameId, client):
-        '''
-        Game time expired
-        
-        @param gameId: Game ID
-        @param client: Player client who has run out of time
-        '''
-        game = self.gameList[ gameId ]
-        player = game.getPlayer( self.clients[client] )
-
-        self.sendGameInfoMessage(gameId, [player.getUsername(),OUT_OF_TIME], client=None, level=constants.GAME_LEVEL)
-        player.time = datetime.timedelta(seconds=0)
-        
-        self.gameOver(game, player)
 
     # Player leave game
     def leaveGame(self, gameId, client, penalize=True, booted=False):
@@ -1151,13 +1092,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             player.addLetters(letters)
             client.sendLetters(gameId, player.getLetters())
         
-        
-        if game.options.has_key(OPTION_TIMED_GAME):
-            player.time = player.time - (datetime.datetime.now() - player.stamp)
-            player.time = datetime.timedelta(days=player.time.days, seconds=player.time.seconds+1 ) # +1 account for error
-            if game.timer is not None and game.timer.active():
-                game.timer.cancel()
-        
         self.sendGameScores(game.getGameId())
         
         if game.isBagEmpty() or game.getCountLetters() < 7:
@@ -1275,12 +1209,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         try:
             self.sendGameInfoMessage(gameId, [player.getUsername(), HAS_PASSED], client=None, level=constants.GAME_LEVEL)
-            
-            if game.options.has_key(OPTION_TIMED_GAME):
-                player.time = player.time - (datetime.datetime.now() - player.stamp)
-                player.time = datetime.timedelta(days=player.time.days, seconds=player.time.seconds)
-                if game.timer is not None and game.timer.active():
-                    game.timer.cancel()
             
             game.passMove()
             
@@ -1455,12 +1383,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         game.resetPassCount()
         
-        if game.options.has_key(OPTION_TIMED_GAME):
-            player.time = player.time - (datetime.datetime.now() - player.stamp)
-            player.time = datetime.timedelta(days=player.time.days, seconds=player.time.seconds)
-            if game.timer is not None and game.timer.active():
-                game.timer.cancel()
-        
         self.sendGameScores(command.getGameId())
         
         self.sendGameInfoMessage(game.getGameId(), [player.getUsername(),HAS_TRADED, '%s' % str(num), util.ternary(num == 1, LETTER, LETTERS)], client=None, level=constants.GAME_LEVEL)
@@ -1568,11 +1490,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if self.clients[client].getUsername() != game.creator:
             client.gameError(game.getGameId(), ServerMessage([NOT_CREATOR]))
             return
-        
-        if game.options.has_key(OPTION_TIMED_GAME) or game.options.has_key(OPTION_MOVE_TIME):
-            player = game.getCurrentPlayer()
-            player.time = player.time - (datetime.datetime.now() - player.stamp)
-            player.time = datetime.timedelta(days=player.time.days, seconds=player.time.seconds+1 ) # +1 account for error
         
         game.pause()
         for player in game.getPlayers():

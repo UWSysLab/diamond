@@ -53,7 +53,6 @@ class GameFrame(gtk.Frame):
         
         self.spectating = spectating
         self.gameOptions = options
-        self.gameTimer = None
         
         self.currentTurn = False
         self.letters = [] # User letter list
@@ -333,13 +332,6 @@ class GameFrame(gtk.Frame):
         col2.add_attribute(cell2, 'text', 1)
         col2.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
         
-        col3 = gtk.TreeViewColumn(_('Time left'))
-        cell3 = gtk.CellRendererText()
-        col3.pack_start(cell3, True)
-        col3.add_attribute(cell3, 'text', 2)
-        col3.set_visible( self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME) )
-        col3.set_sizing(gtk.TREE_VIEW_COLUMN_AUTOSIZE)
-        
         col4 = gtk.TreeViewColumn(_('Letters left'))
         cell4 = gtk.CellRendererText()
         col4.pack_start(cell4, True)
@@ -349,7 +341,6 @@ class GameFrame(gtk.Frame):
         
         self.userView.append_column( col1 )
         self.userView.append_column( col2 )
-        self.userView.append_column( col3 )
         self.userView.append_column( col4 )
         
         header = gtk.Label()
@@ -476,9 +467,6 @@ class GameFrame(gtk.Frame):
         @param clientLeaveGame: True if the client initiated the action to leave the game.  False if the server is booting the user.
         @param disableChat: Flag to disable chat
         '''
-        
-        if self.gameTimer is not None and self.gameTimer.active():
-                self.gameTimer.cancel()
         
         # True if we want to initiate the disconnect.  False if the server boots us
         if clientLeaveGame:
@@ -928,9 +916,6 @@ class GameFrame(gtk.Frame):
         @param users: List of Players
         '''
         
-        if self.gameTimer is not None and self.gameTimer.active():
-            self.gameTimer.cancel()
-        
         self.userList.clear()
         for player in users:
             self.userList.append( (player.name, str(player.score), player.time, str(player.numLetters) ) )
@@ -1013,59 +998,6 @@ class GameFrame(gtk.Frame):
         self.currentTurn = True
 
         self.mainwindow.setCurrentTurn(self.currentGameId, True)
-        
-        if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
-            
-            if self.gameTimer is not None and self.gameTimer.active():
-                self.gameTimer.cancel()
-            
-            sel = self.userView.get_selection()
-            model = self.userView.get_model()
-            
-            it = model.get_iter_first()
-            while ( it != None ):
-                name = model.get_value(it, 0)
-                if (name == self.mainwindow.username):
-                    path = model.get_path(it)
-                    self.gameTimer = reactor.callLater(0, self.decreaseTime, time, model,path)
-                    #sel.select_iter(it)
-                    break
-                it = model.iter_next(it)
-    
-    def decreaseTime(self, time, model, path):
-        '''
-        Decrease time by one second
-        
-        Notify the server if the players time expires
-        
-        @param time: Timedelta of current game time
-        '''
-        x = time - datetime.timedelta(seconds=1)
-        model[path][2] = util.formatTimeDelta(time)
-        
-
-#        if self.currentTurn:
-#            if x.days < 0:
-#                if self.gameOptions.has_key(OPTION_MOVE_TIME):
-#                    self.clearCurrentMove()
-#                    self.otherTurn(player=None)
-#                    self.client.notifyMoveTimeExpired(self.currentGameId)
-#                    return
-#                
-#                if self.gameOptions.has_key(OPTION_TIMED_LIMIT):
-#                    t = -x
-#                    if (t.seconds / 61) >= int(self.gameOptions[OPTION_TIMED_LIMIT]): # +1 to account for zero
-#                        self.clearCurrentMove()
-#                        self.otherTurn(player=None)
-#                        self.client.notifyGameTimeExpired(self.currentGameId)
-#                        return
-#                else:
-#                    self.clearCurrentMove()
-#                    self.otherTurn(player=None)
-#                    self.client.notifyGameTimeExpired(self.currentGameId)
-#                    return
-            
-        self.gameTimer = reactor.callLater(1, self.decreaseTime, x, model, path)
     
     # Set someone elses turn
     def otherTurn(self, player):
@@ -1089,10 +1021,6 @@ class GameFrame(gtk.Frame):
         self.cancelButton.set_sensitive(False)
         self.shuffleButton.set_sensitive(True)
         
-        if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
-            if self.gameTimer is not None and self.gameTimer.active():
-                self.gameTimer.cancel()
-        
         #Deactivate dragging on the letters
         #self.letterBox.foreach(lambda letter: letter.deactivate())
         self.board.deactivate()
@@ -1112,7 +1040,6 @@ class GameFrame(gtk.Frame):
                 if (name == player.name):
                     if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
                         path = model.get_path(it)
-                        self.gameTimer = reactor.callLater(0, self.decreaseTime, player.time, model,path)
                     #sel.select_iter(it)
                     break
                 it = model.iter_next(it)
