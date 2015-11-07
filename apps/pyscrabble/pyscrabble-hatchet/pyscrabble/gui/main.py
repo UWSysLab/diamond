@@ -267,11 +267,6 @@ class MainWindow(gtk.Window):
             self.chatwin.hasFocus()
         
         frame = self.notebook.get_nth_page(page_num)
-        if isinstance(frame, PrivateMessageFrame):
-            box = self.notebook.get_tab_label(frame)
-            label = box.get_children().pop(0)
-            label.set_markup("%s" % label.get_text())
-            frame.hasFocus()
             
         if isinstance(frame, gtk.ScrolledWindow):
             frame = frame.get_child().get_child()

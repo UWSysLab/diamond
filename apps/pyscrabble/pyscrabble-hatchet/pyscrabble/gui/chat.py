@@ -30,8 +30,6 @@ class ChatFrame(gtk.Frame):
         self.client.setChatWindow( self )
         self.mainwindow = main
         
-        self.connect("realize", self.onRealize_cb)
-        
         main = gtk.VBox( False, 10)
         
         self.messageWindowOpen = False
@@ -46,15 +44,6 @@ class ChatFrame(gtk.Frame):
         self.add( main )
         self.show_all()
             
-    def onRealize_cb(self, widget):
-        '''
-        Realize the window
-        
-        @param: widget
-        '''
-        self.entry.grab_focus()
-        self.set_focus_chain([self.entry])
-    
     def createUsersWindow(self):
         '''
         Create TreeView of all users on the server
