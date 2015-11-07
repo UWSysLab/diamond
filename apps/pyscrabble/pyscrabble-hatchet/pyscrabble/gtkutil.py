@@ -549,7 +549,7 @@ class TaggableTextView(gtk.TextView):
         @param event:
         '''
         
-        x,y = widget.window_to_buffer_coords(gtk.TEXT_WINDOW_TEXT, event.x, event.y)
+        x,y = widget.window_to_buffer_coords(gtk.TEXT_WINDOW_TEXT, int(event.x), int(event.y))
        
         iter = widget.get_iter_at_location(x,y)
         tags = iter.get_tags()
