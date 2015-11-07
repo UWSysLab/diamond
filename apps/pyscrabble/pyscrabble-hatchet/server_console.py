@@ -33,11 +33,7 @@ class ServerConsole(object):
         from pyscrabble.net.server import ScrabbleServerFactory
         self.gameFactory = ScrabbleServerFactory()
         
-        from pyscrabble.net.site import ScrabbleSite
-        self.site = appserver.NevowSite( ScrabbleSite(self.gameFactory) )
-        
         reactor.listenTCP(self.g_port, self.gameFactory)
-        reactor.listenTCP(self.w_port, self.site)
         
         if installSignals:
             import signal
@@ -91,7 +87,6 @@ class ServerConsole(object):
             
         parser = ConfigParser.ConfigParser()
         parser.read( config )
-        self.w_port = int(parser.get("pyscrabble","web_port"))
         self.g_port = int(parser.get("pyscrabble","game_port"))
         
 if __name__ == '__main__':
