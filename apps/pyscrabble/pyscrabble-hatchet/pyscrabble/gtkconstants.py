@@ -30,15 +30,8 @@ MENU_DATA = """
             <menuitem action="Preferences"/>
         </menu>
         <menu action="Server">
-            <menuitem action="Change Password"/>
-            <separator/>
-            <menuitem action="Check Messages"/>
-            <separator/>
             <menuitem action="Create Game"/>
             <separator/>
-            <menuitem action="Information"/>
-            <separator/>
-            <menuitem action="Send Offline Message"/>
         </menu>
         <menu action="View">
             <menuitem action="Full Screen"/>

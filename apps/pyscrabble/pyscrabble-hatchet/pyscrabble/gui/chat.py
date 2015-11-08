@@ -35,7 +35,6 @@ class ChatFrame(gtk.Frame):
         self.messageWindowOpen = False
         self.serverInfoWindow = None
         
-        main.pack_start( self.createUsersWindow(), True, True, 0 )
         main.pack_start( self.createGamesWindow(), True, True, 0 )
         
         self.tips = gtk.Tooltips()
@@ -491,7 +490,7 @@ class ChatFrame(gtk.Frame):
         
         Give focus to the chat entry
         '''
-        self.entry.grab_focus()
+        pass
 
     def infoWindow(self, data):
         '''
@@ -507,129 +506,6 @@ class ChatFrame(gtk.Frame):
         self.dialog.connect("response", lambda w,e: self.dialog.destroy())
         self.dialog.show()
         self.dialog.run()
-    
-    def requestUserInfo(self, widget, username):
-        '''
-        Request user information
-        
-        @param widget: Widget that activated this callback
-        @param username: Username
-        '''
-        self.client.requestUserInfo(util.getUnicode(username))
-    
-    def showUserInfo(self, user):
-        '''
-        Show user information
-        
-        @param user: User object
-        '''
-        data = []
-        data.append( (_("Wins"), str(user.getNumericStat(constants.STAT_WINS))) )
-        data.append( (_("Losses"), str(user.getNumericStat(constants.STAT_LOSSES))) )
-        data.append( (_("Ties"), str(user.getNumericStat(constants.STAT_TIES))) )
-        data.append( (_("Rank"), user.rankName) )
-        data.append( (_("Member since"), str(user.getCreatedDate())) )
-        data.append( (_('Last login'), str(user.getLastLoginDate())) )
-        data.append( (_('Status'), str(user.status)) )
-        s = _('User Information')
-        x = InfoWindow(title='%s - %s' % (s, user.getUsername()), header=s, main=None)
-        x.initialize()
-        
-        x.appendPage(gtk.Label(user.getUsername()), [_('Name'),_('Value')],data,visible=False)
-        
-        cols = [_('Name'),_('Wins'),_('Losses'),_('Ties')]
-        data = []
-        for name,record in user.record.iteritems():
-            data.append( (name, int(record["w"]), int(record["l"]), int(record["t"])) )
-        
-        x.appendPage(gtk.Label(_("Record")), cols, data, visible=True, sortable=True, signals={ "button-release-event" : self.mainwindow.userListClicked_cb, "button-press-event" : self.mainwindow.userListClicked_cb })
-        
-        
-        data = []
-        for action in reversed(user.audit):
-            data.append( (str(action), str(action.date)) )
-        x.appendPage(gtk.Label(_('History')), [_('Name'),_('Value')],data,visible=False)
-        
-        x.show_all()
-    
-    def requestServerStats(self, widget):
-        '''
-        Request server stats
-        
-        @param widget: Widget that activated this callback
-        '''
-        if self.serverInfoWindow is None:
-            s = _('Server Information')
-            self.serverInfoWindow = InfoWindow(title=s, header=s, main=self)
-            reactor.callLater(0.5, self.client.requestServerStats)
-            
-    def showServerStats(self, stats):
-        '''
-        Show server stats
-        
-        @param stats: Stats
-        '''
-        stats,users,ranks = stats
-        
-        cols = [_('Name'), _('Value')]
-        
-        stts = []
-        for key,val in stats:
-            stts.append( (repr(key), val) ) #key is a ServerMessage, call repr to display val
-        
-        self.serverInfoWindow.initialize()
-        
-        self.serverInfoWindow.appendPage(gtk.Label(_("Statistics")), cols, stts, visible=False)
-        
-        cols = [_('Name'),_('Wins'),_('Losses'),_('Ties'),_('Rank')]
-        
-        self.serverInfoWindow.appendPage(gtk.Label(_("Users")), cols, users, visible=True, sortable=True, signals={ "button-release-event" : self.mainwindow.userListClicked_cb, "button-press-event" : self.mainwindow.userListClicked_cb })
-        self.serverInfoWindow.appendPage(gtk.Label(_("Rankings")), [_('Rank'),_('Wins Required')], ranks, visible=True)
-        self.serverInfoWindow.show_all()
-    
-    def serverInfoClosed_cb(self):
-        '''
-        Callback that the server info window has been closed
-        '''
-        self.serverInfoWindow = None
-        
-    
-    def showOfflineMessages(self, messages):
-        '''
-        Show offline messages
-        
-        @param messages: List of PrivateMessages
-        '''
-        
-        if len(messages) > 0:
-            self.messageWindowOpen = True
-            x = message.OfflineMessageWindow(self,messages)
-        else:
-            s = _('You do not have any messages')
-            self.infoWindow(s)
-    
-    def messageWindowClosed(self):
-        '''
-        Notify this widget that the message window is closed
-        '''
-        self.messageWindowOpen = False
-    
-    def getMessages_cb(self, widget):
-        '''
-        Check offline messages
-        
-        @param widget: Widget that activated this callback
-        '''
-        if not self.messageWindowOpen:
-            self.client.getMessages()
-    
-    def deleteMessage(self, id):
-        '''
-        Delete message
-        
-        @param id: Message ID
-        '''
-        self.client.deleteMessage(id)
     
     def setGameButtonsState(self, flag):
         '''

@@ -434,8 +434,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             game = self.gameList[ command.getGameId() ]
             if game.hasPlayer(self.clients[client]):
                 self.leaveGame( command.getGameId(), client )
-            if game.hasSpectator(self.clients[client]):
-                self.spectatorLeaveGame(command, client)
 
         if (command.getCommand() == constants.GAME_SEND_MOVE):
             onboard, moves = command.getData()
