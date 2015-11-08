@@ -618,8 +618,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                 _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
         
         self.sendGameInfoMessage(gameId, [player.getUsername(),TURN], client=None, level=constants.GAME_LEVEL)
-        if game.options[OPTION_SHOW_COUNT]:
-            self.sendLetterDistribution(gameId)
     
     def sendLetterDistribution(self, gameId):
         '''
@@ -649,11 +647,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if (game.isPaused() and not booted):
             game.addPending( player )
             return
-        
-        if not game.isComplete() and len(game.getPlayers()) > 1:
-            if game.isStarted():
-                if game.options[OPTION_RANKED] and penalize:
-                    self.db.users[ player.getUsername() ].addLoss(None)
         
         game.playerLeave(player)
         
@@ -703,7 +696,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         words = []
         for move in moves:
             word = util.getUnicode( move.getWord() )
-            if word not in self.dicts[ game.options[OPTION_RULES] ]:
+            if word not in self.dicts[ 'en' ]:
                 client.gameError( gameId, ServerMessage([word, NOT_IN_DICT]) )
                 return
             words.append( word )
@@ -828,8 +821,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             if modifier in constants.WORD_MODIFIERS and not game.hasUsedModifier((m_x,m_y)):
                 
                 if util.isCenter(m_x, m_y):
-                    if game.options[OPTION_CENTER_TILE]:
-                        score = score * (modifier/2)
+                    score = score * (modifier/2)
                 else:
                     score = score * ((modifier/2) ** apply)
                 
