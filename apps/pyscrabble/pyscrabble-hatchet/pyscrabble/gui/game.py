@@ -52,7 +52,7 @@ class GameFrame(gtk.Frame):
         self.hideTradeButton = False
         
         self.spectating = spectating
-        self.gameOptions = options
+        self.gameOptions = {OPTION_CENTER_TILE: True, 52: 'en', OPTION_SHOW_COUNT: True}
         
         self.currentTurn = False
         self.letters = [] # User letter list
