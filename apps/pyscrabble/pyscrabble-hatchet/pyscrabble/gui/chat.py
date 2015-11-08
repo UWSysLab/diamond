@@ -406,10 +406,6 @@ class ChatFrame(gtk.Frame):
         self.gameList.clear()
         for game in games:
             iter = self.gameList.append(None, (game.getName(), str(game.getNumberOfPlayers()), game.getStatus()) )
-            for key,value in game.options:
-                if not isinstance(value,str):
-                    value = str(value)
-                self.gameList.append(iter, (str(key), value, ""))
     
     # Set the current game ID
     def newGame(self, gameId, spectating, options):

@@ -529,7 +529,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             game.removePending( p )
         
         command.setCommand( constants.GAME_JOIN_OK )
-        client.acceptJoinGame( command, game.options )
+        client.acceptJoinGame( command, {} )
         
         players = game.getPlayers()
         pending = game.getPending()
@@ -538,7 +538,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         client.sendMoves( game.getGameId(), game.getMoves() )
         client.gameInfo( game.getGameId(), game.getLog() )
-        client.sendGameOptions( game.getGameId(), game.getOptions() )
+        client.sendGameOptions( game.getGameId(), {} )
         
         if (game.isPaused()):
             client.pauseGame( game.getGameId() )

@@ -103,18 +103,6 @@ class ScrabbleClient(object):
         command = self.command.createNewUserCommand(username, password, isAdmin)
         self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
     
-    # Change password
-    def changePassword(self, oldpassword, newpassword):
-        '''
-        Change password for the current user on the server
-        
-        @param oldpassword: Old password
-        @param newpassword: New password
-        '''
-        
-        command = self.command.createChangePasswordCommand(newpassword, oldpassword)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
     def logout(self):
         '''
         Initiate the logout process
@@ -247,24 +235,6 @@ class ScrabbleClient(object):
         
         command = self.command.createGameTradeLettersCommand(gameId, letters)
         self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
-    
-    def requestUserInfo(self, username):
-        '''
-        Request user information
-        
-        @param username: User info
-        '''
-        command = self.command.createUserInfoCommand(username)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
-    
-    def requestServerStats(self):
-        '''
-        Request server stats
-        
-        @param username: Server stats
-        '''
-        command = self.command.createServerStatsCommand()
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.chatErrback)
         
     def getServerNumUsers(self):
         '''
@@ -272,20 +242,6 @@ class ScrabbleClient(object):
         '''
         command = self.command.createGetNumServerUsersCommand()
         self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.errback)
-    
-    def notifyGameTimeExpired(self, gameId):
-        '''
-        Notify the server that this players game time has expired
-        '''
-        command = self.command.createGameTimeExpireCommand(gameId)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
-    
-    def notifyMoveTimeExpired(self, gameId):
-        '''
-        Notify the server that this players game time has expired
-        '''
-        command = self.command.createMoveTimeExpireCommand(gameId)
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
 
 
     # Protocol callback
@@ -318,7 +274,8 @@ class ScrabbleClient(object):
             return
         
         if (isinstance(command, ChatCommand)):
-            self.processChatCommand(command)
+            #self.processChatCommand(command)
+            print "Received chat command: " + repr(command)
             return
         
         if (isinstance(command, GameCommand)):
@@ -376,9 +333,6 @@ class ScrabbleClient(object):
             if (command.getCommand() == GAME_JOIN_OK):
                 self.chatWin.newGame( command.getGameId(), False, command.getData() )
             
-            if (command.getCommand() == GAME_SPECTATE_JOIN_OK):
-                self.chatWin.newGame( command.getGameId(), True, command.getData() )
-            
             if (command.getCommand() == GAME_JOIN_DENIED):
                 self.chatWin.error(util.ErrorMessage( command.getData() ), True)
             
@@ -415,20 +369,8 @@ class ScrabbleClient(object):
             if (command.getCommand() == GAME_UNPAUSE):
                 self.gameWins[command.getGameId()].unpauseGame()
             
-            if (command.getCommand() == GAME_SPECTATOR_CHAT_SET):
-                self.gameWins[command.getGameId()].enableSpectatorChat(command.getData())
-            
-            if (command.getCommand() == GAME_SPECTATOR_SET):
-                self.gameWins[command.getGameId()].enableSpectators(command.getData())
-            
-            if (command.getCommand() == GAME_SEND_STATS):
-                self.gameWins[command.getGameId()].refreshStats(command.getData())
-            
             if (command.getCommand() == GAME_BAG_EMPTY):
                 self.gameWins[command.getGameId()].gameBagEmpty()
-            
-            if (command.getCommand() == GAME_SEND_SPECTATORS):
-                self.gameWins[command.getGameId()].refreshSpecs(command.getData())
             
             if (command.getCommand() == GAME_SEND_OPTIONS):
                 self.gameWins[command.getGameId()].showOptions(command.getData())

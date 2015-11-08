@@ -18,9 +18,6 @@ class ScrabbleGame:
         @param name: Game ID
         '''
         
-        if not options:
-            options = {}
-        
         self.players = []
         self.name = name
         self.started = False
@@ -33,9 +30,7 @@ class ScrabbleGame:
         self.currentPlayer = None
         self.log = []
         self.pending = []
-        self.stats = {}
-        self.options = options
-        self.bag = Bag( rules=options[OPTION_RULES] )
+        self.bag = Bag( rules='en' )
         self.creator = None
         self.timer = None
         self.spectatorsAllowed = True
@@ -220,50 +215,11 @@ class ScrabbleGame:
         
         self.passedMoves = 0 # Rest pass counter
         score = 0
-        allDisp = ''
         for move in moves:
             word = move.getWord()
             score = score + move.getScore()
             self.words.append( word )
             self.moves.append( move )
-            
-            newdisp = '%s (%s) by %s' % (word, str(move.getScore()), player.getUsername())
-            if self.stats.has_key(STAT_HIGHEST_SCORING_WORD):
-                data,disp = self.stats[STAT_HIGHEST_SCORING_WORD]
-                if (move.getScore() > data.getScore()):
-                    self.stats[STAT_HIGHEST_SCORING_WORD] = move,newdisp
-            else:
-                self.stats[STAT_HIGHEST_SCORING_WORD] = move,newdisp
-            
-            newdisp = '%s (%s) by %s' % (word, str(move.length()), player.getUsername())
-            if self.stats.has_key(STAT_LONGEST_WORD):
-                data,disp = self.stats[STAT_LONGEST_WORD]
-                if (move.length() > data.length()):
-                    self.stats[STAT_LONGEST_WORD] = move,newdisp
-            else:
-                self.stats[STAT_LONGEST_WORD] = move,newdisp
-            
-            allDisp = allDisp + '%s (%s) ' % (word, str(move.getScore()))
-        
-        allDisp = allDisp + 'by %s' % player.getUsername()
-        
-        d = allDisp
-        d = '%s, ' % str(score) + d
-        if self.stats.has_key(STAT_HIGHEST_SCORING_MOVE):
-            data, disp = self.stats[STAT_HIGHEST_SCORING_MOVE]
-            if score > data:
-                self.stats[STAT_HIGHEST_SCORING_MOVE] = score, d
-        else:
-            self.stats[STAT_HIGHEST_SCORING_MOVE] = score, d
-        
-        d = allDisp
-        d = '%s, ' % str(len(moves)) + d
-        if self.stats.has_key(STAT_MOST_WORDS_IN_MOVE):
-            data, disp = self.stats[STAT_MOST_WORDS_IN_MOVE]
-            if len(moves) > data:
-                self.stats[STAT_MOST_WORDS_IN_MOVE] = len(moves), d
-        else:
-            self.stats[STAT_MOST_WORDS_IN_MOVE] = len(moves), d
         
     
     
@@ -457,42 +413,6 @@ class ScrabbleGame:
         '''
         if player not in self.pending:
             self.pending.append( player )
-    
-    def getStats(self):
-        '''
-        Retrieve list of game stats
-        
-        @return: List of tuples (stat_name, stat_value)
-        '''
-        
-        s = []
-        s.append( (ServerMessage([STAT_LETTERS_LEFT]), str(self.bag.getCount())) )
-        
-        for key,value in self.stats.iteritems():
-            data,disp = value
-            s.append ( (ServerMessage([key]), disp) )
-            
-        return s
-    
-    def getOptions(self):
-        '''
-        Return list of options
-        
-        @return: List of tuples (option_name, option_value)
-        '''
-        
-        s = []
-        s.append( (ServerMessage([CREATOR]), self.creator) )
-        
-        for key,value in self.options.iteritems():
-            if key in (OPTION_TIMED_GAME , OPTION_TIMED_LIMIT, OPTION_MOVE_TIME):
-                if value == int(1):
-                    s.append( (ServerMessage([key]), ServerMessage([value,MINUTE])) )
-                else:
-                    s.append( (ServerMessage([key]), ServerMessage([value,MINUTES])) )
-            else:
-                s.append( (ServerMessage([key]), ServerMessage([value])) )
-        return s
         
     
     def getCountLetters(self):
@@ -534,7 +454,6 @@ class ScrabbleGameInfo(object):
             if (game.isComplete()):
                 self.status = ServerMessage([COMPLETE])
             
-            self.options = game.getOptions()
             game = None
     
     def getName(self):
