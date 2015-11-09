@@ -308,9 +308,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         game = self.gameList[ gameId ]
         game.setComplete()
-        
-        self.sendGameInfoMessage(gameId, [SERVER_DELETE_GAME], client=None, level=constants.GAME_LEVEL)
-        
+                
         for player in game.getPlayers():
             c = self.getPlayerClient(player)
             if c:
@@ -365,9 +363,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                 return True
 
         return False
-    
-    def sendGameInfoMessage(self, gameId, message, client=None, level=constants.GAME_LEVEL):
-        print "Tried to send a game info message"
         
     # Change a users password
     def changePassword(self, command, client):
@@ -464,7 +459,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                 c = self.getPlayerClient(player)
                 c.unPauseGame( game.getGameId() )
             self.refreshGameList()
-            self.sendGameInfoMessage(command.getGameId(), [GAME_RESUMED], None, level=constants.GAME_LEVEL)
             self.doGameTurn(game.getGameId(), wasUnpaused=True)
             
             del self.db.games[ game.getGameId() ]
@@ -537,7 +531,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.sendGameScores(game.getGameId())
         
         client.sendMoves( game.getGameId(), game.getMoves() )
-        client.gameInfo( game.getGameId(), game.getLog() )
         client.sendGameOptions( game.getGameId(), {} )
         
         if (game.isPaused()):
@@ -585,7 +578,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             player.addLetters(letters)
             c.sendLetters( game.getGameId(), letters )
         
-        self.sendGameInfoMessage(gameId, [gameId, STARTED], client=None, level=constants.GAME_LEVEL)
         self.sendGameScores(game.getGameId())
 
         self.doGameTurn( gameId )
@@ -616,8 +608,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             _client = self.getPlayerClient(_player)
             if (_player != player):
                 _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
-        
-        self.sendGameInfoMessage(gameId, [player.getUsername(),TURN], client=None, level=constants.GAME_LEVEL)
     
     def sendLetterDistribution(self, gameId):
         '''
@@ -651,8 +641,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         game.playerLeave(player)
         
         self.sendGameScores(gameId)
-        
-        self.sendGameInfoMessage(gameId, [player.getUsername(),LEFT_GAME], client=None, level=constants.GAME_LEVEL)
 
         # If there are no more players left, remove the game
         if len(game.getPlayers()) == 0 and not game.isPaused():
@@ -718,14 +706,10 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         # If the player used all 7 of his/her letters, give them an extra 50
         if onboard.length() == 7:
             player.addScore( constants.BINGO_BONUS_SCORE )
-            self.sendGameInfoMessage(gameId, [player.getUsername(), MADE_A_BINGO, '(%s)' % str(constants.BINGO_BONUS_SCORE)], client=None, level=constants.GAME_LEVEL)
         
         for p in game.getPlayers():
             c = self.getPlayerClient(p)
             c.sendMoves( gameId, moves )
-            
-        for move in moves:
-            self.sendGameInfoMessage(gameId, [player.getUsername(), HAS_ADDED, ' %s (%d)' % (move.getWord(), move.getScore())], client=None, level=constants.GAME_LEVEL)
             
             # If the player used all his/her letters and there are no more letters in the bag, the game is over
         if (len(player.getLetters()) == 0 and game.isBagEmpty()):
@@ -738,16 +722,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
                     continue # Skip winner
                     
                 letters = p.getLetters()
-                lmsg = ''
-                wmsg = ''
                 for letter in letters:
                     p.addScore( letter.getScore() * -1 )
                     player.addScore( letter.getScore() )
-                    lmsg = lmsg + '%s(%d) ' % (letter.getLetter(), letter.getScore() * -1)
-                    wmsg = wmsg + '%s(%d) ' % (letter.getLetter(), letter.getScore())
-                
-                self.sendGameInfoMessage(gameId, [p.getUsername(), LOSES, lmsg], client=None, level=constants.GAME_LEVEL)
-                self.sendGameInfoMessage(gameId, [player.getUsername(), GAINS, wmsg, FROM, p.getUsername()], client=None, level=constants.GAME_LEVEL)
             
             self.sendGameScores(game.getGameId())
             
@@ -871,8 +848,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             return
         
         try:
-            self.sendGameInfoMessage(gameId, [player.getUsername(), HAS_PASSED], client=None, level=constants.GAME_LEVEL)
-            
             game.passMove()
             
             self.sendGameScores(gameId)
@@ -884,13 +859,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             players = game.getPlayers()
             for player in players:
                 letters = player.getLetters()
-                msg = ''
                 for letter in letters:
                     player.addScore( letter.getScore() * -1 )
-                    msg = msg + '%s(%d) ' % (letter.getLetter(), letter.getScore() * -1)
                 
-                self.sendGameInfoMessage(gameId, [player.getUsername(), LOSES, msg], client=None, level=constants.GAME_LEVEL)
-            
             self.sendGameScores(game.getGameId())
             self.gameOver(game)
     
@@ -949,20 +920,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         # If there is less than one player in the game, don't count the score
         count = len(game.getPlayers()) > 1
         
-        if len(winners) > 0:
-            if len(winners) == 1:
-                winner = winners[0]
-                self.sendGameInfoMessage(game.getGameId(), ['%s (%d)' % (winner.username, int(winner.score)), HAS_WON], client=None, level=constants.GAME_LEVEL)
-
-            else:
-                msg = ''
-                for winner in winners:
-                    msg += '%s (%d)' % (winner.username, int(winner.score))
-                    msg += ', '
-
-                msg = msg[:-2]
-                self.sendGameInfoMessage(game.getGameId(), [msg, HAVE_TIED], client=None, level=constants.GAME_LEVEL)
-        
         for p in game.getPlayers():
             c = self.getPlayerClient( p )
             c.gameOver( game.getGameId() )
@@ -1004,63 +961,8 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         game.resetPassCount()
         
         self.sendGameScores(command.getGameId())
-        
-        self.sendGameInfoMessage(game.getGameId(), [player.getUsername(),HAS_TRADED, '%s' % str(num), util.ternary(num == 1, LETTER, LETTERS)], client=None, level=constants.GAME_LEVEL)
-        
+                
         self.doGameTurn(game.getGameId())
-    
-    def getUserStatus(self, username):
-        '''
-        Get users status
-        
-        @param username:
-        @return: ServerMessage detailing users activity on the system
-        '''
-        p,c = None,None
-        for client,player in self.clients.iteritems():
-            if player.getUsername() == username:
-                p,c = player,client
-                break
-        
-        if p is not None and c is not None:
-            message = []
-            playing = []
-            watching = []
-            for game in self.gameList.itervalues():
-                if game.hasPlayer(p):
-                    playing.append( game.getGameId() )
-            
-            for game in self.gameList.itervalues():
-                if game.hasSpectator(p):
-                    watching.append( game.getGameId() )
-            
-            if len(playing) > 0:
-                message.append(PLAYING)
-                count = 0
-                for game in playing:
-                    if count != 0:
-                        message.append(',')
-                    message.append(game)
-                    count += 1
-            
-            if len(watching) > 0:
-                if len(message) > 0:
-                    message.append( '-' )
-                    
-                message.append(WATCHING)
-                count = 0
-                for game in watching:
-                    if count != 0:
-                        message.append(',')
-                    message.append(game)
-                    count += 1
-            
-            if len(message) == 0:
-                message = [ ONLINE ]
-            
-            return ServerMessage(message)
-        else:
-            return ServerMessage([OFFLINE])
 
 
     def saveGame(self, command, client):
@@ -1084,7 +986,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         self.db.games[ game.getGameId() ] = game
         self.db.sync()
-        self.sendGameInfoMessage(command.getGameId(), [GAME_SAVED], None, level=constants.GAME_LEVEL)
         
         for player in game.getPlayers():
             c = self.getPlayerClient(player)
@@ -1382,18 +1283,6 @@ class ScrabbleServer(NetstringReceiver):
         '''
         
         command = self.command.createGameOverCommand(gameId)
-        self.writeCommand( command )
-
-    def gameInfo(self, gameId, tup):
-        '''
-        Send a Game Info message
-        
-        @param gameId: Game ID
-        @param tup: A Tuple containing (boolean, message).  If boolean is true, it is a Server info Message.  Else it is a Player info message.
-        @see: L{pyscrabble.net.server.ServerFactory.sendGameInfoMessage}
-        '''
-        
-        command = self.command.createGameInfoCommand(gameId, tup)
         self.writeCommand( command )
 
     def pauseGame(self, gameId):
