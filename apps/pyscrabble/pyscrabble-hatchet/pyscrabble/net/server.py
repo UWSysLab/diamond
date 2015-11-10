@@ -468,7 +468,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             self.tradeLetters(command, client)
             
     def handleChatCommand(self, command, client):
-        print "Received chat command"
+        print "Received chat command: " + repr(command.command) + " " + repr(command.data)
     
     # Send the list of users to the client
     def sendUserList(self, client):
@@ -525,13 +525,12 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         command.setCommand( constants.GAME_JOIN_OK )
         client.acceptJoinGame( command, {} )
         
-        players = game.getPlayers()
-        pending = game.getPending()
+        #players = game.getPlayers()
+        #pending = game.getPending()
         
         self.sendGameScores(game.getGameId())
         
         client.sendMoves( game.getGameId(), game.getMoves() )
-        client.sendGameOptions( game.getGameId(), {} )
         
         if (game.isPaused()):
             client.pauseGame( game.getGameId() )
@@ -1241,16 +1240,6 @@ class ScrabbleServer(NetstringReceiver):
         
         command = self.command.createErrorCommand(msg)
         self.writeCommand( command )
-    
-    def showInfo(self, msg):
-        '''
-        Show a General Info message
-        
-        @param msg: Info message
-        '''
-        
-        command = self.command.createInfoCommand(msg)
-        self.writeCommand( command )
 
     def gameLeave(self, gameId, disableChat = False):
         '''
@@ -1315,9 +1304,7 @@ class ScrabbleServer(NetstringReceiver):
         @param reason: Failure
         @see: L{twisted.python.failure.Failure}
         '''
-        command = self.command.createLeaveChatCommand()
-        command.setData( isinstance(reason.value, error.ConnectionDone) )
-        self.factory.handleChatCommand(command, self)
+        pass
 
     def logout(self):
         '''
@@ -1339,16 +1326,6 @@ class ScrabbleServer(NetstringReceiver):
         command = self.command.createBootedCommand()
         self.writeCommand( command )
     
-    def sendGameOptions(self, gameId, options):
-        '''
-        Send Game options
-        
-        @param gameId: Game ID
-        @param options: Pptions
-        '''
-        command = self.command.createGameSendOptionsCommand(gameId, options)
-        self.writeCommand( command )
-    
     def gameBagEmpty(self, gameId):
         '''
         Notify the client that the game bag is empty
@@ -1357,15 +1334,6 @@ class ScrabbleServer(NetstringReceiver):
         '''
         command = self.command.createGameBagEmptyCommand(gameId)
         self.writeCommand( command )
-    
-    def sendUserInfo(self, user):
-        '''
-        Send user info
-        
-        @param user: Username
-        '''
-        command = self.command.createUserInfoCommand(user.getUsername(), user)
-        self.writeCommand( command )   
         
     def writeCommand(self, command):
         '''

@@ -235,13 +235,6 @@ class ScrabbleClient(object):
         
         command = self.command.createGameTradeLettersCommand(gameId, letters)
         self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.gameWins[gameId].error)
-        
-    def getServerNumUsers(self):
-        '''
-        Get number of users on the server
-        '''
-        command = self.command.createGetNumServerUsersCommand()
-        self.defer.addCallbacks(self.sendCommand, callbackArgs=[command], errback=self.errback)
 
 
     # Protocol callback
@@ -275,7 +268,7 @@ class ScrabbleClient(object):
         
         if (isinstance(command, ChatCommand)):
             #self.processChatCommand(command)
-            print "Received chat command: " + repr(command)
+            print "Received chat command: " + repr(command.command) + " " + repr(command.data)
             return
         
         if (isinstance(command, GameCommand)):
@@ -372,14 +365,8 @@ class ScrabbleClient(object):
             if (command.getCommand() == GAME_BAG_EMPTY):
                 self.gameWins[command.getGameId()].gameBagEmpty()
             
-            if (command.getCommand() == GAME_SEND_OPTIONS):
-                self.gameWins[command.getGameId()].showOptions(command.getData())
-            
             if (command.getCommand() == GAME_OVER):
                 self.gameWins[command.getGameId()].gameOver()
-            
-            if (command.getCommand() == GAME_DISTRIBUTION):
-                self.gameWins[command.getGameId()].showDistribution( command.getData() )
         
         except KeyError: pass
     

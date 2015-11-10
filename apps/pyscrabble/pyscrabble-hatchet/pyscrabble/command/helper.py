@@ -46,16 +46,6 @@ class CommandCreator(object):
         '''
         
         return self.parser.parseLoginCommand( [username, password, NEW_USER, isAdmin] )
-    
-    def createChangePasswordCommand(self, newpassword, oldpassword):
-        '''
-        
-        @param newpassword:
-        @param oldpassword:
-        @return LoginCommand
-        '''
-        
-        return self.parser.parseLoginCommand( ['', newpassword, CHANGE_PASSWORD, oldpassword] )
         
     def createGoodbyeCommand(self):
         '''
@@ -64,68 +54,6 @@ class CommandCreator(object):
         '''
         
         return self.parser.parseLoginCommand( ['','',LOGOUT,''] )
-    
-    def createJoinChatCommand(self, username):
-        '''
-        
-        @param username:
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( [username, CHAT_JOIN, ''] )
-    
-    def createLeaveChatCommand(self):
-        '''
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( ['', CHAT_LEAVE, ''] )
-    
-    def createPostChatMessageCommand(self, msg, username='' ):
-        '''
-        
-        @param msg:
-        @param username:
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( [username, CHAT_MESSAGE, msg] )
-    
-    def createGetMessagesCommand(self, data=''):
-        '''
-        
-        @param data: Data
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( ['', GET_MESSAGES, data] )
-    
-    def createCheckMessagesCommand(self, data=''):
-        '''
-        
-        @param data: Data
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( ['', CHECK_MESSAGES, data] )
-    
-    def createDeleteMessageCommand(self, data=''):
-        '''
-        
-        @param data: Data
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( ['', DELETE_MESSAGE, data] )
-    
-    def createGetChatUsersCommand(self, users=''):
-        '''
-        
-        @param users: List of users
-        @return: ChatCommand
-        '''
-        
-        return self.parser.parseChatCommand( ['', CHAT_USERS, users] )
     
     def createGetLettersCommand(self, gameId, numLetters):
         '''
@@ -256,16 +184,6 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_PASS, gameId, data] )
     
-    def createGameInfoCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_INFO, gameId, data] )
-    
     def createGamePauseCommand(self, gameId, data=''):
         '''
         
@@ -296,16 +214,6 @@ class CommandCreator(object):
         
         return self.parser.parseGameCommand( [GAME_TRADE_LETTERS, gameId, data] )
     
-    def createGameChatMessageCommand(self, gameId, data=''):
-        '''
-        Send a game chat message to the server
-        
-        @param gameId: Game ID
-        @param data: Chat message
-        '''
-        
-        return self.parser.parseGameCommand( [GAME_CHAT_MESSAGE, gameId, data] )
-    
     def createBootedCommand(self, data=''):
         '''
         Command for the server to boot a user off the server
@@ -323,61 +231,6 @@ class CommandCreator(object):
         '''
         return self.parser.parseChatCommand( ['', ERROR, data] )
     
-    def createInfoCommand(self, data=''):
-        '''
-        Show an Info message
-        
-        @param data: Info message
-        '''
-        return self.parser.parseChatCommand( ['', INFO, data] )
-    
-    def createPrivateMessageCommand(self, sender, recipient, data):
-        '''
-        Send a private message
-        
-        @param sender:
-        @param recipient:
-        @param data:
-        '''
-        
-        return self.parser.parsePrivateMessageCommand( [PRIVATE_MESSAGE_SEND, sender, recipient, data] )
-    
-    def createGameSpectatorJoinCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        return self.parser.parseGameCommand( [GAME_SPECTATOR_JOIN, gameId, data] )
-    
-    def createGameSpectatorLeaveCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        return self.parser.parseGameCommand( [GAME_SPECTATOR_LEAVE, gameId, data] )
-    
-    def createGameSpectatorChatCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        return self.parser.parseGameCommand( [GAME_SPECTATOR_CHAT_SET, gameId, data] )
-    
-    def createGameStatsCommand(self, gameId, data=''):
-        '''
-        Send game stats
-        
-        @param gameId: Game ID
-        @param data: Stat data
-        '''
-        return self.parser.parseGameCommand( [GAME_SEND_STATS, gameId, data] )
-    
     def createGameBagEmptyCommand(self, gameId, data=''):
         '''
         Game bag is empty 
@@ -387,50 +240,6 @@ class CommandCreator(object):
         '''
         return self.parser.parseGameCommand( [GAME_BAG_EMPTY, gameId, data] )
     
-    def createGameSendSpectatorsCommand(self, gameId, data=''):
-        '''
-        Send list of spectators
-        
-        @param gameId: Game ID
-        @param data:
-        '''
-        return self.parser.parseGameCommand ( [GAME_SEND_SPECTATORS, gameId, data] )
-    
-    
-    def createUserInfoCommand(self, username, data=''):
-        '''
-        User info
-        
-        @param username:
-        @return: ChatCommand
-        '''
-        return self.parser.parseChatCommand( [username, USER_INFO, data] )
-    
-    def createServerStatsCommand(self, data=''):
-        '''
-        Server stats
-        
-        @return: ChatCommand
-        '''
-        return self.parser.parseChatCommand( ['', SERVER_STATS, data] )
-    
-    def createGetNumServerUsersCommand(self, data=''):
-        '''
-        Get the number of users on a server
-        
-        @return: LoginCommand
-        '''
-        
-        return self.parser.parseLoginCommand( ['', '', SERVER_NUM_USERS, data] )
-    
-    def createGameSendOptionsCommand(self, gameId, data=''):
-        '''
-        Send game options
-        
-        @param gameId: Game ID
-        @param data:
-        '''
-        return self.parser.parseGameCommand ( [GAME_SEND_OPTIONS, gameId, data] )
     
     def createGameOverCommand(self, gameId, data=''):
         '''
@@ -440,33 +249,6 @@ class CommandCreator(object):
         @param data:
         '''
         return self.parser.parseGameCommand ( [GAME_OVER, gameId, data] )
-    
-    def createGameTimeExpireCommand(self, gameId, data=''):
-        '''
-        Game Time has expired for a player
-        
-        @param gameId: Game ID
-        @param data:
-        '''
-        return self.parser.parseGameCommand ( [GAME_TIME_EXPIRE, gameId, data] )
-    
-    def createMoveTimeExpireCommand(self, gameId, data=''):
-        '''
-        Move Time has expired for a player
-        
-        @param gameId: Game ID
-        @param data:
-        '''
-        return self.parser.parseGameCommand ( [GAME_MOVE_TIME_EXPIRE, gameId, data] )
-    
-    def createGameSpectatorSetCommand(self, gameId, data=''):
-        '''
-        
-        @param gameId:
-        @param data:
-        @return: GameCommand
-        '''
-        return self.parser.parseGameCommand( [GAME_SPECTATOR_SET, gameId, data] )
     
     def createGameBootCommand(self, gameId, data=''):
         '''
