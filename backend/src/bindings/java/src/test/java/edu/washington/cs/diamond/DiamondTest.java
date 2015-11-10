@@ -35,7 +35,7 @@ public class DiamondTest
      * Initialize Diamond
      */
     public void setUp() {
-        Diamond.DiamondInit("moranis.cs.washington.edu");
+        Diamond.DiamondInit();
     }
 
     /**
