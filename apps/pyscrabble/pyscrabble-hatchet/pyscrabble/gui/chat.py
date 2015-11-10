@@ -420,65 +420,7 @@ class ChatFrame(gtk.Frame):
         self.setGameButtonsState(True)
         
         self.mainwindow.newGame( gameId, spectating, options )
-    
-    # Change password dialog
-    def changePasswordDialog(self, button = None):
-        '''
-        Show dialog to change password
         
-        @param button: Widget that was clicked to activate this handler.
-        '''
-        
-        s = _("Change Password")
-        changepasswordDialog = gtk.Dialog(title="%s" % s, flags=gtk.DIALOG_MODAL)
-        changepasswordDialog.vbox.set_border_width( 5 )
-        
-        header = gtk.Label()
-        header.set_markup("<b><big>%s:</big></b>" % s)
-        changepasswordDialog.vbox.pack_start(header)
-        
-        s = _("Old Password")
-        oldpassword = gtkutil.EntryWithLabel(label="%s: " % s, visibility=False)
-        changepasswordDialog.vbox.pack_start( oldpassword )
-        
-        s = _("Password")
-        password1 = gtkutil.EntryWithLabel(label="%s: " % s, visibility=False)
-        changepasswordDialog.vbox.pack_start( password1 )
-        
-        s = _("Confirm Password")
-        password2 = gtkutil.EntryWithLabel(label="%s: " % s, visibility=False)
-        changepasswordDialog.vbox.pack_start( password2 )
-        
-        okbutton = gtk.Button(_("Change"))
-        cancelbutton = gtk.Button(_("Cancel"))
-        
-        changepasswordDialog.action_area.pack_start(okbutton)
-        changepasswordDialog.action_area.pack_start(cancelbutton)
-        
-        okbutton.connect("clicked", self.changePassword, oldpassword, password1, password2, changepasswordDialog)
-        cancelbutton.connect("clicked", lambda b: changepasswordDialog.destroy() )
-        
-        changepasswordDialog.show_all()
-        
-    
-    # Change password
-    def changePassword(self, button, oldpassword, password1, password2, dialog):
-        '''
-        Ask server to change password
-        
-        @param button: Widget that was clicked to activate this handler
-        @param oldpassword: Old password widget
-        @param password1: New Password widget
-        @param password2: New Password Confirmation widget
-        @param dialog: Change Password dialog widget
-        '''
-        
-        if password1.get_text() != password2.get_text():
-            self.error(util.ErrorMessage(_("Passwords don't match.")))
-            return
-        
-        self.client.changePassword(util.hashPassword(oldpassword.get_text()), util.hashPassword(password1.get_text()))
-        dialog.destroy()
     
     def hasFocus(self, widget=None, event=None):
         '''

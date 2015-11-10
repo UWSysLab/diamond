@@ -45,7 +45,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         self.db = db.DB()
         self.maxUsersLoggedIn = 0
         self.startDate = util.Time(seconds=time.time(), dispDate=True)
-        self.rankings = rank.Rankings( resources["config"][constants.RANK_CONFIG] )
         
         dir = resources["resources"][constants.DICT_DIR].path
         for lang in os.listdir( dir ):
@@ -80,14 +79,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         if self.clients.has_key(client):
             del self.clients[client]
     
-    def resetRanks(self):
-        '''
-        Reset users ranks
-        '''
-        for username in self.db.users.keys():
-            self.db.users[username].setRank( 0 )
-            self.db.users[username].rankName = self.rankings.getMinRank().name
-    
     def isLoggedIn(self, player):
         '''
         Check if a user was logged in
@@ -114,62 +105,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         return str
         
     
-    def bootUser(self, username):
-        '''
-        Boot a user from the server
-        
-        @param username: Username
-        '''
-        p = Player( username )
-        c = self.getPlayerClient(p)
-        
-        if c is not None:
-            for game in self.gameList.itervalues():
-                if game.hasPlayer(p):
-                    self.leaveGame(game.getGameId(), c, penalize=True, booted=True)
-                    c.gameBoot(game.getGameId())
-                if game.hasSpectator( player ):
-                    cmd = helper.GameCommand(constants.GAME_LEAVE, game.getGameId(), '')
-                    self.spectatorLeaveGame(cmd, client)
-            c.logout()
-            self.removeClient(c)
-        
-    
-    def removeUser(self, username):
-        '''
-        Remove a user from the server.
-        
-        If the user is logged in, send a booted command
-        
-        @param username: Username
-        '''
-        self.bootUser(username)
-        
-        del self.db.users[util.getUnicode(username)]
-        self.db.sync()
-        
-    
-    def updateUser(self, user):
-        '''
-        Update a user
-        
-        @param user: User
-        '''
-        
-        self.db.users[ user.getUsername() ] = user
-    
-    def doChangePassword(self, username, newPassword):
-        '''
-        Change a users password
-         
-        @param username:
-        @param newPassword:
-        '''
-        
-        user = self.db.users[util.getUnicode(username)]
-        user.setPassword(newPassword)
-                
-
     def getUsers(self):
         '''
         Return user objects
@@ -177,7 +112,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         @return: Dictionary of users
         '''
         x = self.db.users.values()[:]
-        x.sort( lambda x,y : cmp(x.lastLogin, y.lastLogin) )
+        x.sort( lambda x,y : cmp(x.username, y.username) )
         return x
     
     def getUser(self, username):
@@ -221,20 +156,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         return len(self.db.users) != 0
         
     
-    def isUserAdmin(self, username):
-        '''
-        Check to see if a user is administrator
-        
-        @param username: Username
-        @return: True if the user is an Administrator
-        '''
-        u = util.getUnicode(username)
-        if not self.db.users.has_key(u):
-            return False
-        
-        user = self.db.users[u]
-        return user.isAdmin()
-    
     def addNewUser(self, username, password, isAdmin):
         '''
         Add a new user
@@ -258,7 +179,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             isAdmin = True
         
         user = User( username, password, isAdmin )
-        user.rankName = self.rankings.getMinRank().name
         self.db.users[ user.getUsername() ] = user
         self.db.sync()
         
@@ -364,28 +284,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         return False
         
-    # Change a users password
-    def changePassword(self, command, client):
-        '''
-        Change password
-        
-        @param command: LoginCommand
-        @param client: ScrabbleServer Protocol
-        '''
-        
-        if command.getUsername() != None and len(command.getUsername()) != 0:
-            user = self.db.users[ command.getUsername() ]
-        else:
-            player = self.clients[client]
-            user = self.db.users[ player.getUsername() ]
-        
-        if (user.getPassword() == command.getData()): # Data will have the old password
-            user.setPassword( command.getPassword() )
-            self.db.users[ user.getUsername() ] = user
-            self.db.sync()
-        else:
-            client.showError( ServerMessage([INVALID_OLD_PASSWORD]) )
-
     def loginUser(self, player, client):
         '''
         Log a user into the system. Join the main chat
@@ -1090,10 +988,6 @@ class ScrabbleServer(NetstringReceiver):
 
         if (command.getCommand() == constants.NEW_USER):
             self.factory.createNewUser(command, self)
-            return
-
-        if (command.getCommand() == constants.CHANGE_PASSWORD):
-            self.factory.changePassword(command, self)
             return
 
     def sendUserList(self, users):
