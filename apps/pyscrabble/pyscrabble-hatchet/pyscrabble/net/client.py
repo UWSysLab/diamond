@@ -266,11 +266,6 @@ class ScrabbleClient(object):
             self.processLoginCommand(command)
             return
         
-        if (isinstance(command, ChatCommand)):
-            #self.processChatCommand(command)
-            print "Received chat command: " + repr(command.command) + " " + repr(command.data)
-            return
-        
         if (isinstance(command, GameCommand)):
             self.processGameCommand(command)
             return

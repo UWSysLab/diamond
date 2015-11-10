@@ -364,19 +364,6 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
 
         if (command.getCommand() == constants.GAME_TRADE_LETTERS):
             self.tradeLetters(command, client)
-            
-    def handleChatCommand(self, command, client):
-        print "Received chat command: " + repr(command.command) + " " + repr(command.data)
-    
-    # Send the list of users to the client
-    def sendUserList(self, client):
-        '''
-        Send the client a list of all users on the server
-        
-        @param client:
-        '''
-        
-        client.sendUserList( [ self.clients[c] for c in self.clients.keys()] )
 
     def refreshGameList(self):
         '''
@@ -935,10 +922,6 @@ class ScrabbleServer(NetstringReceiver):
         if ( isinstance(command, helper.LoginCommand) ):
             self.handleLoginCommand( command )
             return
-            
-        if ( isinstance(command, helper.ChatCommand) ):
-            self.factory.handleChatCommand( command, self )
-            return
 
         if ( isinstance(command, helper.GameCommand) ):
             self.factory.handleGameCommand( command, self )
@@ -989,17 +972,6 @@ class ScrabbleServer(NetstringReceiver):
         if (command.getCommand() == constants.NEW_USER):
             self.factory.createNewUser(command, self)
             return
-
-    def sendUserList(self, users):
-        '''
-        Send List of Players on the server
-        
-        @param users: List of Players
-        @see: L{pyscrabble.game.player.Player}
-        '''
-        
-        command = self.command.createGetChatUsersCommand( users )
-        self.writeCommand( command )
 
     def sendLetters(self, gameId, letters):
         '''
