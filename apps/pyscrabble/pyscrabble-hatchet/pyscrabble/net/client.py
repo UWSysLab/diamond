@@ -269,10 +269,6 @@ class ScrabbleClient(object):
         if (isinstance(command, GameCommand)):
             self.processGameCommand(command)
             return
-        
-        if (isinstance(command, PrivateMessageCommand)):
-            self.processPrivateMessageCommand(command)
-            return
     
     # Protocol response handlers
     def processLoginCommand(self, command):

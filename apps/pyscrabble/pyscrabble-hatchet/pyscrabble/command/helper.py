@@ -3,13 +3,10 @@ from string import split
 
 LOGIN_COMMAND = 0
 GAME_COMMAND = 1
-CHAT_COMMAND = 2
-PRIVATE_MESSAGE_COMMAND = 3
 
 def fromType(type):
     if type == 0: return LoginCommand()
     if type == 1: return GameCommand()
-    if type == 3: return PrivateMessageCommand()
 
 
 class CommandCreator(object):
@@ -293,15 +290,6 @@ class CommandParser(object):
         '''
         
         return GameCommand( elements.pop(0), elements.pop(0), elements.pop(0) )
-    
-    def parsePrivateMessageCommand(self, elements):
-        '''
-        Parse a PrivateMessageCommand
-        
-        @param elements: List of command elements
-        '''
-        
-        return PrivateMessageCommand( elements.pop(0), elements.pop(0), elements.pop(0), elements.pop(0) )
         
             
 
@@ -451,57 +439,3 @@ class GameCommand(Command):
         
         self.gameId = gameId
 
-
-class PrivateMessageCommand(Command):
-    
-    def __init__(self, command=None, sender=None, recipient=None, data=None):
-        '''
-        Private message command
-        
-        @param command:
-        @param sender:
-        @param recipient:
-        @param data:
-        '''
-        Command.__init__(self, PRIVATE_MESSAGE_COMMAND)
-        self.command = command
-        self.sender = sender
-        self.recipient = recipient
-        self.data = data
-    
-    def getSender(self):
-        '''
-        Get sender
-        
-        @return: Sender
-        '''
-        
-        return self.sender
-    
-    def setSender(self, sender):
-        '''
-        Set sender
-        
-        @param sender:
-        '''
-        
-        self.sender = sender
-    
-    def getRecipient(self):
-        '''
-        Get Recipient
-        
-        @return: Recipient
-        '''
-        
-        return self.recipient
-    
-    def setRecipient(self, recipient):
-        '''
-        Set recipient
-        
-        @param recipient: Recipient
-        '''
-        
-        self.recipient = recipient
-        

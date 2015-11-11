@@ -926,10 +926,6 @@ class ScrabbleServer(NetstringReceiver):
         if ( isinstance(command, helper.GameCommand) ):
             self.factory.handleGameCommand( command, self )
             return
-        
-        if ( isinstance(command, helper.PrivateMessageCommand) ):
-            self.factory.handlePrivateMessageCommand(command, self)
-            return
 
     def handleLoginCommand(self, command):
         '''
