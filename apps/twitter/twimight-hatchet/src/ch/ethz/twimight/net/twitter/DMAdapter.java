@@ -35,7 +35,6 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
-import ch.ethz.twimight.util.InternalStorageHelper;
 
 /** 
  * Cursor adapter for a cursor containing users.

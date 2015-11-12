@@ -27,7 +27,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.SimpleCursorAdapter;
 import ch.ethz.twimight.R;
-import ch.ethz.twimight.util.InternalStorageHelper;
 
 /** 
  * Cursor adapter for a cursor containing users.

@@ -488,19 +488,10 @@ public class TwitterService extends Service {
 			if(c.getCount() >= 0){
 				c.moveToFirst();				
 				
-				if (picturesBulkInsert) {				
-					long[] rowIds = getRowIdsFromCursor(c);					
-					Intent picturesIntent = new Intent(TwitterService.this, PicturesIntentService.class);
-					picturesIntent.putExtra(PicturesIntentService.USERS_IDS, rowIds);					
-					startService(picturesIntent);
-					
-				} else {
-					
 					while(!c.isAfterLast()){
 						synchUser(c,params[0]);					
 						c.moveToNext();					
-					}
-				}					
+					}				
 				
 			}
 			c.close();		
@@ -588,16 +579,6 @@ public class TwitterService extends Service {
 			Long[] params = {rowId, 2L}; // three attempts
 			(new UnfollowUserTask()).execute(params);
 			
-		} else if((flags & TwitterUsers.FLAG_TO_UPDATEIMAGE)>0){
-		
-			// load the profile image			
-			if( c.isNull(c.getColumnIndex(TwitterUsers.COL_LAST_PICTURE_UPDATE)) ||
-					(System.currentTimeMillis() - c.getInt(c.getColumnIndex(TwitterUsers.COL_LAST_PICTURE_UPDATE)) >Constants.USERS_MIN_SYNCH)){
-				long[] rowIds = {rowId};
-				Intent picturesIntent = new Intent(TwitterService.this, PicturesIntentService.class);
-				picturesIntent.putExtra(PicturesIntentService.USERS_IDS, rowIds);
-				startService(picturesIntent);
-			}
 		}
 		
 	}
