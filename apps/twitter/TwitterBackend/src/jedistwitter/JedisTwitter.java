@@ -279,6 +279,9 @@ public class JedisTwitter {
 	public JsonElement destroyFavorite(String screenName, long pid) {
 		String uidString = jedis.get("user:" + screenName + ":uid");
 		jedis.zrem("uid:" + uidString + ":favorites", String.valueOf(pid));
+		
+		jedis.srem("pid:" + pid + ":favoriters", uidString);
+		
 		return getTweet(pid, screenName);
 	}
 
