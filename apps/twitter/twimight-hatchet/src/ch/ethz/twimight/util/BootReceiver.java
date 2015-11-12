@@ -40,10 +40,9 @@ public class BootReceiver extends BroadcastReceiver {
 
 		// we only start the services if we are logged in (i.e., we have the tokens from twitter)
 		//if(LoginActivity.hasAccessToken(context) && LoginActivity.hasAccessTokenSecret(context)){
-		//TODO: figure out if this needs to execute
-		if(false){
+		//TODO: figure out if this is the right equivalent check
+		if(LoginActivity.getTwitterId(context) != null){
 
-						
 			if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.prefRunAtBoot), Constants.TWEET_DEFAULT_RUN_AT_BOOT)==true){
 				new TwitterAlarm(context,false);
 			}
