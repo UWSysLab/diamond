@@ -38,7 +38,6 @@ import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 import ch.ethz.twimight.R;
-import ch.ethz.twimight.net.opportunistic.BluetoothStatus;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
@@ -100,27 +99,13 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 		bottomStatusBar = findViewById(R.id.bottomStatusBar);
 		tvNeighborCount = (TextView) findViewById(R.id.tvNeighborCount);
 		tvStatus = (TextView) findViewById(R.id.tvStatus);
-		// setup disaster mode specific stuff
-		if (PreferenceManager.getDefaultSharedPreferences(this).getBoolean(
-				"prefDisasterMode", false) == true) {
-			if (dd == null)
-				Log.i(TAG,"dd null");			
-			actionBar.setBackgroundDrawable(dd);
-			Log.i(TAG,"setting disaster background");
-			// does the current layout have a bottom status bar?
-			if (bottomStatusBar != null) {
-				bottomStatusBar.setVisibility(View.VISIBLE);
-				updateStatusBar();
-				// register for bluetooth status updates
-				BluetoothStatus.getInstance().addObserver(this);
-			}
-		} else {
-			actionBar.setBackgroundDrawable(dn);
-			Log.i(TAG,"setting normal background");
-			if (bottomStatusBar != null) {
-				bottomStatusBar.setVisibility(View.GONE);
-			}
+		
+		actionBar.setBackgroundDrawable(dn);
+		Log.i(TAG,"setting normal background");
+		if (bottomStatusBar != null) {
+			bottomStatusBar.setVisibility(View.GONE);
 		}
+		
 		// actionbar hack to make sure the background drawable is applied
 		// http://stackoverflow.com/questions/11002691/actionbar-setbackgrounddrawable-nulling-background-from-thread-handler
 		actionBar.setDisplayShowTitleEnabled(false);
@@ -128,12 +113,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 	}
 
 
-	@Override
-	protected void onPause() {
-		// unregister from bluetooth status updates
-		BluetoothStatus.getInstance().deleteObserver(this);
-		super.onPause();
-	}
 	/*
 	 * 
 	 * @Override protected void onRestart() { // TODO Auto-generated method stub
@@ -331,25 +310,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 	 */
 	@Override
 	public void update(Observable observable, Object data) {
-		updateStatusBar();
-	}
-
-	/**
-	 * Updates the bottom status bar. Runs on UI thread and can thus be called
-	 * directly from anywhere.
-	 */
-	private void updateStatusBar() {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				// update number of neighbors
-				tvNeighborCount.setText(String.valueOf(BluetoothStatus
-						.getInstance().getNeighborCount()));
-				// update state description
-				tvStatus.setText(BluetoothStatus.getInstance()
-						.getStatusDescription());
-			}
-		});
 	}
 
 }

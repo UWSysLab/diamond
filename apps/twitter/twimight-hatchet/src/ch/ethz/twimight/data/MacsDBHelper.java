@@ -14,7 +14,6 @@ package ch.ethz.twimight.data;
 
 import java.util.Date;
 
-import ch.ethz.twimight.net.opportunistic.BluetoothStatus;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -126,7 +125,6 @@ public class MacsDBHelper {
 		Cursor activeMacsCursor = fetchActiveMacs();
 		int activeMacsCount = activeMacsCursor.getCount();
 		activeMacsCursor.close();
-		BluetoothStatus.getInstance().setNeighborCount(activeMacsCount);
 	}
 	
 	/**

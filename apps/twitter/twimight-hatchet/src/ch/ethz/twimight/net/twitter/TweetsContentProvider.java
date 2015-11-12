@@ -41,7 +41,6 @@ import ch.ethz.twimight.activities.ShowTweetListActivity;
 import ch.ethz.twimight.activities.TwimightBaseActivity;
 import ch.ethz.twimight.data.DBOpenHelper;
 import ch.ethz.twimight.fragments.TweetListFragment;
-import ch.ethz.twimight.net.opportunistic.ScanningService;
 import ch.ethz.twimight.security.CertificateManager;
 import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
@@ -813,19 +812,6 @@ public class TweetsContentProvider extends ContentProvider {
 		if(LoginActivity.getTwitterId(getContext()).equals(values.getAsInteger(Tweets.COL_TWITTERUSER).toString())){
 			
 			signTweet(cm,km,values);
-			
-			// if we are in disaster mode, we give the content provider a 
-			// second to insert the tweet and then schedule a scanning operation
-			if(PreferenceManager.getDefaultSharedPreferences(getContext()).getBoolean("prefDisasterMode", false) == true){			
-					//new ScanningAlarm(getContext(),0,true);    
-//					Intent i = new Intent(getContext().getApplicationContext(),ScanningService.class);
-//					i.putExtra(ScanningService.FORCED_BLUE_SCAN, true);
-//					getContext().getApplicationContext().startService(i);
-					Intent i = new Intent(getContext().getApplicationContext(), ScanningService.class);
-					getContext().getApplicationContext().startService(i);
-	    							
-				
-			}
 			
 		} else {
 			

@@ -19,7 +19,6 @@ import android.preference.PreferenceManager;
 import android.util.Log;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
-import ch.ethz.twimight.net.opportunistic.ScanningAlarm;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
 
 /**
@@ -43,10 +42,6 @@ public class BootReceiver extends BroadcastReceiver {
 		//if(LoginActivity.hasAccessToken(context) && LoginActivity.hasAccessTokenSecret(context)){
 		//TODO: figure out if this needs to execute
 		if(false){
-
-			if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.prefDisasterMode), Constants.DISASTER_DEFAULT_ON)==true){
-				new ScanningAlarm(context,false);
-			}
 
 						
 			if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.prefRunAtBoot), Constants.TWEET_DEFAULT_RUN_AT_BOOT)==true){

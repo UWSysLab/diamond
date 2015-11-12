@@ -91,7 +91,7 @@ public class StatisticsDBHelper {
 		public boolean insertRow(Location loc, String network, String event, String link, Long timestamp ) {
 			
 			ContentValues update;
-			boolean isDisaster =  PrefsActivity.isDisModeActive(context);
+			boolean isDisaster =  false;
 			
 			if(loc != null){
 				

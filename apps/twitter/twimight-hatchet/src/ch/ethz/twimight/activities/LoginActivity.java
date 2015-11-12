@@ -30,7 +30,6 @@ import ch.ethz.twimight.R;
 import ch.ethz.twimight.data.DBOpenHelper;
 import ch.ethz.twimight.data.RevocationDBHelper;
 import ch.ethz.twimight.fragments.LoginDialogFragment;
-import ch.ethz.twimight.net.opportunistic.ScanningAlarm;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.security.CertificateManager;
@@ -152,12 +151,6 @@ public class LoginActivity extends Activity implements LoginDialogFragment.Login
 		 */
 		public static void startAlarms(Context context) {	
 			
-			if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.prefDisasterMode), 
-					Constants.DISASTER_DEFAULT_ON)==true){
-				
-				new ScanningAlarm(context,false);
-			}		
-			
 			//start the twitter update alarm
 			if(PreferenceManager.getDefaultSharedPreferences(context).getBoolean(context.getString(R.string.prefRunAtBoot), 
 					Constants.TWEET_DEFAULT_RUN_AT_BOOT)==true){
@@ -171,9 +164,7 @@ public class LoginActivity extends Activity implements LoginDialogFragment.Login
 		 * Stop all the alarms and services
 		 */
 		private static void stopServices(Context context) {
-			
-			ScanningAlarm.stopScanning(context);
-			
+						
 			context.stopService(new Intent(context, TwitterService.class));	
 			
 			TwitterAlarm.stopTwitterAlarm(context);

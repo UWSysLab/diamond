@@ -13,7 +13,6 @@
 package ch.ethz.twimight.activities;
 
 import android.bluetooth.BluetoothAdapter;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
@@ -24,8 +23,6 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import ch.ethz.twimight.R;
-import ch.ethz.twimight.net.opportunistic.ScanningAlarm;
-import ch.ethz.twimight.net.opportunistic.ScanningService;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
 import ch.ethz.twimight.util.Constants;
 
@@ -58,32 +55,7 @@ public class PrefsActivity extends PreferenceActivity{
 			// this is where we take action after the user changes a setting!
 			public void onSharedPreferenceChanged(SharedPreferences preferences, String key) {
 
-				if (key.equals(getString(R.string.prefDisasterMode))) { // toggle disaster mode
-					if(preferences.getBoolean(getString(R.string.prefDisasterMode), Constants.DISASTER_DEFAULT_ON) == true){
-						
-						if (LoginActivity.getTwitterId(getBaseContext())!= null && LoginActivity.getTwitterScreenname(getBaseContext()) != null) {
-							enableDisasterMode(); 							
-							// Are we in disaster mode?		
-								
-						} 
-						
-					} else {						
-						disableDisasterMode(getApplicationContext());						
-						finish();
-					}
-					
-				} else if(key.equals(getString(R.string.prefTDSCommunication))){
-					
-					// toggle TDS communication
-					if(preferences.getBoolean(getString(R.string.prefTDSCommunication),	Constants.TDS_DEFAULT_ON) == true){
-						//new TDSAlarm(getApplicationContext(), Constants.TDS_UPDATE_INTERVAL);
-						Log.i(TAG, "start TDS communication");
-					} else {
-						//stopService(new Intent(getApplicationContext(), TDSService.class));
-						//TDSAlarm.stopTDSCommuniction(getApplicationContext());						
-					}
-					
-				}  else if (key.equals(getString(R.string.prefRunAtBoot))) {
+				if (key.equals(getString(R.string.prefRunAtBoot))) {
 					
 					if (preferences.getBoolean(getString(R.string.prefRunAtBoot), Constants.TWEET_DEFAULT_RUN_AT_BOOT) == true ) {
 						ListPreference updatesBackground = (ListPreference) getPreferenceScreen().findPreference(getString(R.string.prefUpdateInterval));
@@ -110,60 +82,7 @@ public class PrefsActivity extends PreferenceActivity{
 		};
 
 	}
-
-
-
-	public static void disableDisasterMode(Context context) {
-		if (getBluetoothInitialState(context) == false) {
-			if (BluetoothAdapter.getDefaultAdapter().isEnabled())
-				BluetoothAdapter.getDefaultAdapter().disable();
-		}				
-		ScanningAlarm.stopScanning(context);
-		Intent in = new Intent(context, ScanningService.class);
-		context.stopService(in);
-		
-	}
-	/**
-	 * Enables Bluetooth when Disaster Mode get's enabled.
-	 */
-	private void enableDisasterMode() {
-		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		if (mBluetoothAdapter.isEnabled())
-			ScanningAlarm.setBluetoothInitialState(getBaseContext(), true);
-		else
-			ScanningAlarm.setBluetoothInitialState(getBaseContext(), false);
-		//for statistics
-		setDisasterModeUsed();
-		
-		if (mBluetoothAdapter.getScanMode() != BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {		
-			Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-			discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 0);			
-			startActivityForResult(discoverableIntent,REQUEST_DISCOVERABLE);           
-			
-		} else {
-			new ScanningAlarm(getApplicationContext(),true);
-			finish();
-		}
-				 
-		
-	}
 	
-	private void setDisasterModeUsed() {
-		SharedPreferences.Editor edit = prefs.edit();
-		edit.putBoolean(Constants.DIS_MODE_USED, true);
-		edit.commit();
-	}
-	
-	private static boolean getBluetoothInitialState(Context context) {
-		
-		SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);		
-		return pref.getBoolean("wasBlueEnabled", true);
-		
-		}
-	
-	public static boolean isDisModeActive(Context context) {
-		return PreferenceManager.getDefaultSharedPreferences(context).getBoolean("prefDisasterMode", false);
-	}
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -171,7 +90,6 @@ public class PrefsActivity extends PreferenceActivity{
 		case REQUEST_DISCOVERABLE:		
 			
 			if (resultCode == BluetoothAdapter.STATE_CONNECTING) {
-				new ScanningAlarm(getApplicationContext(),true);
 				finish();
 			} else if (resultCode == BluetoothAdapter.STATE_DISCONNECTED) {
 				SharedPreferences.Editor edit = prefs.edit();

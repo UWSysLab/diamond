@@ -67,7 +67,6 @@ import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
 import ch.ethz.twimight.util.Constants;
-import ch.ethz.twimight.util.SDCardHelper;
 import ch.ethz.twimight.util.TweetTagHandler;
 
 /**
@@ -123,9 +122,6 @@ public class ShowTweetFragment extends Fragment {
 
 	// photo
 	private String photoPath;
-
-	// SDcard helper
-	private SDCardHelper sdCardHelper;
 
 	private String userID = null;
 
@@ -197,7 +193,6 @@ public class ShowTweetFragment extends Fragment {
     			setUserInfo();			
     			setProfilePicture();	
 
-    			setPhotoAttached();    		
     			// disaster info		
     			if( (buffer & Tweets.BUFFER_DISASTER) != 0 ){
 
@@ -243,33 +238,9 @@ public class ShowTweetFragment extends Fragment {
 		statsDBHelper = new StatisticsDBHelper(activity.getApplicationContext());
 		statsDBHelper.open();
 
-		sdCardHelper = new SDCardHelper();
-
 		cm = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);		
 		locHelper = LocationHelper.getInstance(activity);		
 
-	}
-
-	/**
-	 *  method to set the photo attached with thi tweet
-	 *  
-	 */
-	
-	private void setPhotoAttached() {
-		// Profile image
-		String[] filePath = {photoPath};
-		if(sdCardHelper.checkSDState(filePath)){
-			if(!c.isNull(c.getColumnIndex(Tweets.COL_MEDIA))){
-				ImageView photoView = (ImageView) view.findViewById(R.id.showPhotoAttached);
-				
-				String photoFileName =  c.getString(c.getColumnIndex(Tweets.COL_MEDIA));
-				Uri photoUri = Uri.fromFile(sdCardHelper.getFileFromSDCard(photoPath, photoFileName));//photoFileParent, photoFilename));
-				Bitmap photo = sdCardHelper.decodeBitmapFile(photoUri.getPath());
-				photoView.setImageBitmap(photo);
-			}
-		}
-
-		
 	}
 	
 	
@@ -639,13 +610,6 @@ public class ShowTweetFragment extends Fragment {
 		        	   String delPhotoName = c.getString(c.getColumnIndex(Tweets.COL_MEDIA));
 		        	   
 		        	   if(delPhotoName != null){
-		        		   photoPath = Tweets.PHOTO_PATH + "/" + userID;
-		        		   String[] filePath = {photoPath};
-		       			   if(sdCardHelper.checkSDState(filePath)){
-		       				   File photoFile = sdCardHelper.getFileFromSDCard(photoPath, delPhotoName);//photoFileParent, photoFilename));
-				        	   photoFile.delete();
-		       			   }
-		       			   
 		        	   }
 		  
 		        	   if (!c.isNull((c.getColumnIndex(Tweets.COL_TID))))
