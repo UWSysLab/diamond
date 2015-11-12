@@ -28,12 +28,9 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.data.DBOpenHelper;
-import ch.ethz.twimight.data.RevocationDBHelper;
 import ch.ethz.twimight.fragments.LoginDialogFragment;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
 import ch.ethz.twimight.net.twitter.TwitterService;
-import ch.ethz.twimight.security.CertificateManager;
-import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
 import ch.ethz.twimight.util.TwimightSuggestionProvider;
 
@@ -201,20 +198,9 @@ public class LoginActivity extends Activity implements LoginDialogFragment.Login
 				setTwitterId(null, context);
 				setTwitterScreenname(null, context);
 				
-				// Delete key and certificate
-				KeyManager km = new KeyManager(context);
-				km.deleteKey();
-				CertificateManager cm = new CertificateManager(context);
-				cm.deleteCertificate();
-				
 				// Flush DB
 				DBOpenHelper dbHelper = DBOpenHelper.getInstance(context);
 				dbHelper.flushDB();
-				
-				// Flush revocation list
-				RevocationDBHelper rm = new RevocationDBHelper(context);
-				rm.open();
-				rm.flushRevocationList();
 				
 				SearchRecentSuggestions suggestions = new SearchRecentSuggestions(context,
 		                TwimightSuggestionProvider.AUTHORITY, TwimightSuggestionProvider.MODE);

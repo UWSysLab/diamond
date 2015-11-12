@@ -33,8 +33,6 @@ import ch.ethz.twimight.activities.LoginActivity;
 import ch.ethz.twimight.activities.ShowDMListActivity;
 import ch.ethz.twimight.activities.ShowDMUsersListActivity;
 import ch.ethz.twimight.data.DBOpenHelper;
-import ch.ethz.twimight.security.CertificateManager;
-import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
 
 /**
@@ -307,91 +305,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 				purgeDMs(values);
 				
 				break;
-				
-			case LIST_DISASTER:
-				Log.d(TAG, "Insert LIST_DISASTER");
-				// in disaster mode, we set the is disaster flag, encrypt and sign the message 
-				//and sign the tweet (if we have a certificate for our key pair)
-				values.put(DirectMessages.COL_ISDISASTER, 1);
-				
-				// if we already have a disaster tweet with the same disaster ID, 
-				// we discard the new one
-				disasterId = getDisasterID(values);
-				c = database.query(DBOpenHelper.TABLE_DMS, null, DirectMessages.COL_DISASTERID+"="+disasterId+" AND "+DirectMessages.COL_ISDISASTER+">0", null, null, null, null);
-				if(c.getCount()>0){
-					c.moveToFirst();
-					Uri oldUri = Uri.parse("content://"+DirectMessages.DM_AUTHORITY+"/"+DirectMessages.DMS+"/"+Long.toString(c.getLong(c.getColumnIndex("_id"))));
-					c.close();
-					return oldUri; 
-				}
-				
-				CertificateManager cm = new CertificateManager(getContext());
-				KeyManager km = new KeyManager(getContext().getApplicationContext());
-				
-				//verify whether I was the author or not
-				if(LoginActivity.getTwitterId(getContext()).equals(values.getAsInteger(DirectMessages.COL_SENDER).toString())){
-					
-					if(cm.hasCertificate()){
-						
-						// we put the signature
-						String text = values.getAsString(DirectMessages.COL_TEXT);
-						String userId = LoginActivity.getTwitterId(getContext()).toString();
-						
-						String signature = km.getSignature(new String(text+userId));
-						values.put(DirectMessages.COL_SIGNATURE, signature);
-						// and the certificate
-						values.put(DirectMessages.COL_CERTIFICATE, cm.getCertificate());
-						// and set the is_verified flag to show that the tweet is signed
-						values.put(DirectMessages.COL_ISVERIFIED, 1);
-						
-						Long twitterId = getIdFromScreenName(values.getAsString(DirectMessages.COL_RECEIVER_SCREENNAME));
-						
-						//TODO: obtain peers public keys and encrypt
-						values.put(DirectMessages.COL_CRYPTEXT,text );	
-						/*if (twitterId != null) {
-							String cipherText = km.encrypt(text,twitterId );
-							Log.i(TAG, "ciphertext: " + cipherText );
-							if (cipherText != null) {								
-								values.put(DirectMessages.COL_CRYPTEXT,cipherText );															
-								
-							} 
-						}	*/					
-						
-					} else 
-						values.put(DirectMessages.COL_ISVERIFIED, 0);					
-					
-				} else {					
-					//Is it for me?
-					if (values.getAsLong(DirectMessages.COL_RECEIVER).toString().equals(LoginActivity.getTwitterId(getContext()))){
-						
-						values.put(DirectMessages.COL_BUFFER, DirectMessages.BUFFER_DISASTER_ME|DirectMessages.BUFFER_MESSAGES);
-						//TODO: DECRYPT THE MESSAGE
-					    //String plainText = km.decrypt(values.getAsString(DirectMessages.COL_CRYPTEXT));
-						String plainText = values.getAsString(DirectMessages.COL_CRYPTEXT);
-						//values.remove(DirectMessages.COL_CRYPTEXT);
-						values.put(DirectMessages.COL_TEXT, plainText);
-						
-						// check signature
-						String signature = values.getAsString(DirectMessages.COL_SIGNATURE);
-						String certificate = values.getAsString(DirectMessages.COL_CERTIFICATE);
-						
-						String textForSignatureCheck = plainText + values.getAsString(DirectMessages.COL_SENDER);
-						
-						if(km.checkSignature(cm.parsePem(certificate), signature, textForSignatureCheck)){							
-							values.put(DirectMessages.COL_ISVERIFIED, 1);
-						} else 
-							values.put(DirectMessages.COL_ISVERIFIED, 0);
-												
-					} else
-						values.put(DirectMessages.COL_BUFFER, DirectMessages.BUFFER_DISASTER_OTHERS);
-						
-					
-				}
-				c.close();
-				insertUri = insertDM(values);				
-				//purgeTweets(values);		
-				
-				break;				
 			default: throw new IllegalArgumentException("Unsupported URI: " + uri);	
 		}
 		
