@@ -42,7 +42,6 @@ import ch.ethz.twimight.activities.TwimightBaseActivity;
 import ch.ethz.twimight.data.DBOpenHelper;
 import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.net.opportunistic.ScanningService;
-import ch.ethz.twimight.net.tds.TDSService;
 import ch.ethz.twimight.security.CertificateManager;
 import ch.ethz.twimight.security.KeyManager;
 import ch.ethz.twimight.util.Constants;
@@ -222,16 +221,6 @@ public class TweetsContentProvider extends ContentProvider {
 		String sql;
 		Intent i;
 		switch(tweetUriMatcher.match(uri)){
-		
-		    case TWEETS_TIMELINE_DISASTER_NEW:				    	
-		    	long timestamp_dis = TDSService.getLastUpdate(getContext());
-		    	sql = Tweets.COL_BUFFER+" & ("+Tweets.BUFFER_DISASTER + "|" + Tweets.BUFFER_MYDISASTER + ") != 0 AND " + 
-		    	Tweets.COL_RECEIVED + " >= " + timestamp_dis; 
-		    	Log.i(TAG,"sql: " + sql);
-				c = database.query(DBOpenHelper.TABLE_TWEETS, null, sql, null, null, null, Tweets.DEFAULT_SORT_ORDER);
-				
-				
-			break;
 			
 		    case TWEETS_TIMELINE_NEW:		    	
 		    	long timestamp = getLastCacheAllPages(getContext());
@@ -853,11 +842,6 @@ public class TweetsContentProvider extends ContentProvider {
 		//getContext().getContentResolver().notifyChange(uri, null);
 		// delete everything that now falls out of the buffer
 		purgeTweets(values);
-		
-		// trigger upload to Twimight Disaster Server
-		Intent synchIntent = new Intent(getContext(), TDSService.class);
-		synchIntent.putExtra("synch_request", TDSService.SYNCH_ALL_FORCE);
-		getContext().startService(synchIntent);
 		
 		return insertUri;
 	}

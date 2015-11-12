@@ -16,7 +16,6 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
-import ch.ethz.twimight.net.Html.HtmlPage;
 import ch.ethz.twimight.net.twitter.DirectMessages;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
@@ -157,15 +156,6 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 			+ DirectMessages.COL_CRYPTEXT + " string, "
 			+ DirectMessages.COL_CERTIFICATE + " string);";
 	
-	// html pages 
-	private static final String TABLE_HTML_CREATE = "create table "+TABLE_HTML+" ("
-			+ HtmlPage.COL_PAGE_ID + " integer primary key autoincrement not null, "
-			+ HtmlPage.COL_URL + " string unique not null, "	
-			+ HtmlPage.COL_DISASTERID + " bigint REFERENCES " + TABLE_TWEETS + "(" + Tweets.COL_DISASTERID +") ON DELETE CASCADE, "			
-			+ HtmlPage.COL_FORCED + " integer default 0, "
-			+ HtmlPage.COL_ATTEMPTS + " integer default 0, "
-			+ HtmlPage.COL_FILENAME + " string unique);";
-	
 	/*
 	// html pages trackers
 		private static final String TABLE_HTML_TRACKERS_CREATE = "create table "+TABLE_HTML_TRACKERS+" ("
@@ -235,7 +225,6 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 		database.execSQL(TABLE_TWEETS_CREATE);
 		database.execSQL(TABLE_USERS_CREATE);
 		database.execSQL(TABLE_DMS_CREATE);
-		database.execSQL(TABLE_HTML_CREATE);
 		//database.execSQL(TABLE_HTML_TRACKERS_CREATE);
 
 	

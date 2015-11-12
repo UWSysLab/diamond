@@ -38,14 +38,11 @@ import android.view.Window;
 import android.widget.TextView;
 import android.widget.Toast;
 import ch.ethz.twimight.R;
-import ch.ethz.twimight.data.HtmlPagesDbHelper;
-import ch.ethz.twimight.net.Html.StartServiceHelper;
 import ch.ethz.twimight.net.opportunistic.BluetoothStatus;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
 import ch.ethz.twimight.util.Constants;
-import ch.ethz.twimight.util.LogCollector;
 
 /**
  * The base activity for all Twimight activities.
@@ -75,8 +72,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-		LogCollector.setUpCrittercism(getApplicationContext());
-		LogCollector.leaveBreadcrumb();
 
 		// action bar
 		actionBar = getActionBar();
@@ -242,39 +237,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 			i = new Intent(this, AboutActivity.class);
 			startActivity(i);
 			break;
-		case R.id.menu_cache:
-			new CacheTask().execute();
-			break;
-
-		case R.id.menu_cache_clear:
-
-			AlertDialog.Builder confirmDialog = new AlertDialog.Builder(this);
-			confirmDialog.setMessage(R.string.clear_cache_question);
-			confirmDialog.setTitle(R.string.clear_cache_title);
-			confirmDialog.setPositiveButton(R.string.yes,
-					new DialogInterface.OnClickListener() {
-
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							// TODO Auto-generated method stub
-							dialog.dismiss();
-							new DeleteCacheTask().execute();
-
-						}
-
-					});
-			confirmDialog.setNegativeButton(R.string.no,
-					new DialogInterface.OnClickListener() {
-
-						@Override
-						public void onClick(DialogInterface dialog, int which) {
-							// TODO Auto-generated method stub
-							dialog.dismiss();
-						}
-					});
-			confirmDialog.show();
-
-			break;
 
 		case R.id.menu_feedback:
 			// Launch FeedbacktActivity
@@ -286,49 +248,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 			return false;
 		}
 		return true;
-	}
-
-	private class CacheTask extends AsyncTask<Void, Void, Void> {
-
-		@Override
-		protected Void doInBackground(Void... params) {
-
-			// TODO Auto-generated method stub
-			ContentResolver resolver = getContentResolver();
-			Cursor cursor = resolver.query(
-					Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/"
-							+ Tweets.TWEETS + "/"
-							+ Tweets.TWEETS_TABLE_TIMELINE + "/"
-							+ Tweets.TWEETS_SINCE_LAST_UPDATE), null, null,
-					null, null);
-			HtmlPagesDbHelper htmlDbHelper = new HtmlPagesDbHelper(
-					getApplicationContext());
-			htmlDbHelper.open();
-			htmlDbHelper.saveLinksFromCursor(cursor,
-					HtmlPagesDbHelper.DOWNLOAD_FORCED);
-
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(Void params) {
-			StartServiceHelper.startService(getApplicationContext());
-			getContentResolver().notifyChange(Tweets.TABLE_TIMELINE_URI, null);
-		}
-	}
-
-	private class DeleteCacheTask extends AsyncTask<Void, Void, Void> {
-
-		@Override
-		protected Void doInBackground(Void... params) {
-			Long timeSpan = (long) (0 * 24 * 3600 * 1000);
-			HtmlPagesDbHelper htmlDbHelper = new HtmlPagesDbHelper(
-					getApplicationContext());
-			htmlDbHelper.open();
-			htmlDbHelper.clearHtmlPages(timeSpan);
-			return null;
-		}
-
 	}
 
 	/**

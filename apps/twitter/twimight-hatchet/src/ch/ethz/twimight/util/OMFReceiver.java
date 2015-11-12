@@ -27,7 +27,9 @@ public class OMFReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {		
 
 		// we only start the services if we are logged in (i.e., we have the tokens from twitter)
-				if(LoginActivity.hasAccessToken(context) && LoginActivity.hasAccessTokenSecret(context)){
+				//if(LoginActivity.hasAccessToken(context) && LoginActivity.hasAccessTokenSecret(context)){
+		//TODO: figure out if this code needs to execute
+		if (false) {
 					
 					if (intent.getAction().equals(AUTOM_ENABLE_DISASTER_MODE)) {						
 						

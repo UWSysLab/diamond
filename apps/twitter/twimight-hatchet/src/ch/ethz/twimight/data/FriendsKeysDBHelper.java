@@ -22,7 +22,6 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.preference.PreferenceManager;
-import ch.ethz.twimight.net.tds.TDSPublicKey;
 
 /**
  * Manages the FriendsKeys table in the DB.
@@ -125,41 +124,6 @@ public class FriendsKeysDBHelper {
 
 		return null;
 		
-	}
-	
-	
-	/**
-	 * Insert a key into DB. If we already have a key, we delete the old one.
-	 * @param entry
-	 * @return
-	 */
-	public void insertKey(TDSPublicKey key){
-		// insert statement
-		if(!hasKey(key.getTwitterID())){
-			deleteKey(key.getTwitterID());
-		}
-		database.execSQL("INSERT OR IGNORE INTO "+DBOpenHelper.TABLE_FRIENDS_KEYS+" (" +KEY_FRIENDS_KEY_TWITTER_ID+ "," +KEY_FRIENDS_KEY+ ") VALUES ('" + key.getTwitterID() + "','" + key.getPemKey() + "')");
-	}
-	
-	/**
-	 * Deletes a key of a given twitter ID
-	 */
-	public void deleteKey(long twitterID){
-		database.delete(DBOpenHelper.TABLE_FRIENDS_KEYS, KEY_FRIENDS_KEY_TWITTER_ID+"="+twitterID, null);
-	}
-
-	/**
-	 * Revokes all entries of a list of revocation list entries
-	 * @param revocationList
-	 */
-	public void insertKeys(List<TDSPublicKey> keyList) {
-		// insert new macs in the DB
-		Iterator<TDSPublicKey> iterator = keyList.iterator(); 
-		while(iterator.hasNext()) {
-		    TDSPublicKey key = iterator.next();
-		    insertKey(key);
-		}
-
 	}
 	
 }

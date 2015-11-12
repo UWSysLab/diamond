@@ -24,7 +24,6 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import ch.ethz.twimight.R;
-import ch.ethz.twimight.net.Html.HtmlPage;
 import ch.ethz.twimight.net.opportunistic.ScanningAlarm;
 import ch.ethz.twimight.net.opportunistic.ScanningService;
 import ch.ethz.twimight.net.twitter.TwitterAlarm;
@@ -104,18 +103,6 @@ public class PrefsActivity extends PreferenceActivity{
 					if(PreferenceManager.getDefaultSharedPreferences(getBaseContext()).getBoolean(getString(R.string.prefRunAtBoot), Constants.TWEET_DEFAULT_RUN_AT_BOOT)==true){			
 						new TwitterAlarm(getBaseContext(), false);
 					}
-				} else if (key.equals(getString(R.string.pref_offline_mode))) {		
-
-					if(preferences.getBoolean(getString(R.string.pref_offline_mode), Constants.OFFLINE_DEFAULT_ON)){
-
-						setOfflinePreference(true,PrefsActivity.this);
-					}
-					else{
-						
-						setOfflinePreference(false,PrefsActivity.this);
-
-					}
-
 				}
 			}
 
@@ -123,25 +110,6 @@ public class PrefsActivity extends PreferenceActivity{
 		};
 
 	}
-	
-	
-	//get offline mode preference
-	public static boolean getOfflinePreference(Context context) {
-
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		boolean offlinePref = prefs.getBoolean(HtmlPage.OFFLINE_PREFERENCE, false);
-	
-		return offlinePref;
-	}
-	
-	//set offline mode preference
-	public static void setOfflinePreference(boolean pref, Context context) {
-		
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		SharedPreferences.Editor prefEditor = prefs.edit();
-		prefEditor.putBoolean(HtmlPage.OFFLINE_PREFERENCE, pref);
-		prefEditor.commit();
-	}	
 
 
 

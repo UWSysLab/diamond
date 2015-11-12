@@ -52,9 +52,7 @@ import android.util.Log;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
 import ch.ethz.twimight.activities.TwimightBaseActivity;
-import ch.ethz.twimight.data.HtmlPagesDbHelper;
 import ch.ethz.twimight.data.MacsDBHelper;
-import ch.ethz.twimight.net.Html.HtmlPage;
 import ch.ethz.twimight.net.twitter.DirectMessages;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
@@ -68,6 +66,8 @@ import ch.ethz.twimight.util.SDCardHelper;
  * @author theus
  * @author pcarta
  */
+
+//TODO: delete?
 
 public class ScanningService extends Service implements
 		DevicesReceiver.ScanningFinished,
@@ -113,9 +113,6 @@ public class ScanningService extends Service implements
 	private String photoPath;
 	private static final String PHOTO_PATH = "twimight_photos";
 
-	// html
-	private HtmlPagesDbHelper htmlDbHelper;
-
 	// SDcard helper
 	private SDCardHelper sdCardHelper;
 	// SDcard checking var
@@ -145,9 +142,6 @@ public class ScanningService extends Service implements
 
 		// sdCard helper
 		sdCardHelper = new SDCardHelper();
-		// htmldb helper
-		htmlDbHelper = new HtmlPagesDbHelper(getApplicationContext());
-		htmlDbHelper.open();
 
 		mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 	}
@@ -557,9 +551,6 @@ public class ScanningService extends Service implements
 				} else if (o.getInt(TYPE) == PHOTO) {
 					Log.d("disaster", "receive a photo");
 					processPhoto(o);
-				} else if (o.getInt(TYPE) == HTML) {
-					Log.d("disaster", "receive xml");
-					processHtml(o);
 				} else {
 					Log.d("disaster", "receive a dm");
 					processDM(o);
@@ -662,31 +653,7 @@ public class ScanningService extends Service implements
 		}
 
 	}
-
-	private void processHtml(JSONObject o) {
-		try {
-			Log.i(TAG, "process HTML");
-			String xmlContent = o.getString(HtmlPage.COL_HTML);
-			String filename = o.getString(HtmlPage.COL_FILENAME);
-			Long tweetId = o.getLong(HtmlPage.COL_DISASTERID);
-			String htmlUrl = o.getString(HtmlPage.COL_URL);
-
-			String[] filePath = { HtmlPage.HTML_PATH + "/"
-					+ LoginActivity.getTwitterId(getApplicationContext()) };
-			if (sdCardHelper.checkSDState(filePath)) {
-				File targetFile = sdCardHelper.getFileFromSDCard(filePath[0],
-						filename);// photoFileParent, photoFilename));
-				if (saveFile(targetFile, xmlContent)) {
-					// downloaded = 1;
-				}
-			}
-			htmlDbHelper.insertPage(htmlUrl, filename, tweetId, 0);
-
-		} catch (JSONException e1) {
-			Log.e(TAG, "Exception while receiving disaster tweet photo", e1);
-		}
-	}
-
+	
 	private boolean saveFile(File file, String fileContent) {
 
 		try {
@@ -772,7 +739,6 @@ public class ScanningService extends Service implements
 											.getColumnIndex(Tweets.COL_MEDIA)) != null)
 										sendDisasterPhoto(c);
 								}
-								sendDisasterHtmls(c);
 							}
 						}
 
@@ -840,98 +806,6 @@ public class ScanningService extends Service implements
 		}
 
 		return false;
-	}
-
-	private void sendDisasterHtmls(Cursor c) throws JSONException {
-
-		JSONObject toSendXml;
-
-		String userId = String.valueOf(c.getLong(c
-				.getColumnIndex(Tweets.COL_TWITTERUSER)));
-
-		String substr = Html.fromHtml(
-				c.getString(c.getColumnIndex(Tweets.COL_TEXT))).toString();
-
-		String[] strarr = substr.split(" ");
-
-		// check the urls of the tweet
-		for (String subStrarr : strarr) {
-
-			if (subStrarr.indexOf("http://") >= 0
-					|| subStrarr.indexOf("https://") >= 0) {
-				String subUrl = null;
-				if (subStrarr.indexOf("http://") >= 0) {
-					subUrl = subStrarr.substring(subStrarr.indexOf("http://"));
-				} else if (subStrarr.indexOf("https://") >= 0) {
-					subUrl = subStrarr.substring(subStrarr.indexOf("https://"));
-				}
-				Cursor cursorHtml = htmlDbHelper.getPageInfo(subUrl);
-
-				if (cursorHtml != null) {
-
-					if (!cursorHtml.isNull(cursorHtml
-							.getColumnIndex(HtmlPage.COL_FILENAME))) {
-
-						String[] filePath = { HtmlPage.HTML_PATH + "/"
-								+ LoginActivity.getTwitterId(this) };
-						String filename = cursorHtml.getString(cursorHtml
-								.getColumnIndex(HtmlPage.COL_FILENAME));
-						Long tweetId = cursorHtml.getLong(cursorHtml
-								.getColumnIndex(HtmlPage.COL_DISASTERID));
-						if (sdCardHelper.checkSDState(filePath)) {
-
-							File xmlFile = sdCardHelper.getFileFromSDCard(
-									filePath[0], filename);
-							if (xmlFile.exists()) {
-								toSendXml = getJSONFromXml(xmlFile);
-								toSendXml.put(HtmlPage.COL_URL, subUrl);
-								toSendXml.put(HtmlPage.COL_FILENAME, filename);
-								toSendXml.put(HtmlPage.COL_DISASTERID, tweetId);
-								Log.d(TAG, "sending htmls");
-								Log.d(TAG, toSendXml.toString(5));
-								bluetoothHelper.write(toSendXml.toString());
-
-							}
-
-						}
-					}
-				}
-			}
-		}
-	}
-
-	private JSONObject getJSONFromXml(File xml) {
-		try {
-
-			JSONObject jsonObj = new JSONObject();
-
-			try {
-				FileInputStream xmlStream = new FileInputStream(xml);
-				ByteArrayOutputStream bos = new ByteArrayOutputStream();
-
-				byte[] buffer = new byte[1024];
-				int length;
-				while ((length = xmlStream.read(buffer)) != -1) {
-					bos.write(buffer, 0, length);
-				}
-				byte[] b = bos.toByteArray();
-				String xmlString = Base64.encodeToString(b, Base64.DEFAULT);
-				jsonObj.put(HtmlPage.COL_HTML, xmlString);
-
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			jsonObj.put(TYPE, HTML);
-			return jsonObj;
-		} catch (JSONException e) {
-			// TODO Auto-generated catch block
-			Log.d(TAG, "exception:" + e.getMessage());
-			return null;
-		}
 	}
 
 	/**

@@ -36,7 +36,6 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.activities.LoginActivity;
-import ch.ethz.twimight.data.HtmlPagesDbHelper;
 
 
 /** 
@@ -47,7 +46,6 @@ public class TweetAdapter extends SimpleCursorAdapter {
 	static final String[] from = {TwitterUsers.COL_NAME};
 	static final int[] to = {R.id.textUser};	
 	private static final String TAG = "tweet adapter";
-	private HtmlPagesDbHelper htmlDbHelper ;
 	private final Bitmap mPlaceHolderBitmap;
 	
 	
@@ -119,9 +117,6 @@ public class TweetAdapter extends SimpleCursorAdapter {
 		
 		ViewHolder holder = (ViewHolder) row.getTag();			
 		
-		htmlDbHelper = new HtmlPagesDbHelper(context.getApplicationContext());
-		htmlDbHelper.open();
-		
 		// if we don't have a real name, we use the screen name
 		if(cursor.getString(cursor.getColumnIndex(TwitterUsers.COL_NAME))==null){			
 			holder.usernameTextView.setText("@"+cursor.getString(cursor.getColumnIndex(TwitterUsers.COL_SCREENNAME)));
@@ -155,49 +150,6 @@ public class TweetAdapter extends SimpleCursorAdapter {
 		
 		long disId = cursor.getLong(cursor.getColumnIndex(Tweets.COL_DISASTERID));	
 		
-		int col_html = cursor.getColumnIndex(Tweets.COL_HTML_PAGES);
-		if (col_html > -1) {
-			int hasHtml = cursor.getInt(col_html);
-			
-			holder.splitBar.setVisibility(View.GONE);
-			holder.textHtml.setVisibility(View.GONE);
-
-			if(hasHtml == 1){				
-				
-				
-				Cursor curHtml = htmlDbHelper.getTweetUrls(disId);
-
-				if (curHtml != null && curHtml.getCount() > 0) {		
-
-					//if webpages have been downloaded
-					int text =0;
-
-					if(retweeted){						
-						holder.splitBar.setText("|");						
-						holder.splitBar.setVisibility(View.VISIBLE);
-					}
-
-					if (!htmlDbHelper.allPagesStored(curHtml)) {							
-						
-						text = R.string.downloading;
-						holder.textHtml.setTextColor(Color.parseColor("#9ea403"));
-					} else {
-						
-						text = R.string.downloaded;
-						holder.textHtml.setTextColor(Color.parseColor("#1d8a04"));
-
-					}
-
-					if (text != 0) {
-						holder.textHtml.setText(context.getString(text));
-						holder.textHtml.setVisibility(View.VISIBLE);
-					}	
-				}	
-
-
-			}
-
-		}
 		// Profile image				
 		if(!cursor.isNull(cursor.getColumnIndex(TwitterUsers.COL_PROFILEIMAGE_PATH))){			
 

@@ -17,8 +17,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 import ch.ethz.twimight.activities.LoginActivity;
-import ch.ethz.twimight.net.Html.StartServiceHelper;
-import ch.ethz.twimight.net.tds.TDSAlarm;
 import ch.ethz.twimight.net.twitter.TwitterService;
 
 /**
@@ -35,14 +33,6 @@ public class CommunicationReceiver extends BroadcastReceiver {
 	public void onReceive(Context context, Intent intent) {
 
 		Log.i(TAG,"CALLED");
-		// connectivity changed!
-		StartServiceHelper.startService(context);
-
-		// TDS communication
-		if(TDSAlarm.isTdsEnabled(context)){
-			// remove currently scheduled updates and schedule an immediate one
-			new TDSAlarm();
-		}
 
 		Intent i = new Intent(TwitterService.SYNCH_ACTION);
 		if (!LoginActivity.hasTwitterId(context)) {					
