@@ -400,21 +400,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 			Log.d(TAG, "purging local direct messages buffer");
 			purgeBuffer(DirectMessages.BUFFER_MESSAGES, Constants.MESSAGES_BUFFER_SIZE);
 		}
-			
-		if((bufferFlags & DirectMessages.BUFFER_DISASTER_OTHERS) != 0){
-			Log.d(TAG, "purging relay direct messages buffer");
-			purgeBuffer(DirectMessages.BUFFER_DISASTER_OTHERS, Constants.DISASTERDM_BUFFER_SIZE);
-		}
-		
-		if((bufferFlags & DirectMessages.BUFFER_DISASTER_ME) != 0){
-			Log.d(TAG, "purging relay direct messages buffer");
-			purgeBuffer(DirectMessages.BUFFER_DISASTER_ME, Constants.DISASTERDM_BUFFER_SIZE);
-		}
-
-		if((bufferFlags & DirectMessages.BUFFER_MYDISASTER) != 0){
-			Log.d(TAG, "purging local direct messages buffer");
-			purgeBuffer(DirectMessages.BUFFER_MYDISASTER, Constants.MYDISASTERDM_BUFFER_SIZE);
-		}
 		
 	}
 	

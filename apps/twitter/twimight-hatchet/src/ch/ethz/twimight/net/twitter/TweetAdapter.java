@@ -191,18 +191,7 @@ public class TweetAdapter extends SimpleCursorAdapter {
 		}
 		
 		
-		// disaster info		
-		if( (buffer & Tweets.BUFFER_DISASTER) != 0 ){
-			//Log.i(TAG,"col is disaster > 0");
-			holder.rowLayout.setBackgroundResource(R.drawable.disaster_tweet_background);
-		
-			holder.verifiedImage.setVisibility(ImageView.VISIBLE);
-			if(cursor.getInt(cursor.getColumnIndex(Tweets.COL_ISVERIFIED))>0){
-				holder.verifiedImage.setImageResource(android.R.drawable.ic_secure);
-			} else {
-				holder.verifiedImage.setImageResource(android.R.drawable.ic_partial_secure);
-			}
-		} else if(Long.toString(cursor.getLong(cursor.getColumnIndex(Tweets.COL_TWITTERUSER))).equals(LoginActivity.getTwitterId(context))) {
+		if(Long.toString(cursor.getLong(cursor.getColumnIndex(Tweets.COL_TWITTERUSER))).equals(LoginActivity.getTwitterId(context))) {
 			
 			holder.rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);

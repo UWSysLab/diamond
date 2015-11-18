@@ -730,16 +730,6 @@ public class TweetsContentProvider extends ContentProvider {
 			Log.d(TAG, "Purging mentions buffer");
 			purgeBuffer(Tweets.BUFFER_MENTIONS, Constants.MENTIONS_BUFFER_SIZE);
 		}
-
-		if((bufferFlags & Tweets.BUFFER_DISASTER) != 0){
-			Log.d(TAG, "Purging disaster buffer");
-			purgeBuffer(Tweets.BUFFER_DISASTER, Constants.DTWEET_BUFFER_SIZE);
-		}
-
-		if((bufferFlags & Tweets.BUFFER_MYDISASTER) != 0){
-			Log.d(TAG, "Purging mydisaster buffer");
-			purgeBuffer(Tweets.BUFFER_MYDISASTER, Constants.MYDTWEET_BUFFER_SIZE);
-		}
 		
 		if((bufferFlags & Tweets.BUFFER_USERS) != 0){
 			Log.d(TAG, "Purging user tweets buffer");

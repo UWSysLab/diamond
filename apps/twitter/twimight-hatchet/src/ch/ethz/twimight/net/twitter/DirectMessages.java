@@ -74,9 +74,6 @@ public class DirectMessages implements BaseColumns {
 	
 	// flags to mark which buffer(s) a tweet belongs to. (Buffer sizes are defined in class Constants)
 	public static final int BUFFER_MESSAGES = 1; /** Holds all messages of the local user (to and from) */
-	public static final int BUFFER_DISASTER_ME = 2; /** Disaster messages written by other users for me */
-	public static final int BUFFER_MYDISASTER = 4; /** The disaster messages of the local user */
-	public static final int BUFFER_DISASTER_OTHERS = 8; /** Disaster messages for other users */
 
 
 }

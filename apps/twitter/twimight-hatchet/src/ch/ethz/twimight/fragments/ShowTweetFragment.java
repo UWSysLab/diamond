@@ -193,15 +193,6 @@ public class ShowTweetFragment extends Fragment {
     			setUserInfo();			
     			setProfilePicture();	
 
-    			// disaster info		
-    			if( (buffer & Tweets.BUFFER_DISASTER) != 0 ){
-
-    				if(c.getInt(c.getColumnIndex(Tweets.COL_ISVERIFIED))==0){
-    					LinearLayout unverifiedInfo = (LinearLayout) view.findViewById(R.id.showTweetUnverified);
-    					unverifiedInfo.setVisibility(LinearLayout.VISIBLE);
-    				}
-    			}
-
     			
     			
 
@@ -690,12 +681,7 @@ public class ShowTweetFragment extends Fragment {
 	private ContentValues setRetweetFlag(int flags) {
 		ContentValues cv = new ContentValues();
 		cv.put(Tweets.COL_FLAGS, flags | Tweets.FLAG_TO_RETWEET);
-		
-		if (PreferenceManager.getDefaultSharedPreferences(activity).getBoolean("prefDisasterMode", Constants.DISASTER_DEFAULT_ON)==true) {
-			
-			cv.put(Tweets.COL_BUFFER, buffer | Tweets.BUFFER_DISASTER);
-		} else
-			cv.put(Tweets.COL_BUFFER, buffer);
+		cv.put(Tweets.COL_BUFFER, buffer);
 		return cv;
 	}
 	

@@ -337,16 +337,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 				
 				ContentValues cv = createContentValues(); 
 				
-				if(PreferenceManager.getDefaultSharedPreferences(NewTweetActivity.this).getBoolean("prefDisasterMode", false) == true){				
-					
-					// our own tweets go into the my disaster tweets buffer
-					cv.put(Tweets.COL_BUFFER, Tweets.BUFFER_TIMELINE|Tweets.BUFFER_MYDISASTER);
-
-					insertUri = getContentResolver().insert(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/" 
-																+ Tweets.TWEETS_TABLE_TIMELINE + "/" + Tweets.TWEETS_SOURCE_DISASTER), cv);
-					getContentResolver().notifyChange(Tweets.TABLE_TIMELINE_URI, null);
-				} else {				
-					
 					// our own tweets go into the timeline buffer
 					cv.put(Tweets.COL_BUFFER, Tweets.BUFFER_TIMELINE);
 					//we publish on twitter directly only normal tweets
@@ -360,7 +350,7 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 					if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 						result=true;
 					}
-				}
+					
 				if (locHelper.getCount() > 0 && cm.getActiveNetworkInfo()!= null) {	
 
 					 Log.i(TAG,"writing log");
