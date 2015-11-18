@@ -56,7 +56,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 	
 	private static final int LIST_ALL = 3;
 	private static final int LIST_NORMAL = 4;
-	private static final int LIST_DISASTER = 5;
 	
 	private static final int USERS = 6;
 	
@@ -76,7 +75,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 		
 		dmUriMatcher.addURI(DirectMessages.DM_AUTHORITY, DirectMessages.DMS + "/" + DirectMessages.DMS_LIST + "/" + DirectMessages.DMS_SOURCE_ALL, LIST_ALL);
 		dmUriMatcher.addURI(DirectMessages.DM_AUTHORITY, DirectMessages.DMS + "/" + DirectMessages.DMS_LIST + "/" + DirectMessages.DMS_SOURCE_NORMAL, LIST_NORMAL);
-		dmUriMatcher.addURI(DirectMessages.DM_AUTHORITY, DirectMessages.DMS + "/" + DirectMessages.DMS_LIST + "/" + DirectMessages.DMS_SOURCE_DISASTER, LIST_DISASTER);
 		
 	}
 	
@@ -84,7 +82,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 	private static final int DM_NOTIFICATION_ID = 2;
 	
 	private static final int NOTIFY_DM = 3;
-	private static final int NOTIFY_DISASTER_DM = 4;
 	
 	/**
 	 * onCreate we initialize and open the DB.
@@ -112,7 +109,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 			
 			case LIST_ALL: return DirectMessages.DMS_CONTENT_TYPE;
 			case LIST_NORMAL: return DirectMessages.DMS_CONTENT_TYPE;
-			case LIST_DISASTER: return DirectMessages.DMS_CONTENT_TYPE;
 	
 			default: throw new IllegalArgumentException("Unknown URI: " + uri);	
 		}
@@ -232,14 +228,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 				break;
 			case LIST_ALL:
 				// TODO
-				break;
-
-			case LIST_DISASTER:
-				
-				Log.i(TAG, "Query DMS Disaster");
-				c = database.query(DBOpenHelper.TABLE_DMS, projection,DirectMessages.COL_BUFFER + "&" + DirectMessages.BUFFER_MYDISASTER + "!=0"
-						+ " OR " + DirectMessages.COL_BUFFER + "&" + DirectMessages.BUFFER_DISASTER_OTHERS + "!=0", whereArgs, null, null, sortOrder);
-				c.setNotificationUri(getContext().getContentResolver(), DirectMessages.CONTENT_URI);
 				break;
 
 			case LIST_NORMAL:

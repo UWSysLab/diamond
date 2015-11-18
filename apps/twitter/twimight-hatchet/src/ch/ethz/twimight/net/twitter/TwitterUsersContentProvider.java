@@ -47,7 +47,6 @@ public class TwitterUsersContentProvider extends ContentProvider {
 	
 	private static final int USERS_FRIENDS = 4;
 	private static final int USERS_FOLLOWERS = 5;
-	private static final int USERS_DISASTER = 6;
 	private static final int USERS_SEARCH = 7;
 	
 	
@@ -60,7 +59,6 @@ public class TwitterUsersContentProvider extends ContentProvider {
 
 		twitterusersUriMatcher.addURI(TwitterUsers.TWITTERUSERS_AUTHORITY, TwitterUsers.TWITTERUSERS + "/" + TwitterUsers.TWITTERUSERS_FRIENDS, USERS_FRIENDS);
 		twitterusersUriMatcher.addURI(TwitterUsers.TWITTERUSERS_AUTHORITY, TwitterUsers.TWITTERUSERS + "/" + TwitterUsers.TWITTERUSERS_FOLLOWERS, USERS_FOLLOWERS);
-		twitterusersUriMatcher.addURI(TwitterUsers.TWITTERUSERS_AUTHORITY, TwitterUsers.TWITTERUSERS + "/" + TwitterUsers.TWITTERUSERS_DISASTER, USERS_DISASTER);
 		twitterusersUriMatcher.addURI(TwitterUsers.TWITTERUSERS_AUTHORITY, TwitterUsers.TWITTERUSERS + "/" + TwitterUsers.TWITTERUSERS_SEARCH, USERS_SEARCH);
 		
 	}
@@ -154,11 +152,6 @@ public class TwitterUsersContentProvider extends ContentProvider {
 				i.putExtra("synch_request", TwitterService.SYNCH_FRIENDS);
 				getContext().startService(i);
 				
-				break;
-			case USERS_DISASTER:
-				Log.d(TAG, "Query USERS_DISASTER");
-				c = database.query(DBOpenHelper.TABLE_USERS, projection, TwitterUsers.COL_ISDISASTER_PEER+">0 AND "+TwitterUsers.COL_SCREENNAME+" IS NOT NULL", whereArgs, null, null, sortOrder);
-				c.setNotificationUri(getContext().getContentResolver(),TwitterUsers.USERS_DISASTER_URI);
 				break;
 				
 			case USERS_SEARCH:

@@ -187,13 +187,6 @@ public class NewDMActivity extends Activity{
 
 			ContentValues cv = createContentValues();
 			if (cv != null) {
-				if(PreferenceManager.getDefaultSharedPreferences(NewDMActivity.this).getBoolean("prefDisasterMode", false) == true){
-
-					// our own DMs go into the my disaster dm buffer
-					cv.put(DirectMessages.COL_BUFFER, DirectMessages.BUFFER_MYDISASTER|DirectMessages.BUFFER_MESSAGES);
-					getContentResolver().insert(Uri.parse("content://" + DirectMessages.DM_AUTHORITY + "/" + DirectMessages.DMS + "/" + DirectMessages.DMS_LIST + "/" + DirectMessages.DMS_SOURCE_DISASTER), cv);
-				} else {
-
 					// our own DMs go into the messages buffer
 					cv.put(DirectMessages.COL_BUFFER, DirectMessages.BUFFER_MESSAGES);
 					getContentResolver().insert(Uri.parse("content://" + DirectMessages.DM_AUTHORITY + "/" + DirectMessages.DMS + "/" + DirectMessages.DMS_LIST + "/" + DirectMessages.DMS_SOURCE_NORMAL), cv);
@@ -202,8 +195,6 @@ public class NewDMActivity extends Activity{
 					if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 						result=true;
 					}
-
-				}
 			}
 			
 			

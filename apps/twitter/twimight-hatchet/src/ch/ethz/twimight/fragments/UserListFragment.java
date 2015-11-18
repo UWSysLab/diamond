@@ -91,12 +91,6 @@ public class UserListFragment extends ListFragment {
 
 
 			break;
-		case PEERS_KEY:
-
-			c = resolver.query(Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS 
-					+ "/" + TwitterUsers.TWITTERUSERS_DISASTER), null, null, null, null);
-
-			break;
 
 		case SEARCH_USERS:
 			Log.i("UserListFragment","query");
