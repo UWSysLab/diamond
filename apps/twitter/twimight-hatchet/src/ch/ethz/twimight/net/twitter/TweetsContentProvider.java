@@ -67,18 +67,12 @@ public class TweetsContentProvider extends ContentProvider {
 	
 
 	private static final int TWEETS_TIMELINE_NORMAL = 4;
-	private static final int TWEETS_TIMELINE_DISASTER = 5;
 	private static final int TWEETS_TIMELINE_ALL = 6;
 	private static final int TWEETS_TIMELINE_NEW = 7;
-	private static final int TWEETS_TIMELINE_DISASTER_NEW =11 ;
 
-	private static final int TWEETS_FAVORITES_NORMAL = 8;
-	private static final int TWEETS_FAVORITES_DISASTER = 9;
 	private static final int TWEETS_FAVORITES_ALL = 10;
 
 
-	private static final int TWEETS_MENTIONS_NORMAL = 12;
-	private static final int TWEETS_MENTIONS_DISASTER = 13;
 	private static final int TWEETS_MENTIONS_ALL = 14;
 	
 	private static final int TWEETS_USER_ID = 15;
@@ -102,33 +96,15 @@ public class TweetsContentProvider extends ContentProvider {
 				+ "/" + Tweets.TWEETS_SOURCE_NORMAL, TWEETS_TIMELINE_NORMAL);
 		
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
-				+ "/" + Tweets.TWEETS_SOURCE_DISASTER, TWEETS_TIMELINE_DISASTER);
-		
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
 				+ "/" + Tweets.TWEETS_SOURCE_ALL, TWEETS_TIMELINE_ALL);
 		
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
 				+ "/" + Tweets.TWEETS_SINCE_LAST_UPDATE, TWEETS_TIMELINE_NEW);
 		
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
-				+ "/" + Tweets.TWEETS_SOURCE_DISASTER + "/" + Tweets.TWEETS_SINCE_LAST_UPDATE, TWEETS_TIMELINE_DISASTER_NEW );
-			
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_FAVORITES 
-				+ "/" + Tweets.TWEETS_SOURCE_NORMAL, TWEETS_FAVORITES_NORMAL);
-		
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_FAVORITES 
-				+ "/" + Tweets.TWEETS_SOURCE_DISASTER, TWEETS_FAVORITES_DISASTER);
-		
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_FAVORITES 
 				+ "/" + Tweets.TWEETS_SOURCE_ALL, TWEETS_FAVORITES_ALL);
 		
 		
-
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_MENTIONS 
-				+ "/" + Tweets.TWEETS_SOURCE_NORMAL, TWEETS_MENTIONS_NORMAL);
-		
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_MENTIONS 
-				+ "/" + Tweets.TWEETS_SOURCE_DISASTER, TWEETS_MENTIONS_DISASTER);
 		
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_MENTIONS 
 				+ "/" + Tweets.TWEETS_SOURCE_ALL, TWEETS_MENTIONS_ALL);
@@ -139,7 +115,6 @@ public class TweetsContentProvider extends ContentProvider {
 	// for the status bar notification
 	private static final int TWEET_NOTIFICATION_ID = 1;	
 	private static final int NOTIFY_MENTION = 2;
-	private static final int NOTIFY_DISASTER = 3;
 	private static final int NOTIFY_TWEET = 4;
 	
 	/**
@@ -168,15 +143,10 @@ public class TweetsContentProvider extends ContentProvider {
 			case TWEETS_USER_ID: return Tweets.TWEETS_CONTENT_TYPE;
 			
 			case TWEETS_TIMELINE_NORMAL: return Tweets.TWEETS_CONTENT_TYPE;
-			case TWEETS_TIMELINE_DISASTER: return Tweets.TWEETS_CONTENT_TYPE;
 			case TWEETS_TIMELINE_ALL: return Tweets.TWEETS_CONTENT_TYPE;
 			
-			case TWEETS_FAVORITES_NORMAL: return Tweets.TWEETS_CONTENT_TYPE;
-			case TWEETS_FAVORITES_DISASTER: return Tweets.TWEETS_CONTENT_TYPE;
 			case TWEETS_FAVORITES_ALL: return Tweets.TWEETS_CONTENT_TYPE;
 			
-			case TWEETS_MENTIONS_NORMAL: return Tweets.TWEETS_CONTENT_TYPE;
-			case TWEETS_MENTIONS_DISASTER: return Tweets.TWEETS_CONTENT_TYPE;
 			case TWEETS_MENTIONS_ALL: return Tweets.TWEETS_CONTENT_TYPE;
 	
 			default: throw new IllegalArgumentException("Unknown URI: " + uri);	
@@ -353,47 +323,6 @@ public class TweetsContentProvider extends ContentProvider {
 				i.putExtra("synch_request", TwitterService.SYNCH_TIMELINE);
 				getContext().startService(i);
 				break;
-			case TWEETS_TIMELINE_DISASTER: 
-				if (TwimightBaseActivity.D) Log.d(TAG, "Query TIMELINE_DISASTER");
-				sql = "SELECT "
-					+ DBOpenHelper.TABLE_TWEETS + "." + "_id AS _id, "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TWITTERUSER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MENTIONS + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT_PLAIN + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RECEIVED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "					
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "	
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CERTIFICATE + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_SIGNATURE + ", "
-					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_NAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_PROFILEIMAGE_PATH + " "
-					+ "FROM "+DBOpenHelper.TABLE_TWEETS + " "
-					+ "JOIN " + DBOpenHelper.TABLE_USERS + " " 
-					+ "ON " +DBOpenHelper.TABLE_TWEETS+"." +Tweets.COL_TWITTERUSER+ "=" +DBOpenHelper.TABLE_USERS+"." +TwitterUsers.COL_TWITTERUSER_ID+ " "
-					+ "WHERE ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&"+Tweets.BUFFER_DISASTER+")!=0 "
-					+ "OR ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&"+Tweets.BUFFER_MYDISASTER+")!=0 "
-					+ "ORDER BY " + Tweets.DEFAULT_SORT_ORDER +";";
-				c = database.rawQuery(sql, null);
-				// TODO: Correct notification URI
-				c.setNotificationUri(getContext().getContentResolver(), Tweets.TABLE_TIMELINE_URI);
-				
-				// start synch service with a synch timeline request
-				//i = new Intent(TwitterService.SYNCH_ACTION);
-				//i.putExtra("synch_request", TwitterService.SYNCH_TIMELINE);
-				//getContext().startService(i);
-				break;
 			case TWEETS_TIMELINE_ALL:
 				if (TwimightBaseActivity.D) Log.d(TAG, "Query TIMELINE_ALL");
 				sql = "SELECT "
@@ -492,84 +421,6 @@ public class TweetsContentProvider extends ContentProvider {
 
 				break;
 			
-			case TWEETS_FAVORITES_NORMAL: 
-				if (TwimightBaseActivity.D) Log.d(TAG, "Query FAVORITES_NORMAL");
-				sql = "SELECT "
-					+ DBOpenHelper.TABLE_TWEETS + "." + "_id AS _id, "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TWITTERUSER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MENTIONS + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT_PLAIN + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "			
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
-					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_NAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_PROFILEIMAGE_PATH + " "
-					+ "FROM "+DBOpenHelper.TABLE_TWEETS + " "
-					+ "JOIN " + DBOpenHelper.TABLE_USERS + " " 
-					+ "ON " +DBOpenHelper.TABLE_TWEETS+"." +Tweets.COL_TWITTERUSER+ "=" +DBOpenHelper.TABLE_USERS+"." +TwitterUsers.COL_TWITTERUSER_ID+ " "
-					+ "WHERE ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&" + Tweets.BUFFER_FAVORITES+")!=0 "
-					+ "AND ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER + " & (" + Tweets.BUFFER_DISASTER+ "|"+ Tweets.BUFFER_MYDISASTER +") )=0 "
-					+ "ORDER BY " + Tweets.DEFAULT_SORT_ORDER +";";
-				c = database.rawQuery(sql, null);
-				
-				// TODO: correct notification URI
-				c.setNotificationUri(getContext().getContentResolver(), Tweets.TABLE_FAVORITES_URI);
-				
-				// start synch service with a synch favorites request
-				i = new Intent(TwitterService.SYNCH_ACTION);
-				i.putExtra("synch_request", TwitterService.SYNCH_FAVORITES);
-				getContext().startService(i);
-
-				break;
-			case TWEETS_FAVORITES_DISASTER: 
-				if (TwimightBaseActivity.D) Log.d(TAG, "Query FAVORITES_DISASTER");
-				sql = "SELECT "
-					+ DBOpenHelper.TABLE_TWEETS + "." + "_id AS _id, "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TWITTERUSER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MENTIONS + ", "					
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT_PLAIN + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "			
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
-					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_NAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_PROFILEIMAGE_PATH + " "
-					+ "FROM "+DBOpenHelper.TABLE_TWEETS + " "
-					+ "JOIN " + DBOpenHelper.TABLE_USERS + " " 
-					+ "ON " +DBOpenHelper.TABLE_TWEETS+"." +Tweets.COL_TWITTERUSER+ "=" +DBOpenHelper.TABLE_USERS+"." +TwitterUsers.COL_TWITTERUSER_ID+ " "
-					+ "WHERE ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&"+Tweets.BUFFER_FAVORITES+")!=0 "
-					+ "AND ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER + " & (" + Tweets.BUFFER_DISASTER+ "|"+ Tweets.BUFFER_MYDISASTER +") ) !=0 "
-					+ "ORDER BY " + Tweets.DEFAULT_SORT_ORDER +";";
-				c = database.rawQuery(sql, null);
-				
-				// TODO: correct notification URI
-				c.setNotificationUri(getContext().getContentResolver(), Tweets.TABLE_FAVORITES_URI);
-				
-				// start synch service with a synch favorites request
-				i = new Intent(TwitterService.SYNCH_ACTION);
-				i.putExtra("synch_request", TwitterService.SYNCH_FAVORITES);
-				getContext().startService(i);
-				break;
-				
 			case TWEETS_FAVORITES_ALL: 
 				if (TwimightBaseActivity.D) Log.d(TAG, "Query FAVORITES_ALL");
 				sql = "SELECT "
@@ -609,84 +460,6 @@ public class TweetsContentProvider extends ContentProvider {
 				getContext().startService(i);	
 				break;
 				
-			case TWEETS_MENTIONS_NORMAL: 
-				if (TwimightBaseActivity.D) Log.d(TAG, "Query MENTIONS_NORMAL");
-				sql = "SELECT "
-					+ DBOpenHelper.TABLE_TWEETS + "." + "_id AS _id, "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT_PLAIN + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TWITTERUSER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MENTIONS + ", "					
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "	
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
-					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_NAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_PROFILEIMAGE_PATH + " "
-					+ "FROM "+DBOpenHelper.TABLE_TWEETS + " "
-					+ "JOIN " + DBOpenHelper.TABLE_USERS + " " 
-					+ "ON " +DBOpenHelper.TABLE_TWEETS+"." +Tweets.COL_TWITTERUSER+ "=" +DBOpenHelper.TABLE_USERS+"." +TwitterUsers.COL_TWITTERUSER_ID+ " "
-					+ "WHERE ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&"+Tweets.BUFFER_MENTIONS+")!=0 "
-					+ "AND ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER + " & (" + Tweets.BUFFER_DISASTER+ "|"+ Tweets.BUFFER_MYDISASTER +") )=0 "
-					+ "ORDER BY " + Tweets.DEFAULT_SORT_ORDER +";";
-				c = database.rawQuery(sql, null);
-				
-				// TODO: correct notification URI
-				c.setNotificationUri(getContext().getContentResolver(), Tweets.TABLE_MENTIONS_URI);
-				
-				// start synch service with a synch mentions request
-				i = new Intent(TwitterService.SYNCH_ACTION);
-				i.putExtra("synch_request", TwitterService.SYNCH_MENTIONS);
-				getContext().startService(i);
-
-				break;
-			case TWEETS_MENTIONS_DISASTER: 
-				if (TwimightBaseActivity.D) Log.d(TAG, "Query MENTIONS_DISASTER");
-				sql = "SELECT "
-					+ DBOpenHelper.TABLE_TWEETS + "." + "_id AS _id, "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TEXT_PLAIN + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_TWITTERUSER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MENTIONS + ", "					
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "					
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
-					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_NAME + ", "
-					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_PROFILEIMAGE_PATH + " "
-					+ "FROM "+DBOpenHelper.TABLE_TWEETS + " "
-					+ "JOIN " + DBOpenHelper.TABLE_USERS + " " 
-					+ "ON " +DBOpenHelper.TABLE_TWEETS+"." +Tweets.COL_TWITTERUSER+ "=" +DBOpenHelper.TABLE_USERS+"." +TwitterUsers.COL_TWITTERUSER_ID+ " "
-					+ "WHERE ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER+"&"+Tweets.BUFFER_MENTIONS+")!=0 "
-					+ "AND ("+DBOpenHelper.TABLE_TWEETS+"."+Tweets.COL_BUFFER + " & (" + Tweets.BUFFER_DISASTER+ "|"+ Tweets.BUFFER_MYDISASTER +") ) !=0 "
-					+ "ORDER BY " + Tweets.DEFAULT_SORT_ORDER +";";
-				c = database.rawQuery(sql, null);
-				
-				// TODO: correct notification URI
-				c.setNotificationUri(getContext().getContentResolver(), Tweets.TABLE_MENTIONS_URI);
-				
-				// start synch service with a synch mentions request
-				i = new Intent(TwitterService.SYNCH_ACTION);
-				i.putExtra("synch_request", TwitterService.SYNCH_MENTIONS);
-				getContext().startService(i);
-
-				break;
 			case TWEETS_MENTIONS_ALL: 
 				if (TwimightBaseActivity.D) Log.d(TAG, "Query MENTIONS_ALL");
 				sql = "SELECT "
@@ -1127,10 +900,6 @@ public class TweetsContentProvider extends ContentProvider {
 		case(NOTIFY_MENTION):
 			contentText = getContext().getString(R.string.mention_content_text);
 			notificationIntent.putExtra(ShowTweetListActivity.FILTER_REQUEST, TweetListFragment.MENTIONS_KEY);			
-			break;
-		case(NOTIFY_DISASTER):
-			contentText = getContext().getString(R.string.dis_tweet_content_text);
-			notificationIntent.putExtra(ShowTweetListActivity.FILTER_REQUEST, TweetListFragment.FAVORITES_KEY);
 			break;
 		case(NOTIFY_TWEET):
 			contentText = getContext().getString(R.string.tweet_content_text);

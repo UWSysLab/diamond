@@ -92,7 +92,7 @@ that you downloaded there.
 		$ mvn package
 
 ### Running a test Android app
-The project DiamondAndroidTest in 'apps/test-apps' is an Eclipse project containing a simple Diamond test app for Android.
+The project DiamondAndroidTest in `apps/test-apps` is an Eclipse project containing a simple Diamond test app for Android.
 The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
 source directory and $ANDROID_SDK with the path to the Android SDK folder. These instructions have been tested on Mac and Linux
 using an Android SDK with Android 5.1.1 (API level 22) installed.
