@@ -48,7 +48,7 @@ abstract class BaseJsonHandler implements HttpHandler {
 		os.write(responseJson.toString().getBytes());
 		os.close();
 		
-		//System.out.println(requestURI);
+		System.out.println(requestURI);
 	}
 	
 	abstract JsonElement getResponseJson(String requestMethod, Headers requestHeaders,
@@ -345,8 +345,8 @@ class HackSearchUsersHandler extends BaseJsonHandler {
 	}
 }
 
-class NewDMHandler extends BaseJsonHandler {
-	public NewDMHandler(JedisTwitter jt) {
+class CreateDMHandler extends BaseJsonHandler {
+	public CreateDMHandler(JedisTwitter jt) {
 		super(jt);
 	}
 
@@ -372,6 +372,46 @@ class NewDMHandler extends BaseJsonHandler {
 	}
 }
 
+class DestroyDMHandler extends BaseJsonHandler {
+	public DestroyDMHandler(JedisTwitter jt) {
+		super(jt);
+	}
+	
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		long dmid = Long.parseLong(bodyParams.get("id"));
+		String username = Utils.getUsername(requestHeaders);
+		return jedisTwitter.destroyDM(dmid, username);
+	}
+}
+
+class GetSentDMsHandler extends BaseJsonHandler {
+	public GetSentDMsHandler(JedisTwitter jt) {
+		super(jt);
+	}
+	
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
+		return jedisTwitter.getSentDMs(username);
+	}
+}
+
+class GetReceivedDMsHandler extends BaseJsonHandler {
+	public GetReceivedDMsHandler(JedisTwitter jt) {
+		super(jt);
+	}
+	
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		String username = Utils.getUsername(requestHeaders);
+		return jedisTwitter.getReceivedDMs(username);
+	}
+}
 
 class TestHandler implements HttpHandler {
 
@@ -415,6 +455,7 @@ public class Main {
 		jedisTwitter.updateStatus("sconnery", "Was that a Timothy Dalton movie?", null, System.currentTimeMillis());
 		jedisTwitter.updateStatus("dcraig", "We need two more tweets", null, System.currentTimeMillis());
 		jedisTwitter.updateStatus("dcraig", "Last", null, System.currentTimeMillis());
+		jedisTwitter.createDM("Seriously, don't listen to Sean Connery", jedisTwitter.getUid("dcraig"), jedisTwitter.getUid("a"), System.currentTimeMillis());
 	}
 	
 	public static void main(String[] args) {
@@ -448,7 +489,10 @@ public class Main {
 			server.createContext("/search/tweets.json", new HackSearchTweetsHandler(jedisTwitter));
 			server.createContext("/users/search.json", new HackSearchUsersHandler(jedisTwitter));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedisTwitter));
-			server.createContext("/direct_messages/new.json", new NewDMHandler(jedisTwitter));
+			server.createContext("/direct_messages/new.json", new CreateDMHandler(jedisTwitter));
+			server.createContext("/direct_messages.json", new GetReceivedDMsHandler(jedisTwitter));
+			server.createContext("/direct_messages/sent.json", new GetSentDMsHandler(jedisTwitter));
+			server.createContext("/direct_messages/destroy.json", new DestroyDMHandler(jedisTwitter));
 			server.setExecutor(null);
 			server.start();
 		}

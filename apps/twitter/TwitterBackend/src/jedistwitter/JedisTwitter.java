@@ -235,7 +235,7 @@ public class JedisTwitter {
 		return dm;
 	}
 	
-	public JsonObject createDM(String text, long senderUid, long recipientUid, long time) {
+	public JsonElement createDM(String text, long senderUid, long recipientUid, long time) {
 		long dmid = jedis.incr("global:dmid");
 		String dmKey = "dmid:" + dmid;
 		
@@ -253,6 +253,46 @@ public class JedisTwitter {
 		
 		String sender_screen_name = jedis.hget("uid:" + senderUid, "screen_name");
 		return getDM(dmid, sender_screen_name);
+	}
+	
+	public JsonElement destroyDM(long dmid, String authScreenName) {
+		JsonObject destroyedDM = getDM(dmid, authScreenName);
+
+		long recipientUid = Long.parseLong(jedis.hget("dmid:" + dmid, "recipient_id"));
+		long senderUid = Long.parseLong(jedis.hget("dmid:" + dmid, "sender_id"));
+		
+		//only destroy DM if it was received by the authenticating user
+		long authUid = getUid(authScreenName);
+		if (authUid != recipientUid) {
+			return new JsonObject();
+		}
+		
+		jedis.lrem("uid:" + recipientUid + ":dms_received", 0, String.valueOf(dmid));
+		jedis.lrem("uid:" + senderUid + ":dms_sent", 0, String.valueOf(dmid));
+		
+		jedis.del("dmid:" + dmid);
+		
+		return destroyedDM;
+	}
+	
+	public JsonElement getSentDMs(String authScreenName) {
+		JsonArray result = new JsonArray();
+		long senderUid = getUid(authScreenName);
+		List<String> allSentDMs = jedis.lrange("uid:" + senderUid + ":dms_sent", 0, -1);
+		for (String sentDM : allSentDMs) {
+			result.add(getDM(Long.parseLong(sentDM), authScreenName));
+		}
+		return result;
+	}
+	
+	public JsonElement getReceivedDMs(String authScreenName) {
+		JsonArray result = new JsonArray();
+		long recipientUid = getUid(authScreenName);
+		List<String> allReceivedDMs = jedis.lrange("uid:" + recipientUid + ":dms_received", 0, -1);
+		for (String receivedDM : allReceivedDMs) {
+			result.add(getDM(Long.parseLong(receivedDM), authScreenName));
+		}
+		return result;
 	}
 
 	public long getUid(String screenName) {
