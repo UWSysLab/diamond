@@ -207,6 +207,53 @@ public class JedisTwitter {
 
 		return tweet;
 	}
+	
+	public JsonObject getDM(long dmid, String authScreenName) {
+		String dmKey = "dmid:" + dmid;
+		
+		String text = jedis.hget(dmKey, "text");
+		String created_at = jedis.hget(dmKey, "created_at");
+		String recipient_id = jedis.hget(dmKey, "recipient_id");
+		String sender_id = jedis.hget(dmKey, "sender_id");
+		String recipient_screen_name = jedis.hget("uid:" + recipient_id, "screen_name");
+		String sender_screen_name = jedis.hget("uid:" + sender_id, "screen_name");
+		JsonObject recipient = getUser(Long.parseLong(recipient_id), authScreenName);
+		JsonObject sender = getUser(Long.parseLong(sender_id), authScreenName);
+		
+		JsonObject dm = new JsonObject();
+		dm.add("id", new JsonPrimitive(dmid));
+		dm.add("id_str", new JsonPrimitive(String.valueOf(dmid)));
+		dm.add("created_at", new JsonPrimitive(created_at));
+		dm.add("recipient", recipient);
+		dm.add("recipient_id", new JsonPrimitive(recipient_id));
+		dm.add("recipient_screen_name", new JsonPrimitive(recipient_screen_name));
+		dm.add("sender", sender);
+		dm.add("sender_id", new JsonPrimitive(sender_id));
+		dm.add("sender_screen_name", new JsonPrimitive(sender_screen_name));
+		dm.add("text", new JsonPrimitive(text));
+		
+		return dm;
+	}
+	
+	public JsonObject createDM(String text, long senderUid, long recipientUid, long time) {
+		long dmid = jedis.incr("global:dmid");
+		String dmKey = "dmid:" + dmid;
+		
+		String created_at = String.valueOf(time);
+		
+		//create DM as redis hash
+		jedis.hset(dmKey, "text", text);
+		jedis.hset(dmKey, "created_at", created_at);
+		jedis.hset(dmKey, "recipient_id", String.valueOf(recipientUid));
+		jedis.hset(dmKey, "sender_id", String.valueOf(senderUid));
+
+		//add DM to sender's list of sent DMs and recipient's list of received DMs
+		jedis.rpush("uid:" + senderUid + ":dms_sent", String.valueOf(dmid));
+		jedis.rpush("uid:" + recipientUid + ":dms_received", String.valueOf(dmid));
+		
+		String sender_screen_name = jedis.hget("uid:" + senderUid, "screen_name");
+		return getDM(dmid, sender_screen_name);
+	}
 
 	public long getUid(String screenName) {
 		String uidString = jedis.get("user:" + screenName + ":uid");

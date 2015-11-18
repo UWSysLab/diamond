@@ -345,6 +345,33 @@ class HackSearchUsersHandler extends BaseJsonHandler {
 	}
 }
 
+class NewDMHandler extends BaseJsonHandler {
+	public NewDMHandler(JedisTwitter jt) {
+		super(jt);
+	}
+
+	@Override
+	JsonElement getResponseJson(String requestMethod, Headers requestHeaders, URI requestURI,
+			InputStream requestBody) {
+		
+		Map<String, String> bodyParams = Utils.getBodyParams(requestBody);
+		
+		String text = bodyParams.get("text");
+		String senderScreenname = Utils.getUsername(requestHeaders);
+		long senderUid = jedisTwitter.getUid(senderScreenname);
+		long recipientUid = jedisTwitter.getUid(bodyParams);
+		long time = System.currentTimeMillis();
+		
+		if (recipientUid == -1) {
+			System.out.println("NewDMHandler error: must specify either screen name or user id of recipient");
+			return new JsonObject();
+		}
+
+		
+		return jedisTwitter.createDM(text, senderUid, recipientUid, time);
+	}
+}
+
 
 class TestHandler implements HttpHandler {
 
@@ -421,6 +448,7 @@ public class Main {
 			server.createContext("/search/tweets.json", new HackSearchTweetsHandler(jedisTwitter));
 			server.createContext("/users/search.json", new HackSearchUsersHandler(jedisTwitter));
 			server.createContext("/hack/adduser.json", new AddUserHandler(jedisTwitter));
+			server.createContext("/direct_messages/new.json", new NewDMHandler(jedisTwitter));
 			server.setExecutor(null);
 			server.start();
 		}
