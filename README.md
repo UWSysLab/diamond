@@ -92,9 +92,10 @@ that you downloaded there.
 		$ mvn package
 
 ### Running a test Android app
-The project DiamondAndroidTest in the "apps/test-apps" folder is an Eclipse project containing a simple Diamond test app for Android.
+The project DiamondAndroidTest in 'apps/test-apps' is an Eclipse project containing a simple Diamond test app for Android.
 The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
-source directory and $ANDROID_SDK with the path to the Android SDK folder.
+source directory and $ANDROID_SDK with the path to the Android SDK folder. These instructions have been tested on Mac and Linux
+using an Android SDK with Android 5.1.1 (API level 22) installed.
 
 1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
 
@@ -103,16 +104,17 @@ source directory and $ANDROID_SDK with the path to the Android SDK folder.
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
-    1. Go to File -> Import -> Existing Projects into Workspace.
-    2. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory.
+    1. Go to File -> Import -> General -> Existing Projects into Workspace.
+    2. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory and click Finish.
 
 3. Add the Android support v7 appcompat library to the project:
 
-    1. Go to File -> Import -> Existing Projects into Workspace.
-    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory.
-    3. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
+    1. Go to File -> Import -> General -> Existing Projects into Workspace.
+    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory and click Finish.
+    3. Right click on android-support-v7-appcompat in the Package Explorer, then go to Android, and select Android 5.1.1 as the build target.
+    4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
-4. Go to Window -> Preferences -> Android -> Build, and uncheck the option "Force error when external jars contain native libraries."
+4. Go to Window (or Eclipse on Mac) -> Preferences -> Android -> Build, and uncheck the option "Force error when external jars contain native libraries."
 
 5. Refresh, clean, and close and open the project until it builds successfully:
 
