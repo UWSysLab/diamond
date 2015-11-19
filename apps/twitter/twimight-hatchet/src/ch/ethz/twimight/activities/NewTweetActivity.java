@@ -410,11 +410,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 				tweetContentValues.put(Tweets.COL_LNG, loc.getLongitude());
 			}
 		}
-		//if there is a photo, put the path of photo in the cv
-		if (hasMedia){
-			tweetContentValues.put(Tweets.COL_MEDIA, finalPhotoName);
-			Log.i(TAG, Tweets.COL_MEDIA + ":" + finalPhotoName);
-		}
 		
 		return tweetContentValues;
 	}

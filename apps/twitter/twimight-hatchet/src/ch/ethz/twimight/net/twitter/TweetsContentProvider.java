@@ -98,9 +98,6 @@ public class TweetsContentProvider extends ContentProvider {
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
 				+ "/" + Tweets.TWEETS_SOURCE_ALL, TWEETS_TIMELINE_ALL);
 		
-		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_TIMELINE 
-				+ "/" + Tweets.TWEETS_SINCE_LAST_UPDATE, TWEETS_TIMELINE_NEW);
-		
 		tweetUriMatcher.addURI(Tweets.TWEET_AUTHORITY, Tweets.TWEETS + "/" + Tweets.TWEETS_TABLE_FAVORITES 
 				+ "/" + Tweets.TWEETS_SOURCE_ALL, TWEETS_FAVORITES_ALL);
 		
@@ -189,14 +186,6 @@ public class TweetsContentProvider extends ContentProvider {
 		Intent i;
 		switch(tweetUriMatcher.match(uri)){
 			
-		    case TWEETS_TIMELINE_NEW:		    	
-		    	long timestamp = getLastCacheAllPages(getContext());
-		    	sql = Tweets.COL_RECEIVED + "> " + timestamp +" and " + Tweets.COL_HTML_PAGES + " = " + 1 ;
-				c = database.query(DBOpenHelper.TABLE_TWEETS, null, sql, null, null, null, null);
-				setLastCacheAllPages(getContext());
-				
-			break;
-			
 			case TWEETS: 
 				if (TwimightBaseActivity.D) Log.d(TAG, "Query TWEETS");
 				c = database.query(DBOpenHelper.TABLE_TWEETS, projection, where, whereArgs, null, null, sortOrder);
@@ -221,9 +210,6 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_LNG + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_TWITTERUSER_ID + ", "
@@ -257,10 +243,7 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_LNG + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "		
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_TWITTERUSER_ID + ", "
@@ -295,14 +278,10 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RECEIVED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "
-				
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 				    + DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
@@ -338,10 +317,7 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "				
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
@@ -387,12 +363,9 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "				
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
@@ -433,12 +406,9 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_CREATED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_REPLYTO + ", "					
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "		
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "
@@ -474,10 +444,7 @@ public class TweetsContentProvider extends ContentProvider {
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_FLAGS + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_BUFFER + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_MEDIA + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_HTML_PAGES + ", "				
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_DISASTERID + ", "
-					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_ISVERIFIED + ", "
 					+ DBOpenHelper.TABLE_TWEETS + "." +Tweets.COL_RETWEETED_BY + ", "
 					+ DBOpenHelper.TABLE_USERS + "." + "_id AS userRowId, "
 					+ DBOpenHelper.TABLE_USERS + "." +TwitterUsers.COL_SCREENNAME + ", "

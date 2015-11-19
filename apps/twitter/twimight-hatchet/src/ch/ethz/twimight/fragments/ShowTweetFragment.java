@@ -597,11 +597,6 @@ public class ShowTweetFragment extends Fragment {
 		           public void onClick(DialogInterface dialog, int id) {		        	   
 		        	       	   
 		        	   queryContentProvider();	        	   
-		        	   
-		        	   String delPhotoName = c.getString(c.getColumnIndex(Tweets.COL_MEDIA));
-		        	   
-		        	   if(delPhotoName != null){
-		        	   }
 		  
 		        	   if (!c.isNull((c.getColumnIndex(Tweets.COL_TID))))
 		        		   resolver.update(uri, setDeleteFlag(flags), null, null);

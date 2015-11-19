@@ -1078,10 +1078,6 @@ public class TwitterService extends Service {
 		cv.put(Tweets.COL_TEXT_PLAIN, Html.fromHtml(tweetSpanText).toString()  );
 		
 		String tweetText = Html.fromHtml(tweetSpanText).toString();
-		//if there are urls to this tweet, change the status of html field to 1
-		if(tweetText.indexOf("http://") > 0 || tweetText.indexOf("https://") > 0 ){
-			cv.put(Tweets.COL_HTML_PAGES, 1);
-		}	
 		cv.put(Tweets.COL_CREATED, tweet.getCreatedAt().getTime());
 		cv.put(Tweets.COL_SOURCE, tweet.source);
 
@@ -2562,19 +2558,7 @@ public class TwitterService extends Service {
 				flags = c.getInt(c.getColumnIndex(Tweets.COL_FLAGS));
 				buffer = c.getInt(c.getColumnIndex(Tweets.COL_BUFFER));
 
-				String text = c.getString(c.getColumnIndex(Tweets.COL_TEXT_PLAIN));
-				mediaName = c.getString(c.getColumnIndex(Tweets.COL_MEDIA));
-				String mediaUrl =  null;
-				
-				if (mediaName != null)
-					mediaUrl = Environment.getExternalStoragePublicDirectory(Tweets.PHOTO_PATH +
-												"/" + LoginActivity.getTwitterId(TwitterService.this) + "/" + mediaName).getAbsolutePath();
-				
-				boolean hasMedia;
-				if(mediaUrl != null)
-					hasMedia = true;
-				else	
-					hasMedia = false;				
+				String text = c.getString(c.getColumnIndex(Tweets.COL_TEXT_PLAIN));		
 
 				if(!(c.getDouble(c.getColumnIndex(Tweets.COL_LAT))==0 && c.getDouble(c.getColumnIndex(Tweets.COL_LNG))==0)){
 					double[] location = {c.getDouble(c.getColumnIndex(Tweets.COL_LAT)),c.getDouble(c.getColumnIndex(Tweets.COL_LNG))}; 
@@ -2584,23 +2568,9 @@ public class TwitterService extends Service {
 				}
 				
 				if(c.getColumnIndex(Tweets.COL_REPLYTO)>=0){
-					if(hasMedia){
-						Log.d("upload", "upload media with reply");
-						BigInteger replyToId = BigInteger.valueOf(c.getLong(c.getColumnIndex(Tweets.COL_REPLYTO)));
-						tweet = twitter.updateStatusWithMedia(text, replyToId, new File(mediaUrl));
-					}
-					else{
-						tweet = twitter.updateStatus(text, c.getLong(c.getColumnIndex(Tweets.COL_REPLYTO)));
-					}
+					tweet = twitter.updateStatus(text, c.getLong(c.getColumnIndex(Tweets.COL_REPLYTO)));
 				} else {
-					if(hasMedia){
-						Log.d("upload", "upload media without reply");
-						tweet = twitter.updateStatusWithMedia(text, null, new File(mediaUrl));
-					}
-					else{
-						tweet = twitter.updateStatus(text);
-					}
-					
+					tweet = twitter.updateStatus(text);
 				}
 
 			} catch(Exception ex) { 

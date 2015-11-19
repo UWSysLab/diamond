@@ -79,16 +79,11 @@ public class Tweets implements BaseColumns {
 	public static final String COL_RECEIVED = "received"; /** timestamp we insert the tweet into the DB */
 	public static final String COL_SOURCE = "source"; /** the application with which the tweet was created (as reported by twitter) */
 	public static final String COL_BUFFER = "buffer_flags"; /** which buffer(s) is the tweet in */
-	public static final String COL_MEDIA = "media_url"; /**url of media*/
 	public static final String COL_FLAGS = "flags"; /** Transactional flags */
 	//public static final String COL_URLS = ""; /** url hashtag */
-	public static final String COL_HTML_PAGES = "html_pages"; /** status of html pages related to this tweet, 0: not have, 1: does have */
 	
 	// for disaster mode	
 	public static final String COL_DISASTERID = "d_id"; /** the disaster ID of the tweet (for both, disaster and normal tweets) this is the java hashcode (32Bit) of the String TWEETS_COLUMNS_TEXT+TWEETS_COLUMNS_USER */
-	public static final String COL_ISVERIFIED = "is_verified"; /** is the signature of the disaster tweet valid? */
-	public static final String COL_SIGNATURE = "signature"; /** the signature of the disaster tweet */
-	public static final String COL_CERTIFICATE = "certificate"; /** the certificate of the user */
 	
 	public static final String DEFAULT_SORT_ORDER = COL_CREATED + " DESC";
 	public static final String REVERSE_SORT_ORDER = COL_CREATED + " ASC";
