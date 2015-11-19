@@ -254,24 +254,8 @@ public class ShowUserActivity extends TwimightBaseActivity{
 		screenName.setText("@" + userScreenName);
 		realName.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_NAME)));
 
-		if(c.getColumnIndex(TwitterUsers.COL_LOCATION) >=0){
-			location.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_LOCATION)));
-			location.setVisibility(TextView.VISIBLE);
-		} else {
-			location.setVisibility(TextView.GONE);
-		}
-
-		if(c.getColumnIndex(TwitterUsers.COL_DESCRIPTION) >=0){
-			String tmp = c.getString(c.getColumnIndex(TwitterUsers.COL_DESCRIPTION));
-			if(tmp != null){
-				description.setText(tmp);
-				description.setVisibility(TextView.VISIBLE);
-			} else {
-				description.setVisibility(TextView.GONE);
-			}
-		} else {
-			description.setVisibility(TextView.GONE);
-		}
+		location.setVisibility(TextView.GONE);
+		description.setVisibility(TextView.GONE);
 
 		int tweets = c.getInt(c.getColumnIndex(TwitterUsers.COL_STATUSES));
 		int favorites = c.getInt(c.getColumnIndex(TwitterUsers.COL_FAVORITES));

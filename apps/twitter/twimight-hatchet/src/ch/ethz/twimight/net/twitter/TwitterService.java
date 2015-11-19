@@ -1074,21 +1074,10 @@ public class TwitterService extends Service {
 				userContentValues.put(TwitterUsers.COL_TWITTERUSER_ID, user.getId());					
 				userContentValues.put(TwitterUsers.COL_SCREENNAME, user.getScreenName());				
 				userContentValues.put(TwitterUsers.COL_NAME, user.getName());
-				if(user.description!=null) userContentValues.put(TwitterUsers.COL_DESCRIPTION, user.getDescription());
-				if(user.location!=null) userContentValues.put(TwitterUsers.COL_LOCATION, user.getLocation());
 				userContentValues.put(TwitterUsers.COL_FAVORITES, user.favoritesCount);
 				userContentValues.put(TwitterUsers.COL_FRIENDS, user.friendsCount);
 				userContentValues.put(TwitterUsers.COL_FOLLOWERS, user.followersCount);
-				userContentValues.put(TwitterUsers.COL_LISTED, user.listedCount);
-				userContentValues.put(TwitterUsers.COL_TIMEZONE, user.timezone);
 				userContentValues.put(TwitterUsers.COL_STATUSES, user.statusesCount);
-				userContentValues.put(TwitterUsers.COL_VERIFIED, user.verified);
-				userContentValues.put(TwitterUsers.COL_PROTECTED, user.protectedUser);
-				if(user.getProfileImageUrl()!=null) {
-					userContentValues.put(TwitterUsers.COL_IMAGEURL, user.getProfileImageUrl().toString());
-					// we flag the user for updating their profile image	
-					userContentValues.put(TwitterUsers.COL_FLAGS, TwitterUsers.FLAG_TO_UPDATEIMAGE);	
-				}
 				if (insertAsFriend) {
 					userContentValues.put(TwitterUsers.COL_ISFRIEND, 1);
 					

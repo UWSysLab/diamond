@@ -26,8 +26,8 @@ import ch.ethz.twimight.R;
  */
 public class UserAdapter extends SimpleCursorAdapter {
 	
-	static final String[] from = {TwitterUsers.COL_SCREENNAME, TwitterUsers.COL_NAME, TwitterUsers.COL_LOCATION};
-	static final int[] to = {R.id.showUserScreenName, R.id.showUserRealName, R.id.showUserLocation};
+	static final String[] from = {TwitterUsers.COL_SCREENNAME, TwitterUsers.COL_NAME};
+	static final int[] to = {R.id.showUserScreenName, R.id.showUserRealName};
 
 	/** Constructor */
 	public UserAdapter(Context context, Cursor c) {

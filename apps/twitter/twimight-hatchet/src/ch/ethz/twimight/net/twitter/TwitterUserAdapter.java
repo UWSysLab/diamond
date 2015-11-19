@@ -36,8 +36,8 @@ public class TwitterUserAdapter extends SimpleCursorAdapter {
 	
 	private static final String TAG = "TwitterUserAdapter";
 	
-	static final String[] from = {TwitterUsers.COL_SCREENNAME, TwitterUsers.COL_NAME, TwitterUsers.COL_LOCATION};
-	static final int[] to = {R.id.showUserScreenName, R.id.showUserRealName, R.id.showUserLocation};
+	static final String[] from = {TwitterUsers.COL_SCREENNAME, TwitterUsers.COL_NAME};
+	static final int[] to = {R.id.showUserScreenName, R.id.showUserRealName};
 
 	/** Constructor */
 	public TwitterUserAdapter(Context context, Cursor c) {

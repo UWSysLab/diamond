@@ -59,10 +59,6 @@ public class TwitterUsers implements BaseColumns {
 	 */
 	public static final String TWITTERUSERS_FOLLOWERS = "followers";
 	/**
-	 * Selecting only disaster peers
-	 */
-	public static final String TWITTERUSERS_DISASTER = "disaster_peers";
-	/**
 	 * Selecting users for the searching operation
 	 */
 	public static final String TWITTERUSERS_SEARCH = "search_users";
@@ -84,25 +80,14 @@ public class TwitterUsers implements BaseColumns {
 	public static final String COL_SCREENNAME = "user_screenname";
 	public static final String COL_TWITTERUSER_ID = "twitteruser_id";
 	public static final String COL_NAME = "name";
-	public static final String COL_LANG = "lang";
-	public static final String COL_DESCRIPTION = "description";
-	public static final String COL_IMAGEURL = "profile_image_url";
 	public static final String COL_STATUSES = "statuses_count";
 	public static final String COL_FOLLOWERS = "followers_count";
 	public static final String COL_FRIENDS = "friends_count";
-	public static final String COL_LISTED = "listed_count";
 	public static final String COL_FAVORITES = "favorites_count";
-	public static final String COL_LOCATION = "location";
-	public static final String COL_UTCOFFSET = "utc_offset";
-	public static final String COL_TIMEZONE = "timezone";
-	public static final String COL_URL = "url";
 	public static final String COL_CREATED = "u_created_at";
-	public static final String COL_PROTECTED = "protected";
-	public static final String COL_VERIFIED = "verified";
 	
 	public static final String COL_ISFOLLOWER = "following"; /** is the user following us? */
 	public static final String COL_ISFRIEND = "follow"; /** are we following the user? */
-	public static final String COL_ISDISASTER_PEER = "disaster_peer"; /** have we met the user in disaster mode */
 	public static final String COL_IS_SEARCH_RESULT = "search_result"; /** have we met the user in disaster mode */
 	public static final String COL_FOLLOWREQUEST = "follow_request_sent"; /** was a following request sent to twitter? */	
 	public static final String COL_LASTUPDATE = "last_update";
@@ -110,7 +95,6 @@ public class TwitterUsers implements BaseColumns {
 	public static final String COL_FLAGS = "u_flags";
 
 	public static final String COL_PROFILEIMAGE_PATH = "_data";
-	public static final String COL_PROFILEIMAGE = "image";  /** this is used only in disaster mode to sent the profile image */
 
 	
 	public static final String DEFAULT_SORT_ORDER = COL_SCREENNAME;
@@ -135,7 +119,6 @@ public class TwitterUsers implements BaseColumns {
 	public static final Uri USERS_FRIENDS_URI = Uri.parse(BASE_URI + COL_ISFRIEND);
 	public static final Uri USERS_FOLLOWERS_URI = Uri.parse(BASE_URI +  COL_ISFOLLOWER );
 	public static final Uri USERS_SEARCH_URI = Uri.parse(BASE_URI + TWITTERUSERS_SEARCH );
-	public static final Uri USERS_DISASTER_URI = Uri.parse(BASE_URI + COL_ISDISASTER_PEER);
 
 
 	
