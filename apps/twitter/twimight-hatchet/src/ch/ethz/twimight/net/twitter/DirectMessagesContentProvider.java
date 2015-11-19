@@ -161,7 +161,6 @@ public class DirectMessagesContentProvider extends ContentProvider {
 				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_TEXT + ", "
 				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_SENDER + ", "
 				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_CREATED + ", "
-				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_ISDISASTER + ", "
 				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_FLAGS + ", "
 				+ DBOpenHelper.TABLE_DMS+"."+DirectMessages.COL_DMID+ ", "
 				+ DBOpenHelper.TABLE_USERS+"._id AS userRowId, "

@@ -139,12 +139,7 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 			+ DirectMessages.COL_RECEIVED + " integer, "
 			+ DirectMessages.COL_FLAGS + " integer default 0, "
 			+ DirectMessages.COL_BUFFER + " integer default 0, "
-			+ DirectMessages.COL_ISDISASTER + " integer default 0, "
-			+ DirectMessages.COL_DISASTERID + " integer, "
-			+ DirectMessages.COL_ISVERIFIED + " integer, "
-			+ DirectMessages.COL_SIGNATURE + " string, "
-			+ DirectMessages.COL_CRYPTEXT + " string, "
-			+ DirectMessages.COL_CERTIFICATE + " string);";
+			+ DirectMessages.COL_DISASTERID + " integer);";
 	
 	/*
 	// html pages trackers

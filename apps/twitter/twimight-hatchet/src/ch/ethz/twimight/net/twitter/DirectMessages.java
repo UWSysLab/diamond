@@ -38,7 +38,6 @@ public class DirectMessages implements BaseColumns {
 	
 	// URI name definitions
 	public static final String DMS_SOURCE_NORMAL = "normal"; /** only normal direct messages (no disaster messages) */
-	public static final String DMS_SOURCE_DISASTER = "disaster"; /** only disaster direct messages */
 	public static final String DMS_SOURCE_ALL = "all"; /** both, normal and disaster messages */
 	
 	public static final String DMS_LIST = "list"; /** all messages */
@@ -57,13 +56,7 @@ public class DirectMessages implements BaseColumns {
 	public static final String COL_FLAGS = "flags"; /** Transactional flags */
 	
 	// for disaster mode
-	public static final String COL_ISDISASTER = "is_disaster_dm"; /** disaster or normal message? */
-
 	public static final String COL_DISASTERID = "d_id"; /** the disaster ID of the message (for both, disaster and normal message) */
-	public static final String COL_ISVERIFIED = "is_verified"; /** is the signature of the disaster message valid? */
-	public static final String COL_SIGNATURE = "signature"; /** the signature of the disaster message */
-	public static final String COL_CERTIFICATE = "certificate"; /** the certificate of the user */
-	public static final String COL_CRYPTEXT = "cryptext"; /** the encrypted message */
 	
 	public static final String DEFAULT_SORT_ORDER = COL_CREATED + " DESC";
 	

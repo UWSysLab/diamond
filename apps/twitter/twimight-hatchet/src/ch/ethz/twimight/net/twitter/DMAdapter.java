@@ -148,17 +148,11 @@ public class DMAdapter extends SimpleCursorAdapter {
 		LinearLayout rowLayout = (LinearLayout) dmrow.findViewById(R.id.showDM);		
 		if(Long.toString(cursor.getLong(cursor.getColumnIndex(DirectMessages.COL_SENDER))).equals(LoginActivity.getTwitterId(context))) {
 
-			if(cursor.getInt(cursor.getColumnIndex(DirectMessages.COL_ISDISASTER))>0)
-				rowLayout.setBackgroundResource(R.drawable.disaster_tweet_background);
-			else
-				rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
+			rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
 
 		} else {
 
-			if(cursor.getInt(cursor.getColumnIndex(DirectMessages.COL_ISDISASTER))>0)
-				rowLayout.setBackgroundResource(R.drawable.disaster_dm_background_receiver);
-			else
-				rowLayout.setBackgroundResource(R.drawable.normal_tweet_background);
+			rowLayout.setBackgroundResource(R.drawable.normal_tweet_background);
 		}
 		
 	}
