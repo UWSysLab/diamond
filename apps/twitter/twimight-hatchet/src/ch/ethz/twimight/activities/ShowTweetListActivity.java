@@ -33,7 +33,6 @@ import ch.ethz.twimight.data.StatisticsDBHelper;
 import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.fragments.adapters.ListViewPageAdapter;
 import ch.ethz.twimight.listeners.TabListener;
-import ch.ethz.twimight.location.LocationHelper;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.util.Constants;
 import winterwell.jtwitter.Twitter;
@@ -58,11 +57,9 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 
 	
 	//LOGS
-	LocationHelper locHelper ;
 	long timestamp;	
 	ConnectivityManager cm;
 	StatisticsDBHelper locDBHelper;	
-	CheckLocation checkLocation;
 	public static final String ON_PAUSE_TIMESTAMP = "onPauseTimestamp";	
 	
 	ActionBar actionBar;
@@ -85,13 +82,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		
 		cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
 		timestamp = System.currentTimeMillis();
-		
-		locHelper = LocationHelper.getInstance(this);
-		locHelper.registerLocationListener();
-		
-		handler = new Handler();
-		checkLocation = new CheckLocation();
-		handler.postDelayed(checkLocation, 1*60*1000L);	
 		
 		Bundle bundle = new Bundle();
 		bundle.putInt(ListViewPageAdapter.BUNDLE_TYPE, ListViewPageAdapter.BUNDLE_TYPE_TWEETS);
@@ -138,24 +128,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			//new BenchmarkTask().execute();
 		}
 	}
-		
-
-
-	private class CheckLocation implements Runnable {
-
-		@Override
-		public void run() {
-
-			if (locHelper != null && locHelper.getCount() > 0 && locDBHelper != null && cm.getActiveNetworkInfo() != null) {	
-				Log.i(TAG,"writing log");
-				locDBHelper.insertRow(locHelper.getLocation(), cm.getActiveNetworkInfo().getTypeName(), StatisticsDBHelper.APP_STARTED, null, timestamp);
-				locHelper.unRegisterLocationListener();
-
-			} else {}
-			
-		}
-		
-	}
 	
 
 	@Override
@@ -181,13 +153,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			intent.removeExtra(FILTER_REQUEST);
 
 		}
-
-		Long pauseTimestamp =  getOnPauseTimestamp(this);
-		if (pauseTimestamp != 0 &&  (System.currentTimeMillis()-pauseTimestamp) > 10 * 60 * 1000L ) {
-			handler = new Handler();			
-			handler.post(new CheckLocation());
-
-		}		
 
 
 	}
@@ -228,7 +193,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 	@Override
 	protected void onStop() {
 		running=false;
-		locHelper.unRegisterLocationListener();
 		super.onStop();
 	
 		
@@ -254,18 +218,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 		actionBar = null;
 		
 		Log.i(TAG,"destroying main activity");
-		if ((System.currentTimeMillis() - timestamp <= 1 * 60 * 1000L)&& locHelper!=null && locDBHelper != null && 
-				cm.getActiveNetworkInfo() != null) {
-			
-			if (locHelper.getCount() > 0 && cm.getActiveNetworkInfo() != null ) {				
-				handler.removeCallbacks(checkLocation);				
-				locDBHelper.insertRow(locHelper.getLocation(), cm.getActiveNetworkInfo().getTypeName(), StatisticsDBHelper.APP_STARTED , null, timestamp);
-			} else {}
-		}
-		
-		if ((locHelper != null && locHelper.getCount() > 0) && locDBHelper != null && cm.getActiveNetworkInfo() != null) {				
-			locDBHelper.insertRow(locHelper.getLocation(), cm.getActiveNetworkInfo().getTypeName(), StatisticsDBHelper.APP_CLOSED , null, System.currentTimeMillis());
-		} else {}
 
 		TwimightBaseActivity.unbindDrawables(findViewById(R.id.rootRelativeLayout));	
 		

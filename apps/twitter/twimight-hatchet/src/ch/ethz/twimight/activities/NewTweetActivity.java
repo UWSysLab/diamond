@@ -45,7 +45,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import ch.ethz.twimight.R;
 import ch.ethz.twimight.data.StatisticsDBHelper;
-import ch.ethz.twimight.location.LocationHelper;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.util.Constants;
@@ -93,7 +92,6 @@ public class NewTweetActivity extends Activity{
 	private LinearLayout photoLayout;
 
 	//LOGS
-	LocationHelper locHelper ;
 	long timestamp;		
 	ConnectivityManager cm;		
 	/** 
@@ -105,7 +103,6 @@ public class NewTweetActivity extends Activity{
 		setContentView(R.layout.tweet);				
 
 		cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);			
-		locHelper = LocationHelper.getInstance(this);		
 
 		setupBasicButtons();
 
@@ -205,39 +202,6 @@ public class NewTweetActivity extends Activity{
 				}
 			}
 		});
-
-		// User settings: do we use location or not?
-
-		useLocation = PreferenceManager.getDefaultSharedPreferences(this).getBoolean("prefUseLocation", Constants.TWEET_DEFAULT_LOCATION);
-
-		locationButton = (ImageButton) findViewById(R.id.tweet_location);
-		locationChecked = false;
-
-		if(useLocation){
-			locationButton.setImageResource(R.drawable.ic_menu_mylocation_on);
-			locationChecked = true;
-		}
-
-		locationButton.setOnClickListener(new OnClickListener(){
-			@Override
-			public void onClick(View v) {
-				if(!locationChecked){
-
-					locHelper.registerLocationListener();
-					Toast.makeText(NewTweetActivity.this, getString(R.string.location_on), Toast.LENGTH_SHORT).show();
-					locationButton.setImageResource(R.drawable.ic_menu_mylocation_on);
-					locationChecked = true;
-
-				} else {
-
-					locHelper.unRegisterLocationListener();
-					Toast.makeText(NewTweetActivity.this, getString(R.string.location_off), Toast.LENGTH_SHORT).show();
-					locationButton.setImageResource(R.drawable.ic_menu_mylocation);
-					locationChecked = false;
-				}
-			}
-		});
-
 	}
 
 	/**
@@ -268,34 +232,12 @@ public class NewTweetActivity extends Activity{
 	}
 	
 	/**
-	 * onResume
-	 */
-	@Override
-	public void onResume(){
-		super.onResume();
-		if(useLocation){
-			locHelper.registerLocationListener();
-		}
-	}
-	
-	/**
-	 * onPause
-	 */
-	@Override
-	public void onPause(){
-		super.onPause();
-		locHelper.unRegisterLocationListener();
-	}
-	
-	/**
 	 * On Destroy
 	 */
 	@Override
 	public void onDestroy(){
 		super.onDestroy();
 		Log.d(TAG, "onDestroy");
-		if (locHelper!= null) 
-			locHelper.unRegisterLocationListener();	
 		
 		locationButton.setOnClickListener(null);
 		locationButton = null;
@@ -350,15 +292,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 					if(cm.getActiveNetworkInfo()==null || !cm.getActiveNetworkInfo().isConnected()){
 						result=true;
 					}
-					
-				if (locHelper.getCount() > 0 && cm.getActiveNetworkInfo()!= null) {	
-
-					 Log.i(TAG,"writing log");
-					statsDBHelper.insertRow(locHelper.getLocation(), cm.getActiveNetworkInfo().getTypeName(), 
-							StatisticsDBHelper.TWEET_WRITTEN, null, timestamp);
-					locHelper.unRegisterLocationListener();
-					 Log.i(TAG, String.valueOf(hasMedia));
-				}
 
 				return result;
 			
@@ -401,15 +334,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 		}	
 		// set the current timestamp
 		tweetContentValues.put(Tweets.COL_CREATED, System.currentTimeMillis());
-		
-		
-		if(useLocation){
-			Location loc = locHelper.getLocation();
-			if(loc!=null){
-				tweetContentValues.put(Tweets.COL_LAT, loc.getLatitude());
-				tweetContentValues.put(Tweets.COL_LNG, loc.getLongitude());
-			}
-		}
 		
 		return tweetContentValues;
 	}

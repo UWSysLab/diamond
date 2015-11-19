@@ -62,7 +62,6 @@ import ch.ethz.twimight.activities.NewTweetActivity;
 import ch.ethz.twimight.activities.ShowUserActivity;
 import ch.ethz.twimight.activities.TwimightBaseActivity;
 import ch.ethz.twimight.data.StatisticsDBHelper;
-import ch.ethz.twimight.location.LocationHelper;
 import ch.ethz.twimight.net.twitter.Tweets;
 import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.net.twitter.TwitterUsers;
@@ -111,7 +110,6 @@ public class ShowTweetFragment extends Fragment {
 	protected String TAG = "ShowTweetFragment";
 
 	// LOGS
-	LocationHelper locHelper;
 	Intent intent;
 	ConnectivityManager cm;
 	StatisticsDBHelper statsDBHelper;
@@ -230,7 +228,6 @@ public class ShowTweetFragment extends Fragment {
 		statsDBHelper.open();
 
 		cm = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);		
-		locHelper = LocationHelper.getInstance(activity);		
 
 	}
 	
@@ -513,11 +510,7 @@ public class ShowTweetFragment extends Fragment {
 						).toString()
 						);
 		
-		if(c.getString(c.getColumnIndex(Tweets.COL_SOURCE))!=null){
-			createdWithView.setText(Html.fromHtml(c.getString(c.getColumnIndex(Tweets.COL_SOURCE))));
-		} else {
-			createdWithView.setVisibility(TextView.GONE);
-		}
+		createdWithView.setVisibility(TextView.GONE);
 
 
 		String retweeted_by = c.getString(c.getColumnIndex(Tweets.COL_RETWEETED_BY));
@@ -535,7 +528,6 @@ public class ShowTweetFragment extends Fragment {
 	@Override
 	public void onResume(){
 		super.onResume();
-		locHelper.registerLocationListener();
 		observer = new TweetContentObserver(handler);
 		c.registerContentObserver(observer);
 
@@ -548,9 +540,7 @@ public class ShowTweetFragment extends Fragment {
 	@Override
 	public void onPause(){
 		
-		super.onPause();
-		if (locHelper != null) 			
-			locHelper.unRegisterLocationListener();    			
+		super.onPause(); 			
 		if(c!=null){
 			if(observer != null) 
 				try {

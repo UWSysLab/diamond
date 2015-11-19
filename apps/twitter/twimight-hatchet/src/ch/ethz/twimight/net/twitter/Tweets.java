@@ -73,11 +73,8 @@ public class Tweets implements BaseColumns {
 	public static final String COL_RETWEETCOUNT = "retweet_count"; /** how many retweets does twitter report for this tweet */	
 	public static final String COL_RETWEETED_BY = "retweetedBy"; /** has been retweeted by */
 	public static final String COL_MENTIONS = "mentions"; /** does the tweet mention the local user */
-	public static final String COL_LAT = "lat"; /** latitude in case of geo-tagging */
-	public static final String COL_LNG = "lng"; /** longitude in case of geo-tagging */
 	public static final String COL_CREATED = "created"; /** the creation timestamp (millisecs since 1970) */
 	public static final String COL_RECEIVED = "received"; /** timestamp we insert the tweet into the DB */
-	public static final String COL_SOURCE = "source"; /** the application with which the tweet was created (as reported by twitter) */
 	public static final String COL_BUFFER = "buffer_flags"; /** which buffer(s) is the tweet in */
 	public static final String COL_FLAGS = "flags"; /** Transactional flags */
 	//public static final String COL_URLS = ""; /** url hashtag */

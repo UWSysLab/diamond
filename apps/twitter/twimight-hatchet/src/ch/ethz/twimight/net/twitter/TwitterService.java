@@ -1079,7 +1079,6 @@ public class TwitterService extends Service {
 		
 		String tweetText = Html.fromHtml(tweetSpanText).toString();
 		cv.put(Tweets.COL_CREATED, tweet.getCreatedAt().getTime());
-		cv.put(Tweets.COL_SOURCE, tweet.source);
 
 		cv.put(Tweets.COL_TID, tweet.getId().longValue());
 
@@ -2560,12 +2559,7 @@ public class TwitterService extends Service {
 
 				String text = c.getString(c.getColumnIndex(Tweets.COL_TEXT_PLAIN));		
 
-				if(!(c.getDouble(c.getColumnIndex(Tweets.COL_LAT))==0 && c.getDouble(c.getColumnIndex(Tweets.COL_LNG))==0)){
-					double[] location = {c.getDouble(c.getColumnIndex(Tweets.COL_LAT)),c.getDouble(c.getColumnIndex(Tweets.COL_LNG))}; 
-					twitter.setMyLocation(location);
-				} else {
-					twitter.setMyLocation(null);
-				}
+				twitter.setMyLocation(null);
 				
 				if(c.getColumnIndex(Tweets.COL_REPLYTO)>=0){
 					tweet = twitter.updateStatus(text, c.getLong(c.getColumnIndex(Tweets.COL_REPLYTO)));

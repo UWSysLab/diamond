@@ -92,11 +92,8 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 			+ Tweets.COL_RETWEETCOUNT + " int, "		
 			+ Tweets.COL_RETWEETED_BY + " string, "
 			+ Tweets.COL_MENTIONS + " int, "
-			+ Tweets.COL_LAT + " real, "
-			+ Tweets.COL_LNG + " real, "
 			+ Tweets.COL_CREATED + " integer, "
 			+ Tweets.COL_RECEIVED + " integer, "
-			+ Tweets.COL_SOURCE + " string, "
 			+ Tweets.COL_FLAGS + " integer default 0, "
 			+ Tweets.COL_BUFFER + " integer default 0, "					
 			+ Tweets.COL_DISASTERID + " integer);";
