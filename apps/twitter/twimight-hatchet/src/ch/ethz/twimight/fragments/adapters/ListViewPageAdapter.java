@@ -92,7 +92,6 @@ public class ListViewPageAdapter extends FragmentPagerAdapter {
 		
 		map.put(0, (getFragmentByPosition(0) == null) ? new TweetListFragment(TweetListFragment.TIMELINE_KEY) : getFragmentByPosition(0));
 		map.put(1, (getFragmentByPosition(1) == null) ? new TweetListFragment(TweetListFragment.FAVORITES_KEY) : getFragmentByPosition(1));
-		map.put(2, (getFragmentByPosition(2) == null) ? new TweetListFragment(TweetListFragment.MENTIONS_KEY) : getFragmentByPosition(2));
 
 		return map;
 	}

@@ -217,12 +217,6 @@ public abstract class TwimightBaseActivity extends FragmentActivity implements
 			startActivity(i);
 			break;
 
-		case R.id.menu_feedback:
-			// Launch FeedbacktActivity
-			i = new Intent(Intent.ACTION_VIEW, Uri.parse(Constants.TDS_BASE_URL
-					+ "/bugs/new"));
-			startActivity(i);
-			break;
 		default:
 			return false;
 		}

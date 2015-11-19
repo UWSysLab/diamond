@@ -196,10 +196,6 @@ public class TweetAdapter extends SimpleCursorAdapter {
 			holder.rowLayout.setBackgroundResource(R.drawable.own_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);
 			
-		} else if((cursor.getColumnIndex(Tweets.COL_MENTIONS)>=0) && (cursor.getInt(cursor.getColumnIndex(Tweets.COL_MENTIONS))>0)){
-			
-			holder.rowLayout.setBackgroundResource(R.drawable.mention_tweet_background);
-			holder.verifiedImage.setVisibility(ImageView.GONE);			
 		} else {
 			holder.rowLayout.setBackgroundResource(R.drawable.normal_tweet_background);
 			holder.verifiedImage.setVisibility(ImageView.GONE);

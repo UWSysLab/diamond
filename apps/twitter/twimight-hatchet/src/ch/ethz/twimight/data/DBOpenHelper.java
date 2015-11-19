@@ -82,7 +82,6 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 	// Tweets (including disaster tweets)
 	private static final String TABLE_TWEETS_CREATE = "create table "+TABLE_TWEETS+" ("
 			+ ROW_ID + " integer primary key autoincrement not null, "
-			+ Tweets.COL_TEXT + " string not null, "
 			+ Tweets.COL_TEXT_PLAIN + " string not null, "
 			+ Tweets.COL_TWITTERUSER + " bigint, "			
 			+ Tweets.COL_SCREENNAME+ " string, "
@@ -91,7 +90,6 @@ public class DBOpenHelper extends SQLiteOpenHelper {
 			+ Tweets.COL_RETWEETED + " int, "
 			+ Tweets.COL_RETWEETCOUNT + " int, "		
 			+ Tweets.COL_RETWEETED_BY + " string, "
-			+ Tweets.COL_MENTIONS + " int, "
 			+ Tweets.COL_CREATED + " integer, "
 			+ Tweets.COL_RECEIVED + " integer, "
 			+ Tweets.COL_FLAGS + " integer default 0, "

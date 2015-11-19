@@ -183,8 +183,6 @@ public class LoginActivity extends Activity implements LoginDialogFragment.Login
 				// Delete persistent Twitter update information
 				TwitterService.setFavoritesSinceId(null, context);
 				TwitterService.setLastFavoritesUpdate(null, context);
-				TwitterService.setMentionsSinceId(null, context);
-				TwitterService.setLastMentionsUpdate(null, context);
 				TwitterService.setTimelineSinceId(null, context);
 				TwitterService.setLastTimelineUpdate(0, context);
 				TwitterService.setLastFriendsUpdate(null, context);

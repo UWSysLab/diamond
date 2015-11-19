@@ -496,7 +496,7 @@ public class ShowTweetFragment extends Fragment {
 		screenName = c.getString(c.getColumnIndex(TwitterUsers.COL_SCREENNAME));
 		screenNameView.setText("@"+screenName);
 		realNameView.setText(c.getString(c.getColumnIndex(TwitterUsers.COL_NAME)));
-		text = c.getString(c.getColumnIndex(Tweets.COL_TEXT));
+		text = c.getString(c.getColumnIndex(Tweets.COL_TEXT_PLAIN));
 
 		SpannableString str = new SpannableString(Html.fromHtml(text, null, new TweetTagHandler(activity)));
 

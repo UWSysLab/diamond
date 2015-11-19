@@ -58,7 +58,6 @@ public class NewTweetActivity extends Activity{
 
 	private static final String TAG = "TweetActivity";
 	
-	private boolean useLocation;
 	private EditText text;
 	private TextView characters;
 	private Button cancelButton;
@@ -66,30 +65,7 @@ public class NewTweetActivity extends Activity{
 	
 	private long isReplyTo;
 	
-	// the following are all to deal with location
-	private ImageButton locationButton;
-	
-	private boolean locationChecked;
 	private TextWatcher textWatcher;
-	
-	//uploading photos
-	private static final int PICK_FROM_CAMERA = 1;
-	private static final int PICK_FROM_FILE = 2;
-	private String tmpPhotoPath; //path storing photos on SDcard
-	private String finalPhotoPath; //path storing photos on SDcard
-	private String finalPhotoName; //file name of uploaded photo
-	private Uri tmpPhotoUri; //uri storing temp photos
-	private Uri photoUri; //uri storing photos
-	private ImageView mImageView; //to display the photo to be uploaded
-
-	private boolean hasMedia = false;
-	private ImageButton uploadFromGallery;
-	private ImageButton uploadFromCamera;
-	private ImageButton deletePhoto;
-	private ImageButton previewPhoto;
-	private ImageButton photoButton;
-	private Bitmap photo = null;
-	private LinearLayout photoLayout;
 
 	//LOGS
 	long timestamp;		
@@ -187,48 +163,6 @@ public class NewTweetActivity extends Activity{
 			}
 
 		});
-
-		photoButton = (ImageButton) findViewById(R.id.tweet_photo);		
-		photoButton.setOnClickListener(new OnClickListener(){
-			@Override
-			public void onClick(View v) {
-				if(photoLayout.getVisibility() == View.GONE){
-					photoLayout.setVisibility(View.VISIBLE);
-					//photoButton.setImageResource(R.drawable.ic_menu_gallery_on);
-				}
-				else{
-					photoLayout.setVisibility(View.GONE);
-					//photoButton.setImageResource(R.drawable.ic_menu_gallery);
-				}
-			}
-		});
-	}
-
-	/**
-	 * set button status with different operations
-	 * 
-	 * @param statusUpload
-	 * @param statusDelete
-	 */
-	private void setButtonStatus(boolean statusUpload, boolean statusDelete){
-		uploadFromGallery.setEnabled(statusUpload);
-		uploadFromCamera.setEnabled(statusUpload);
-		deletePhoto.setEnabled(statusDelete);
-		previewPhoto.setEnabled(statusDelete);
-		if(statusUpload){
-			uploadFromGallery.setImageResource(R.drawable.ic_menu_slideshow);
-			uploadFromCamera.setImageResource(R.drawable.ic_camera);
-		}else{
-			uploadFromGallery.setImageResource(R.drawable.ic_menu_slideshow_off);
-			uploadFromCamera.setImageResource(R.drawable.ic_camera_off);
-		}
-		if(statusDelete){
-			deletePhoto.setImageResource(R.drawable.ic_menu_delete);
-			previewPhoto.setImageResource(R.drawable.ic_menu_zoom);
-		}else{
-			deletePhoto.setImageResource(R.drawable.ic_menu_delete_off);
-			previewPhoto.setImageResource(R.drawable.ic_menu_zoom_off);
-		}
 	}
 	
 	/**
@@ -238,9 +172,6 @@ public class NewTweetActivity extends Activity{
 	public void onDestroy(){
 		super.onDestroy();
 		Log.d(TAG, "onDestroy");
-		
-		locationButton.setOnClickListener(null);
-		locationButton = null;
 		
 		cancelButton.setOnClickListener(null);
 		cancelButton = null;
@@ -324,8 +255,6 @@ private class SendTweetTask extends AsyncTask<Void, Void, Boolean>{
 	private ContentValues createContentValues() {
 		ContentValues tweetContentValues = new ContentValues();
 		
-		tweetContentValues.put(Tweets.COL_TEXT, text.getText().toString());
-
 		tweetContentValues.put(Tweets.COL_TEXT_PLAIN, text.getText().toString());
 		tweetContentValues.put(Tweets.COL_TWITTERUSER, LoginActivity.getTwitterId(this));
 		tweetContentValues.put(Tweets.COL_SCREENNAME, LoginActivity.getTwitterScreenname(this));

@@ -35,7 +35,6 @@ public class Tweets implements BaseColumns {
 	// URI name definitions
 	public static final String TWEETS_TABLE_TIMELINE = "timeline"; /** the timeline filter */
 	public static final String TWEETS_TABLE_FAVORITES = "favorites"; /** the favorites filter */
-	public static final String TWEETS_TABLE_MENTIONS = "mentions"; /** the mentions filter */
 	public static final String TWEETS_TABLE_USER = "user"; /** the mentions filter */
 
 	public static final String TWEETS_SOURCE_NORMAL = "normal"; /** only normal tweets (no disaster tweets) */
@@ -53,7 +52,6 @@ public class Tweets implements BaseColumns {
 	public static final Uri ALL_TWEETS_URI = Uri.parse(BASE_URI + TWEETS); /** URI to reference all tweets */	
 	public static final Uri TABLE_TIMELINE_URI = Uri.parse(BASE_URI + TWEETS_TABLE_TIMELINE );  
 	public static final Uri TABLE_FAVORITES_URI = Uri.parse(BASE_URI + TWEETS_TABLE_FAVORITES );  
-	public static final Uri TABLE_MENTIONS_URI = Uri.parse(BASE_URI + TWEETS_TABLE_MENTIONS );  
 	public static final Uri TABLE_SEARCH_URI = Uri.parse(BASE_URI + SEARCH  );  
 	public static final Uri TABLE_USER_URI = Uri.parse(BASE_URI + TWEETS_TABLE_USER );  
 
@@ -63,7 +61,6 @@ public class Tweets implements BaseColumns {
 	public static final String PHOTO_PATH = "twimight_photos";
 
 	// here start the column names
-	public static final String COL_TEXT = "text"; /** the tweet text */
 	public static final String COL_TEXT_PLAIN = "text_plain"; /** the tweet html text */
 	public static final String COL_TWITTERUSER = "twitteruser_id"; /** the user id of the author */
 	public static final String COL_SCREENNAME = "user_screenname"; /** the user screenname of the author */
@@ -72,7 +69,6 @@ public class Tweets implements BaseColumns {
 	public static final String COL_RETWEETED = "retweeted"; /** did we retweet the tweet? */
 	public static final String COL_RETWEETCOUNT = "retweet_count"; /** how many retweets does twitter report for this tweet */	
 	public static final String COL_RETWEETED_BY = "retweetedBy"; /** has been retweeted by */
-	public static final String COL_MENTIONS = "mentions"; /** does the tweet mention the local user */
 	public static final String COL_CREATED = "created"; /** the creation timestamp (millisecs since 1970) */
 	public static final String COL_RECEIVED = "received"; /** timestamp we insert the tweet into the DB */
 	public static final String COL_BUFFER = "buffer_flags"; /** which buffer(s) is the tweet in */
@@ -98,7 +94,6 @@ public class Tweets implements BaseColumns {
 	public static final int BUFFER_DISASTER = 2; /** Disaster tweets of other users */
 	public static final int BUFFER_MYDISASTER = 4; /** The disaster tweets of the local user */
 	public static final int BUFFER_FAVORITES = 8; /** All favorites of the local user */
-	public static final int BUFFER_MENTIONS = 16; /** All mentions of the local user */
 	public static final int BUFFER_USERS = 32; /** All mentions of the local user */
 	public static final int BUFFER_SEARCH = 64; /** Results obtained from searching on Twitter */
 

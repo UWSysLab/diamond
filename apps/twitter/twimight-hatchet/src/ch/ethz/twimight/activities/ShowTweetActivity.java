@@ -87,10 +87,6 @@ public class ShowTweetActivity extends TwimightBaseActivity implements OnTweetDe
 			c = resolver.query(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/"
 					+ Tweets.TWEETS_TABLE_FAVORITES + "/" + Tweets.TWEETS_SOURCE_ALL), null, null, null, null);
 			break;
-		case TweetListFragment.MENTIONS_KEY: 			
-			c = resolver.query(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/" 
-					+ Tweets.TWEETS_TABLE_MENTIONS + "/" + Tweets.TWEETS_SOURCE_ALL), null, null, null, null);
-			break;
 		case TweetListFragment.SEARCH_TWEETS:
 			c = resolver.query(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/" 
 					+ Tweets.SEARCH), null, SearchableActivity.query , null, null);

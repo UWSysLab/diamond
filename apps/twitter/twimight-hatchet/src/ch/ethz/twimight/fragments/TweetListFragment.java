@@ -28,7 +28,6 @@ public class TweetListFragment extends ListFragment {
 	long userId;
 	public static final int TIMELINE_KEY = 10;	
 	public static final int FAVORITES_KEY = 11;
-	public static final int MENTIONS_KEY = 12;
 	public static final int SEARCH_TWEETS = 13;
 	public static final int USER_TWEETS = 14;
 	
@@ -139,15 +138,6 @@ public class TweetListFragment extends ListFragment {
 			overscrollIntent.putExtra(TwitterService.FORCE_FLAG, true);
 			c = resolver.query(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/"
 					+ Tweets.TWEETS_TABLE_FAVORITES + "/" + Tweets.TWEETS_SOURCE_ALL), null, null, null, null);
-
-
-			break;
-		case MENTIONS_KEY: 
-		
-			overscrollIntent.putExtra("synch_request", TwitterService.SYNCH_MENTIONS);
-			overscrollIntent.putExtra(TwitterService.FORCE_FLAG, true);
-			c = resolver.query(Uri.parse("content://" + Tweets.TWEET_AUTHORITY + "/" + Tweets.TWEETS + "/" 
-					+ Tweets.TWEETS_TABLE_MENTIONS + "/" + Tweets.TWEETS_SOURCE_ALL), null, null, null, null);
 
 
 			break;

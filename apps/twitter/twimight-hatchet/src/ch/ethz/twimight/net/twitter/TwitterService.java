@@ -75,7 +75,6 @@ public class TwitterService extends Service {
 	public static final int SYNCH_ALL = 1;
 	public static final int SYNCH_TIMELINE = 2;
 	public static final int SYNCH_FAVORITES = 3;
-	public static final int SYNCH_MENTIONS = 4;
 	public static final int SYNCH_FRIENDS = 7;
 	public static final int SYNCH_FOLLOWERS = 8;
 	public static final int SYNCH_USER = 9;
@@ -97,7 +96,6 @@ public class TwitterService extends Service {
 	public static final long FALSE = 0;
 	
 	public static final String FORCE_FLAG = "force";
-	public static final String TASK_MENTIONS = "mentions";
 	public static final String TASK_DIRECT_MESSAGES_IN = "direct_messages_in";	
 	public static final String OVERSCROLL_TYPE = "overscroll_type";		
 	public static final String URL = "url";	
@@ -180,7 +178,6 @@ public class TwitterService extends Service {
 				case SYNCH_ALL:					
 					if (!intent.hasExtra("isLogin")) {						
 						synchTimeline(intent);
-						synchMentions(intent.getBooleanExtra(FORCE_FLAG, false));									
 						synchMessages();
 						synchTransactional();	
 					} else {
@@ -191,9 +188,6 @@ public class TwitterService extends Service {
 					break;
 				case SYNCH_TIMELINE:				
 						synchTimeline(intent);				
-					break;
-				case SYNCH_MENTIONS:
-					synchMentions(intent.getBooleanExtra(FORCE_FLAG, false));
 					break;
 				case SYNCH_FAVORITES:				
 					synchFavorites(intent.getBooleanExtra(FORCE_FLAG, false));
@@ -607,17 +601,6 @@ public class TwitterService extends Service {
 	}
 
 	/**
-	 * Starts a thread to load the mentions. But only if the last mentions request is old enough.
-	 */
-	private void synchMentions(boolean force) {
-		Log.d(TAG, "SYNCH_MENTIONS");
-		if(force || (System.currentTimeMillis() - getLastMentionsUpdate(getBaseContext()) > Constants.MENTIONS_MIN_SYNCH)){
-			(new UpdateMentionsTask()).execute();
-		} 
-
-	}
-
-	/**
 	 * Loads DMs from Twitter
 	 */
 	private void synchMessages() {
@@ -801,52 +784,6 @@ public class TwitterService extends Service {
 			prefEditor.putLong("favoritesLastUpdate", date.getTime());
 		else
 			prefEditor.putLong("favoritesLastUpdate", 0);
-
-		prefEditor.commit();
-	}
-
-	/**
-	 * Reads the ID of the last mentions tweet from shared preferences.
-	 * @return
-	 */
-	public static BigInteger getMentionsSinceId(Context context) {
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		String sinceIdString = prefs.getString("mentionsSinceId", null); 
-		if(sinceIdString==null)
-			return null;
-		else
-			return new BigInteger(sinceIdString);
-	}
-
-	/**
-	 * Stores the given ID as the since ID
-	 */
-	public static void setMentionsSinceId(BigInteger sinceId, Context context) {
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		SharedPreferences.Editor prefEditor = prefs.edit();
-		prefEditor.putString("mentionsSinceId",sinceId==null?null:sinceId.toString());
-		prefEditor.commit();
-	}
-
-	/**
-	 * Reads the timestamp of the last mentions update from shared preferences.
-	 * @return
-	 */
-	public static long getLastMentionsUpdate(Context context) {
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		return prefs.getLong("mentionsLastUpdate", 0);
-	}
-
-	/**
-	 * Stores the current timestamp as the time of last mentions update
-	 */
-	public static void setLastMentionsUpdate(Date date, Context context) {
-		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		SharedPreferences.Editor prefEditor = prefs.edit();
-		if(date!=null)
-			prefEditor.putLong("mentionsLastUpdate", date.getTime());
-		else
-			prefEditor.putLong("mentionsLastUpdate", 0);
 
 		prefEditor.commit();
 	}
@@ -1072,12 +1009,9 @@ public class TwitterService extends Service {
 			cv.put(Tweets.COL_RETWEETED_BY,scrName);
 		}
 		
+		String tweetText = tweet.getText();
+		cv.put(Tweets.COL_TEXT_PLAIN, tweetText);
 		
-		String tweetSpanText = createSpans(tweet).getText();
-		cv.put(Tweets.COL_TEXT, tweetSpanText);
-		cv.put(Tweets.COL_TEXT_PLAIN, Html.fromHtml(tweetSpanText).toString()  );
-		
-		String tweetText = Html.fromHtml(tweetSpanText).toString();
 		cv.put(Tweets.COL_CREATED, tweet.getCreatedAt().getTime());
 
 		cv.put(Tweets.COL_TID, tweet.getId().longValue());
@@ -1103,119 +1037,6 @@ public class TwitterService extends Service {
 		cv.put(Tweets.COL_BUFFER, buffer);
 		
 		return cv;
-	}
-	
-	
-
-	private class SpanResult {
-		private String text;
-		private ArrayList<String> urls;
-		
-		SpanResult(String text, ArrayList<String> urls) {
-			this.text=text;
-			this.urls=urls;
-		}
-		
-		String getText() {
-			return text;
-		}
-		
-		ArrayList<String> getUrls() {
-			return urls;
-		}
-	}
-
-	/**
-	 * Creates spans for entities (mentions, urls, hashtags).
-	 * @param tweet
-	 * @return The tweet text with the spans
-	 */	
-	@SuppressWarnings("unchecked")
-	private SpanResult createSpans(Status tweet){
-
-		if(tweet==null) return null;
-		ArrayList<String> urls = null;
-		String originalText = (String) tweet.getText();
-
-		// we need one list with all entities, sorted by their start
-		List<TweetEntity> allEntities = new ArrayList<TweetEntity>();
-
-		List<TweetEntity> entities = tweet.getTweetEntities(Twitter.KEntityType.hashtags);
-		if(entities != null){
-			for (TweetEntity entity: entities) {
-				allEntities.add(entity);
-			}
-		}
-		entities = tweet.getTweetEntities(Twitter.KEntityType.user_mentions);
-		if(entities != null){
-			for (TweetEntity entity: entities) {
-				allEntities.add(entity);
-				try{
-					// we add (or update, if we already have them) the user to the local DB.
-					String screenname = tweet.getText().substring(entity.start+1, entity.end);				
-					ContentValues cv = new ContentValues();
-					cv.put(TwitterUsers.COL_NAME, entity.displayVersion());
-					cv.put(TwitterUsers.COL_SCREENNAME, screenname);						
-					//cv.put(TwitterUsers.COL_FLAGS, TwitterUsers.FLAG_TO_UPDATE);
-
-					Uri insertUri = Uri.parse("content://" + TwitterUsers.TWITTERUSERS_AUTHORITY + "/" + TwitterUsers.TWITTERUSERS);
-					getContentResolver().insert(insertUri, cv);
-				} catch(Exception ex){
-					Log.e(TAG, "Exception while inserting mentioned user");
-				}
-			}
-		}
-		entities = tweet.getTweetEntities(Twitter.KEntityType.urls);
-		if(entities != null){
-			
-			for (TweetEntity entity: entities) {				
-				allEntities.add(entity);
-			}
-		} 			
-		// do we have entities at all?
-		if(allEntities.isEmpty()) return new SpanResult(tweet.getText(),urls);
-
-		
-		// sort according to start character
-		Collections.sort(allEntities, new Comparator<TweetEntity>(){
-			@Override
-			public int compare(TweetEntity entity1, TweetEntity entity2) {
-				
-				return entity1.start - entity2.start;
-			}
-		});
-		// assemble the text
-		StringBuilder replacedText = new StringBuilder();
-		int lastIndex = 0;
-		try {
-			
-			urls = new ArrayList<String>();
-			for (TweetEntity curEntity: allEntities) {
-				// append everything before the start of this entity
-				replacedText.append("<tweet>"+originalText.substring(lastIndex, curEntity.start));
-				// append the entity
-				if(curEntity.type == KEntityType.hashtags){
-					replacedText.append("<hashtag target='"+curEntity.toString()+"'>"+ originalText.substring(curEntity.start, curEntity.end)+"</hashtag>");
-				} else if(curEntity.type == KEntityType.urls){
-					replacedText.append("<url target='"+originalText.substring(curEntity.start, curEntity.end)+"'>"+ curEntity.displayVersion()+"</url>");
-					urls.add(curEntity.displayVersion());				    
-				  
-					
-				} else if(curEntity.type == KEntityType.user_mentions){
-					replacedText.append("<mention target='"+originalText.substring(curEntity.start, curEntity.end)+"' name='"+curEntity.displayVersion()+"'>"+ originalText.substring(curEntity.start, curEntity.end)+"</mention>");
-				}
-				lastIndex = curEntity.end;
-			}
-			// append the rest of the original text
-			replacedText.append(originalText.substring(lastIndex,originalText.length())+"</tweet>");
-			
-			
-		} catch (StringIndexOutOfBoundsException ex) {
-			Log.e(TAG,"create spans error",ex);
-			return new SpanResult(tweet.getText(),urls);
-		}	
-		
-		return new SpanResult(replacedText.toString(),urls);
 	}
 
 
@@ -1426,119 +1247,6 @@ public class TwitterService extends Service {
 				}
 			}			
 		}
-	}
-
-	/**
-	 * Loads the mentions from twitter
-	 * @author thossmann
-	 *
-	 */
-	private class UpdateMentionsTask extends AsyncTask<Void, Void, List<Status>> {
-
-		Exception ex;
-
-		@Override
-		protected List<winterwell.jtwitter.Status> doInBackground(Void... params) {
-			Log.d(TAG, "AsynchTask: UpdateMentionsTask");
-			ShowTweetListActivity.setLoading(true);
-
-			List<winterwell.jtwitter.Status> mentions = null;
-
-			twitter.setCount(Constants.NR_MENTIONS);			
-			twitter.setSinceId(getMentionsSinceId(getBaseContext()));
-
-			try {				  
-				mentions = twitter.getMentions();	
-				 
-			} catch (Exception ex) {					
-				this.ex = ex; // save the exception for later handling
-			}
-
-			return mentions;
-		}
-
-		@Override
-		protected void onPostExecute(List<winterwell.jtwitter.Status> result) {
-			ShowTweetListActivity.setLoading(false);
-			// error handling
-			if(ex != null){
-				if(ex instanceof TwitterException.RateLimit){					
-					Log.e(TAG, "exception while loading mentions: " + ex);
-				} else if(ex instanceof TwitterException.Timeout){
-					if (ShowTweetListActivity.running)	
-						Toast.makeText(getBaseContext(), "Timeout while loading mentions.", Toast.LENGTH_SHORT).show();
-					Log.e(TAG, "exception while loading mentions: " + ex);
-				} else {
-					Log.e(TAG, "exception while loading mentions: " + ex);
-				}
-				return;
-			} else
-				new InsertMentionsTask().execute(result);
-
-		}
-
-	}
-	
-	
-
-	/**
-	 * Asynchronously insert tweets into the mentions buffer
-	 * @author thossmann
-	 *
-	 */
-	private class InsertMentionsTask extends AsyncTask<List<winterwell.jtwitter.Status>, Void, Void> {
-
-		@Override
-		protected Void doInBackground(List<winterwell.jtwitter.Status>... params) {			
-			ShowTweetListActivity.setLoading(true);
-			List<winterwell.jtwitter.Status> tweetList = params[0];
-			
-			if(tweetList!=null && !tweetList.isEmpty()){
-				BigInteger lastId = null;								
-				
-				ArrayList<ContentValues> cv = new ArrayList<ContentValues>();	  
-			    ArrayList<ContentValues> users = new ArrayList<ContentValues>();	
-				
-			    boolean isFirstRound =true;
-			    
-				for (winterwell.jtwitter.Status tweet: tweetList) {
-					if(lastId == null)
-						lastId = tweet.getId();						
-					
-					if(tweet.getUser() != null){	
-												
-							users.add( getUserContentValues(tweet.getUser(),false));	
-							cv.add( getTweetContentValues(tweet,null, Tweets.BUFFER_MENTIONS ) );												
-						
-					} 					
-					if (cv.size() == 5) {						
-						insertDataAndNotify(cv,users,isFirstRound, Tweets.TABLE_MENTIONS_URI);		
-					    cv.clear();
-					    users.clear();	
-					    isFirstRound = false;
-					}
-				}
-				if (cv.size() > 0) {
-					insertDataAndNotify(cv,users,isFirstRound,Tweets.TABLE_MENTIONS_URI);		
-				}
-
-				// save the id of the last tweet for future timeline synchs
-				setMentionsSinceId(lastId, getBaseContext());
-			}
-
-			// save the timestamp of the last update
-			setLastMentionsUpdate(new Date(), getBaseContext());
-
-			return null;
-		}
-
-		@Override
-		protected void onPostExecute(Void params){
-			ShowTweetListActivity.setLoading(false);
-			getContentResolver().notifyChange(Tweets.TABLE_MENTIONS_URI, null);
-			setTaskExecuted(TwitterService.TASK_MENTIONS, TwitterService.this);
-		}
-
 	}
 
 	/**
