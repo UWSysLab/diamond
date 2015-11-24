@@ -130,7 +130,7 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
-		boolean benchmark = true;
+		boolean benchmark = false;
 		if (benchmark) {
 			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 			StrictMode.setThreadPolicy(policy);
