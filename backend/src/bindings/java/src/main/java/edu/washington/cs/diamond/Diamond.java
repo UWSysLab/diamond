@@ -20,6 +20,15 @@ public class Diamond {
     public static native void DiamondInit();
     public static native void DiamondInit(@ByRef @StdString String server);
 
+    public static class Callback extends FunctionPointer {
+        static { Loader.load(); }
+        protected Callback() { allocate(); }
+        private native void allocate();
+        public @Name("notifyReactive") void call() {
+            System.out.println("Upcall from C++ into Java worked!\n");
+        }
+    }
+
     public static class MappedObjectList<T> {
         DStringList keyList;
         MapObjectFunction func;
