@@ -1,4 +1,4 @@
-#include "includes/notify_reactive.h"
+#include "includes/diamondnotify.h"
 
 #include "lib/message.h"
 

@@ -135,7 +135,7 @@ set(SRC_DIAMOND_DATA_TYPES
 # Build targets
 # ---------------------------------------------------------
 
-add_library (diamondnotifycpp SHARED
+add_library (diamondnotify SHARED
             ${DIAMOND_SOURCE_DIR}/bindings/cpp/diamondnotifycpp.cc)
 
 # Set up library dependencies for linking into the Diamond library
@@ -147,7 +147,7 @@ add_library (diamond SHARED
             ${SRC_DIAMOND_CLOUD_STORE}
             ${SRC_DIAMOND_DATA_TYPES}
             ${SRC_UNQLITE})
-target_link_libraries(diamond ${DIAMOND_LIB_DEPS} diamondnotifycpp)
+target_link_libraries(diamond ${DIAMOND_LIB_DEPS} diamondnotify)
 add_dependencies(diamond hiredis-redisclient)
 
 # only create and test for x86
