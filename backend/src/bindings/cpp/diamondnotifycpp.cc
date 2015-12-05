@@ -1,7 +1,9 @@
 #include "includes/diamondnotify.h"
 
+#include <iostream>
+
 #include "lib/message.h"
 
 void notifyReactiveUpcall() {
-    Notice("Reactive call into C++ code\n");
+    std::cout << "Reactive call into C++ code\n" << std::endl;
 }
