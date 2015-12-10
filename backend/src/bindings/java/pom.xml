@@ -89,7 +89,7 @@
             <goal>exec</goal>
           </goals>
           <configuration>
-            <executable>g++</executable>
+            <executable>gcc</executable>
             <arguments>
               <argument>-fPIC</argument>
               <argument>-shared</argument>
@@ -101,6 +101,8 @@
               <argument>-I../../includes</argument>
               <argument>-I../../</argument>
               <argument>-Itarget/classes/x86-lib</argument>
+              <argument>-Ltarget/classes/x86-lib</argument>
+              <argument>-ljniDiamond</argument>
               <argument>-std=c++11</argument>
             </arguments>
           </configuration>
@@ -155,6 +157,29 @@
               <argument>-Wl,-rpath,../../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
+            </arguments>
+          </configuration>
+        </execution>
+        <execution>
+          <id>gcc-android</id>
+          <phase>process-classes</phase>
+          <goals>
+            <goal>exec</goal>
+          </goals>
+          <configuration>
+            <executable>../../../toolchains/android/toolchain/bin/arm-linux-androideabi-gcc</executable>
+            <arguments>
+              <argument>-fPIC</argument>
+              <argument>-shared</argument>
+              <argument>-o</argument>
+              <argument>target/classes/arm-lib/libdiamondnotify.so</argument>
+              <argument>src/diamondnotifyjava.cc</argument>
+              <argument>-I../../includes</argument>
+              <argument>-I../../</argument>
+              <argument>-Itarget/classes/arm-lib</argument>
+              <argument>-Ltarget/classes/arm-lib</argument>
+              <argument>-ljniDiamond</argument>
+              <argument>-std=c++11</argument>
             </arguments>
           </configuration>
         </execution>
