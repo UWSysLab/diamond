@@ -379,7 +379,7 @@ class GameTile(gtk.Button, Tile):
         if arrow is not None:
             box = gtk.HBox(False, 0)
             arrow.set_size_request(10,10)
-            arrow.set_padding(0.0, 0.0)
+            arrow.set_padding(0, 0)
             box.pack_start(arrow, False, False, 0)
             self.add(box)
             self.key_press_handler = self.connect("key-press-event", self.keyPress_cb, self.direction)
