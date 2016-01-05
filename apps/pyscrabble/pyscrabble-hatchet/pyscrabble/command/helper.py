@@ -3,10 +3,12 @@ from string import split
 
 LOGIN_COMMAND = 0
 GAME_COMMAND = 1
+CHAT_COMMAND = 2
 
 def fromType(type):
     if type == 0: return LoginCommand()
     if type == 1: return GameCommand()
+    if type == 2: return ChatCommand()
 
 
 class CommandCreator(object):
@@ -219,6 +221,14 @@ class CommandCreator(object):
         
         return self.parser.parseLoginCommand(['','', BOOTED, data])
     
+    def createErrorCommand(self, data=''):
+        '''
+        Show an error message
+        
+        @param data: Error message
+        '''
+        return self.parser.parseChatCommand( ['', ERROR, data] )
+    
     def createGameBagEmptyCommand(self, gameId, data=''):
         '''
         Game bag is empty 
@@ -280,6 +290,16 @@ class CommandParser(object):
         '''
         
         return LoginCommand( elements.pop(0), elements.pop(0), elements.pop(0), elements.pop(0) )
+    
+    def parseChatCommand(self, elements):
+        '''
+        Parse a ChatCommand
+        
+        @param elements: List of command elements
+        @return: ChatCommand
+        '''
+        
+        return ChatCommand( elements.pop(0), elements.pop(0), elements.pop(0) )
     
     def parseGameCommand(self, elements):
         '''
@@ -361,6 +381,26 @@ class Command(object):
         @param username: Username
         '''
         
+        self.username = username
+
+
+class ChatCommand(Command):
+    '''
+    Chat Command class.  Used for chat functions
+    '''
+    
+    def __init__(self, username=None, command=None, data=None):
+        '''
+        Initialize the ChatCommand
+        
+        @param username: Username
+        @param command: Command
+        @param data:
+        @see: L{constants}
+        '''
+        Command.__init__(self, CHAT_COMMAND)
+        self.command = command
+        self.data = data
         self.username = username
 
 

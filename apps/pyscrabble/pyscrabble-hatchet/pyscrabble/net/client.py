@@ -266,6 +266,10 @@ class ScrabbleClient(object):
             self.processLoginCommand(command)
             return
         
+        if (isinstance(command, ChatCommand)):
+            self.processChatCommand(command)
+            return
+        
         if (isinstance(command, GameCommand)):
             self.processGameCommand(command)
             return
@@ -295,6 +299,18 @@ class ScrabbleClient(object):
             return
             
         self.mainWin.error(util.ErrorMessage(command.getData()))
+    
+    def processChatCommand(self, command):
+        '''
+        Process a Game Chat command
+        
+        @param command: ChatCommand
+        @see: L{pyscrabble.command.helper.ChatCommand}
+        '''
+        
+        
+        if (command.getCommand() == ERROR):
+            self.chatWin.error( util.ErrorMessage(command.getData()) )
     
     def processGameCommand(self, command):
         '''
