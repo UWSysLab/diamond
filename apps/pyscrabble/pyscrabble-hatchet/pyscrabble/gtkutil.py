@@ -257,25 +257,7 @@ class LetterPlaceHolder(gtk.Fixed):
         letter = context.get_source_widget()
         
         if isinstance(letter, gui.pieces.GameTile):
-            self.game_frame.removeMove(letter, letter.x, letter.y)
-            if letter.getLetter().isBlank():
-                letter.getLetter().setLetter("")
-            letter = gui.pieces.GameLetter(letter.getLetter(), self.letterBox)
-        
-        if not isinstance(letter, gui.pieces.GameLetter):
-            return
-        
-        letters = self.letterBox.get_children()
-        self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-        
-        for l in letters:
-            if id(l) == id(widget):
-                self.letterBox.pack_start(letter, False, False, 0)
-            elif id(l) == id(letter):
-                self.letterBox.pack_start(widget, False, False, 0)
-            else:
-                self.letterBox.pack_start(l, False, False, 0)
-        self.letterBox.show_all()
+            self.game_frame.putTileOnPlaceholder(letter)
         
     def activate(self):
         '''

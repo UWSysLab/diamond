@@ -496,65 +496,68 @@ class GameFrame(gtk.Frame):
         self.showLetters([])
     
     
-    # Callback from GameTile, when a user moves a Letter from their list onto the Board
-    def registerMove(self, tile, x, y, refresh, letter):
+    # Game state management methods added by Niel
+    def addLetter(self, letter):
         '''
-        Callback from GameTile.  When a Letter is dropped on a Tile, it callsback here to let the Game know the location of the Letter.
-        
-        @param tile: Tile
-        @param x: X position
-        @param y: Y position
-        @param refresh: True to refresh letter box
-        @param letter: GameLetter to remove from letter box
+        @param letter: Letter to add to list of letters
         '''
+        self.letters.append(letter)
+        self.showLetters(self.letters)
         
-        #print 'Registering %s %s %d,%d' % ( str(id(tile)), str(tile.getLetter()), x,y )
-        #print tile.getLetter() in self.letters, self.letters
-        if tile.getLetter() in self.letters: # If we're moving a tile around on the board, we dont want to remove it
-        
-            letters = []
-            found = False
-            for _letter in self.letters:
-                if tile.getLetter() == _letter and tile.getLetter().isBlank() == _letter.isBlank():
-                    if not found:
-                        found = True
-                    else:
-                        #print 'Adding', _letter
-                        letters.append( _letter )
+    def removeLetter(self, letter):
+        '''
+        @param letter: Letter to remove from list of letters
+        '''
+        letters = []
+        found = False
+        for _letter in self.letters:
+            if letter == _letter and letter.isBlank() == _letter.isBlank():
+                if not found:
+                    found = True
                 else:
                     letters.append( _letter )
-                   
-            self.letters = letters
-            
-            if refresh:
-                letters = self.letterBox.get_children()
-                self.letterBox.foreach(lambda w: self.letterBox.remove(w))
-                for l in letters:
-                    #print 'id(%s) == id(%s) %s == %s %s' % (str(l), str(letter), str(id(l)), str(id(letter)), str(id(l) == id(letter)))
-                    if id(l) == id(letter): #Compare memory values to make sure its actually the same widget
-                        self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
-                    else:
-                        self.letterBox.pack_start(l, False, False, 0)
-                self.letterBox.show_all()
-            
-            self.onBoard.addMove( tile.getLetter() ,x,y )
-    
-    def removeMove(self, tile, x, y, refresh=True):
-        '''
-        Remove onboard move
+            else:
+                letters.append( _letter )        
+        self.letters = letters
+        self.showLetters(self.letters)
         
-        @param tile:
-        @param x:
-        @param y:
-        '''
-        #print 'Removing %s %s %d,%d' % ( str(tile.getLetter()), str(tile.getLetter().isBlank()), x,y )
+    def registerMove(self, tile, x, y): 
+        self.onBoard.addMove( tile.getLetter() ,x,y )
+        
+    def removeMove(self, tile, x, y):
         self.onBoard.removeMove( tile.getLetter(), x, y )
-        if refresh:
-            t = GameTile(x,y,self)
-            t.activate()
-            self.board.put(t,x,y)
-        self.letters.append( tile.getLetter() )
-        self.board.show_all()
+        
+    def swapTiles(self, gTileA, gTileB):
+        letterA = gTileA.getLetter()
+        letterB = gTileB.getLetter()
+        if letterA == None:
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.clear()
+        else:
+            self.removeMove(gTileA, gTileA.x, gTileA.y)
+            self.removeMove(gTileB, gTileB.x, gTileB.y)
+            gTileB.putLetter(letterA)
+            self.registerMove(gTileB, gTileB.x, gTileB.y)
+
+        gTileA.putLetter(letterB)
+        self.registerMove(gTileA, gTileA.x, gTileA.y)
+    
+    def swapTileAndLetter(self, gTile, gLetter):
+        if gTile.getLetter() == None:
+            self.removeLetter(gLetter.getLetter())
+        else:
+            self.removeLetter(gLetter.getLetter())
+            self.removeMove(gTile, gTile.x, gTile.y)
+            self.addLetter(gTile.getLetter())
+            
+        gTile.putLetter(gLetter.getLetter())
+        self.registerMove(gTile, gTile.x, gTile.y)
+        
+    def putTileOnPlaceholder(self, gTile):
+        self.removeMove(gTile, gTile.x, gTile.y)
+        self.addLetter(gTile.getLetter())
+        gTile.clear()
+    
     
     def getNumOnBoardMoves(self):
         '''
@@ -1277,16 +1280,6 @@ class GameFrame(gtk.Frame):
         for c in self.letterBox.get_children():
             if isinstance(c, GameLetter):
                 c.refresh()
-    
-    def removeLetter(self, x, y):
-        '''
-        Remove a letter from the board
-        
-        @param x:
-        @param y:
-        '''
-        self.removeMove(self.board.get(x,y), x, y, refresh=True)
-        self.showLetters( self.letters )
         
     
     def placeLetter(self, letter, x, y):
