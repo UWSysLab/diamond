@@ -343,6 +343,24 @@ private:
     void Deserialize(const std::string &s);
 };
 
+class DBoolean : public DObject
+{
+public:
+    DBoolean() : _b() {};
+    DBoolean(const bool b, const std::string &key) : DObject(key), _b(b) {};
+    ~DBoolean() {};
+    bool Value();
+    void Set(const bool b);
+    DBoolean & operator=(const bool b) { Set(b); return *this; };
+
+private:
+    bool _b;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+    void SetNotProtected(const bool b);
+};
+
 class DRedisStringList
 {
 public:

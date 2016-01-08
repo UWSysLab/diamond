@@ -233,6 +233,23 @@ TEST(DStringList, Map) {
     EXPECT_EQ(list2.Size(), 0);
 }
 
+TEST(DBoolean, Map) {
+    DiamondInit();
+
+    DBoolean bool1;
+    DBoolean bool2;
+
+    int ret = DBoolean::Map(bool1, std::string("test:cpp:bool"));
+    bool1 = true;
+
+    ret = DBoolean::Map(bool2, std::string("test:cpp:bool"));
+    EXPECT_EQ(bool2.Value(), true);
+
+    bool2 = false;
+    EXPECT_EQ(bool1.Value(), false);
+}
+    
+
 TEST(DString, EmptyStrings) {
     DiamondInit();
 
