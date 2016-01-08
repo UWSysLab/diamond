@@ -7,6 +7,12 @@ from pyscrabble import manager
 from pyscrabble import gtkutil
 from pyscrabble import util
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
+import ReactiveManager
+
 # Class representing a Tile on the Gameboard            
 class GameTile(gtk.Button):
     '''
@@ -26,8 +32,15 @@ class GameTile(gtk.Button):
         @param parent: GameFrame class
         '''
         self.board = parent #callback to the parent widget
-        
-        self.letter = None
+                
+        self.letterStr = DString()
+        DString.Map(self.letterStr, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letter")
+        self.letterScore = DLong()
+        DLong.Map(self.letterScore, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":score")
+        self.isBlank = DBoolean()
+        DBoolean.Map(self.isBlank, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":isBlank")
+        self.letterPresent = DBoolean()
+        DBoolean.Map(self.letterPresent, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
         
         gtk.Button.__init__(self)
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
@@ -67,7 +80,7 @@ class GameTile(gtk.Button):
         '''
         self.deactivate()
             
-        if (self.getLetter() == None):
+        if (not self.letterPresent.Value()):
             self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
@@ -153,20 +166,21 @@ class GameTile(gtk.Button):
         @param showBlank: True to show blank value
         '''
         self.set_label( letter, showBlank )
-        self.letter = letter
+        self.letterStr.Set(letter.getLetter())
+        self.letterScore.Set(letter.getScore())
+        self.letterPresent.Set(True)
         self.refresh()
-
-    def update_label(self):
-        self.set_label(self.letter, False)
     
     def clear(self):
-        self.letter = None
+        self.letterPresent.Set(False)
         self.refresh()
         self.activate()
         
     def getLetter(self):
-        return self.letter
-
+        if (self.letterPresent.Value()):
+            return Letter(self.letterStr.Value(), self.letterScore.Value())
+        else:
+            return None
         
     
     def findStyle(self, x, y):
@@ -560,7 +574,8 @@ class GameLetter(gtk.ToggleButton):
         self.handlerId = 0
         self.destHandlerId = 0
         
-        self.letter = letter
+        #self.letter = letter
+        self.letter = Letter(letter.getLetter().encode('utf-8'), letter.getScore())
         
         self.activate()
 

@@ -18,7 +18,15 @@ from twisted.internet import reactor
 from pyscrabble.gui.login import LoginWindow
 import gtk
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
+import ReactiveManager
+
 if __name__ == '__main__':
+    
+    DiamondInit()
     
     dist.ensure_config_dir( dist.CONFIG_DIR )
     

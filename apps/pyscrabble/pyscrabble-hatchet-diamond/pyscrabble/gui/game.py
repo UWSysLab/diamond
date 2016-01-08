@@ -14,6 +14,11 @@ try:
 except NameError:
     from sets import Set as set
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
+import ReactiveManager
 
 class GameFrame(gtk.Frame):
     '''
@@ -592,9 +597,11 @@ class GameFrame(gtk.Frame):
             for letter,x,y in self.onBoard.getTiles():
                 #print 'Clearing %s %d,%d' % (letter,x,y)
                 self.letters.append(letter)
-                t = GameTile(x,y,self)
-                t.activate()
-                self.board.put(t,x,y)
+                #t = GameTile(x,y,self)
+                #t.activate()
+                #self.board.put(t,x,y)
+                t = self.board.get(x, y)
+                t.clear()
             self.showLetters( self.letters )
             self.onBoard.clear()
         self.board.clearArrows()
