@@ -51,6 +51,13 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Set", &DCounter::Set)
     ;
 
+    class_<DBoolean, bases<DObject> >("DBoolean")
+        .def("Map", &DBoolean::Map)
+        .staticmethod("Map")
+        .def("Value", &DBoolean::Value)
+        .def("Set", &DBoolean::Set)
+    ;
+
     // Note from Niel: I wrote these bindings for the DSet class, since I needed
     // them for PyScrabble.
 

@@ -102,6 +102,19 @@ class TestDiamond(unittest.TestCase):
         list1.Clear()
         self.assertEquals(len(list2.Members()), 0)
 
+    def test_DBoolean(self):
+        b1 = DBoolean()
+        b2 = DBoolean()
+
+        DBoolean.Map(b1, "test:python:bool")
+        DBoolean.Map(b2, "test:python:bool")
+
+        s1.Set(True)
+        self.assertEqual(s2.Value(), True)
+
+        s2.Set(False)
+        self.assertEqual(s1.Value(), False)
+
 if __name__ == '__main__':
     unittest.main()
                                                                                 
