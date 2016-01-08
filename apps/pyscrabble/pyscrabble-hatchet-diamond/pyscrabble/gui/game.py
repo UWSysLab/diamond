@@ -19,6 +19,7 @@ sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/pyth
 sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
 from libpydiamond import *
 import ReactiveManager
+import gobject
 
 class GameFrame(gtk.Frame):
     '''
@@ -82,6 +83,12 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
+                
+        ReactiveManager.add(self.drawBoard)
+        
+    def drawBoard(self):
+        for tile in self.board.tiles.values():
+            gobject.idle_add(tile.refresh)
     
     ### UI Creation ####
         

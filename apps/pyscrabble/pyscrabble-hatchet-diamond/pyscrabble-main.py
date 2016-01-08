@@ -23,9 +23,11 @@ sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/pyth
 sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
 from libpydiamond import *
 import ReactiveManager
+import gobject
 
 if __name__ == '__main__':
     
+    gobject.threads_init()
     DiamondInit()
     
     dist.ensure_config_dir( dist.CONFIG_DIR )
