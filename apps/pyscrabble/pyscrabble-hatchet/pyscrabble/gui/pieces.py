@@ -280,9 +280,11 @@ class GameTile(gtk.Button):
         @return: True if the tile is active
         '''
         self.set_label( self.getLetter() )
-        
+        self.updateBackground(self.getLetter())
+    
+    def updateBackground(self, letter):    
         o = manager.OptionManager()
-        if self.getLetter() is not None:
+        if letter is not None:
             if o.get_default_bool_option(USE_COLOR_LETTER, True):
                 self.setBackground( o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER]) )
             else:
