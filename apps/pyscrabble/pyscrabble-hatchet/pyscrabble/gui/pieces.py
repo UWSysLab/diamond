@@ -155,9 +155,6 @@ class GameTile(gtk.Button):
         self.set_label( letter, showBlank )
         self.letter = letter
         self.refresh()
-
-    def update_label(self):
-        self.set_label(self.letter, False)
     
     def clear(self):
         self.letter = None
