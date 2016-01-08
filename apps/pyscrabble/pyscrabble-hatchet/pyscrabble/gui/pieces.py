@@ -256,7 +256,6 @@ class GameTile(gtk.Button):
             s = str(letter.getScore())
             o = manager.OptionManager()
             if letter.isBlank():
-                print "AHHH DEBUG TIME AHHH"
                 if showBlank:
                     l = ""
                 if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
