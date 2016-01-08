@@ -152,7 +152,6 @@ class GameTile(gtk.Button):
         @param letter:
         @param showBlank: True to show blank value
         '''
-        self.set_label( letter, showBlank )
         self.letter = letter
         self.refresh()
     
