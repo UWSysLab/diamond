@@ -27,6 +27,8 @@ class GameTile(gtk.Button):
         '''
         self.board = parent #callback to the parent widget
         
+        self.letter = None
+        
         gtk.Button.__init__(self)
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         self.findStyle(x,y)
@@ -45,8 +47,6 @@ class GameTile(gtk.Button):
         
         self.connect("button-release-event", self.buttonRelease_cb)
         self.connect("button-press-event", self.buttonPress_cb)
-        
-        self.letter = None
     
     def clone(self):
         '''
@@ -154,14 +154,14 @@ class GameTile(gtk.Button):
         '''
         self.set_label( letter, showBlank )
         self.letter = letter
-        self.update_label()
+        self.refresh()
 
     def update_label(self):
         self.set_label(self.letter, False)
     
     def clear(self):
         self.letter = None
-        self.update_label()
+        self.refresh()
         self.activate()
         
     def getLetter(self):
@@ -284,25 +284,16 @@ class GameTile(gtk.Button):
         
         @return: True if the tile is active
         '''
+        self.set_label( self.getLetter() )
+        
         o = manager.OptionManager()
         if self.getLetter() is not None:
-            self.set_label( self.getLetter() )
-            
-            if self.handler_is_connected(self.handler_id):
-                if ( o.get_default_bool_option(USE_COLOR_NEW_TILE, True) ):
-                    self.setBackground( o.get_default_option(COLOR_NEW_TILE, DEFAULT_NEW_TILE) )
-                    return
-                    
             if o.get_default_bool_option(USE_COLOR_LETTER, True):
                 self.setBackground( o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER]) )
             else:
                 self.setBackground( TILE_COLORS[TILE_LETTER] )
         else:
-            if self.getStyle() is TILE_NORMAL:
-                if o.get_default_bool_option(USE_COLOR_NORMAL_TILE, True):
-                    self.setBackground( o.get_default_option(COLOR_NORMAL_TILE, TILE_COLORS[TILE_NORMAL]) )
-                else:
-                    self.setBackground( TILE_COLORS[TILE_NORMAL] )
+            self.findStyle(self.x, self.y)
         
     
     def buttonPress_cb(self, widget, event):
@@ -784,7 +775,7 @@ class GameBoard(gtk.Table):
         return True
         
     
-    def putLetter(self, letter, x, y, set_bg):
+    def putLetter(self, letter, x, y):
         '''
         Put a Letter on a Tile on the board
         
@@ -804,10 +795,6 @@ class GameBoard(gtk.Table):
         self.empty = False
         self.tiles[(x,y)].putLetter(letter)
         self.tiles[(x,y)].deactivate()
-        
-        if set_bg:
-            o = manager.OptionManager()
-            self.tiles[(x,y)].setBackground(o.get_default_option(COLOR_RECENT_TILE, DEFAULT_RECENT_TILE))
     
     def moveTouching(self, move, onBoard):
         '''

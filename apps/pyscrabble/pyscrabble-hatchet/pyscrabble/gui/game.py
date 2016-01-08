@@ -1059,7 +1059,7 @@ class GameFrame(gtk.Frame):
             
         for move in moves:
             for letter, x, y in move.getTiles():
-                self.board.putLetter(letter, x, y, opt)
+                self.board.putLetter(letter, x, y)
         self.board.show_all()
         
         if opt:
