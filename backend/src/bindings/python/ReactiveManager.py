@@ -17,10 +17,11 @@ def run():
 def add(func):
     txSet.add(func)
 
-def testFunc():
-    print "Hello, world!"
-
-# Test code
 start()
-add(testFunc)
-time.sleep(10)
+
+#class TestObj:
+#    def testFunc(self):
+#        print "Hello world 2!"
+#obj = TestObj()
+#add(obj.testFunc)
+#time.sleep(10)
