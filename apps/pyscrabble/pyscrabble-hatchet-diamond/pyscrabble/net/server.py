@@ -209,7 +209,9 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         if not self.gameList.has_key(gameId):
             game = ScrabbleGame( gameId, options )
-            game.creator = self.clients[client].getUsername()
+            game.setCreator(self.clients[client].getUsername().encode("utf-8"))
+            game.currentPlayer.Set("")
+            game.players.Clear()
             self.gameList[ gameId ] = game
             self.refreshGameList()
         else:

@@ -20,6 +20,9 @@ sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
 from libpydiamond import *
 import ReactiveManager
 import gobject
+from pyscrabble.game.game import *
+from pyscrabble import constants
+
 
 class GameFrame(gtk.Frame):
     '''
@@ -35,7 +38,7 @@ class GameFrame(gtk.Frame):
     '''
     
     
-    def __init__(self, client, main, gameId, spectating, options):
+    def __init__(self, client, main, gameId, username, spectating, options):
         '''
         Initialize the game frame
         
@@ -47,6 +50,8 @@ class GameFrame(gtk.Frame):
         '''
         
         gtk.Frame.__init__(self)
+        
+        self.username = username
         
         # callback to socket client
         self.client = client
@@ -88,7 +93,9 @@ class GameFrame(gtk.Frame):
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
-            gobject.idle_add(tile.refresh)
+            letter = tile.getLetter()
+            gobject.idle_add(tile.set_label, letter)
+            gobject.idle_add(tile.updateBackground, letter)
     
     ### UI Creation ####
         
@@ -455,11 +462,35 @@ class GameFrame(gtk.Frame):
     # Start the game
     def startGame(self, button):
         '''
-        User action to Start the game
+        User starts a game
         
-        @param button: Button that was clicked
+        @param gameId: Game ID
+        @param client: ScrabbleServer Protocol
         '''
-        self.client.startGame( self.currentGameId )
+        gameId = self.currentGameId
+        game = ScrabbleGame(gameId)
+        
+        if self.username != game.getCreator():
+            self.error(util.ErrorMessage(ServerMessage([NOT_CREATOR])))
+            return
+        
+        if (game.isStarted()):
+            self.error(util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
+            return
+
+        game.start()
+            
+        for player in game.getPlayers():
+            letters = game.getLetters( player.getNumberOfLettersNeeded() )
+            player.addLetters(letters)
+        
+        #TODO
+        #self.sendGameScores(game.getGameId())
+
+        #TODO
+        #self.doGameTurn( gameId )
+        #TODO
+        #self.refreshGameList()
     
     def gameOver(self):
         '''
@@ -663,10 +694,165 @@ class GameFrame(gtk.Frame):
     
         try:
             moves = self.getMoves()
-            self.client.sendMoves( self.currentGameId, moves, self.onBoard )
-            self.okButton.set_sensitive(False)
+            self.gameSendMove(self.currentGameId, self.onBoard, moves)
+            #self.client.sendMoves( self.currentGameId, moves, self.onBoard )
+            #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
             self.error(util.ErrorMessage(inst.message))
+    
+    # Player send move to game
+    def gameSendMove(self, gameId, onboard, moves):
+        '''
+        User sends moves to the game
+        
+        @param gameId: Game ID
+        @param onboard: Move containing letters put on the board
+        @param moves: List of Moves formed
+        '''
+        
+        game = ScrabbleGame(gameId)
+        player = game.getPlayer( self.username )
+        
+        if not player == game.getCurrentPlayer():
+            return
+        
+        if (game.isPaused()):
+            self.error(util.ErrorMessage(ServerMessage([MOVE_GAME_PAUSED])))
+            return
+        if (not game.isInProgress()):
+            self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS])) )
+            return
+        
+        # Validate word in dictionary and not on the board alread
+        words = []
+        for move in moves:
+            word = util.getUnicode( move.getWord() )
+            if word not in self.dicts[ 'en' ]:
+                self.error(ServerMessage([word, NOT_IN_DICT]) )
+                return
+            words.append( word )
+        
+        self.acceptMove()
+        score = self.getMovesScore(game, moves)
+        letters = self.getLettersFromMove(onboard)
+        player.removeLetters( letters )
+        player.addScore( score )
+        
+        self.removeModifiers(game, moves)
+        
+        game.addMoves(moves, player)
+        
+        game.resetPassCount()
+        
+        # If the player used all 7 of his/her letters, give them an extra 50
+        if onboard.length() == 7:
+            player.addScore( constants.BINGO_BONUS_SCORE )
+            
+            # If the player used all his/her letters and there are no more letters in the bag, the game is over
+        if (len(player.getLetters()) == 0 and game.isBagEmpty()):
+            
+            # Subtract everyones letter points
+            # Give points to the person who went out
+            players = game.getPlayers()
+            for p in players:
+                if p == player: 
+                    continue # Skip winner
+                    
+                letters = p.getLetters()
+                for letter in letters:
+                    p.addScore( letter.getScore() * -1 )
+                    player.addScore( letter.getScore() )
+            
+            self.sendGameScores(game.getGameId())
+            
+            self.gameOver(game)
+            return
+
+        letters = game.getLetters( player.getNumberOfLettersNeeded() )
+        if (len(letters) > 0):
+            player.addLetters(letters)
+        
+        #TODO
+        #self.sendGameScores(game.getGameId())
+
+        # Next player
+        #TODO
+        #self.doGameTurn(gameId)
+        
+    # Get the letters from the moves
+    def getLettersFromMove(self, move):
+        '''
+        Get the letters in a move
+        
+        @param move: Move
+        @return: List of letters in C{move}
+        '''
+        
+        letters = []
+        
+        for letter, x, y in move.getTiles():
+            letters.append( letter.clone() )
+
+        return letters
+    
+    # Get the score of the list of moves
+    def getMovesScore(self, game, moves):
+        '''
+        Get the total score for a list of Moves
+        
+        @param game: ScrabbleGame
+        @param moves: List of Moves
+        @return: Total score for the list of Moves
+        '''
+        
+        total = 0
+        
+        for move in moves:
+            score = 0
+            apply = 0
+            modifier = constants.TILE_NORMAL
+            m_x = -1
+            m_y = -1
+            for letter,x,y in move.getTiles():
+                m = util.getTileModifier(x,y)
+                if m in constants.LETTER_MODIFIERS and not game.hasUsedModifier((x,y)):
+                    score = score + (m * letter.getScore())
+                else:
+                    score = score + letter.getScore()
+    
+                if (m >= modifier and not game.hasUsedModifier((x,y))):
+                    modifier = m
+                    if m in constants.WORD_MODIFIERS:
+                        apply = apply + 1
+                    m_x = x
+                    m_y = y
+
+            if modifier in constants.WORD_MODIFIERS and not game.hasUsedModifier((m_x,m_y)):
+                
+                if util.isCenter(m_x, m_y):
+                    score = score * (modifier/2)
+                else:
+                    score = score * ((modifier/2) ** apply)
+                
+            move.setScore( score )
+            total = total + score
+        
+        return total
+    
+    def removeModifiers(self, game, moves):
+        '''
+        Mark off modifiers that are used in this move
+        
+        @param game: Game
+        @param moves: List of moves
+        '''
+        for move in moves:
+            for letter,x,y in move.getTiles():
+                m = util.getTileModifier(x,y)
+                if m in constants.LETTER_MODIFIERS and not game.hasUsedModifier((x,y)):
+                    game.addUsedModifier( (x,y) )
+                if m in constants.WORD_MODIFIERS and not game.hasUsedModifier((x,y)):
+                    game.addUsedModifier( (x,y) )
     
     # Button click to pass the move
     def passMove(self, event = None):

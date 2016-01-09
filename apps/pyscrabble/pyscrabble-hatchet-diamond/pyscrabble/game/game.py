@@ -5,6 +5,10 @@ from pyscrabble.constants import *
 from pyscrabble.lookup import *
 from random import shuffle
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
 
 class ScrabbleGame:
     '''
@@ -18,22 +22,33 @@ class ScrabbleGame:
         @param name: Game ID
         '''
         
-        self.players = []
+        self.players = DStringList()
+        DStringList.Map(self.players, "testgame:players")
         self.name = name
-        self.started = False
+        self.started = DBoolean()
+        DBoolean.Map(self.started, "testgame:started")
+        self.started.Set(False)
         self.paused = False
         self.complete = False
         self.moves = []
         self.words = []
         self.usedModifiers = []
         self.passedMoves = 0
-        self.currentPlayer = None
+        self.currentPlayer = DString()
+        DString.Map(self.currentPlayer, "testgame:currentplayer")
         self.log = []
         self.pending = []
         self.bag = Bag( rules='en' )
-        self.creator = None
+        self.creator = DString()
+        DString.Map(self.creator, "testgame:creator")
         self.timer = None
         self.spectatorsAllowed = True
+    
+    def setCreator(self, playerName):
+        self.creator.Set(playerName)
+    
+    def getCreator(self):
+        return self.creator.Value()
     
     def getDistribution(self):
         '''

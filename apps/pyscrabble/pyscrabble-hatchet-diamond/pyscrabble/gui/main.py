@@ -170,7 +170,7 @@ class MainWindow(gtk.Window):
         @param spectating: True if the user is spectating
         @param options: Game options dict
         '''
-        frame = GameFrame(self.client, self, gameId, spectating, options)
+        frame = GameFrame(self.client, self, gameId, self.username, spectating, options)
         window = gtk.ScrolledWindow()
         window.add_with_viewport( frame )
         window.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )

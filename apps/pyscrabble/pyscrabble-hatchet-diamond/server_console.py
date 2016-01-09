@@ -11,6 +11,11 @@ import logging
 import os
 import ConfigParser
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
+
 class ServerConsole(object):
     '''
     Console Server
@@ -95,6 +100,7 @@ class ServerConsole(object):
         self.g_port = int(parser.get("pyscrabble","game_port"))
         
 if __name__ == '__main__':
+    DiamondInit()
     x = ServerConsole()
     x.startConsole()
     
