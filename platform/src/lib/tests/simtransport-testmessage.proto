@@ -1,0 +1,5 @@
+package transport.test;
+
+message TestMessage {
+    required string test = 1;
+}
