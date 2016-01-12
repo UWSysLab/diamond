@@ -51,7 +51,7 @@ class GameFrame(gtk.Frame):
         
         gtk.Frame.__init__(self)
         
-        self.username = username
+        self.username = username.encode("utf-8")
         
         # callback to socket client
         self.client = client
@@ -60,6 +60,13 @@ class GameFrame(gtk.Frame):
         
         self.currentGameId = gameId
         self.currentGame = ScrabbleGame(gameId)
+        #self.player = Player(username, gameId)
+        self.letterStrs = DStringList()
+        DStringList.Map(self.letterStrs, "game:" + gameId + ":player:" + self.username + ":letterstrs")
+        self.letterScores = DList()
+        DList.Map(self.letterScores, "game:" + gameId + ":player:" + self.username + ":letterscores")
+        self.letterIsBlanks = DBooleanList()
+        DBooleanList.Map(self.letterScores, "game:" + gameId + ":player:" + self.username + ":letterisblanks")
         self.recentMoves = []
         self.hideTradeButton = False
         
@@ -91,6 +98,10 @@ class GameFrame(gtk.Frame):
         self.userView.columns_autosize()
                 
         ReactiveManager.add(self.drawBoard)
+    
+    def drawScreen(self):
+        self.showLetters()
+        self.drawBoard()
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
@@ -567,25 +578,33 @@ class GameFrame(gtk.Frame):
         '''
         @param letter: Letter to add to list of letters
         '''
-        self.letters.append(letter)
-        self.showLetters(self.letters)
+        self.letterStrs.Append(letter.getLetter())
+        self.letterScores.Append(letter.getScore())
+        self.letterIsBlanks.Append(letter.isBlank())
+        self.showLetters()
         
     def removeLetter(self, letter):
         '''
         @param letter: Letter to remove from list of letters
         '''
-        letters = []
-        found = False
-        for _letter in self.letters:
-            if letter == _letter and letter.isBlank() == _letter.isBlank():
-                if not found:
-                    found = True
-                else:
-                    letters.append( _letter )
-            else:
-                letters.append( _letter )        
-        self.letters = letters
-        self.showLetters(self.letters)
+        #letters = []
+        #found = False
+        #for _letter in self.letters:
+        #    if letter == _letter and letter.isBlank() == _letter.isBlank():
+        #        if not found:
+        #            found = True
+        #        else:
+        #            letters.append( _letter )
+        #    else:
+        #        letters.append( _letter )        
+        #self.letters = letters
+        #self.showLetters(self.letters)
+        for i in range(0, self.letterStrs.Size()):
+            if (letter.getLetter() == self.letterStrs.Value(i) and letter.getScore() == self.letterScores.Value(i) and letter.isBlanks() == self.letterIsBlanks.Value(i)):
+                self.letterStrs.Erase(i)
+                self.letterScores.Erase(i)
+                self.letterIsBlanks.Erase(i)
+                break
         
     def registerMove(self, tile, x, y): 
         self.onBoard.addMove( tile.getLetter() ,x,y )
@@ -657,13 +676,15 @@ class GameFrame(gtk.Frame):
         if not self.onBoard.isEmpty():
             for letter,x,y in self.onBoard.getTiles():
                 #print 'Clearing %s %d,%d' % (letter,x,y)
-                self.letters.append(letter)
+                self.letterStrs.Append(letter.getLetter())
+                self.letterScores.Append(letter.getScore())
+                self.letterIsBlanks.Append(letter.isBlank())
                 #t = GameTile(x,y,self)
                 #t.activate()
                 #self.board.put(t,x,y)
                 t = self.board.get(x, y)
                 t.clear()
-            self.showLetters( self.letters )
+            self.showLetters()
             self.onBoard.clear()
         self.board.clearArrows()
         self.board.show_all()
@@ -1108,7 +1129,7 @@ class GameFrame(gtk.Frame):
         '''
         Refresh letters
         '''
-        self.showLetters( self.letters )
+        self.showLetters()
         
     
     # Show/Refresh letters in the letter box
@@ -1121,17 +1142,17 @@ class GameFrame(gtk.Frame):
         
         # Remove all the widgets
         self.letterBox.foreach(lambda w: w.deactivate() and self.letterBox.remove(w))
-        self.letters = []
         
-        for letter in letters:
-            if letter.isBlank():
-                letter.setLetter("")
+        for i in range(0, self.letterStrs.Size()):
+            if self.letterIsBlanks.Value(i):
+                self.letterStrs.Erase(i)
+                self.letterStrs.Insert(i, "")  
+            letter = Letter(self.letterStrs.Value(i), self.letterScores.Value(i), self.letterIsBlanks.Value(i))
             l = GameLetter(letter, self.letterBox)
             self.letterBox.pack_start(l, False, False, 0)
             self.letterBox.show_all()
-            self.letters.append( letter )
         
-        for x in range( 7 - len(letters) ):
+        for x in range( 7 - self.letterStrs.Size() ):
             self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
             self.letterBox.show_all()
     

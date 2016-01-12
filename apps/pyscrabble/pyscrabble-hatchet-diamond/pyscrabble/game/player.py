@@ -88,7 +88,7 @@ class Player(object):
     A Player in the game.
     '''
     
-    def __init__(self, username=''):
+    def __init__(self, username='', gameName=''):
         '''
         Initialize the player
         
@@ -99,11 +99,13 @@ class Player(object):
         #self.u_time = None
         
         self.score = DLong()
-        DLong.Map(self.score, "player:" + repr(username) + ":score")
+        DLong.Map(self.score, "game:" + gameName + ":player:" + repr(username) + ":score")
         self.letterStrs = DStringList()
-        DStringList.Map(self.letterStrs, "player:" + repr(username) + ":letterstrs")
+        DStringList.Map(self.letterStrs, "game:" + gameName + ":player:" + repr(username) + ":letterstrs")
         self.letterScores = DList()
-        DList.Map(self.letterScores, "player:" + repr(username) + ":letterscores")
+        DList.Map(self.letterScores, "game:" + gameName + ":player:" + repr(username) + ":letterscores")
+        self.letterIsBlanks = DBooleanList()
+        DBooleanList.Map(self.letterIsBlanks, "game:" + gameName + ":player:" + repr(username) + ":letterisblanks")
     
     def addScore(self, score):
         '''
@@ -142,7 +144,7 @@ class Player(object):
         for letter in letters:
             self.letterStrs.Append(letter.getLetter().encode("utf-8"))
             self.letterScores.Append(letter.getScore())
-        print "DEBUG: " + repr(letters) + " | " + repr(self.letterStrs.Members()) + " | " + repr(self.letterScores.Members())
+            self.letterIsBlanks.Append(letter.isBlank())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -168,6 +170,7 @@ class Player(object):
             index = self.letterStrs.Index(letter.getLetter())
             self.letterStrs.Erase(index)
             self.letterScores.Erase(index)
+            self.letterIsBlanks.Erase(index)
         
     def getLetters(self):
         '''
@@ -177,7 +180,6 @@ class Player(object):
         '''
         
         letters = []
-        print "DEBUG:" + repr(self.letterStrs.Size()) + " " + repr(self.letterScores.Size())
         for i in range(0, self.letterStrs.Size()):
             letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
         return letters
@@ -193,6 +195,7 @@ class Player(object):
         self.score.Set(0)
         self.letterStrs.Clear()
         self.letterScores.Clear()
+        self.letterIsBlanks.Clear()
     
     def __eq__(self, other):
         '''

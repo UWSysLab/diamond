@@ -367,7 +367,7 @@ class Bag:
         
         for letter in letters:
             self.letterStrs.Append( letter.getLetter() )
-            self.letterScores.Append( letter.getScores() )
+            self.letterScores.Append( letter.getScore() )
         
         self.shuffleLetters()
 

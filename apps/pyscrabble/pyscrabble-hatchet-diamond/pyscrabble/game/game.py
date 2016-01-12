@@ -212,7 +212,7 @@ class ScrabbleGame:
         #return self.players.Members()
         result = []
         for playerName in self.players.Members():
-            result.append(Player(playerName))
+            result.append(Player(playerName, self.name))
         return result
     
     def hasPlayer(self, player):
@@ -385,7 +385,7 @@ class ScrabbleGame:
         
         for _playerName in self.players.Members():
             if player.getUsername() == _playerName:
-                return Player(_playerName)
+                return Player(_playerName, self.name)
         return None
     
     def isCurrentPlayer(self, player):
@@ -395,7 +395,7 @@ class ScrabbleGame:
         @param player: Player to checl
         @return: True if C{player} is the current player.
         '''
-        return self.currentPlayer == player
+        return self.currentPlayer.Value() == player.getUsername()
     
     def setComplete(self):
         '''

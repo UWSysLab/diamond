@@ -167,6 +167,7 @@ class GameTile(gtk.Button):
         '''
         self.letterStr.Set(letter.getLetter())
         self.letterScore.Set(letter.getScore())
+        self.letterIsBlank.Set(letter.isBlank())
         self.letterPresent.Set(True)
         self.refresh()
     
@@ -177,7 +178,7 @@ class GameTile(gtk.Button):
         
     def getLetter(self):
         if (self.letterPresent.Value()):
-            return Letter(self.letterStr.Value(), self.letterScore.Value())
+            return Letter(self.letterStr.Value(), self.letterScore.Value(), self.letterIsBlank.Value())
         else:
             return None
         
