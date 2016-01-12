@@ -140,6 +140,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Erase", &DList::Erase)
         .def("Remove", &DList::Remove)
         .def("Clear", &DList::Clear)
+        .def("Size", &DList::Size)
     ;
 
     struct string_vector_to_list {
