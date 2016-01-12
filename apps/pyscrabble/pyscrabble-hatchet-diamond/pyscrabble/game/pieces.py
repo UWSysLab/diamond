@@ -5,6 +5,11 @@ from pyscrabble import manager
 from pyscrabble import util
 from random import shuffle
 
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
+
 class Letter(object):
     '''
     Letter class.  Represents a letter on the gameboard
@@ -256,15 +261,39 @@ class Bag:
         
         @see: L{Letter}
         '''
-        self.letters = []
-        
+        self.letterStrs = DStringList()
+        DStringList.Map(self.letterStrs, "testgame:bag:letterstrs")
+        self.letterScores = DList()
+        DList.Map(self.letterScores, "testgame:bag:letterscores")
+        self.rules = DString()
+        DString.Map(self.rules, "testgame:bag:rules")
+    
+    def reset(self, rules):
+        self.rules.Set(rules)
+        self.letterStrs.Clear()
+        self.letterScores.Clear()
         l = manager.LettersManager()
-        for letter,count,score in l.getLetters(rules):
+        for letter,count,score in l.getLetters(self.rules.Value()):
             for x in range(count):
-                self.letters.append( Letter(letter, score) )
+                self.letterStrs.Append(letter.encode("utf-8"))
+                self.letterScores.Append(score)
         
         # Shuffle the letters in the bag
-        shuffle(self.letters)
+        self.shuffleLetters()
+    
+    def shuffleLetters(self):
+        indices = range(0, self.letterStrs.Size())
+        shuffle(indices)
+        tempLetterStrs = []
+        tempLetterScores = []
+        for i in range(0, self.letterStrs.Size()):
+            tempLetterStrs.append(self.letterStrs.Value(i))
+            tempLetterScores.append(self.letterScores.Value(i))
+        self.letterStrs.Clear()
+        self.letterScores.Clear()
+        for index in indices:
+            self.letterStrs.Append(tempLetterStrs[index])
+            self.letterScores.Append(tempLetterScores[index])
     
     def getDistribution(self):
         '''
@@ -275,8 +304,8 @@ class Bag:
         
         result = {}
         
-        for letter in self.letters:
-            key = letter.getCharacter()
+        for letter in self.letterStrs.Members():
+            key = letter
             if result.has_key(key):
                 result[key] = result[key] + 1
             else:
@@ -302,7 +331,13 @@ class Bag:
         if (self.getCount() < count):
             count = self.getCount()
         
-        return [ self.letters.pop() for x in range(count) ]   
+        result = []
+        for x in range(count):
+            result.append(Letter(self.letterStrs.Value(0), self.letterScores.Value(0)))
+            self.letterStrs.Erase(0)
+            self.letterScores.Erase(0)
+        print "DEBUG BAG::GETLETTERS " + repr(result)
+        return result
     
     def isEmpty(self):
         '''
@@ -320,7 +355,7 @@ class Bag:
         @return: Number of letters in the Bag
         '''
         
-        return len( self.letters )
+        return self.letterStrs.Size()
     
     def returnLetters(self, letters):
         '''
@@ -331,9 +366,10 @@ class Bag:
         '''
         
         for letter in letters:
-            self.letters.append( letter )
+            self.letterStrs.Append( letter.getLetter() )
+            self.letterScores.Append( letter.getScores() )
         
-        shuffle(self.letters)
+        self.shuffleLetters()
 
 class Move(object):
     '''

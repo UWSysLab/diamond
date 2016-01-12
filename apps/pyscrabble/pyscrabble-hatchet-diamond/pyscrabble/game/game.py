@@ -48,6 +48,7 @@ class ScrabbleGame:
         self.currentPlayer.Set("")
         self.started.Set(False)
         self.players.Clear()
+        self.bag.reset(rules='en')
     
     def setCreator(self, playerName):
         self.creator.Set(playerName)
@@ -164,16 +165,16 @@ class ScrabbleGame:
         
         self.started.Set(True)
         
-        tempPlayers = DStringList()
-        for playerName in self.players.Members():
-            tempPlayers.Append(playerName)
-        self.players.Clear()
-        indices = range(0, self.players.Size() - 1)
+        indices = range(0, self.players.Size())
         shuffle(indices)
+        tempPlayers = []
+        for playerName in self.players.Members():
+            tempPlayers.append(playerName)
+        self.players.Clear()
         for index in indices:
-            self.players.Append(tempPlayers.Get(index))
+            self.players.Append(tempPlayers[index])
         
-    
+            
     def getCurrentPlayer(self):
         '''
         Get current player
@@ -191,13 +192,11 @@ class ScrabbleGame:
         @return: Next Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-
-        print "DEBUG GAME " + repr(self.players.Members())
-        
+                
         if (self.players.Size() == 0):
             return None
         
-        self.currentPlayer = self.players.Get(0)
+        self.currentPlayer = self.players.Value(0)
         self.players.Erase(0)
         self.players.Append(self.currentPlayer)
         return Player(self.currentPlayer)

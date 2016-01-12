@@ -497,9 +497,9 @@ class GameFrame(gtk.Frame):
         
         @param gameId: Game ID
         '''
-                
+        
         player = self.currentGame.getNextPlayer()
-                
+        
         if player is None:
             return
                 

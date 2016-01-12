@@ -102,8 +102,8 @@ class Player(object):
         DLong.Map(self.score, "player:" + repr(username) + ":score")
         self.letterStrs = DStringList()
         DStringList.Map(self.letterStrs, "player:" + repr(username) + ":letterstrs")
-        self.letterScores = DStringList()
-        DStringList.Map(self.letterScores, "player:" + repr(username) + ":letterscores")
+        self.letterScores = DList()
+        DList.Map(self.letterScores, "player:" + repr(username) + ":letterscores")
     
     def addScore(self, score):
         '''
@@ -140,8 +140,9 @@ class Player(object):
         '''
         
         for letter in letters:
-            self.letterStrs.Append(letter.getLetter())
+            self.letterStrs.Append(letter.getLetter().encode("utf-8"))
             self.letterScores.Append(letter.getScore())
+        print "DEBUG: " + repr(letters) + " | " + repr(self.letterStrs.Members()) + " | " + repr(self.letterScores.Members())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -176,7 +177,8 @@ class Player(object):
         '''
         
         letters = []
-        for i in range(0, len(self.letterStrs.Members())):
+        print "DEBUG:" + repr(self.letterStrs.Size()) + " " + repr(self.letterScores.Size())
+        for i in range(0, self.letterStrs.Size()):
             letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
         return letters
     
