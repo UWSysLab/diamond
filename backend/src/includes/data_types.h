@@ -307,6 +307,31 @@ private:
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
+class DBooleanList : public DObject
+{
+public:
+    DBooleanList() {};
+    DBooleanList(std::vector<bool> vec, const std::string &key) : DObject(key), _vec(vec) {};
+    DBooleanList(const std::string &key) : DObject(key) {};
+    ~DBooleanList() {};
+    std::vector<bool> Members();
+    bool Value(const int index);
+    void Append(const bool val);
+    void Append(const std::vector<bool> &vec);
+    void Insert(const int index, const bool val);
+    void Erase(const int index);
+    void Clear();
+    int Size();
+    DBooleanList & operator=(const std::vector<bool> &vec) { Append(vec); return *this; };
+    
+private:
+    std::vector<bool> _vec;
+
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+    int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
+};
+
 class DStringQueue : public DObject
 {
 public:
