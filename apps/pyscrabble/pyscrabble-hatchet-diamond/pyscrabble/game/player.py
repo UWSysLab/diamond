@@ -2,6 +2,12 @@ import datetime
 import time
 from pyscrabble import constants
 from pyscrabble import util
+from pyscrabble.game.pieces import Letter
+
+import sys
+sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
+sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+from libpydiamond import *
 
 class User(object):
     '''
@@ -90,9 +96,14 @@ class Player(object):
         '''
         
         self.username = username
-        self.score = 0
-        self.letters = []
-        self.u_time = None
+        #self.u_time = None
+        
+        self.score = DLong()
+        DLong.Map(self.score, "player:" + repr(username) + ":score")
+        self.letterStrs = DStringList()
+        DStringList.Map(self.letterStrs, "player:" + repr(username) + ":letterstrs")
+        self.letterScores = DStringList()
+        DStringList.Map(self.letterScores, "player:" + repr(username) + ":letterscores")
     
     def addScore(self, score):
         '''
@@ -101,7 +112,7 @@ class Player(object):
         @param score: Score to add to Player's score.
         '''
         
-        self.score = self.score + score
+        self.score.Set(self.score.Value() + score)
     
     def getScore(self):
         '''
@@ -109,7 +120,7 @@ class Player(object):
         @return: Player's score
         '''
         
-        return self.score
+        return self.score.Value()
     
     def getUsername(self):
         '''
@@ -117,7 +128,8 @@ class Player(object):
         @return: Player's username
         '''
         
-        return util.getUnicode(self.username)
+        #return util.getUnicode(self.username)
+        return self.username.encode("utf-8")
         
     def addLetters(self, letters):
         '''
@@ -127,7 +139,9 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        self.letters.extend( letters )
+        for letter in letters:
+            self.letterStrs.Append(letter.getLetter())
+            self.letterScores.Append(letter.getScore())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -137,7 +151,7 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        return 7 - len(self.letters)
+        return 7 - self.letterStrs.Size()
     
     def removeLetters(self, list):
         '''
@@ -150,7 +164,9 @@ class Player(object):
         for letter in list:
             if (letter.isBlank()):
                 letter.setLetter("")
-            self.letters.remove( letter )
+            index = self.letterStrs.Index(letter.getLetter())
+            self.letterStrs.Erase(index)
+            self.letterScores.Erase(index)
         
     def getLetters(self):
         '''
@@ -159,7 +175,10 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        return self.letters
+        letters = []
+        for i in range(0, len(self.letterStrs.Members())):
+            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
+        return letters
     
     def reset(self):
         '''
@@ -169,8 +188,9 @@ class Player(object):
         Remove all Letters from the Player's letterbox.
         '''
         
-        self.score = 0
-        self.letters = []
+        self.score.Set(0)
+        self.letterStrs.Clear()
+        self.letterScores.Clear()
     
     def __eq__(self, other):
         '''
@@ -193,7 +213,7 @@ class Player(object):
         '''
         
         if (isinstance(other, Player)):
-            return self.score < other.score
+            return self.score.Value() < other.score.Value()
         return False
     
     def __gt__(self, other):
@@ -205,7 +225,7 @@ class Player(object):
         '''
         
         if (isinstance(other, Player)):
-            return self.score > other.score
+            return self.score.Value() > other.score.Value()
         return False
     
     def __repr__(self):
@@ -216,7 +236,7 @@ class Player(object):
         @return: Player formatted as a string
         '''
         
-        return '%s(%d)' % (self.getUsername(), int(self.score))
+        return '%s(%d)' % (self.getUsername(), int(self.score.Value()))
     
     def clone(self):
         '''
@@ -235,7 +255,7 @@ class Player(object):
         Clear the letters for this Player.
         '''
         
-        self.letters = []
+        self.letters.Clear()
     
     def getTime(self):
         if hasattr(self, 'u_time') and self.u_time is not None:

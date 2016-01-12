@@ -21,13 +21,12 @@ class ScrabbleGame:
         
         @param name: Game ID
         '''
-        
-        self.players = DStringList()
-        DStringList.Map(self.players, "testgame:players")
+
         self.name = name
+        self.players = DStringList()
+        DStringList.Map(self.players, "game:" + name + ":players")
         self.started = DBoolean()
-        DBoolean.Map(self.started, "testgame:started")
-        self.started.Set(False)
+        DBoolean.Map(self.started, "game:" + name + ":started")
         self.paused = False
         self.complete = False
         self.moves = []
@@ -35,14 +34,20 @@ class ScrabbleGame:
         self.usedModifiers = []
         self.passedMoves = 0
         self.currentPlayer = DString()
-        DString.Map(self.currentPlayer, "testgame:currentplayer")
+        DString.Map(self.currentPlayer, "game:" + name + ":currentplayer")
         self.log = []
         self.pending = []
         self.bag = Bag( rules='en' )
         self.creator = DString()
-        DString.Map(self.creator, "testgame:creator")
+        DString.Map(self.creator, "game:" + name + ":creator")
         self.timer = None
         self.spectatorsAllowed = True
+    
+    def reset(self):
+        self.setCreator("")
+        self.currentPlayer.Set("")
+        self.started.Set(False)
+        self.players.Clear()
     
     def setCreator(self, playerName):
         self.creator.Set(playerName)
@@ -111,7 +116,7 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        self.players.append( player )
+        self.players.Append( player.getUsername() )
     
     def getGameId(self):
         '''
@@ -129,7 +134,7 @@ class ScrabbleGame:
         @return: Number of players in the game
         '''
         
-        return len(self.players)
+        return self.players.Size()
     
     def isStarted(self):
         '''
@@ -141,7 +146,7 @@ class ScrabbleGame:
         if (self.isPaused()):
             return False
             
-        return self.started
+        return self.started.Value()
     
     def isComplete(self):
         '''
@@ -157,9 +162,17 @@ class ScrabbleGame:
         Start the game.
         '''
         
-        self.started = True
+        self.started.Set(True)
         
-        shuffle(self.players)
+        tempPlayers = DStringList()
+        for playerName in self.players.Members():
+            tempPlayers.Append(playerName)
+        self.players.Clear()
+        indices = range(0, self.players.Size() - 1)
+        shuffle(indices)
+        for index in indices:
+            self.players.Append(tempPlayers.Get(index))
+        
     
     def getCurrentPlayer(self):
         '''
@@ -168,7 +181,7 @@ class ScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return self.currentPlayer
+        return Player(self.currentPlayer)
         
     
     def getNextPlayer(self):
@@ -178,13 +191,16 @@ class ScrabbleGame:
         @return: Next Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
+
+        print "DEBUG GAME " + repr(self.players.Members())
         
-        if (len(self.players) == 0):
+        if (self.players.Size() == 0):
             return None
         
-        self.currentPlayer = self.players.pop(0)
-        self.players.append(self.currentPlayer)
-        return self.currentPlayer
+        self.currentPlayer = self.players.Get(0)
+        self.players.Erase(0)
+        self.players.Append(self.currentPlayer)
+        return Player(self.currentPlayer)
     
     def getPlayers(self):
         '''
@@ -194,7 +210,11 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        return self.players[:]
+        #return self.players.Members()
+        result = []
+        for playerName in self.players.Members():
+            result.append(Player(playerName))
+        return result
     
     def hasPlayer(self, player):
         '''
@@ -205,7 +225,7 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        return player in self.players
+        return player.getUsername() in self.players.Members()
     
     def playerLeave(self, player):
         '''
@@ -216,7 +236,7 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        self.players.remove(player)
+        self.players.Remove(player.getUsername())
         self.returnLetters( player.getLetters() )
     
     def addMoves(self, moves, player):
@@ -276,7 +296,7 @@ class ScrabbleGame:
         '''
         
         self.passedMoves = self.passedMoves + 1
-        if (self.passedMoves == len(self.players)):
+        if (self.passedMoves == self.players.Size()):
             raise GameOverException
     
     def getWinners(self, exclude=None):
@@ -364,9 +384,9 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.player.Player}
         '''
         
-        for _player in self.players:
-            if player.getUsername() == _player.getUsername():
-                return _player
+        for _playerName in self.players.Members():
+            if player.getUsername() == _playerName:
+                return Player(_playerName)
         return None
     
     def isCurrentPlayer(self, player):

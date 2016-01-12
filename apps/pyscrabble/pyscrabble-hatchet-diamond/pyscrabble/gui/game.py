@@ -59,6 +59,7 @@ class GameFrame(gtk.Frame):
         self.mainwindow = main
         
         self.currentGameId = gameId
+        self.currentGame = ScrabbleGame(gameId)
         self.recentMoves = []
         self.hideTradeButton = False
         
@@ -466,31 +467,53 @@ class GameFrame(gtk.Frame):
         
         @param gameId: Game ID
         @param client: ScrabbleServer Protocol
-        '''
-        gameId = self.currentGameId
-        game = ScrabbleGame(gameId)
-        
-        if self.username != game.getCreator():
+        ''' 
+        if self.username != self.currentGame.getCreator():
             self.error(util.ErrorMessage(ServerMessage([NOT_CREATOR])))
             return
         
-        if (game.isStarted()):
+        if (self.currentGame.isStarted()):
             self.error(util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
             return
 
-        game.start()
-            
-        for player in game.getPlayers():
-            letters = game.getLetters( player.getNumberOfLettersNeeded() )
+        self.currentGame.start()
+        
+        for player in self.currentGame.getPlayers():
+            player.reset()
+            letters = self.currentGame.getLetters( player.getNumberOfLettersNeeded() )
             player.addLetters(letters)
         
         #TODO
         #self.sendGameScores(game.getGameId())
 
         #TODO
-        #self.doGameTurn( gameId )
+        self.doGameTurn()
         #TODO
         #self.refreshGameList()
+        
+    def doGameTurn(self, wasUnpaused=False ):
+        '''
+        Turn control of the board to the next player in the game
+        
+        @param gameId: Game ID
+        '''
+                
+        player = self.currentGame.getNextPlayer()
+                
+        if player is None:
+            return
+                
+        time = datetime.timedelta(seconds=0)
+        
+        if self.username == player.getUsername():
+            self.setCurrentTurn(time)
+        else:
+            self.otherTurn(PlayerInfo(player.getUsername(), player.getScore(), player.getLetters().Size()))
+        
+        #for _player in self.currentGame.getPlayers():
+        #    _client = self.getPlayerClient(_player)
+        #    if (_player != player):
+        #        _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
     
     def gameOver(self):
         '''
@@ -1171,6 +1194,7 @@ class GameFrame(gtk.Frame):
         @param gameId: Game ID
         '''
         self.currentGameId = gameId
+        self.currentGame = ScrabbleGame(gameId)
     
     # Set the current turn
     def setCurrentTurn(self, time):
