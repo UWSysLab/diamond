@@ -170,6 +170,32 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Clear", &DStringList::Clear)
         .def("Size", &DStringList::Size)
     ;
+
+    struct bool_vector_to_list {
+        static PyObject * convert(const std::vector<bool> & orig_vec) {
+            boost::python::list result;
+            for (std::vector<bool>::const_iterator it = orig_vec.begin();
+                    it != orig_vec.end(); it++) {
+                result.append(boost::python::object(*it));
+            }
+            return boost::python::incref(result.ptr());
+        }
+    };
+
+    boost::python::to_python_converter<std::vector<bool>, bool_vector_to_list>();
+
+    void (DBooleanList::*BooleanAppend)(const bool) = &DBooleanList::Append;
+    class_<DBooleanList, bases<DObject> >("DBooleanList")
+        .def("Map", &DBooleanList::Map)
+        .staticmethod("Map")
+        .def("Members", &DBooleanList::Members)
+        .def("Value", &DBooleanList::Value)
+        .def("Append", BooleanAppend)
+        .def("Insert", &DBooleanList::Insert)
+        .def("Erase", &DBooleanList::Erase)
+        .def("Clear", &DBooleanList::Clear)
+        .def("Size", &DBooleanList::Size)
+    ;
 }
 
     
