@@ -95,17 +95,17 @@ class Player(object):
         @param username: Username of Player
         '''
         
-        self.username = username
+        self.username = username.encode("utf-8")
         #self.u_time = None
         
         self.score = DLong()
-        DLong.Map(self.score, "game:" + gameName + ":player:" + repr(username) + ":score")
+        DLong.Map(self.score, "game:" + gameName + ":player:" + self.username + ":score")
         self.letterStrs = DStringList()
-        DStringList.Map(self.letterStrs, "game:" + gameName + ":player:" + repr(username) + ":letterstrs")
+        DStringList.Map(self.letterStrs, "game:" + gameName + ":player:" + self.username + ":letterstrs")
         self.letterScores = DList()
-        DList.Map(self.letterScores, "game:" + gameName + ":player:" + repr(username) + ":letterscores")
+        DList.Map(self.letterScores, "game:" + gameName + ":player:" + self.username + ":letterscores")
         self.letterIsBlanks = DBooleanList()
-        DBooleanList.Map(self.letterIsBlanks, "game:" + gameName + ":player:" + repr(username) + ":letterisblanks")
+        DBooleanList.Map(self.letterIsBlanks, "game:" + gameName + ":player:" + self.username + ":letterisblanks")
     
     def addScore(self, score):
         '''
@@ -141,10 +141,14 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
+        print "DEBUG Player::addLetters() " + repr(letters)
         for letter in letters:
+            if letter.isBlank():
+                letter.setLetter("")
             self.letterStrs.Append(letter.getLetter().encode("utf-8"))
             self.letterScores.Append(letter.getScore())
             self.letterIsBlanks.Append(letter.isBlank())
+        print "DEBUG Player::addLetters(): " + repr(self.letterStrs.Members()) + " | " + repr(self.letterScores.Members()) + " | " + repr(self.letterIsBlanks.Members())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -156,7 +160,7 @@ class Player(object):
         
         return 7 - self.letterStrs.Size()
     
-    def removeLetters(self, list):
+    def removeLetters(self, letterList):
         '''
         Remove Letters from this Player's letterbox
         
@@ -164,7 +168,7 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        for letter in list:
+        for letter in letterList:
             if (letter.isBlank()):
                 letter.setLetter("")
             index = self.letterStrs.Index(letter.getLetter())

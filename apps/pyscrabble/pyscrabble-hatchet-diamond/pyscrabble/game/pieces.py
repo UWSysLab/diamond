@@ -336,7 +336,6 @@ class Bag:
             result.append(Letter(self.letterStrs.Value(0), self.letterScores.Value(0)))
             self.letterStrs.Erase(0)
             self.letterScores.Erase(0)
-        print "DEBUG BAG::GETLETTERS " + repr(result)
         return result
     
     def isEmpty(self):
