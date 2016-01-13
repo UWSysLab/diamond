@@ -15,14 +15,14 @@ class Letter(object):
     Letter class.  Represents a letter on the gameboard
     '''
     
-    def __init__(self, letter="", score=0 ):
+    def __init__(self, letter="", score=0, isBlank=False ):
         '''
         Initialize the Letter
         
         @param letter: String representing the Letter
         '''
         self.score = score
-        self.__isBlank = False
+        self.__isBlank = isBlank
         self.setLetter( letter )
     
     def clone(self):

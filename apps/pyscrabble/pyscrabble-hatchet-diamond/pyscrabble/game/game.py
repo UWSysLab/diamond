@@ -49,6 +49,12 @@ class ScrabbleGame:
         self.started.Set(False)
         self.players.Clear()
         self.bag.reset(rules='en')
+        
+        for x in range(0, 15):
+            for y in range(0, 15):
+                self.letterPresent = DBoolean()
+                DBoolean.Map(self.letterPresent, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
+                self.letterPresent.Set(False)
     
     def setCreator(self, playerName):
         self.creator.Set(playerName)
@@ -182,7 +188,7 @@ class ScrabbleGame:
         @return: Player who has control of the board.
         @see: L{pyscrabble.game.player.Player}
         '''
-        return Player(self.currentPlayer)
+        return Player(self.currentPlayer.Value())
         
     
     def getNextPlayer(self):

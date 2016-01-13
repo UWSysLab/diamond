@@ -37,8 +37,8 @@ class GameTile(gtk.Button):
         DString.Map(self.letterStr, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letter")
         self.letterScore = DLong()
         DLong.Map(self.letterScore, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":score")
-        self.isBlank = DBoolean()
-        DBoolean.Map(self.isBlank, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":isBlank")
+        self.letterIsBlank = DBoolean()
+        DBoolean.Map(self.letterIsBlank, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterIsBlank")
         self.letterPresent = DBoolean()
         DBoolean.Map(self.letterPresent, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
         

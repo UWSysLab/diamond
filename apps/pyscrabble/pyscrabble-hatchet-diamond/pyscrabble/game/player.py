@@ -160,7 +160,7 @@ class Player(object):
         
         return 7 - self.letterStrs.Size()
     
-    def removeLetters(self, letterList):
+    def removeLetters(self, list):
         '''
         Remove Letters from this Player's letterbox
         
@@ -168,7 +168,7 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        for letter in letterList:
+        for letter in list:
             if (letter.isBlank()):
                 letter.setLetter("")
             index = self.letterStrs.Index(letter.getLetter())
@@ -185,7 +185,7 @@ class Player(object):
         
         letters = []
         for i in range(0, self.letterStrs.Size()):
-            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
+            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i), self.letterIsBlanks.Value(i))) 
         return letters
     
     def reset(self):

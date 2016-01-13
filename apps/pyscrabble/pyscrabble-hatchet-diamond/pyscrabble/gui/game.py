@@ -594,7 +594,7 @@ class GameFrame(gtk.Frame):
         #        letters.append( _letter )        
         #self.letters = letters
         #self.showLetters(self.letters)
-        self.player.removeLetters(list)
+        self.player.removeLetters([letter])
         
     def registerMove(self, tile, x, y): 
         self.onBoard.addMove( tile.getLetter() ,x,y )
@@ -618,13 +618,17 @@ class GameFrame(gtk.Frame):
         self.registerMove(gTileA, gTileA.x, gTileA.y)
     
     def swapTileAndLetter(self, gTile, gLetter):
+        print "DEBUG TIME"
         if gTile.getLetter() == None:
+            print "A"
             self.removeLetter(gLetter.getLetter())
         else:
+            print "B"
             self.removeLetter(gLetter.getLetter())
             self.removeMove(gTile, gTile.x, gTile.y)
             self.addLetter(gTile.getLetter())
-            
+        
+        print "C"
         gTile.putLetter(gLetter.getLetter())
         self.registerMove(gTile, gTile.x, gTile.y)
         
@@ -742,7 +746,7 @@ class GameFrame(gtk.Frame):
         '''
         
         game = ScrabbleGame(gameId)
-        player = game.getPlayer( self.username )
+        player = game.getPlayer( self.player )
         
         if not player == game.getCurrentPlayer():
             return
