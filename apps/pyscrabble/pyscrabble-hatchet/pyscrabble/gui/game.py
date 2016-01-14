@@ -68,6 +68,13 @@ class GameFrame(gtk.Frame):
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
         
+        self.gameLetters = []
+        for i in range(0, 7):
+            gl = GameLetter(None, self.letterBox)
+            self.letterBox.pack_start(gl)
+            self.gameLetters.append(gl)
+        self.letterBox.show_all()
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -543,15 +550,22 @@ class GameFrame(gtk.Frame):
         self.registerMove(gTileA, gTileA.x, gTileA.y)
     
     def swapTileAndLetter(self, gTile, gLetter):
-        if gTile.getLetter() == None:
-            self.removeLetter(gLetter.getLetter())
-        else:
-            self.removeLetter(gLetter.getLetter())
+        origLetterLetter = gLetter.getLetter()
+        origTileLetter = gTile.getLetter()
+        
+        if origLetterLetter == None:
             self.removeMove(gTile, gTile.x, gTile.y)
-            self.addLetter(gTile.getLetter())
+            self.addLetter(origTileLetter)
+            gTile.clear()
+        else:
+            self.removeLetter(origLetterLetter)
+        
+            if gTile.getLetter() != None:
+                self.removeMove(gTile, gTile.x, gTile.y)
+                self.addLetter(origTileLetter)
             
-        gTile.putLetter(gLetter.getLetter())
-        self.registerMove(gTile, gTile.x, gTile.y)
+            gTile.putLetter(origLetterLetter)
+            self.registerMove(gTile, gTile.x, gTile.y)
         
     def putTileOnPlaceholder(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
@@ -897,20 +911,20 @@ class GameFrame(gtk.Frame):
         '''
         
         # Remove all the widgets
-        self.letterBox.foreach(lambda w: w.deactivate() and self.letterBox.remove(w))
+        self.letterBox.foreach(lambda w: w.clear())
         self.letters = []
         
-        for letter in letters:
+        for i in range(0, len(letters)):
+            letter = letters[i]
             if letter.isBlank():
                 letter.setLetter("")
-            l = GameLetter(letter, self.letterBox)
-            self.letterBox.pack_start(l, False, False, 0)
+            self.gameLetters[i].copyLetter(letter)
             self.letterBox.show_all()
             self.letters.append( letter )
         
-        for x in range( 7 - len(letters) ):
-            self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
-            self.letterBox.show_all()
+        #for x in range( 7 - len(letters) ):
+        #    self.letterBox.pack_start(gtkutil.LetterPlaceHolder(self.letterBox, self), False, False, 0)
+        #    self.letterBox.show_all()
     
     def refreshUserList(self, users):
         '''
