@@ -141,14 +141,12 @@ class Player(object):
         @see: L{pyscrabble.game.pieces.Letter}
         '''
         
-        print "DEBUG Player::addLetters() " + repr(letters)
         for letter in letters:
             if letter.isBlank():
                 letter.setLetter("")
             self.letterStrs.Append(letter.getLetter().encode("utf-8"))
             self.letterScores.Append(letter.getScore())
             self.letterIsBlanks.Append(letter.isBlank())
-        print "DEBUG Player::addLetters(): " + repr(self.letterStrs.Members()) + " | " + repr(self.letterScores.Members()) + " | " + repr(self.letterIsBlanks.Members())
     
     def getNumberOfLettersNeeded(self):
         '''
