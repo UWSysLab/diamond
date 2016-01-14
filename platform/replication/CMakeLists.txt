@@ -1,0 +1,36 @@
+# ---------------------------------------------------------
+# Directory Source files
+# ---------------------------------------------------------
+
+add_subdirectory("${DIAMOND_SOURCE_DIR}/replication/common")
+
+PROTOBUF_GENERATE_CPP(SRC_DIAMOND_REPLICATION_PROTO HDR_DIAMOND_REPLICATION_PROTO
+  ${DIAMOND_SOURCE_DIR}/replication/vr-proto.proto)
+
+# Append the protobuf files to pass them up the scope
+set(SRC_DIAMOND_REPLICATION_PROTO 
+  ${SRC_DIAMOND_REPLICATION_PROTO}
+  ${SRC_DIAMOND_REPLICATION_COMMON_PROTO}
+  PARENT_SCOPE)
+
+set(HDR_DIAMOND_REPLICATION_PROTO
+  ${HDR_DIAMOND_REPLICATION_PROTO}
+  ${HDR_DIAMOND_REPLICATION_COMMON_PROTO}
+  PARENT_SCOPE)
+
+set(SRC_DIAMOND_REPLICATION_CLIENT 
+  ${SRC_DIAMOND_REPLICATION_COMMON}
+  ${SRC_DIAMOND_REPLICATION_PROTO}
+  ${HDR_DIAMOND_REPLICATION_PROTO}
+  ${DIAMOND_SOURCE_DIR}/replication/client.cc
+  PARENT_SCOPE)
+
+set(SRC_DIAMOND_REPLICATION_CLIENT 
+  ${SRC_DIAMOND_REPLICATION_COMMON}
+  ${SRC_DIAMOND_REPLICATION_PROTO}
+  ${HDR_DIAMOND_REPLICATION_PROTO}
+  ${DIAMOND_SOURCE_DIR}/replication/replica.cc
+  PARENT_SCOPE)
+
+include_directories(${DIAMOND_SRC_DIR}/replication/)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
