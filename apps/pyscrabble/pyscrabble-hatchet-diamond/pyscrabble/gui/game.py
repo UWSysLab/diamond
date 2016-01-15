@@ -22,6 +22,8 @@ import ReactiveManager
 import gobject
 from pyscrabble.game.game import *
 from pyscrabble import constants
+import os
+import codecs
 
 
 class GameFrame(gtk.Frame):
@@ -68,7 +70,6 @@ class GameFrame(gtk.Frame):
         self.spectating = spectating
         self.gameOptions = {OPTION_CENTER_TILE: True, 52: 'en', OPTION_SHOW_COUNT: True}
         
-        self.currentTurn = False
         self.letters = [] # User letter list
         self.onBoard = Move() # Letters on board for current move
         self.tileTips = gtk.Tooltips()
@@ -81,7 +82,28 @@ class GameFrame(gtk.Frame):
         
         main.pack_start(top, False, False, 20)
         main.pack_start(self.initUserLetters(), False, False, 0)
-            
+        
+        resources = manager.ResourceManager()
+        self.dicts = {}
+        dir = resources["resources"][constants.DICT_DIR].path
+        for lang in os.listdir( dir ):
+            if not lang.islower(): continue # Avoids CVS directories
+            self.dicts[lang] = set()
+            for file in os.listdir( os.path.join(dir, lang) ):
+                if not file.islower(): continue # Avoids CVS directories
+                path = os.path.join(dir, lang, file)
+                
+                f = codecs.open(path, encoding='utf-8', mode='rb')
+                lines = f.read().split()
+                f.close()
+                
+                l = []
+                for line in lines:
+                    l.append( line.upper() )
+                x = set( l )
+                
+                self.dicts[lang] = self.dicts[lang].union(x)
+        
         self.gameLetters = []
         for i in range(0, 7):
             gl = GameLetter(None, self.letterBox)
@@ -101,9 +123,15 @@ class GameFrame(gtk.Frame):
                 
         ReactiveManager.add(self.drawScreen)
     
+    def destroy(self):
+        ReactiveManager.remove(self.drawScreen)
+        gtk.Frame.destroy(self)
+    
     def drawScreen(self):
         self.drawLetters()
         self.drawBoard()
+        self.drawUserList()
+        self.drawUI()
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
@@ -114,9 +142,71 @@ class GameFrame(gtk.Frame):
     def drawLetters(self):
         if (self.currentGame.started.Value()):
             letters = self.player.getLetters()
-            if letters != self.prevLetters:
-                gobject.idle_add(self.showLetters, letters)
-                self.prevLetters = letters
+            gobject.idle_add(self.showLetters, letters)
+    
+    def drawUserList(self):
+        users = []
+        players = self.currentGame.getPlayers()
+        print "DEBUG " + repr(len(players))
+        for player in players:
+            users.append(PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters())))
+        
+        gobject.idle_add(self.userList.clear)
+        for playerInfo in users:
+            print "WAT"
+            gobject.idle_add(self.appendWrapper, (playerInfo.name, str(playerInfo.score), playerInfo.time, str(playerInfo.numLetters)) )
+    
+    def appendWrapper(self, tuple):
+        self.userList.append(tuple)
+    
+    def drawUI(self):
+        currentPlayerName = self.currentGame.getCurrentPlayer().getUsername()
+        started = self.currentGame.started.Value()
+        thisPlayerName = self.player.getUsername()
+        gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName)
+    
+    def drawUIHelper(self, started, thisPlayerName, currentPlayerName):
+        if started:
+            self.startButton.hide()
+            self.saveButton.set_sensitive(True)
+        
+        isPlayerTurn = (currentPlayerName == thisPlayerName)
+        if isPlayerTurn:
+            self.okButton.set_sensitive(True)
+            self.passButton.set_sensitive(True)
+            if self.hideTradeButton == False:
+                self.tradeButton.set_sensitive(True)
+            self.cancelButton.set_sensitive(True)
+            self.shuffleButton.set_sensitive(True)
+            
+            self.board.activate()
+            
+            self.mainwindow.setCurrentTurn(self.currentGameId, True)
+        else:
+            self.okButton.set_sensitive(False)
+            self.passButton.set_sensitive(False)
+            self.tradeButton.set_sensitive(False)
+            self.cancelButton.set_sensitive(False)
+            self.shuffleButton.set_sensitive(True)
+            
+            self.board.deactivate()
+            
+            self.mainwindow.setCurrentTurn(self.currentGameId, False)
+            
+            if currentPlayerName is not None:
+                sel = self.userView.get_selection()
+                model = self.userView.get_model()
+            
+                it = model.get_iter_first()
+                while ( it != None ):
+                    name = model.get_value(it, 0)
+                    if (name == currentPlayerName):
+                        if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
+                            path = model.get_path(it)
+                        #sel.select_iter(it)
+                        break
+                    it = model.iter_next(it)
+
     
     ### UI Creation ####
         
@@ -522,18 +612,6 @@ class GameFrame(gtk.Frame):
         
         if player is None:
             return
-                
-        time = datetime.timedelta(seconds=0)
-        
-        if self.username == player.getUsername():
-            self.setCurrentTurn(time)
-        else:
-            self.otherTurn(PlayerInfo(player.getUsername(), player.getScore(), player.getLetters().Size()))
-        
-        #for _player in self.currentGame.getPlayers():
-        #    _client = self.getPlayerClient(_player)
-        #    if (_player != player):
-        #        _client.gameTurnOther( gameId, PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters()), time ))
     
     def gameOver(self):
         '''
@@ -590,7 +668,6 @@ class GameFrame(gtk.Frame):
         @param letter: Letter to add to list of letters
         '''
         self.player.addLetters([letter])
-        self.showLetters(self.player.getLetters())
         
     def removeLetter(self, letter):
         '''
@@ -609,7 +686,6 @@ class GameFrame(gtk.Frame):
         #self.letters = letters
         #self.showLetters(self.letters)
         self.player.removeLetters([letter])
-        self.showLetters(self.player.getLetters())
         
     def registerMove(self, tile, x, y): 
         self.onBoard.addMove( tile.getLetter() ,x,y )
@@ -707,7 +783,7 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        if (self.currentTurn == False):
+        if (self.isCurrentTurn() == False):
             self.error(util.ErrorMessage(_("Its not your turn")))
             return
         
@@ -824,6 +900,8 @@ class GameFrame(gtk.Frame):
         letters = game.getLetters( player.getNumberOfLettersNeeded() )
         if (len(letters) > 0):
             player.addLetters(letters)
+            
+        self.board.empty = False
         
         #TODO
         #self.sendGameScores(game.getGameId())
@@ -1214,102 +1292,6 @@ class GameFrame(gtk.Frame):
         self.currentGameId = gameId
         self.currentGame = ScrabbleGame(gameId)
     
-    # Set the current turn
-    def setCurrentTurn(self, time):
-        '''
-        Set current turn.
-        
-        Unhide action buttons and activate the board and tiles.
-        
-        @param time: Time left
-        '''
-        self.startButton.hide()
-        self.saveButton.set_sensitive(True) #Enable save button, game is started
-        
-        # Show the action buttons if its your turn
-        #self.toolBar.show()
-        self.okButton.set_sensitive(True)
-        self.passButton.set_sensitive(True)
-        if self.hideTradeButton == False:
-            self.tradeButton.set_sensitive(True)
-        self.cancelButton.set_sensitive(True)
-        self.shuffleButton.set_sensitive(True)
-        
-        #Activate dragging on the letters
-        #self.letterBox.foreach(lambda letter: letter.activate())
-        self.board.activate()
-        self.clearCurrentMove()
-        
-        self.currentTurn = True
-
-        self.mainwindow.setCurrentTurn(self.currentGameId, True)
-    
-    # Set someone elses turn
-    def otherTurn(self, player):
-        '''
-        Its someone elses turn
-        
-        Hide the action buttons and deactivate the board and tiles.
-        
-        @param player: Player who has control of the baord.
-        '''
-        
-        self.startButton.hide()
-        if not self.spectating:
-            self.saveButton.set_sensitive(True) #Enable save button, game is started
-        
-        # Hide the action buttons if its not your turn
-        #self.toolBar.hide()
-        self.okButton.set_sensitive(False)
-        self.passButton.set_sensitive(False)
-        self.tradeButton.set_sensitive(False)
-        self.cancelButton.set_sensitive(False)
-        self.shuffleButton.set_sensitive(True)
-        
-        #Deactivate dragging on the letters
-        #self.letterBox.foreach(lambda letter: letter.deactivate())
-        self.board.deactivate()
-        
-        # Highlight the name of the player who has control of the board
-        self.currentTurn = False
-        self.mainwindow.setCurrentTurn(self.currentGameId, False)
-        self.clearCurrentMove()
-        
-        if player is not None:
-            sel = self.userView.get_selection()
-            model = self.userView.get_model()
-            
-            it = model.get_iter_first()
-            while ( it != None ):
-                name = model.get_value(it, 0)
-                if (name == player.name):
-                    if self.gameOptions.has_key(OPTION_TIMED_GAME) or self.gameOptions.has_key(OPTION_MOVE_TIME):
-                        path = model.get_path(it)
-                    #sel.select_iter(it)
-                    break
-                it = model.iter_next(it)
-    
-    # Apply moves to board
-    def applyMoves(self, moves):
-        '''
-        Callback from server to put moves on the board
-        
-        @param moves: List of moves to put on the board.
-        '''
-        o = manager.OptionManager()
-        opt = o.get_default_bool_option(USE_COLOR_RECENT_TILE, True)
-            
-        for move in moves:
-            for letter, x, y in move.getTiles():
-                self.board.putLetter(letter, x, y)
-        self.board.show_all()
-        
-        if opt:
-            if self.mainwindow.is_active() and self.mainwindow.gameFrameHasFocus(self):
-                reactor.callLater(RECENT_MOVE_TIMEOUT, self.clearRecentMove, moves)
-            else:
-                self.recentMoves.extend( moves )
-    
     def showError(self, data):
         '''
         Show error dialog
@@ -1335,7 +1317,7 @@ class GameFrame(gtk.Frame):
         
         self.showError(data)
         
-        if self.currentTurn == True:
+        if self.isCurrentTurn():
             self.okButton.set_sensitive(True)
         
         o = manager.OptionManager()
@@ -1583,7 +1565,7 @@ class GameFrame(gtk.Frame):
         
         @return: True if the user has control of the board
         '''
-        return self.currentTurn
+        return self.currentGame.getCurrentPlayer().getUsername() == self.player.getUsername()
     
     def getGameOption(self, opt):
         '''

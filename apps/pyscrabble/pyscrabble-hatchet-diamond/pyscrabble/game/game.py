@@ -202,10 +202,10 @@ class ScrabbleGame:
         if (self.players.Size() == 0):
             return None
         
-        self.currentPlayer = self.players.Value(0)
+        self.currentPlayer.Set(self.players.Value(0))
         self.players.Erase(0)
-        self.players.Append(self.currentPlayer)
-        return Player(self.currentPlayer)
+        self.players.Append(self.currentPlayer.Value())
+        return Player(self.currentPlayer.Value())
     
     def getPlayers(self):
         '''

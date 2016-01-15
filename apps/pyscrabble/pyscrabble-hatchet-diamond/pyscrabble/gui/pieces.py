@@ -80,9 +80,11 @@ class GameTile(gtk.Button):
         '''
         self.deactivate()
             
-        if (not self.letterPresent.Value()):
-            self.handler_id = self.connect("drag_data_received", self.letterDragged);
+        self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
+        if self.letterPresent.Value():
+            self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
+            self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
     
     def deactivate(self):
@@ -149,9 +151,7 @@ class GameTile(gtk.Button):
         @param widget: Widget that was dragged
         @param letter: Letter value
         @param score: Score value
-        '''     
-        self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
-        self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
+        '''
         
         if isinstance(widget, GameTile):
             self.board.swapTiles(self, widget)
@@ -169,11 +169,9 @@ class GameTile(gtk.Button):
         self.letterScore.Set(letter.getScore())
         self.letterIsBlank.Set(letter.isBlank())
         self.letterPresent.Set(True)
-        self.refresh()
     
     def clear(self):
         self.letterPresent.Set(False)
-        self.refresh()
         self.activate()
         
     def getLetter(self):

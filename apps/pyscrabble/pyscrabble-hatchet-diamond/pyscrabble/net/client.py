@@ -346,7 +346,8 @@ class ScrabbleClient(object):
                 self.gameWins[command.getGameId()].error( util.ErrorMessage(command.getData()) )
             
             if (command.getCommand() == GAME_SEND_MOVE):
-                self.gameWins[command.getGameId()].applyMoves( command.getData() )
+                #self.gameWins[command.getGameId()].applyMoves( command.getData() )
+                print "Get rid of the server code doing this: GAME_SEND_MOVE called with " + repr(command.getData())
             
             if (command.getCommand() == GAME_ACCEPT_MOVE):
                 self.gameWins[command.getGameId()].acceptMove()
