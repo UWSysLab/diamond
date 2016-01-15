@@ -17,6 +17,9 @@ def run():
 def add(func):
     txSet.add(func)
 
+def remove(func):
+    txSet.remove(func)
+
 start()
 
 #class TestObj:
