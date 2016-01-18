@@ -1,6 +1,6 @@
-import "replication/common/request.proto";
+import "request.proto";
 
-package replication.vr.proto;
+package replication.proto;
 
 message RequestMessage {
     required replication.Request req = 1;

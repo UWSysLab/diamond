@@ -34,7 +34,7 @@
 #ifndef _LIB_LATENCY_H_
 #define _LIB_LATENCY_H_
 
-#include "lib/latency-format.pb.h"
+#include "latency-format.pb.h"
 
 #include <stdbool.h>
 #include <stdint.h>

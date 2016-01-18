@@ -1,10 +1,11 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * kvstore-test.cc:
- *   test cases for simple key-value store class
+ * includes/error.h
+ *   Diamond error codes used within Diamond as well as returned
+ *   externally
  *
- * Copyright 2015 Irene Zhang  <iyzhang@cs.washington.edu>
+ * Copyright 2013-2015 Irene Zhang <iyzhang@cs.washington.edu>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,35 +29,17 @@
  *
  **********************************************************************/
 
-#include "store/common/backend/kvstore.h"
+#ifndef _ERROR_H_
+#define _ERROR_H_
 
-#include <gtest/gtest.h>
+// Reply types
+#define REPLY_OK 0
+#define REPLY_FAIL 1
+#define REPLY_RETRY 2
+#define REPLY_ABSTAIN 3
+#define REPLY_TIMEOUT 4
+#define REPLY_NETWORK_FAILURE 5
+#define REPLY_NOT_FOUND 6
+#define REPLY_MAX 7
 
-TEST(KVStore, Put)
-{
-    KVStore store;
-
-    EXPECT_TRUE(store.put("test1", "abc"));
-    EXPECT_TRUE(store.put("test2", "def"));
-    EXPECT_TRUE(store.put("test1", "xyz"));
-    EXPECT_TRUE(store.put("test3", "abc"));
-}
-
-TEST(KVStore, Get)
-{
-    KVStore store;
-    std::string val;
-
-    EXPECT_TRUE(store.put("test1", "abc"));
-    EXPECT_TRUE(store.get("test1", val));
-    EXPECT_EQ(val, "abc");
-
-    EXPECT_TRUE(store.put("test2", "def"));
-    EXPECT_TRUE(store.get("test2", val));
-    EXPECT_EQ(val, "def");
-
-    EXPECT_TRUE(store.put("test1", "xyz"));
-    EXPECT_TRUE(store.get("test1", val));
-    EXPECT_EQ(val, "xyz");
-}
-
+#endif

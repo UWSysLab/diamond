@@ -31,12 +31,20 @@ endif()
 # Include and link directories
 # ---------------------------------------------------------
 
-include_directories(includes)
+
+set(DIAMOND_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+include_directories(${DIAMOND_SOURCE_DIR})
 
 # Add protobufs
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+PROTOBUF_GENERATE_CPP(SRC_DIAMOND_PROTO HDR_DIAMOND_PROTO
+  ${DIAMOND_SOURCE_DIR}/request.proto
+  ${DIAMOND_SOURCE_DIR}/vr-proto.proto
+  ${DIAMOND_SOURCE_DIR}/common-proto.proto
+  ${DIAMOND_SOURCE_DIR}/store-proto.proto
+    ${DIAMOND_SOURCE_DIR}/latency-format.proto)
+include_directories(${PROJECT_BINARY_DIR})
 
 if(APPLE)
     include_directories("/opt/local/include" "/usr/local/include")
@@ -51,12 +59,7 @@ endif()
 add_subdirectory(data_types)
 add_subdirectory(lib)
 add_subdirectory(replication)
-# Tell cmake that these files will be generated later
-set_source_files_properties(${SRC_DIAMOND_REPLICATION_PROTO} ${HDR_DIAMOND_REPLICATION_PROTO} PROPERTIES
-                            GENERATED TRUE)
 add_subdirectory(store)
-set_source_files_properties(${SRC_DIAMOND_STORE_PROTO} ${HDR_DIAMOND_STORE_PROTO} PROPERTIES
-                            GENERATED TRUE)
 
 # ---------------------------------------------------------
 # Build targets
@@ -66,17 +69,23 @@ set_source_files_properties(${SRC_DIAMOND_STORE_PROTO} ${HDR_DIAMOND_STORE_PROTO
 add_library(diamond SHARED
             ${SRC_DIAMOND_LIB}
 	    ${SRC_DIAMOND_DATA_TYPES}
+	    ${SRC_DIAMOND_PROTO}
+	    ${HDR_DIAMOND_PROTO}
 	    ${SRC_DIAMOND_REPLICATION_CLIENT}
             ${SRC_DIAMOND_STORE_CLIENT})
 target_link_libraries(diamond ${PROTOBUF_LIBRARIES})
 
+
 # Set up the executable for the Diamond server
 add_executable(server
-               ${SRC_DIAMOND_LIB}
-	       ${SRC_DIAMOND_DATA_TYPES}
-	       ${SRC_REPLICATION_SERVER}
-	       ${SRC_DIAMOND_STORE_SERVER})
+  ${SRC_DIAMOND_LIB}
+  ${SRC_DIAMOND_DATA_TYPES}
+  ${SRC_DIAMOND_PROTO}
+  ${HDR_DIAMOND_PROTO}
+  ${SRC_REPLICATION_SERVER}
+  ${SRC_DIAMOND_STORE_SERVER})
 target_link_libraries(server ${PROTOBUF_LIBRARIES})
+
 
 # only create and test for x86
 if (NOT ANDROID)

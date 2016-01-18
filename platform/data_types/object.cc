@@ -1,15 +1,13 @@
-
-#include "storage/cloud.h"
-#include "storage/stalestorage.h"
 #include "includes/data_types.h"
+#include "error/error.h"
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/timestamp.h"
+#include "store/client.h"
 #include <unordered_map>
 #include <map>
 #include <inttypes.h>
 #include <set>
-
 
 namespace diamond {
 
@@ -25,12 +23,12 @@ bool networkConnectivity = false;
 Client* store = NULL;
 bool debugMultiMapIndividual = false;
 
-void DiamondInit(const std::string &server) {
-    store = Cloud::Instance(server);
+void DiamondInit(const std::string &configPath, int nshards, int closestReplica) {
+   store = new strongstore::Client(configPath, nshards, closestReplica);
 }
 
 void DiamondInit() {
-    DiamondInit("localhost");
+   DiamondInit("./replicas.config", 3, 0);
 }
 
 
@@ -43,10 +41,6 @@ DObject::Map(DObject &addr, const string &key)
 
     addr._key = key;
    
-    if (!store->IsConnected()) {
-        Panic("Cannot map objects before connecting to backing store server");
-    }
-    
     int res = addr.Pull();
     //int res = 0;
 
@@ -71,7 +65,7 @@ DObject::Pull(){
         // If it's not on the stalestore
 
         ret = store->Get(_key, value);
-        if (ret != ERR_EMPTY && ret != ERR_OK) {
+        if (ret != ERR_EMPTY && ret != REPLY_OK) {
             // Bad reply case
             Panic("Unable to pull");
             value = "";
@@ -96,7 +90,7 @@ DObject::Push(){
     value = Serialize();
 
     int ret = store->Put(_key, value);
-    if (ret != ERR_OK) {
+    if (ret != REPLY_OK) {
         return ret;
     }
     return 0;
@@ -111,36 +105,28 @@ DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
         Panic("Mismatch between number of keys and DObjects");
     }
 
-    // Just for debugging
-    if(debugMultiMapIndividual){
-        for (size_t i = 0; i < keys.size(); i++) {
-            string currentKey = keys.at(i);
-            Map(*objects.at(i), currentKey);
-        }
-        return 0;
-    }
-
-    vector<string> values;
-    int ret = cloudstore->MultiGet(keys, values);
-    if (ret != ERR_OK) {
-        return ret;
-    }
-
-    if (keys.size() != values.size()) {
-        Panic("Mismatch between number of keys and values returned by MultiGet");
-    }
-
-    for (size_t i = 0; i < keys.size(); i++) {
-        pthread_mutex_lock(&objects.at(i)->_objectMutex);
-
-        string currentKey = keys.at(i);
-        objects.at(i)->_key = currentKey;
-        objects.at(i)->Deserialize(values.at(i));
-
-        pthread_mutex_unlock(&objects.at(i)->_objectMutex);
-    }
-
     return 0;
+    // vector<string> values;
+    // // int ret = cloudstore->MultiGet(keys, values);
+    // // if (ret != REPLY_OK) {
+    // //     return ret;
+    // // }
+
+    // if (keys.size() != values.size()) {
+    //     Panic("Mismatch between number of keys and values returned by MultiGet");
+    // }
+
+    // for (size_t i = 0; i < keys.size(); i++) {
+    //     pthread_mutex_lock(&objects.at(i)->_objectMutex);
+
+    //     string currentKey = keys.at(i);
+    //     objects.at(i)->_key = currentKey;
+    //     objects.at(i)->Deserialize(values.at(i));
+
+    //     pthread_mutex_unlock(&objects.at(i)->_objectMutex);
+    // }
+
+    // return 0;
 }
 
 } // namespace diamond

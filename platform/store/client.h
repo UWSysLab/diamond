@@ -37,11 +37,11 @@
 #include "lib/configuration.h"
 #include "lib/udptransport.h"
 #include "store/common/frontend/client.h"
-#include "replication/vr/client.h"
+#include "replication/client.h"
 #include "store/common/frontend/bufferclient.h"
 #include "store/common/truetime.h"
-#include "store/strongstore/strong-proto.pb.h"
-#include "store/strongstore/shardclient.h"
+#include "store-proto.pb.h"
+#include "store/shardclient.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -54,8 +54,8 @@ namespace strongstore {
 class Client : public ::Client
 {
 public:
-    Client(Mode mode, string configPath, int nshards,
-            int closestReplica, TrueTime timeServer);
+    Client(string configPath, int nshards,
+            int closestReplica);
     ~Client();
 
     // Overriding functions from ::Client
@@ -97,11 +97,8 @@ private:
     // Buffering client for each shard.
     std::vector<BufferClient *> bclient;
 
-    // Mode in which spanstore runs.
-    Mode mode;
-
     // Timestamp server shard.
-    replication::vr::VRClient *tss; 
+    replication::VRClient *tss; 
 
     // TrueTime server.
     TrueTime timeServer;

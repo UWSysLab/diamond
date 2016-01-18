@@ -29,12 +29,12 @@
  **********************************************************************/
 
 #include "replication/common/client.h"
-#include "replication/common/request.pb.h"
+#include "request.pb.h"
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/transport.h"
 #include "replication/client.h"
-#include "replication/vr-proto.pb.h"
+#include "vr-proto.pb.h"
 
 namespace replication {
 

@@ -49,7 +49,7 @@ ShardClient::ShardClient(Mode mode, const string &configPath,
     }
     transport::Configuration config(configStream);
 
-    client = new replication::vr::VRClient(config, transport);
+    client = new replication::VRClient(config, transport);
 
     if (mode == MODE_OCC || mode == MODE_SPAN_OCC) {
         if (closestReplica == -1) {

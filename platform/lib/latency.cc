@@ -43,7 +43,7 @@
 #include <fstream>
 
 #include "lib/message.h"
-#include "lib/latency-format.pb.h"
+#include "latency-format.pb.h"
 
 static struct Latency_t *latencyHead;
 

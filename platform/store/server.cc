@@ -38,22 +38,9 @@ namespace strongstore {
 
 using namespace proto;
 
-Server::Server(Mode mode, uint64_t skew, uint64_t error) : mode(mode)
+Server::Server()
 {
-    timeServer = TrueTime(skew, error);
-
-    switch (mode) {
-    case MODE_LOCK:
-    case MODE_SPAN_LOCK:
-        store = new strongstore::LockStore();
-        break;
-    case MODE_OCC:
-    case MODE_SPAN_OCC:
-        store = new strongstore::OCCStore();
-        break;
-    default:
-        NOT_REACHABLE();
-    }
+    store = new strongstore::OCCStore();
 }
 
 Server::~Server()
@@ -102,9 +89,6 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         if (status == 0) {
             replicate = true;
             // get a prepare timestamp and send along to replicas
-            if (mode == MODE_SPAN_LOCK || mode == MODE_SPAN_OCC) {
-                request.mutable_prepare()->set_timestamp(timeServer.GetTime());
-            }
             request.SerializeToString(&str2);
         } else {
             // if abort, don't replicate
@@ -151,9 +135,6 @@ Server::ReplicaUpcall(opnum_t opnum,
         // get a prepare timestamp and return to client
         store->Prepare(request.txnid(),
                        Transaction(request.prepare().txn()));
-        if (mode == MODE_SPAN_LOCK || mode == MODE_SPAN_OCC) {
-            reply.set_timestamp(request.prepare().timestamp());
-        }
         break;
     case strongstore::proto::Request::COMMIT:
         store->Commit(request.txnid(), request.commit().timestamp());
@@ -214,8 +195,6 @@ main(int argc, char **argv)
     unsigned int myShard=0, maxShard=1, nKeys=1;
     const char *configPath = NULL;
     const char *keyPath = NULL;
-    int64_t skew = 0, error = 0;
-    strongstore::Mode mode;
 
     // Parse arguments
     int opt;
@@ -236,44 +215,6 @@ main(int argc, char **argv)
             break;
         }
         
-        case 'm':
-        {
-            if (strcasecmp(optarg, "lock") == 0) {
-                mode = strongstore::MODE_LOCK;
-            } else if (strcasecmp(optarg, "occ") == 0) {
-                mode = strongstore::MODE_OCC;
-            } else if (strcasecmp(optarg, "span-lock") == 0) {
-                mode = strongstore::MODE_SPAN_LOCK;
-            } else if (strcasecmp(optarg, "span-occ") == 0) {
-                mode = strongstore::MODE_SPAN_OCC;
-            } else {
-                fprintf(stderr, "unknown mode '%s'\n", optarg);
-            }
-            break;
-        }
-
-        case 's':
-        {
-            char *strtolPtr;
-            skew = strtoul(optarg, &strtolPtr, 10);
-            if ((*optarg == '\0') || (*strtolPtr != '\0') || (skew < 0))
-            {
-                fprintf(stderr, "option -s requires a numeric arg\n");
-            }
-            break;
-        }
-
-        case 'e':
-        {
-            char *strtolPtr;
-            error = strtoul(optarg, &strtolPtr, 10);
-            if ((*optarg == '\0') || (*strtolPtr != '\0') || (error < 0))
-            {
-                fprintf(stderr, "option -e requires a numeric arg\n");
-            }
-            break;
-        }
-
         case 'k':
         {
             char *strtolPtr;
@@ -328,10 +269,6 @@ main(int argc, char **argv)
         fprintf(stderr, "option -i is required\n");
     }
 
-    if (mode == strongstore::MODE_UNKNOWN) {
-        fprintf(stderr, "option -m is required\n");
-    }
-
     // Load configuration
     std::ifstream configStream(configPath);
     if (configStream.fail()) {
@@ -346,8 +283,8 @@ main(int argc, char **argv)
 
     UDPTransport transport(0.0, 0.0, 0);
 
-    strongstore::Server server(mode, skew, error);
-    replication::vr::VRReplica replica(config, index, &transport, 1, &server);
+    strongstore::Server server = strongstore::Server();
+    replication::VRReplica replica(config, index, &transport, 1, &server);
     
     if (keyPath) {
         string key;

@@ -37,11 +37,11 @@
 #include "lib/message.h"
 #include "lib/transport.h"
 #include "store/common/frontend/client.h"
-#include "replication/vr/client.h"
+#include "replication/client.h"
 #include "store/common/frontend/txnclient.h"
 #include "store/common/timestamp.h"
 #include "store/common/transaction.h"
-#include "store/strongstore/strong-proto.pb.h"
+#include "store-proto.pb.h"
 
 #include <string>
 #include <mutex>
@@ -96,7 +96,7 @@ private:
     int shard; // which shard this client accesses
     int replica; // which replica to use for reads
 
-    replication::vr::VRClient *client; // Client proxy.
+    replication::VRClient *client; // Client proxy.
     Promise *waiting; // waiting thread
     Promise *blockingBegin; // block until finished 
 

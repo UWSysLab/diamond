@@ -64,7 +64,7 @@ Client::Client(Mode mode, string configPath, int nShards,
                     tssConfigPath.c_str());
         }
         transport::Configuration tssConfig(tssConfigStream);
-        tss = new replication::vr::VRClient(tssConfig, &transport);
+        tss = new replication::VRClient(tssConfig, &transport);
     }
 
     /* Start a client for each shard. */

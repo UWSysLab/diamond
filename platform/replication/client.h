@@ -34,7 +34,7 @@
 
 #include "replication/common/client.h"
 #include "lib/configuration.h"
-#include "replication/vr-proto.pb.h"
+#include "vr-proto.pb.h"
 
 namespace replication {
 

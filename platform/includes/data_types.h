@@ -26,7 +26,30 @@ using namespace std;
 #define LOCK_DURATION_MS (5*1000)
 
 void DiamondInit();
-void DiamondInit(const std::string &server);
+void DiamondInit(const std::string &server, int nshards, int closestReplica);
+
+class DObject
+{
+public:
+    static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
+    static int Map(DObject &addr, const std::string &key);
+    
+protected:
+    DObject() : _key("dummykey") {};
+    DObject(const std::string &key) : _key(key) {};
+    virtual ~DObject() {};
+    std::string _key;
+    pthread_mutex_t  _objectMutex = PTHREAD_MUTEX_INITIALIZER;
+
+    virtual std::string Serialize() = 0;
+    virtual void Deserialize(const std::string &s) = 0;
+    int Push();
+    int Pull();
+
+private:
+    uint64_t _lockid = 0;
+    long _locked = 0;
+};
 
 class DString : public DObject 
 {

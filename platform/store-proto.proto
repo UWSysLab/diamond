@@ -1,4 +1,4 @@
-import "store/common/common-proto.proto";
+import "common-proto.proto";
 
 package strongstore.proto;
 
