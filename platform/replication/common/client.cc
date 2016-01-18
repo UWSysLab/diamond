@@ -29,7 +29,7 @@
  **********************************************************************/
 
 #include "replication/common/client.h"
-#include "replication/common/request.pb.h"
+#include "request.pb.h"
 #include "lib/message.h"
 #include "lib/transport.h"
 

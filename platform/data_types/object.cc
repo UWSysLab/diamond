@@ -1,5 +1,5 @@
 #include "includes/data_types.h"
-#include "error/error.h"
+#include "includes/error.h"
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/timestamp.h"
@@ -54,7 +54,7 @@ DObject::Map(DObject &addr, const string &key)
 int
 DObject::Pull(){
     string value;
-    LOG_RC("Pull()"); 
+    Debug("Pull()"); 
 
     int ret;
     
@@ -65,14 +65,14 @@ DObject::Pull(){
         // If it's not on the stalestore
 
         ret = store->Get(_key, value);
-        if (ret != ERR_EMPTY && ret != REPLY_OK) {
+        if (ret != REPLY_NOT_FOUND && ret != REPLY_OK) {
             // Bad reply case
             Panic("Unable to pull");
             value = "";
             return ret;
         }
 
-        if (ret == ERR_EMPTY) {
+        if (ret == REPLY_NOT_FOUND) {
             value = "";
         }
     // }
@@ -85,7 +85,7 @@ DObject::Pull(){
 int
 DObject::Push(){
     string value;
-    LOG_RC("PushAlways()"); 
+    Debug("PushAlways()"); 
 
     value = Serialize();
 

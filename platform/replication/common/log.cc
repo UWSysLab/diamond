@@ -29,7 +29,7 @@
  **********************************************************************/
 
 #include "replication/common/log.h"
-#include "replication/common/request.pb.h"
+#include "request.pb.h"
 #include "lib/assert.h"
 
 #include <openssl/sha.h>

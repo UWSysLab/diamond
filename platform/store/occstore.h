@@ -35,6 +35,7 @@
 
 #include "lib/assert.h"
 #include "lib/message.h"
+#include "includes/error.h"
 #include "store/common/backend/versionstore.h"
 #include "store/common/backend/txnstore.h"
 #include "store/common/transaction.h"

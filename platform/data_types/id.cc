@@ -7,7 +7,6 @@
  *
  **********************************************************************/
 
-#include "storage/cloud.h"
 #include "includes/data_types.h"
 #include "lib/assert.h"
 #include "lib/message.h"

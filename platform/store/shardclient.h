@@ -36,6 +36,7 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/transport.h"
+#include "includes/error.h"
 #include "store/common/frontend/client.h"
 #include "replication/client.h"
 #include "store/common/frontend/txnclient.h"
@@ -49,19 +50,11 @@
 
 namespace strongstore {
 
-enum Mode {
-    MODE_UNKNOWN,
-    MODE_OCC,
-    MODE_LOCK,
-    MODE_SPAN_OCC,
-    MODE_SPAN_LOCK
-};
-
 class ShardClient : public TxnClient
 {
 public:
     /* Constructor needs path to shard config. */
-    ShardClient(Mode mode,
+    ShardClient(
         const std::string &configPath, 
         Transport *transport,
         uint64_t client_id,

@@ -34,7 +34,7 @@
 #define _COMMON_CLIENT_H_
 
 #include "lib/configuration.h"
-#include "replication/common/request.pb.h"
+#include "request.pb.h"
 #include "lib/transport.h"
 
 

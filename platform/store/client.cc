@@ -36,9 +36,9 @@ using namespace std;
 
 namespace strongstore {
 
-Client::Client(Mode mode, string configPath, int nShards,
-                int closestReplica, TrueTime timeServer)
-    : transport(0.0, 0.0, 0), mode(mode), timeServer(timeServer)
+Client::Client(string configPath, int nShards,
+                int closestReplica)
+    : transport(0.0, 0.0, 0)
 {
     // Initialize all state here;
     client_id = 0;
@@ -56,21 +56,19 @@ Client::Client(Mode mode, string configPath, int nShards,
     Debug("Initializing SpanStore client with id [%lu]", client_id);
 
     /* Start a client for time stamp server. */
-    if (mode == MODE_OCC) {
-        string tssConfigPath = configPath + ".tss.config";
-        ifstream tssConfigStream(tssConfigPath);
-        if (tssConfigStream.fail()) {
-            fprintf(stderr, "unable to read configuration file: %s\n",
-                    tssConfigPath.c_str());
-        }
-        transport::Configuration tssConfig(tssConfigStream);
-        tss = new replication::VRClient(tssConfig, &transport);
+    string tssConfigPath = configPath + ".tss.config";
+    ifstream tssConfigStream(tssConfigPath);
+    if (tssConfigStream.fail()) {
+	fprintf(stderr, "unable to read configuration file: %s\n",
+		tssConfigPath.c_str());
     }
-
+    transport::Configuration tssConfig(tssConfigStream);
+    tss = new replication::VRClient(tssConfig, &transport);
+    
     /* Start a client for each shard. */
     for (int i = 0; i < nShards; i++) {
         string shardConfigPath = configPath + to_string(i) + ".config";
-        ShardClient *shardclient = new ShardClient(mode, shardConfigPath,
+        ShardClient *shardclient = new ShardClient(shardConfigPath,
             &transport, client_id, i, closestReplica);
         bclient[i] = new BufferClient(shardclient);
     }
@@ -171,20 +169,17 @@ Client::Prepare(uint64_t &ts)
     }
 
     // In the meantime ... go get a timestamp for OCC
-    if (mode == MODE_OCC) {
-        // Have to go to timestamp server
-        unique_lock<mutex> lk(cv_m);
+    unique_lock<mutex> lk(cv_m);
 
-        Debug("Sending request to TimeStampServer");
-        tss->Invoke("", bind(&Client::tssCallback, this,
-                             placeholders::_1,
-                             placeholders::_2));
+    Debug("Sending request to TimeStampServer");
+    tss->Invoke("", bind(&Client::tssCallback, this,
+			 placeholders::_1,
+			 placeholders::_2));
         
-        Debug("Waiting for TSS reply");
-        cv.wait(lk);
-        ts = stol(replica_reply, NULL, 10);
-        Debug("TSS reply received: %lu", ts);
-    }
+    Debug("Waiting for TSS reply");
+    cv.wait(lk);
+    ts = stol(replica_reply, NULL, 10);
+    Debug("TSS reply received: %lu", ts);
 
     // 2. Wait for reply from all shards. (abort on timeout)
     Debug("Waiting for PREPARE replies");
@@ -222,41 +217,6 @@ Client::Commit()
     }
 
     if (status == REPLY_OK) {
-        // For Spanner like systems, calculate timestamp.
-        if (mode == MODE_SPAN_OCC || mode == MODE_SPAN_LOCK) {
-            uint64_t now, err;
-            struct timeval t1, t2;
-
-            gettimeofday(&t1, NULL);
-            timeServer.GetTimeAndError(now, err);
-
-            if (now > ts) {
-                ts = now;
-            } else {
-                uint64_t diff = ((ts >> 32) - (now >> 32))*1000000 +
-                        ((ts & 0xffffffff) - (now & 0xffffffff));
-                err += diff;
-            }
-
-            commit_sleep = (int)err;
-
-            // how good are we at waking up on time?
-            Debug("Commit wait sleep: %lu", err);
-            if (err > 1000000)
-                Warning("Sleeping for too long! %lu; now,ts: %lu,%lu", err, now, ts);
-            if (err > 150) {
-                usleep(err-150);
-            }
-            // fine grained busy-wait
-            while (1) {
-                gettimeofday(&t2, NULL);
-                if ((t2.tv_sec-t1.tv_sec)*1000000 +
-                    (t2.tv_usec-t1.tv_usec) > (int64_t)err) {
-                    break;
-                }
-            }
-        }
-
         // Send commits
         Debug("COMMIT Transaction at [%lu]", ts);
 

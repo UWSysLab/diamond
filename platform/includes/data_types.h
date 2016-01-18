@@ -213,24 +213,24 @@ private:
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
-class DStringQueue : public DObject
-{
-public:
-    DStringQueue() {};
-    DStringQueue(const std::string &key) : DObject(key) {};
-    ~DStringQueue() {};
-    void Queue(const std::string val);
-    void Dequeue(const std::string val); /* Removes the first copy of val, if present */
-    int Size();
-    int Clear();
-//    DStringQueue & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+// class DStringQueue : public DObject
+// {
+// public:
+//     DStringQueue() {};
+//     DStringQueue(const std::string &key) : DObject(key) {};
+//     ~DStringQueue() {};
+//     void Queue(const std::string val);
+//     void Dequeue(const std::string val); /* Removes the first copy of val, if present */
+//     int Size();
+//     int Clear();
+// //    DStringQueue & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
     
-private:
-    DStringList list;
+// private:
+//     DStringList list;
 
-    std::string Serialize();
-    void Deserialize(const std::string &s);
-};
+//     std::string Serialize();
+//     void Deserialize(const std::string &s);
+// };
 
 
 class DID : public DObject 
@@ -248,28 +248,6 @@ private:
     std::string Serialize();
     void Deserialize(const std::string &s);
 };
-
-class DRedisStringList
-{
-public:
-    DRedisStringList() {};
-    DRedisStringList(const std::string &key) : _key(key) {};
-    ~DRedisStringList() {};
-    std::vector<std::string> Members();
-    std::string Value(const int index);
-    void Append(const std::string &val);
-    void Append(const std::vector<std::string> &vec);
-    void EraseFirst();
-    void Remove(const std::string &val);
-    void Clear();
-    long Size();
-    DRedisStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
-    
-private:
-    std::string _key;
-};
-
-
 
 } // namespace diamond
 

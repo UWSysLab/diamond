@@ -32,6 +32,7 @@
 #ifndef _BUFFER_CLIENT_H_
 #define _BUFFER_CLIENT_H_
 
+#include "includes/error.h"
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "store/common/transaction.h"

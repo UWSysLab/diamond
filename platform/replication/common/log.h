@@ -31,7 +31,7 @@
 #ifndef _COMMON_LOG_H_
 #define _COMMON_LOG_H_
 
-#include "replication/common/request.pb.h"
+#include "request.pb.h"
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/transport.h"

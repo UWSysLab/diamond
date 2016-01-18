@@ -37,7 +37,7 @@ namespace strongstore {
 using namespace std;
 using namespace proto;
 
-ShardClient::ShardClient(Mode mode, const string &configPath,
+ShardClient::ShardClient(const string &configPath,
                        Transport *transport, uint64_t client_id, int
                        shard, int closestReplica)
     : transport(transport), client_id(client_id), shard(shard)
@@ -51,17 +51,13 @@ ShardClient::ShardClient(Mode mode, const string &configPath,
 
     client = new replication::VRClient(config, transport);
 
-    if (mode == MODE_OCC || mode == MODE_SPAN_OCC) {
-        if (closestReplica == -1) {
-            replica = client_id % config.n;
-        } else {
-            replica = closestReplica;
-        }
-        Debug("Sending unlogged to replica %i", replica);
+    if (closestReplica == -1) {
+	replica = client_id % config.n;
     } else {
-        replica = 0;
+	replica = closestReplica;
     }
-
+    Debug("Sending unlogged to replica %i", replica);
+    
     waiting = NULL;
     blockingBegin = NULL;
 }
