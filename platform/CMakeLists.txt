@@ -38,12 +38,14 @@ include_directories(${DIAMOND_SOURCE_DIR})
 # Add protobufs
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
-PROTOBUF_GENERATE_CPP(SRC_DIAMOND_PROTO HDR_DIAMOND_PROTO
+PROTOBUF_GENERATE_CPP(SRC_DIAMOND_REPLICATION_PROTO HDR_DIAMOND_REPLICATION_PROTO
   ${DIAMOND_SOURCE_DIR}/request.proto
   ${DIAMOND_SOURCE_DIR}/vr-proto.proto
+  ${DIAMOND_SOURCE_DIR}/latency-format.proto)
+
+PROTOBUF_GENERATE_CPP(SRC_DIAMOND_STORE_PROTO HDR_DIAMOND_STORE_PROTO
   ${DIAMOND_SOURCE_DIR}/common-proto.proto
-  ${DIAMOND_SOURCE_DIR}/store-proto.proto
-    ${DIAMOND_SOURCE_DIR}/latency-format.proto)
+  ${DIAMOND_SOURCE_DIR}/store-proto.proto)
 include_directories(${PROJECT_BINARY_DIR})
 
 if(APPLE)
@@ -69,8 +71,10 @@ add_subdirectory(store)
 add_library(diamond SHARED
             ${SRC_DIAMOND_LIB}
 	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_PROTO}
-	    ${HDR_DIAMOND_PROTO}
+	    ${SRC_DIAMOND_REPLICATION_PROTO}
+	    ${HDR_DIAMOND_REPLICATION_PROTO}
+	    ${SRC_DIAMOND_STORE_PROTO}
+	    ${HDR_DIAMOND_STORE_PROTO}
 	    ${SRC_DIAMOND_REPLICATION_CLIENT}
             ${SRC_DIAMOND_STORE_CLIENT})
 target_link_libraries(diamond ${PROTOBUF_LIBRARIES})
@@ -81,12 +85,25 @@ else()
   # Set up the executable for the Diamond server
   add_executable(server
     ${SRC_DIAMOND_LIB}
-    ${SRC_DIAMOND_PROTO}
-    ${HDR_DIAMOND_PROTO}
+    ${SRC_DIAMOND_REPLICATION_PROTO}
+    ${HDR_DIAMOND_REPLICATION_PROTO}
+    ${SRC_DIAMOND_STORE_PROTO}
+    ${HDR_DIAMOND_STORE_PROTO}
     ${SRC_DIAMOND_REPLICATION_SERVER}
     ${SRC_DIAMOND_STORE_SERVER})
   target_link_libraries(server ${PROTOBUF_LIBRARIES})
   target_link_libraries(server pthread)
+
+  # compile the timestamp server
+  add_subdirectory(timeserver)
+  add_executable(tss
+    ${SRC_DIAMOND_TIMESERVER}
+    ${SRC_DIAMOND_LIB}
+    ${SRC_DIAMOND_REPLICATION_PROTO}
+    ${HDR_DIAMOND_REPLICATION_PROTO}
+    ${SRC_DIAMOND_REPLICATION_SERVER})
+  target_link_libraries(tss ${PROTOBUF_LIBRARIES})
+  target_link_libraries(tss pthread)
 
   # Add Libevent
   find_package (LibEvent)
@@ -94,11 +111,13 @@ else()
     include_directories(${LIBEVENT_INCLUDE_DIR})
     target_link_libraries (server ${LIBEVENT_LIB})
     target_link_libraries (diamond ${LIBEVENT_LIB})
+    target_link_libraries (tss ${LIBEVENT_LIB})
   else()
     find_package (LibUV REQUIRED)
     include_directories(${LIBUV_INCLUDE_DIRS})
     target_link_libraries (diamond ${LIBUV_LIBRARIES})
     target_link_libraries (server ${LIBUV_LIBRARIES})
+    target_link_libraries (tss ${LIBUV_LIBRARIES})
   endif (LibEvent_FOUND)
 
   # Add python bindings for Linux and Mac OSX
@@ -109,6 +128,7 @@ else()
   include_directories(${OPENSSL_INCLUDE_DIR})
   target_link_libraries (server ${OPENSSL_LIBRARIES})
   target_link_libraries (diamond ${OPENSSL_LIBRARIES})
+  target_link_libraries (tss ${OPENSSL_LIBRARIES})
 
   # Set up testing infrastructure
   enable_testing()
