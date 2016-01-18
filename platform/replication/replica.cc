@@ -30,7 +30,7 @@
 
 #include "replication/common/replica.h"
 #include "replication/replica.h"
-#include "replication/vr-proto.pb.h"
+#include "vr-proto.pb.h"
 
 #include "lib/assert.h"
 #include "lib/configuration.h"

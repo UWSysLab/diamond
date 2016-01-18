@@ -16,7 +16,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 if (NOT ANDROID)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fstack-protector -Wall -Wno-uninitialized")
-   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fstack-protector -std=c++0x -fPIC -Wall -pthread")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fstack-protector -std=c++0x -fPIC -Wall")
 else()
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DANDROID -fstack-protector -g -Wall -Wno-uninitialized")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DANDROID -fstack-protector -g -std=c++0x -fPIC -Wall")
@@ -75,25 +75,41 @@ add_library(diamond SHARED
             ${SRC_DIAMOND_STORE_CLIENT})
 target_link_libraries(diamond ${PROTOBUF_LIBRARIES})
 
+if (ANDROID)
+     target_link_libraries (diamond -luv)
+else()
+  # Set up the executable for the Diamond server
+  add_executable(server
+    ${SRC_DIAMOND_LIB}
+    ${SRC_DIAMOND_PROTO}
+    ${HDR_DIAMOND_PROTO}
+    ${SRC_DIAMOND_REPLICATION_SERVER}
+    ${SRC_DIAMOND_STORE_SERVER})
+  target_link_libraries(server ${PROTOBUF_LIBRARIES})
+  target_link_libraries(server pthread)
 
-# Set up the executable for the Diamond server
-add_executable(server
-  ${SRC_DIAMOND_LIB}
-  ${SRC_DIAMOND_DATA_TYPES}
-  ${SRC_DIAMOND_PROTO}
-  ${HDR_DIAMOND_PROTO}
-  ${SRC_REPLICATION_SERVER}
-  ${SRC_DIAMOND_STORE_SERVER})
-target_link_libraries(server ${PROTOBUF_LIBRARIES})
+  # Add Libevent
+  find_package (LibEvent)
+  if (LibEvent_FOUND)
+    include_directories(${LIBEVENT_INCLUDE_DIR})
+    target_link_libraries (server ${LIBEVENT_LIB})
+    target_link_libraries (diamond ${LIBEVENT_LIB})
+  else()
+    find_package (LibUV REQUIRED)
+    include_directories(${LIBUV_INCLUDE_DIRS})
+    target_link_libraries (diamond ${LIBUV_LIBRARIES})
+    target_link_libraries (server ${LIBUV_LIBRARIES})
+  endif (LibEvent_FOUND)
 
-
-# only create and test for x86
-if (NOT ANDROID)
   # Add python bindings for Linux and Mac OSX
   add_subdirectory(bindings/python)
+ 
+  # add openssl
+  find_package (OpenSSL REQUIRED)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+  target_link_libraries (server ${OPENSSL_LIBRARIES})
+  target_link_libraries (diamond ${OPENSSL_LIBRARIES})
+
+  # Add tests
+  add_subdirectory(test)
 endif()
-
-# if(ANDROID)
-#   target_link_libraries(diamond -luv)
-# endif()
-

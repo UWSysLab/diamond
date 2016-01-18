@@ -33,7 +33,9 @@ class DObject
 public:
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
-    
+    static void TransactionBegin(void);
+    static int TransactionCommit(void);
+     
 protected:
     DObject() : _key("dummykey") {};
     DObject(const std::string &key) : _key(key) {};

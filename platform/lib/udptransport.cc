@@ -205,7 +205,8 @@ UDPTransport::UDPTransport(double dropRate, double reorderRate,
     if (evbase) {
         libeventBase = evbase;
     } else {
-        evthread_use_pthreads();
+	// Irene: Not sure if we have to call this
+        // evthread_use_pthreads();
         libeventBase = event_base_new();
         evthread_make_base_notifiable(libeventBase);
     }

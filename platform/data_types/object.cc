@@ -15,12 +15,14 @@ using namespace std;
 
 // Used by diamond_profile.h macros
 pthread_mutex_t  profileMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
+
 long profileEnterTs[MAX_THREAD_ID];
 
 // Used to simulate that the network is offline
 bool networkConnectivity = false;
 
-Client* store = NULL;
+strongstore::Client* store = NULL;
 bool debugMultiMapIndividual = false;
 
 void DiamondInit(const std::string &configPath, int nshards, int closestReplica) {
@@ -31,6 +33,29 @@ void DiamondInit() {
    DiamondInit("./replicas.config", 3, 0);
 }
 
+void
+DObject::TransactionBegin(void)
+{
+   pthread_mutex_lock(&transactionMutex);
+
+   Debug("TRANSACTION BEGIN");
+
+   store->Begin();
+
+   pthread_mutex_unlock(&transactionMutex);
+}
+
+int
+DObject::TransactionCommit(void)
+{
+   pthread_mutex_lock(&transactionMutex);
+   Debug("TRANSACTION COMMIT");
+
+   int ret = store->Commit();
+
+   pthread_mutex_unlock(&transactionMutex);
+   return ret;
+}
 
 // XXX: Add an assert so that we don't map inside a transaction?
 int
@@ -50,7 +75,6 @@ DObject::Map(DObject &addr, const string &key)
 }
 
 // XXX: Ensure return codes are correct
-
 int
 DObject::Pull(){
     string value;

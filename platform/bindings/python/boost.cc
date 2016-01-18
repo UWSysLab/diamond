@@ -19,7 +19,7 @@ using namespace boost::python;
 BOOST_PYTHON_MODULE(libpydiamond)
 {
     void (*DiamondInitNoArgs)() = &DiamondInit;
-    void (*DiamondInitWithArgs)(const std::string &) = &DiamondInit;
+    void (*DiamondInitWithArgs)(const std::string &, int nshards, int closestReplicat) = &DiamondInit;
     def("DiamondInit", DiamondInitNoArgs);
     def("DiamondInit", DiamondInitWithArgs);
 
@@ -27,7 +27,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
     class_<DObject, boost::noncopyable>("DObject", no_init)
         .def("TransactionBegin", TransactionBegin)
         .def("TransactionCommit", &DObject::TransactionCommit)
-        .def("TransactionRetry", &DObject::TransactionRetry)
+//        .def("TransactionRetry", &DObject::TransactionRetry)
         .def("Map", &DObject::Map)
     ;
 
