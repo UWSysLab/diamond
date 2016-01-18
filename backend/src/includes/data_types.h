@@ -25,17 +25,94 @@ using namespace std;
 
 #define LOCK_DURATION_MS (5*1000)
 
+enum DConsistency {RELEASE_CONSISTENCY, SEQUENTIAL_CONSISTENCY};
+enum txFinishAction {COMMIT, ROLLBACK, RETRY};
+enum txInterruptAction {CONTINUE, STOP};
+
 void DiamondInit();
-void DiamondInit(const std::string &server, int nshards, int closestReplica);
+void DiamondInit(const std::string &server);
+
+
+typedef struct structTransactionState {
+    // Counts the number of atomic reads that hit the redis server (multiple reads count as one if they're atomic)
+    // If the value of cloudAtomicReadCount is one by the end of the transaction, we know there weren't inconsistent reads
+    int cloudAtomicReadCount; 
+
+    std::set<std::string> rs; 
+    std::set<std::string> ws; 
+    std::map<std::string, std::string > localView; // Content of the values read/written inside the transaction
+
+    std::set<string> txPrefetchKeys; // User-specified set of keys that are expected to be used together in this specific transaction
+    std::map<string, string> txPrefetchKeyValues;
+    bool optionLearnPrefetchSet;
+    bool optionReadLocalOnly;
+
+    unsigned long timeoutNextMs;
+    unsigned long timeoutPeriodMs;
+    enum txInterruptAction (*disconnectHandler)(void*);
+    enum txInterruptAction (*timeoutHandler)(void*);
+    void * txArg;
+
+    bool aborted;
+} TransactionState;
 
 class DObject
 {
 public:
+	void Lock();
+	void ContinueLock();
+	void Unlock();
+	void Signal();
+	void Broadcast();
+	void Wait();
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
+
+
     static void TransactionBegin(void);
     static int TransactionCommit(void);
-     
+    static void TransactionRollback(void);
+    static void TransactionRetry(void);
+    static bool TransactionExecute(enum txFinishAction (*tx)(void*), void * txArg, unsigned int maxAttempts);
+    static bool TransactionExecute(enum txFinishAction (*tx)(void*), 
+                                    enum txInterruptAction (*disconnected)(void*), 
+                                    enum txInterruptAction (*timedOut)(void*), 
+                                    void * txArg, unsigned int maxAttempts, unsigned long timeoutMs);
+    
+    static void TransactionHandleTimeout(void);
+    static void TransactionHandleDisconnect(void);
+
+
+    static void TransactionOptionPrefetch(set<string> &txPrefetchKeys);
+    static void TransactionOptionPrefetch(set<DObject*> &txPrefetch);
+    static void TransactionOptionPrefetch(vector<DObject *> &txPrefetch);
+    static void TransactionOptionPrefetchAuto(bool enable);
+    static void TransactionOptionLocalOnly(bool enable);
+
+    static void PrefetchKeySet(string& key, string &value, const set<string>& keySet);
+    static int Prefetch(string key, string &value);
+    static void PrefetchLearn(std::set<string> &rs);
+
+    static void PrefetchGlobalAddSet(set<DObject*> &prefetchSet); 
+    static void PrefetchGlobalAddSet(set<string> &prefetchSet); 
+    static void PrefetchGlobalAddSet(vector<DObject*> &prefetchSet); 
+    static void PrefetchGlobalAddSet(vector<string> &prefetchSet); 
+    static void PrefetchGlobalRemoveSet(set<DObject*> &prefetchSet); 
+    static void PrefetchGlobalRemoveSet(set<string> &prefetchSet); 
+
+    static void SetNetworkConnectivity(bool connectivity);
+    std::string GetKey(void);
+
+    static void SetGlobalPrefetch(bool enable);
+    static void SetGlobalStaleness(bool enable);
+    static void SetGlobalMaxStaleness(long maxStalenessMs);
+    void SetGlobalConsistency(enum DConsistency dc); // Made obsolete by the transactions?!
+    static void SetGlobalRedisWait(bool enable, int replicas, int timeout);
+
+
+    static void DebugSleep(long seconds);
+    static void DebugMultiMapIndividualSet(bool enable);
+
 protected:
     DObject() : _key("dummykey") {};
     DObject(const std::string &key) : _key(key) {};
@@ -49,9 +126,24 @@ protected:
     int Pull();
 
 private:
-    uint64_t _lockid = 0;
-    long _locked = 0;
+	uint64_t _lockid = 0;
+	long _locked = 0;
+
+	void LockNotProtected(); // Callee should hold the _objectMutex
+	void UnlockNotProtected(); // Callee should hold the _objectMutex
+    int PushAlways();
+    int PullAlways();
+    int PullAlwaysWatch();
+
+    static bool IsTransactionInProgress(void);
+    static void SetTransactionInProgress(bool res);
+    static void SetTransactionPrefetchKeys(set<string> &txPrefetchSet);
+    static set<string> GetKeys(set<DObject*> &objs);
+
+    static TransactionState* GetTransactionState(void);
+  
 };
+
 
 class DString : public DObject 
 {
@@ -112,7 +204,6 @@ private:
     void Deserialize(const std::string &s);
     void SetNotProtected(const int val);
 };
-
 
 class DSet : public DObject
 {
@@ -241,24 +332,24 @@ private:
     int IndexNotProtected(const std::string val); /* Returns the index of the first copy of val, or -1 if not present */
 };
 
-// class DStringQueue : public DObject
-// {
-// public:
-//     DStringQueue() {};
-//     DStringQueue(const std::string &key) : DObject(key) {};
-//     ~DStringQueue() {};
-//     void Queue(const std::string val);
-//     void Dequeue(const std::string val); /* Removes the first copy of val, if present */
-//     int Size();
-//     int Clear();
-// //    DStringQueue & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+class DStringQueue : public DObject
+{
+public:
+    DStringQueue() {};
+    DStringQueue(const std::string &key) : DObject(key) {};
+    ~DStringQueue() {};
+    void Queue(const std::string val);
+    void Dequeue(const std::string val); /* Removes the first copy of val, if present */
+    int Size();
+    int Clear();
+//    DStringQueue & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
     
-// private:
-//     DStringList list;
+private:
+    DStringList list;
 
-//     std::string Serialize();
-//     void Deserialize(const std::string &s);
-// };
+    std::string Serialize();
+    void Deserialize(const std::string &s);
+};
 
 
 class DID : public DObject 
@@ -295,6 +386,92 @@ private:
     void SetNotProtected(const bool b);
 };
 
+class DRedisStringList
+{
+public:
+    DRedisStringList() {};
+    DRedisStringList(const std::string &key) : _key(key) {};
+    ~DRedisStringList() {};
+    std::vector<std::string> Members();
+    std::string Value(const int index);
+    void Append(const std::string &val);
+    void Append(const std::vector<std::string> &vec);
+    void EraseFirst();
+    void Remove(const std::string &val);
+    void Clear();
+    long Size();
+    DRedisStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+    
+private:
+    std::string _key;
+};
+
+
+
 } // namespace diamond
+
+
+//#define DEBUG_RC
+
+#ifdef DEBUG_RC
+#define LOG_RC(str) { Notice("[%ld] Key %s: %s\n", getThreadID(), this->_key.c_str(), str);}
+#else // DEBUG_RC
+#define LOG_RC(str) { }
+#endif // DEBUG_RC
+
+
+
+//#define DEBUG_TX
+
+#ifdef DEBUG_TX
+#define LOG_TX(str) {\
+    Notice("[%ld] %s\n", getThreadID(), str);\
+}
+#define LOG_TX_DUMP_RS() {\
+        std::set<string>* txRS = GetTransactionRS();\
+        int i = 0;\
+        Notice("[%ld] RS size = %ld\n", getThreadID(), txRS->size());\
+        auto it = txRS->begin();\
+        std::map<string, string >* locals = GetTransactionLocals();\
+        for (; it != txRS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it).c_str();\
+             Notice("[%ld] RS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#define LOG_TX_DUMP_WS() {\
+        std::set<string>* txWS = GetTransactionWS();\
+        int i = 0;\
+        Notice("[%ld] WS size = %ld\n", getThreadID(), txWS->size());\
+        auto it = txWS->begin();\
+        std::map<string, string >* locals = GetTransactionLocals();\
+        for (; it != txWS->end(); it++,i++) {\
+             const char* value = (*locals)[*it].c_str();\
+             const char* key =  (*it).c_str();\
+             Notice("[%ld] WS slot %d: Key = %s, Value = %s\n", getThreadID(), i, key, value);\
+        }\
+    }
+#else  // DEBUG_TX
+#define LOG_TX(str) {}
+#define LOG_TX_DUMP_RS() {}
+#define LOG_TX_DUMP_WS() {}
+#endif // DEBUG_TX
+
+
+
+//#define DEBUG_PREFETCH
+#ifdef DEBUG_PREFETCH
+#define LOG_PREFETCH(str){\
+    Notice("%s", str);\
+}
+#define LOG_PREFETCH_ARGS(fmt,...){\
+    Notice(fmt, __VA_ARGS__);\
+}
+#else
+#define LOG_PREFETCH(str) {}
+#define LOG_PREFETCH_ARGS(fmt,...){}
+#endif
+
+
 
 #endif 

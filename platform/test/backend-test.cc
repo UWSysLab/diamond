@@ -230,6 +230,59 @@ TEST(DStringList, Map) {
     EXPECT_EQ(list2.Size(), 0);
 }
 
+TEST(DBooleanList, Map) {
+    DiamondInit();
+
+    DBooleanList list1;
+    DBooleanList list2;
+
+    int ret = DBooleanList::Map(list1, std::string("15"));
+    list1.Clear();
+    list1.Append(true);
+    list1.Append(false);
+
+    ret = DBooleanList::Map(list2, std::string("15"));
+
+    EXPECT_EQ(ret, REPLY_OK);
+    EXPECT_EQ(list2.Value(0), true);
+
+    list2.Append(true);
+    list2.Append(false);
+
+    EXPECT_EQ(list1.Value(3), false);
+/*
+    list1.Insert(2, false);
+
+    EXPECT_EQ(list2.Value(3), true);
+
+    EXPECT_EQ(list2.Members().size(), list2.Size()); 
+    EXPECT_EQ(list2.Members().at(1), list2.Value(1));
+    EXPECT_EQ(list2.Members().at(2), list2.Value(2));
+
+    list1.Erase(3);
+    EXPECT_EQ(list2.Value(3), false);
+
+    list1.Clear();
+    EXPECT_EQ(list2.Size(), 0);
+*/
+}
+
+TEST(DBoolean, Map) {
+    DiamondInit();
+
+    DBoolean bool1;
+    DBoolean bool2;
+
+    int ret = DBoolean::Map(bool1, std::string("test:cpp:bool"));
+    bool1 = true;
+
+    ret = DBoolean::Map(bool2, std::string("test:cpp:bool"));
+    EXPECT_EQ(bool2.Value(), true);
+
+    bool2 = false;
+    EXPECT_EQ(bool1.Value(), false);
+}
+
 TEST(DString, EmptyStrings) {
     DiamondInit();
 

@@ -548,6 +548,7 @@ class GameLetter(gtk.ToggleButton):
         gtk.ToggleButton.__init__(self)
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
         
+        self.letter = letter
         
         self.letterBox = letterBox
         
@@ -558,8 +559,6 @@ class GameLetter(gtk.ToggleButton):
         self.handlerId = 0
         self.destHandlerId = 0
         
-        self.letter = letter
-        
         self.activate()
 
     def setBackground(self):
@@ -569,14 +568,20 @@ class GameLetter(gtk.ToggleButton):
         o = manager.OptionManager()
         color = None
         if o.get_default_bool_option(USE_COLOR_LETTER, True):
-            color = o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER])
+           color = o.get_default_option(COLOR_LETTER, TILE_COLORS[TILE_LETTER])
         else:
-            color = TILE_COLORS[TILE_LETTER]
+           color = TILE_COLORS[TILE_LETTER]
         
         color = gtk.gdk.color_parse(color)
+        if self.letter == None:
+            color = None
         self.modify_bg(gtk.STATE_NORMAL, color )
         self.modify_bg(gtk.STATE_ACTIVE, color )
         self.modify_bg(gtk.STATE_PRELIGHT, color )
+    
+    def clear(self):
+        self.letter = None
+        self.refresh()
     
     def getLetter(self):
         '''
@@ -594,14 +599,8 @@ class GameLetter(gtk.ToggleButton):
         @param letter: Letter
         '''
         
-        s = letter.getLetter()
-        if letter.isBlank():
-            s = ""
-        
-        self.setLetter(s)
-        self.setScore( letter.getScore() )
-        self.setIsBlank(letter.isBlank())
-        self.set_label(letter)
+        self.letter = letter
+        self.refresh()
     
     def dragLetter(self, widget, context, selection, targetType, eventTime):
         '''
@@ -614,7 +613,8 @@ class GameLetter(gtk.ToggleButton):
         @param eventTime:
         '''
         #print 'dragging gameletter %s' % widget.getLetter().getLetter()
-        selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        if self.letter != None:
+            selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
     
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
         sourceWidget = context.get_source_widget()
@@ -673,6 +673,9 @@ class GameLetter(gtk.ToggleButton):
             widget = gtk.Label()
         else:
             self.remove(widget)
+        
+        if letter == None:
+            return
         
         l = letter.getLetter()
         s = str(letter.getScore())
