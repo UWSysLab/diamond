@@ -124,7 +124,7 @@ VRClient::SendRequest()
     reqMsg.mutable_req()->set_clientid(clientid);
     reqMsg.mutable_req()->set_clientreqid(pendingRequest->clientReqId);
     
-    //Debug("SENDING REQUEST: %lu %lu", clientid, pendingRequest->clientReqId);
+    Debug("SENDING REQUEST: %lu %lu", clientid, pendingRequest->clientReqId);
     // XXX Try sending only to (what we think is) the leader first
     transport->SendMessageToAll(this, reqMsg);
     

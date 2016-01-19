@@ -30,7 +30,7 @@ void DiamondInit(const std::string &configPath, int nshards, int closestReplica)
 }
 
 void DiamondInit() {
-   DiamondInit("local", 1, 0);
+   DiamondInit("../../test/local", 1, 0);
 }
 
 void

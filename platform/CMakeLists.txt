@@ -1,8 +1,7 @@
 # Diamond platform code
 
 cmake_minimum_required (VERSION 3.1)
-project (DIAMOND)
-
+project (DIAMOND C CXX)
 
 # ----------------------------------------------------
 # Additional CMake modules 
@@ -17,6 +16,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 if (NOT ANDROID)
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -fstack-protector -Wall -Wno-uninitialized")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -fstack-protector -std=c++0x -fPIC -Wall")
+   set(CMAKE_LD_FLAGS "-levent_pthreads")
 else()
    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DANDROID -fstack-protector -g -Wall -Wno-uninitialized")
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DANDROID -fstack-protector -g -std=c++0x -fPIC -Wall")
@@ -34,6 +34,10 @@ endif()
 
 set(DIAMOND_SOURCE_DIR ${PROJECT_SOURCE_DIR})
 include_directories(${DIAMOND_SOURCE_DIR})
+
+# Add pthreads
+find_package(Threads REQUIRED)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 
 # Add protobufs
 find_package(Protobuf REQUIRED)
@@ -78,6 +82,7 @@ add_library(diamond SHARED
 	    ${SRC_DIAMOND_REPLICATION_CLIENT}
             ${SRC_DIAMOND_STORE_CLIENT})
 target_link_libraries(diamond ${PROTOBUF_LIBRARIES})
+target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
 
 if (ANDROID)
      target_link_libraries (diamond -luv)
@@ -92,7 +97,7 @@ else()
     ${SRC_DIAMOND_REPLICATION_SERVER}
     ${SRC_DIAMOND_STORE_SERVER})
   target_link_libraries(server ${PROTOBUF_LIBRARIES})
-  target_link_libraries(server pthread)
+  target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
 
   # compile the timestamp server
   add_subdirectory(timeserver)
@@ -103,22 +108,7 @@ else()
     ${HDR_DIAMOND_REPLICATION_PROTO}
     ${SRC_DIAMOND_REPLICATION_SERVER})
   target_link_libraries(tss ${PROTOBUF_LIBRARIES})
-  target_link_libraries(tss pthread)
-
-  # Add Libevent
-  find_package (LibEvent)
-  if (LibEvent_FOUND)
-    include_directories(${LIBEVENT_INCLUDE_DIR})
-    target_link_libraries (server ${LIBEVENT_LIB})
-    target_link_libraries (diamond ${LIBEVENT_LIB})
-    target_link_libraries (tss ${LIBEVENT_LIB})
-  else()
-    find_package (LibUV REQUIRED)
-    include_directories(${LIBUV_INCLUDE_DIRS})
-    target_link_libraries (diamond ${LIBUV_LIBRARIES})
-    target_link_libraries (server ${LIBUV_LIBRARIES})
-    target_link_libraries (tss ${LIBUV_LIBRARIES})
-  endif (LibEvent_FOUND)
+  target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
 
   # Add python bindings for Linux and Mac OSX
   add_subdirectory(bindings/python)
@@ -173,10 +163,30 @@ else()
 
       add_dependencies(${GTEST_LIBRARIES} googletest)
       add_dependencies(${GTEST_MAIN_LIBRARIES} googletest)
-endif()
+    endif()
+    
+    include_directories(${GTEST_INCLUDE_DIRS})
 
-  include_directories(${GTEST_INCLUDE_DIRS})
+    # Add tests
+    add_subdirectory(test)
+  endif()
 
-  # Add tests
-  add_subdirectory(test)
-endif()
+  # Add Libevent
+find_package (LibEvent)
+if (LibEvent_FOUND)
+  include_directories(${LIBEVENT_INCLUDE_DIR})
+  target_link_libraries (server ${LIBEVENT_LIB})
+  target_link_libraries (diamond ${LIBEVENT_LIB})
+  target_link_libraries (tss ${LIBEVENT_LIB})
+else()
+  find_package (LibUV REQUIRED)
+  include_directories(${LIBUV_INCLUDE_DIRS})
+  target_link_libraries (diamond ${LIBUV_LIBRARIES})
+  target_link_libraries (server ${LIBUV_LIBRARIES})
+  target_link_libraries (tss ${LIBUV_LIBRARIES})
+endif (LibEvent_FOUND)
+
+target_link_libraries (diamond event_pthreads)
+target_link_libraries (server event_pthreads)
+target_link_libraries (tss event_pthreads)
+

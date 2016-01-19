@@ -49,7 +49,7 @@ OCCStore::Get(uint64_t id, const string &key, pair<Timestamp, string> &value)
         Debug("[%lu] GET %s %lu", id, key.c_str(), value.first.getTimestamp());
         return REPLY_OK;
     } else {
-        return REPLY_FAIL;
+        return REPLY_NOT_FOUND;
     }
 }
 
@@ -62,7 +62,7 @@ OCCStore::Get(uint64_t id, const string &key, const Timestamp &timestamp, pair<T
     if (store.get(key, timestamp, value)) {
         return REPLY_OK;
     } else {
-        return REPLY_FAIL;
+        return REPLY_NOT_FOUND;
     }
 }
 

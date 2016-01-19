@@ -134,6 +134,7 @@ ShardClient::Get(uint64_t id, const string &key,
 
     transport->Timer(0, [=]() {
 	    waiting = promise;
+	    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
             client->InvokeUnlogged(replica,
                                    request_str,
                                    bind(&ShardClient::GetCallback,

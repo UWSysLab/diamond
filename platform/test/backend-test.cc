@@ -39,9 +39,9 @@ using namespace diamond;
 
 TEST(DString, Map)
 {
-   DiamondInit("../test/local", 1, 0);
+   DiamondInit();
    
-    DString s1;
+   DString s1;
     DString s2;
 
     int ret = DString::Map(s1, std::string("10"));
