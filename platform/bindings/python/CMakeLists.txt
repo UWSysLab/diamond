@@ -21,9 +21,8 @@ if (APPLE)
    set(PYTHON_LIBRARY ${pylibpath})
 endif()
 
-find_package(PythonLibs 2.7)
-find_package(Boost)
-find_package(Boost COMPONENTS python)
+find_package(PythonLibs REQUIRED)
+find_package(Boost COMPONENTS python REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
 include_directories(${Boost_INCLUDE_DIRS})

@@ -53,7 +53,7 @@ Client::Client(string configPath, int nShards,
     nshards = nShards;
     bclient.reserve(nshards);
 
-    Debug("Initializing SpanStore client with id [%lu]", client_id);
+    Debug("Initializing Diamond Store client with id [%lu]", client_id);
 
     /* Start a client for time stamp server. */
     string tssConfigPath = configPath + ".tss.config";
@@ -76,7 +76,7 @@ Client::Client(string configPath, int nShards,
     /* Run the transport in a new thread. */
     clientTransport = new thread(&Client::run_client, this);
 
-    Debug("SpanStore client [%lu] created!", client_id);
+    Debug("Diamond Store client [%lu] created!", client_id);
 }
 
 Client::~Client()

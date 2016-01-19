@@ -39,8 +39,8 @@ using namespace diamond;
 
 TEST(DString, Map)
 {
-    DiamondInit();
-
+   DiamondInit("../test/local", 1, 0);
+   
     DString s1;
     DString s2;
 
