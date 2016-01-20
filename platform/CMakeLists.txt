@@ -169,6 +169,7 @@ else()
 
     # Add tests
     add_subdirectory(test)
+    add_subdirectory(terminalclient)
   endif()
 
   # Add Libevent
