@@ -1,5 +1,6 @@
 import unittest
 import sys
+sys.path.append("../../../build/bindings/python")
 from libpydiamond import *
     
 class TestDiamond(unittest.TestCase):
