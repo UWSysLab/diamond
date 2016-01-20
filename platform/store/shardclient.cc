@@ -56,7 +56,6 @@ ShardClient::ShardClient(const string &configPath,
     } else {
 	replica = closestReplica;
     }
-    Debug("Sending unlogged to replica %i", replica);
     
     waiting = NULL;
     blockingBegin = NULL;
@@ -100,16 +99,17 @@ ShardClient::Get(uint64_t id, const string &key, Promise *promise)
     int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
 
     transport->Timer(0, [=]() {
+	    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
 	    waiting = promise;    
-        client->InvokeUnlogged(replica,
-                               request_str,
-                               bind(&ShardClient::GetCallback,
-                                    this,
-                                    placeholders::_1,
-                                    placeholders::_2),
-                               bind(&ShardClient::GetTimeout,
-                                    this),
-                               timeout); // timeout in ms
+	    client->InvokeUnlogged(replica,
+				   request_str,
+				   bind(&ShardClient::GetCallback,
+					this,
+					placeholders::_1,
+					placeholders::_2),
+				   bind(&ShardClient::GetTimeout,
+					this),
+				   timeout); // timeout in ms
     });
 }
 

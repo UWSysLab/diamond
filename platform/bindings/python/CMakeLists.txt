@@ -21,7 +21,11 @@ if (APPLE)
    set(PYTHON_LIBRARY ${pylibpath})
 endif()
 
-find_package(PythonLibs REQUIRED)
+# finds the wrong version for Boost on Ubuntu
+# find_package(PythonLibs)
+set(PYTHON_INCLUDE_DIRS "/usr/include/python2.7")
+set(PYTHON_LIBRARIES "//usr/lib/x86_64-linux-gnu/libpython2.7.so")
+
 find_package(Boost COMPONENTS python REQUIRED)
 
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -34,7 +38,8 @@ target_link_libraries(pydiamond
 	diamond
 	${PYTHON_LIBRARIES}
 	${Boost_LIBRARIES}
-	${DIAMOND_LIB_DEPS})
-	    
+	${DIAMOND_LIB_DEPS}
+	boost_python)
+      
 add_test(NAME pybindings
          COMMAND python ${CMAKE_CURRENT_DIR}/test/test.py)

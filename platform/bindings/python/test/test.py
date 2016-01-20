@@ -104,6 +104,7 @@ class TestDiamond(unittest.TestCase):
         self.assertEquals(len(list2.Members()), 0)
 
 if __name__ == '__main__':
+    DiamondInit("../../../test/local", 1, 0)
     unittest.main()
                                                                                 
 
