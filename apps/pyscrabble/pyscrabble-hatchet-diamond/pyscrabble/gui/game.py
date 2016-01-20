@@ -15,8 +15,8 @@ except NameError:
     from sets import Set as set
 
 import sys
-sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
-sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 import ReactiveManager
 import gobject

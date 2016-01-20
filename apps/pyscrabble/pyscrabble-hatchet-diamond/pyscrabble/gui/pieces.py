@@ -8,8 +8,8 @@ from pyscrabble import gtkutil
 from pyscrabble import util
 
 import sys
-sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
-sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 import ReactiveManager
 

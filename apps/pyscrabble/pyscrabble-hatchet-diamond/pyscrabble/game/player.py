@@ -5,8 +5,8 @@ from pyscrabble import util
 from pyscrabble.game.pieces import Letter
 
 import sys
-sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
-sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 
 class User(object):

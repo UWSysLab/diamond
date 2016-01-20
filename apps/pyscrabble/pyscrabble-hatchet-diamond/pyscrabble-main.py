@@ -19,8 +19,8 @@ from pyscrabble.gui.login import LoginWindow
 import gtk
 
 import sys
-sys.path.append("/home/nl35/research/diamond-src/backend/build/src/bindings/python")
-sys.path.append("/home/nl35/research/diamond-src/backend/src/bindings/python")
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 import ReactiveManager
 import gobject
@@ -28,7 +28,7 @@ import gobject
 if __name__ == '__main__':
     
     gobject.threads_init()
-    DiamondInit()
+    DiamondInit("../../../platform/test/local", 1, 0)
     
     dist.ensure_config_dir( dist.CONFIG_DIR )
     
