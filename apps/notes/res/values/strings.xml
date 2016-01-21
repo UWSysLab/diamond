@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Notes1</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="show_notes_name">ShowNotes</string>
+    <string name="action_new">New Note</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="title_activity_edit_note">Add/Edit</string>
+    <string name="note_title_hint">Title</string>
+	<string name="note_content_hint">Content</string>
+	<string name="save_button">Save</string>
+	<string name="edit_error_title">Error!</string>
+	<string name="edit_error_message">You cannot save a note without a title</string>
+	<string name="delete_button">Delete</string>
+</resources>
