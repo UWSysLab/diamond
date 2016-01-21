@@ -1,5 +1,5 @@
 DIAMOND_SRC_DIR=$(cd ..; pwd)
-DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/backend"
+DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/platform"
 
 # build binaries
 cd $DIAMOND_BACKEND_DIR/build
