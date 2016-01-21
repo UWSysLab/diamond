@@ -1,3 +1,7 @@
 #!/usr/bin/perl
 
-system("pkill 'server -c'");
+die "usage: ./kill-servers.pl config_prefix" unless @ARGV==1;
+
+my $configPrefix = shift;
+
+system("pkill -f $configPrefix");
