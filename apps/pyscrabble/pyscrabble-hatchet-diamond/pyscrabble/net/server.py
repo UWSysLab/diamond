@@ -22,6 +22,11 @@ try:
     set
 except NameError:
     from sets import Set as set
+    
+import sys
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
+from libpydiamond import *
 
 logger = logging.getLogger("pyscrabble.net.server")
 
@@ -209,8 +214,10 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
         
         if not self.gameList.has_key(gameId):
             game = ScrabbleGame( gameId, options )
+            DObject.TransactionBegin()
             game.reset()
             game.setCreator(self.clients[client].getUsername().encode("utf-8"))
+            DObject.TransactionCommit()
             self.gameList[ gameId ] = game
             self.refreshGameList()
         else:
@@ -375,6 +382,7 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             c.sendGameList( [ScrabbleGameInfo(game) for game in self.gameList.values()] )
         
     # Join a game
+    # TODO: implement the rest of this method
     def joinGame(self, command, client):
         '''
         User joins a game
@@ -403,10 +411,12 @@ class ScrabbleServerFactory(protocol.ServerFactory, object):
             client.denyJoinGame(command)
             return
 
+        DObject.TransactionBegin()
         if not game.hasPlayer( p ):
             game.addPlayer( p )
         else:
             game.removePending( p )
+        DObject.TransactionCommit()
         
         command.setCommand( constants.GAME_JOIN_OK )
         client.acceptJoinGame( command, {} )

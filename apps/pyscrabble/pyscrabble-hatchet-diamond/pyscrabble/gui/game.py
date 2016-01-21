@@ -586,6 +586,7 @@ class GameFrame(gtk.Frame):
             self.error(util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
             return
 
+        DObject.TransactionBegin()
         self.currentGame.start()
         
         for player in self.currentGame.getPlayers():
@@ -598,6 +599,7 @@ class GameFrame(gtk.Frame):
 
         #TODO
         self.doGameTurn()
+        DObject.TransactionCommit()
         #TODO
         #self.refreshGameList()
         
