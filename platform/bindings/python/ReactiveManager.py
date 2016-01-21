@@ -1,5 +1,8 @@
 import threading
 import time
+import sys
+sys.path.append("../../build/bindings/python")
+from libpydiamond import *
 
 txSet = set()
 
@@ -12,7 +15,9 @@ def run():
     while True:
         time.sleep(1)
         for func in txSet:
+            DObject.TransactionBegin()
             func()
+            DObject.TransactionCommit()
 
 def add(func):
     txSet.add(func)

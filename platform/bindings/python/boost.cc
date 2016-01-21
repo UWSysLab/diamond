@@ -26,7 +26,9 @@ BOOST_PYTHON_MODULE(libpydiamond)
     void (*TransactionBegin)(void) = &DObject::TransactionBegin;
     class_<DObject, boost::noncopyable>("DObject", no_init)
         .def("TransactionBegin", TransactionBegin)
+        .staticmethod("TransactionBegin")
         .def("TransactionCommit", &DObject::TransactionCommit)
+        .staticmethod("TransactionCommit")
         .def("Map", &DObject::Map)
     ;
 
