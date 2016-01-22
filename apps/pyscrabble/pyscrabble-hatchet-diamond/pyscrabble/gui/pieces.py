@@ -32,15 +32,16 @@ class GameTile(gtk.Button):
         @param parent: GameFrame class
         '''
         self.board = parent #callback to the parent widget
+        gameName = parent.currentGameId
                 
         self.letterStr = DString()
-        DString.Map(self.letterStr, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letter")
+        DString.Map(self.letterStr, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letter")
         self.letterScore = DLong()
-        DLong.Map(self.letterScore, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":score")
+        DLong.Map(self.letterScore, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":score")
         self.letterIsBlank = DBoolean()
-        DBoolean.Map(self.letterIsBlank, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterIsBlank")
+        DBoolean.Map(self.letterIsBlank, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letterIsBlank")
         self.letterPresent = DBoolean()
-        DBoolean.Map(self.letterPresent, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
+        DBoolean.Map(self.letterPresent, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
         
         gtk.Button.__init__(self)
         self.set_size_request(TILE_WIDTH, TILE_HEIGHT)
@@ -730,14 +731,16 @@ class GameBoard(gtk.Table):
     '''
     
     
-    def __init__(self):
+    def __init__(self, parent):
         '''
         Constructor
         '''
         
         gtk.Table.__init__(self,rows=15, columns=15, homogeneous = True)
         self.tiles = {} # Hold a reference to all tiles
-        self.empty = True
+        gameName = parent.currentGameId
+        self.empty = DBoolean()
+        DBoolean.Map(self.empty, "game:" + gameName + ":board:empty")
     
     def activate(self):
         '''
@@ -792,27 +795,6 @@ class GameBoard(gtk.Table):
         return True
         
     
-    def putLetter(self, letter, x, y):
-        '''
-        Put a Letter on a Tile on the board
-        
-        This is different from adding a new Widget to the board.
-        
-        This assumes that a GameTile already exists at (x,y) and that
-        we are going to change the Letter on that Tile
-        
-        @param letter: Letter
-        @param x: x position
-        @param y: y position
-        @param set_bg: True to set COLOR_RECENT_TILE as background color
-        @see: L{pyscrabble.gui.pieces.GameTile}
-        @see: L{pyscrabble.game.pieces.Letter}
-        '''
-        
-        self.empty = False
-        self.tiles[(x,y)].putLetter(letter)
-        self.tiles[(x,y)].deactivate()
-    
     def moveTouching(self, move, onBoard):
         '''
         Check if this move is touching another on the board
@@ -852,7 +834,7 @@ class GameBoard(gtk.Table):
         
         @return: True if the board is empty
         '''
-        return self.empty
+        return self.empty.Value()
     
     def getTilesAtX(self, _x):
         '''
@@ -1014,14 +996,6 @@ class GameBoard(gtk.Table):
             return (self.tiles[(x-1, y)], x-1, y)
         else:
             return None,None,None
-    
-    def isEmpty(self):
-        '''
-        Check whether the board has any moves on it
-        
-        @return True if the board has no moves
-        '''
-        return self.empty
     
     def getMovesAtXY(self, x, y):
         '''

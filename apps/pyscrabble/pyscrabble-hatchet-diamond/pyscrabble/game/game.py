@@ -50,11 +50,15 @@ class ScrabbleGame:
         self.players.Clear()
         self.bag.reset(rules='en')
         
+        empty = DBoolean()
+        DBoolean.Map(empty, "game:" + self.name + ":board:empty")
+        empty.Set(True)
+        
         for x in range(0, 15):
             for y in range(0, 15):
-                self.letterPresent = DBoolean()
-                DBoolean.Map(self.letterPresent, "testgame:tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
-                self.letterPresent.Set(False)
+                letterPresent = DBoolean()
+                DBoolean.Map(letterPresent, "game:" + self.name + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
+                letterPresent.Set(False)
     
     def setCreator(self, playerName):
         self.creator.Set(playerName)

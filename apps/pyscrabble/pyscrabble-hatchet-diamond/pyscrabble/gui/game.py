@@ -515,7 +515,7 @@ class GameFrame(gtk.Frame):
         '''
         
         
-        self.board = GameBoard()
+        self.board = GameBoard(self)
         
         # Create the blank board
         for y in range(15):
@@ -913,7 +913,7 @@ class GameFrame(gtk.Frame):
         if (len(letters) > 0):
             player.addLetters(letters)
             
-        self.board.empty = False
+        self.board.empty.Set(False)
 
         # Next player
         self.doGameTurn(gameId)
