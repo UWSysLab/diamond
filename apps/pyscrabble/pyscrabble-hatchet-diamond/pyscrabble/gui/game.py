@@ -111,6 +111,8 @@ class GameFrame(gtk.Frame):
             self.gameLetters.append(gl)
         self.letterBox.show_all()
         
+        self.wasPlayerTurn = None
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -169,6 +171,11 @@ class GameFrame(gtk.Frame):
             self.saveButton.set_sensitive(True)
         
         isPlayerTurn = (currentPlayerName == thisPlayerName)
+        
+        if self.wasPlayerTurn == None or isPlayerTurn != self.wasPlayerTurn:
+            self.mainwindow.setCurrentTurn(self.currentGameId, isPlayerTurn)
+            self.wasPlayerTurn = isPlayerTurn
+        
         if isPlayerTurn:
             self.okButton.set_sensitive(True)
             self.passButton.set_sensitive(True)
@@ -179,7 +186,6 @@ class GameFrame(gtk.Frame):
             
             self.board.activate()
             
-            self.mainwindow.setCurrentTurn(self.currentGameId, True)
         else:
             self.okButton.set_sensitive(False)
             self.passButton.set_sensitive(False)
@@ -188,9 +194,7 @@ class GameFrame(gtk.Frame):
             self.shuffleButton.set_sensitive(True)
             
             self.board.deactivate()
-            
-            self.mainwindow.setCurrentTurn(self.currentGameId, False)
-            
+                        
             if currentPlayerName is not None:
                 sel = self.userView.get_selection()
                 model = self.userView.get_model()
