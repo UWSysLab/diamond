@@ -998,14 +998,6 @@ class GameBoard(gtk.Table):
         else:
             return None,None,None
     
-    def isEmpty(self):
-        '''
-        Check whether the board has any moves on it
-        
-        @return True if the board has no moves
-        '''
-        return self.empty
-    
     def getMovesAtXY(self, x, y):
         '''
         Get moves at X and Y positions
