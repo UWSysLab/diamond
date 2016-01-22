@@ -32,7 +32,8 @@ class ScrabbleGame:
         self.moves = []
         self.words = []
         self.usedModifiers = []
-        self.passedMoves = 0
+        self.passedMoves = DLong()
+        DLong.Map(self.passedMoves, "game:" + name + ":passedmoves")
         self.currentPlayer = DString()
         DString.Map(self.currentPlayer, "game:" + name + ":currentplayer")
         self.log = []
@@ -49,6 +50,7 @@ class ScrabbleGame:
         self.started.Set(False)
         self.players.Clear()
         self.bag.reset(rules='en')
+        self.passedMoves.Set(0)
         
         empty = DBoolean()
         DBoolean.Map(empty, "game:" + self.name + ":board:empty")
@@ -257,7 +259,8 @@ class ScrabbleGame:
         @see: L{pyscrabble.game.pieces.Move}
         '''
         
-        self.passedMoves = 0 # Rest pass counter
+        self.passedMoves.Set(0) # Rest pass counter
+        #TODO
         score = 0
         for move in moves:
             word = move.getWord()
@@ -291,7 +294,7 @@ class ScrabbleGame:
         '''
         Reset the pass counter
         '''
-        self.passedMoves = 0
+        self.passedMoves.Set(0)
         
     
     def passMove(self):
@@ -304,7 +307,7 @@ class ScrabbleGame:
         @raise GameOverException: If all players have passed their moves and the game is over.
         '''
         
-        self.passedMoves = self.passedMoves + 1
+        self.passedMoves.Set(self.passedMoves.Value() + 1)
         if (self.passedMoves == self.players.Size()):
             raise GameOverException
     

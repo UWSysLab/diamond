@@ -540,18 +540,33 @@ class GameFrame(gtk.Frame):
         @param button: Button that was clicked
         '''  
         
+        DObject.TransactionBegin()
+        
         l = []
         for letter in self.letterBox.get_children():
             if isinstance(letter, GameLetter):
                 if letter.get_active():
                     l.append(letter.getLetter())
+                    letter.set_active(False)
                 
         if len(l) > 0:
-            self.client.tradeLetters( self.currentGameId, l )
+            print "DEBUG TRADELETTERS"
+            self.clearCurrentMove()
+            print "player letters: " + repr(self.player.getLetters())
+            self.player.removeLetters( l )
+            print "list l is: " + repr(l)
+            letters = self.currentGame.getLetters( self.player.getNumberOfLettersNeeded() )
+            print "list letters is: " + repr(letters)
+            self.player.addLetters( letters )
+            self.currentGame.returnLetters( l )
+            print "player letters: " + repr(self.player.getLetters())
+
+            self.currentGame.resetPassCount()
+            self.doGameTurn()
         else:
             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-        
-        self.clearCurrentMove()
+            
+        DObject.TransactionCommit()
     
     # Pause the game
     def doPauseGame(self, button):
