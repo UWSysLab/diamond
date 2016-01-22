@@ -147,13 +147,11 @@ class GameFrame(gtk.Frame):
     def drawUserList(self):
         users = []
         players = self.currentGame.getPlayers()
-        print "DEBUG " + repr(len(players))
         for player in players:
             users.append(PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters())))
         
         gobject.idle_add(self.userList.clear)
         for playerInfo in users:
-            print "WAT"
             gobject.idle_add(self.appendWrapper, (playerInfo.name, str(playerInfo.score), playerInfo.time, str(playerInfo.numLetters)) )
     
     def appendWrapper(self, tuple):
@@ -696,6 +694,7 @@ class GameFrame(gtk.Frame):
         self.onBoard.removeMove( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
+        DObject.TransactionBegin()
         letterA = gTileA.getLetter()
         letterB = gTileB.getLetter()
         if letterA == None:
@@ -709,8 +708,10 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
+        DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
+        DObject.TransactionBegin()
         origLetterLetter = gLetter.getLetter()
         origTileLetter = gTile.getLetter()
         
@@ -727,11 +728,14 @@ class GameFrame(gtk.Frame):
         
             gTile.putLetter(origLetterLetter)
             self.registerMove(gTile, gTile.x, gTile.y)
+        DObject.TransactionCommit()
         
     def putTileOnPlaceholder(self, gTile):
+        DObject.TransactionBegin()
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
+        DObject.TransactionCommit()
     
     
     def getNumOnBoardMoves(self):
@@ -763,6 +767,7 @@ class GameFrame(gtk.Frame):
         
         @param event:
         '''
+        DObject.TransactionBegin()
         if not self.onBoard.isEmpty():
             for letter,x,y in self.onBoard.getTiles():
                 #print 'Clearing %s %d,%d' % (letter,x,y)
@@ -773,6 +778,7 @@ class GameFrame(gtk.Frame):
                 t = self.board.get(x, y)
                 t.clear()
             self.onBoard.clear()
+        DObject.TransactionCommit()
         self.board.clearArrows()
         self.board.show_all()
     
@@ -784,6 +790,8 @@ class GameFrame(gtk.Frame):
         
         @param event:
         '''
+        
+        DObject.TransactionBegin()
         
         if (self.isCurrentTurn() == False):
             self.error(util.ErrorMessage(_("Its not your turn")))
@@ -830,6 +838,8 @@ class GameFrame(gtk.Frame):
             #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
             self.error(util.ErrorMessage(inst.message))
+            
+        DObject.TransactionCommit()
     
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves):
@@ -859,7 +869,7 @@ class GameFrame(gtk.Frame):
         for move in moves:
             word = util.getUnicode( move.getWord() )
             if word not in self.dicts[ 'en' ]:
-                self.error(ServerMessage([word, NOT_IN_DICT]) )
+                self.error(util.ErrorMessage(ServerMessage([word, NOT_IN_DICT])) )
                 return
             words.append( word )
         
@@ -904,13 +914,9 @@ class GameFrame(gtk.Frame):
             player.addLetters(letters)
             
         self.board.empty = False
-        
-        #TODO
-        #self.sendGameScores(game.getGameId())
 
         # Next player
-        #TODO
-        #self.doGameTurn(gameId)
+        self.doGameTurn(gameId)
         
     # Get the letters from the moves
     def getLettersFromMove(self, move):
