@@ -611,7 +611,6 @@ class GameFrame(gtk.Frame):
                 self.board.put(t,x,y)
             self.showLetters( self.letters )
             self.onBoard.clear()
-        self.board.clearArrows()
         self.board.show_all()
     
     
@@ -891,7 +890,6 @@ class GameFrame(gtk.Frame):
         
         Clear the board and setCurrentTurn = False
         '''
-        self.board.clearArrows()
         self.onBoard.clear()
         self.currentTurn = False
         
