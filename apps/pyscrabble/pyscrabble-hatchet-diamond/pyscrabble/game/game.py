@@ -45,6 +45,9 @@ class ScrabbleGame:
         self.spectatorsAllowed = True
     
     def reset(self):
+        for player in self.getPlayers():
+            player.reset()
+        
         self.setCreator("")
         self.currentPlayer.Set("")
         self.started.Set(False)
