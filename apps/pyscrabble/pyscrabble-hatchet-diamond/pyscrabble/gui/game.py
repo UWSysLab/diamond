@@ -601,16 +601,18 @@ class GameFrame(gtk.Frame):
         
         @param gameId: Game ID
         @param client: ScrabbleServer Protocol
-        ''' 
+        '''
+        DObject.TransactionBegin()
         if self.username != self.currentGame.getCreator():
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_CREATOR])))
+            DObject.TransactionCommit()
             return
         
         if (self.currentGame.isStarted()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
+            DObject.TransactionCommit()
             return
 
-        DObject.TransactionBegin()
         self.currentGame.start()
         
         for player in self.currentGame.getPlayers():
@@ -794,15 +796,19 @@ class GameFrame(gtk.Frame):
     
     # Callback to clear letters put on board
     def clearCurrentMoveBackground(self, event=None):
-        threading.Thread(target=self.clearCurrentMove, args=(event)).start()
+        threading.Thread(target=self.clearCurrentMoveBackgroundHelper, args=()).start()
+    
+    def clearCurrentMoveBackgroundHelper(self):
+        DObject.TransactionBegin()
+        self.clearCurrentMove()
+        DObject.TransactionCommit()
         
-    def clearCurrentMove(self, event=None):
+    def clearCurrentMove(self):
         '''
         Callback to clear the current move off the board
         
         @param event:
         '''
-        DObject.TransactionBegin()
         if not self.onBoard.isEmpty():
             for letter,x,y in self.onBoard.getTiles():
                 #print 'Clearing %s %d,%d' % (letter,x,y)
@@ -813,7 +819,6 @@ class GameFrame(gtk.Frame):
                 t = self.board.get(x, y)
                 t.clear()
             self.onBoard.clear()
-        DObject.TransactionCommit()
     
     
     # Callback to send current move
@@ -831,10 +836,12 @@ class GameFrame(gtk.Frame):
         
         if (self.isCurrentTurn() == False):
             gobject.idle_add(self.error, util.ErrorMessage(_("Its not your turn")))
+            DObject.TransactionCommit()
             return
         
         if (not self.onBoard.isValid()):
             gobject.idle_add(self.error, util.ErrorMessage(_("Move is invalid")))
+            DObject.TransactionCommit()
             return
         
         # Make sure the board has a letter in the center or one of the tiles in this move does
@@ -845,6 +852,7 @@ class GameFrame(gtk.Frame):
                     center = True
             if not center:
                 gobject.idle_add(self.error, util.ErrorMessage(_("Move must cover center tile.")))
+                DObject.TransactionCommit()
                 return
             
         # Check for blanks
@@ -852,6 +860,7 @@ class GameFrame(gtk.Frame):
             if (letter.isBlank() and letter.getLetter() ==""):
                 new = self.showBlankLetterDialog()
                 if (new == ""): # new will be blank if the user cancels the dialog
+                    DObject.TransactionCommit()
                     return
                 else:
                     #print 'Blank set on %s' % str(id(letter))
@@ -1366,7 +1375,7 @@ class GameFrame(gtk.Frame):
         o = manager.OptionManager()
         
         if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
-            self.clearCurrentMove()
+            self.clearCurrentMoveBackground()
     
     def info(self, log):
         '''
