@@ -28,7 +28,7 @@ import gobject
 if __name__ == '__main__':
     
     gobject.threads_init()
-    DiamondInit("../../../platform/test/local", 1, 0)
+    DiamondInit("../../../platform/test/niel", 1, 0)
     
     dist.ensure_config_dir( dist.CONFIG_DIR )
     

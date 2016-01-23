@@ -100,7 +100,7 @@ class ServerConsole(object):
         self.g_port = int(parser.get("pyscrabble","game_port"))
         
 if __name__ == '__main__':
-    DiamondInit("../../../platform/test/local", 1, 0)
+    DiamondInit("../../../platform/test/niel", 1, 0)
     x = ServerConsole()
     x.startConsole()
     

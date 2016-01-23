@@ -24,6 +24,7 @@ from pyscrabble.game.game import *
 from pyscrabble import constants
 import os
 import codecs
+import threading
 
 
 class GameFrame(gtk.Frame):
@@ -111,6 +112,8 @@ class GameFrame(gtk.Frame):
             self.gameLetters.append(gl)
         self.letterBox.show_all()
         
+        self.wasPlayerTurn = None
+        
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
@@ -147,13 +150,11 @@ class GameFrame(gtk.Frame):
     def drawUserList(self):
         users = []
         players = self.currentGame.getPlayers()
-        print "DEBUG " + repr(len(players))
         for player in players:
             users.append(PlayerInfo(player.getUsername(), player.getScore(), len(player.getLetters())))
         
         gobject.idle_add(self.userList.clear)
         for playerInfo in users:
-            print "WAT"
             gobject.idle_add(self.appendWrapper, (playerInfo.name, str(playerInfo.score), playerInfo.time, str(playerInfo.numLetters)) )
     
     def appendWrapper(self, tuple):
@@ -171,6 +172,11 @@ class GameFrame(gtk.Frame):
             self.saveButton.set_sensitive(True)
         
         isPlayerTurn = (currentPlayerName == thisPlayerName)
+        
+        if self.wasPlayerTurn == None or isPlayerTurn != self.wasPlayerTurn:
+            self.mainwindow.setCurrentTurn(self.currentGameId, isPlayerTurn)
+            self.wasPlayerTurn = isPlayerTurn
+        
         if isPlayerTurn:
             self.okButton.set_sensitive(True)
             self.passButton.set_sensitive(True)
@@ -181,7 +187,6 @@ class GameFrame(gtk.Frame):
             
             self.board.activate()
             
-            self.mainwindow.setCurrentTurn(self.currentGameId, True)
         else:
             self.okButton.set_sensitive(False)
             self.passButton.set_sensitive(False)
@@ -190,9 +195,7 @@ class GameFrame(gtk.Frame):
             self.shuffleButton.set_sensitive(True)
             
             self.board.deactivate()
-            
-            self.mainwindow.setCurrentTurn(self.currentGameId, False)
-            
+                        
             if currentPlayerName is not None:
                 sel = self.userView.get_selection()
                 model = self.userView.get_model()
@@ -425,7 +428,7 @@ class GameFrame(gtk.Frame):
         self.okButton.connect("clicked", self.sendCurrentMove)
         self.passButton.connect("clicked", self.askPass)
         self.tradeButton.connect("clicked", self.tradeLetters)
-        self.cancelButton.connect("clicked", self.clearCurrentMove)
+        self.cancelButton.connect("clicked", self.clearCurrentMoveBackground)
         self.shuffleButton.connect('clicked', self.shuffleLetters_cb)
         
         t = gtk.VBox(False, 0)
@@ -517,7 +520,7 @@ class GameFrame(gtk.Frame):
         '''
         
         
-        self.board = GameBoard()
+        self.board = GameBoard(self)
         
         # Create the blank board
         for y in range(15):
@@ -531,6 +534,9 @@ class GameFrame(gtk.Frame):
     
     
     # Trade letters in for new letters
+    def tradeLettersBackground(self, button):
+        threading.Thread(target=self.tradeLetters, args=(button)).start()
+        
     def tradeLetters(self, button):
         '''
         Allow the user to trade letters in.  This counts as a turn
@@ -538,18 +544,33 @@ class GameFrame(gtk.Frame):
         @param button: Button that was clicked
         '''  
         
+        DObject.TransactionBegin()
+        
         l = []
         for letter in self.letterBox.get_children():
             if isinstance(letter, GameLetter):
                 if letter.get_active():
                     l.append(letter.getLetter())
+                    letter.set_active(False)
                 
         if len(l) > 0:
-            self.client.tradeLetters( self.currentGameId, l )
+            print "DEBUG TRADELETTERS"
+            self.clearCurrentMove()
+            print "player letters: " + repr(self.player.getLetters())
+            self.player.removeLetters( l )
+            print "list l is: " + repr(l)
+            letters = self.currentGame.getLetters( self.player.getNumberOfLettersNeeded() )
+            print "list letters is: " + repr(letters)
+            self.player.addLetters( letters )
+            self.currentGame.returnLetters( l )
+            print "player letters: " + repr(self.player.getLetters())
+
+            self.currentGame.resetPassCount()
+            self.doGameTurn()
         else:
             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-        
-        self.clearCurrentMove()
+            
+        DObject.TransactionCommit()
     
     # Pause the game
     def doPauseGame(self, button):
@@ -572,21 +593,26 @@ class GameFrame(gtk.Frame):
     
     # Start the game
     def startGame(self, button):
+        threading.Thread(target=self.startGameHelper, args=(button)).start()
+    
+    def startGameHelper(self, button):
         '''
         User starts a game
         
         @param gameId: Game ID
         @param client: ScrabbleServer Protocol
-        ''' 
+        '''
+        DObject.TransactionBegin()
         if self.username != self.currentGame.getCreator():
-            self.error(util.ErrorMessage(ServerMessage([NOT_CREATOR])))
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_CREATOR])))
+            DObject.TransactionCommit()
             return
         
         if (self.currentGame.isStarted()):
-            self.error(util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
+            DObject.TransactionCommit()
             return
 
-        DObject.TransactionBegin()
         self.currentGame.start()
         
         for player in self.currentGame.getPlayers():
@@ -696,6 +722,10 @@ class GameFrame(gtk.Frame):
         self.onBoard.removeMove( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
+        threading.Thread(target=self.swapTilesHelper, args=(gTileA, gTileB)).start()
+        
+    def swapTilesHelper(self, gTileA, gTileB):
+        DObject.TransactionBegin()
         letterA = gTileA.getLetter()
         letterB = gTileB.getLetter()
         if letterA == None:
@@ -709,8 +739,13 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
+        DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
+        threading.Thread(target=self.swapTileAndLetterHelper, args=(gTile, gLetter)).start()
+        
+    def swapTileAndLetterHelper(self, gTile, gLetter):
+        DObject.TransactionBegin()
         origLetterLetter = gLetter.getLetter()
         origTileLetter = gTile.getLetter()
         
@@ -727,11 +762,14 @@ class GameFrame(gtk.Frame):
         
             gTile.putLetter(origLetterLetter)
             self.registerMove(gTile, gTile.x, gTile.y)
+        DObject.TransactionCommit()
         
     def putTileOnPlaceholder(self, gTile):
+        DObject.TransactionBegin()
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
+        DObject.TransactionCommit()
     
     
     def getNumOnBoardMoves(self):
@@ -757,7 +795,15 @@ class GameFrame(gtk.Frame):
         
     
     # Callback to clear letters put on board
-    def clearCurrentMove(self, event=None):
+    def clearCurrentMoveBackground(self, event=None):
+        threading.Thread(target=self.clearCurrentMoveBackgroundHelper, args=()).start()
+    
+    def clearCurrentMoveBackgroundHelper(self):
+        DObject.TransactionBegin()
+        self.clearCurrentMove()
+        DObject.TransactionCommit()
+        
+    def clearCurrentMove(self):
         '''
         Callback to clear the current move off the board
         
@@ -773,24 +819,29 @@ class GameFrame(gtk.Frame):
                 t = self.board.get(x, y)
                 t.clear()
             self.onBoard.clear()
-        self.board.clearArrows()
-        self.board.show_all()
     
     
     # Callback to send current move
     def sendCurrentMove(self, event = None):
+        threading.Thread(target=self.sendCurrentMoveHelper, args=(event)).start()
+        
+    def sendCurrentMoveHelper(self, event = None):
         '''
         Send the current move on the board to the server
         
         @param event:
         '''
         
+        DObject.TransactionBegin()
+        
         if (self.isCurrentTurn() == False):
-            self.error(util.ErrorMessage(_("Its not your turn")))
+            gobject.idle_add(self.error, util.ErrorMessage(_("Its not your turn")))
+            DObject.TransactionCommit()
             return
         
         if (not self.onBoard.isValid()):
-            self.error(util.ErrorMessage(_("Move is invalid")))
+            gobject.idle_add(self.error, util.ErrorMessage(_("Move is invalid")))
+            DObject.TransactionCommit()
             return
         
         # Make sure the board has a letter in the center or one of the tiles in this move does
@@ -800,7 +851,8 @@ class GameFrame(gtk.Frame):
                 if (x+1,y+1) in CENTER:
                     center = True
             if not center:
-                self.error(util.ErrorMessage(_("Move must cover center tile.")))
+                gobject.idle_add(self.error, util.ErrorMessage(_("Move must cover center tile.")))
+                DObject.TransactionCommit()
                 return
             
         # Check for blanks
@@ -808,6 +860,7 @@ class GameFrame(gtk.Frame):
             if (letter.isBlank() and letter.getLetter() ==""):
                 new = self.showBlankLetterDialog()
                 if (new == ""): # new will be blank if the user cancels the dialog
+                    DObject.TransactionCommit()
                     return
                 else:
                     #print 'Blank set on %s' % str(id(letter))
@@ -829,7 +882,9 @@ class GameFrame(gtk.Frame):
             #self.client.sendMoves( self.currentGameId, moves, self.onBoard )
             #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
-            self.error(util.ErrorMessage(inst.message))
+            gobject.idle_add(self.error, util.ErrorMessage(inst.message))
+            
+        DObject.TransactionCommit()
     
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves):
@@ -848,10 +903,10 @@ class GameFrame(gtk.Frame):
             return
         
         if (game.isPaused()):
-            self.error(util.ErrorMessage(ServerMessage([MOVE_GAME_PAUSED])))
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([MOVE_GAME_PAUSED])))
             return
         if (not game.isInProgress()):
-            self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS])) )
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS])) )
             return
         
         # Validate word in dictionary and not on the board alread
@@ -859,7 +914,7 @@ class GameFrame(gtk.Frame):
         for move in moves:
             word = util.getUnicode( move.getWord() )
             if word not in self.dicts[ 'en' ]:
-                self.error(ServerMessage([word, NOT_IN_DICT]) )
+                gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([word, NOT_IN_DICT])) )
                 return
             words.append( word )
         
@@ -903,14 +958,10 @@ class GameFrame(gtk.Frame):
         if (len(letters) > 0):
             player.addLetters(letters)
             
-        self.board.empty = False
-        
-        #TODO
-        #self.sendGameScores(game.getGameId())
+        self.board.empty.Set(False)
 
         # Next player
-        #TODO
-        #self.doGameTurn(gameId)
+        self.doGameTurn(gameId)
         
     # Get the letters from the moves
     def getLettersFromMove(self, move):
@@ -1210,7 +1261,6 @@ class GameFrame(gtk.Frame):
         
         Clear the board and setCurrentTurn = False
         '''
-        self.board.clearArrows()
         self.onBoard.clear()
         self.currentTurn = False
         
@@ -1325,7 +1375,7 @@ class GameFrame(gtk.Frame):
         o = manager.OptionManager()
         
         if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
-            self.clearCurrentMove()
+            self.clearCurrentMoveBackground()
     
     def info(self, log):
         '''

@@ -44,9 +44,6 @@ class GameTile(gtk.Button):
         self.key_press_handler = 0
         self.active = False
         self.deactivate()
-        
-        self.connect("button-release-event", self.buttonRelease_cb)
-        self.connect("button-press-event", self.buttonPress_cb)
     
     def clone(self):
         '''
@@ -118,9 +115,6 @@ class GameTile(gtk.Button):
         @param eventType:
         '''
         #print 'set letter called in tile %d,%d' % (self.x,self.y)
-        
-        # Kill typing
-        self.get_parent().clearArrows()
         
         
         c = context.get_source_widget()
@@ -291,237 +285,6 @@ class GameTile(gtk.Button):
                 self.setBackground( TILE_COLORS[TILE_LETTER] )
         else:
             self.findStyle(self.x, self.y)
-        
-    
-    def buttonPress_cb(self, widget, event):
-        '''
-        Button press event
-        
-        @param widget: widget
-        @param event: event info
-        '''
-        if event.type == gtk.gdk._2BUTTON_PRESS:
-            if self.getLetter() is not None:
-                if self.handler_is_connected(self.handler_id):
-                    self.board.removeMove(self, self.x, self.y)
-                    self.board.refreshLetterBox()
-            return True
-            
-        if event.button == 1 and self.getLetter() is None and event.type not in (gtk.gdk._2BUTTON_PRESS, gtk.gdk._3BUTTON_PRESS):
-            if self.board.isCurrentTurn() == True:
-                
-                if self.fixed:
-                    return False
-                
-                self.direction = self.direction + 1
-                if self.direction > GameTile.DIR_VERT:
-                    self.direction = GameTile.DIR_NONE
-                    
-                self.handleArrow(self.getArrow(self.direction))
-                
-        return False
-        
-    
-    def getArrow(self, direction):
-        '''
-        Get arrow from direction
-        
-        @param direction:
-        '''
-        if direction == GameTile.DIR_HORIZ:
-            return gtk.Arrow(gtk.ARROW_RIGHT, gtk.SHADOW_OUT)
-        if direction == GameTile.DIR_VERT:
-            return gtk.Arrow(gtk.ARROW_DOWN, gtk.SHADOW_OUT)
-            
-        return None
-    
-    def handleArrow(self, arrow):
-        '''
-        Place an arrow on the board
-        
-        @param arrow:
-        '''
-        dir = self.direction
-        self.get_parent().clearArrows()
-        self.direction = dir
-        
-        if arrow is not None:
-            box = gtk.HBox(False, 0)
-            arrow.set_size_request(10,10)
-            arrow.set_padding(0, 0)
-            box.pack_start(arrow, False, False, 0)
-            self.add(box)
-            self.key_press_handler = self.connect("key-press-event", self.keyPress_cb, self.direction)
-        self.show_all()
-        
-    
-    def buttonRelease_cb(self, widget, event):
-        '''
-        Button release event
-        
-        @param widget: Widget
-        @param event: Event info
-        '''
-        
-        if event.button == 3:
-            
-            menu = gtk.Menu()
-            
-            if widget.getLetter() is not None:
-            
-                board = widget.get_parent()
-                moves = board.getMovesAtXY(widget.x,widget.y)
-                
-                if len(moves) > 0:
-                    item = gtk.ImageMenuItem(stock_id=STOCK_DEFINE)
-                    menu.append(item)
-                    
-                    l = manager.LettersManager()
-                    
-                    meta = l.getMeta( self.board.getGameOption(OPTION_RULES) )
-                    site = meta['lookup']
-                    submenu = gtk.Menu()
-                    for move in moves:
-                        word = move.getWord()
-                        i = gtk.MenuItem(word)
-                        i.connect("activate", util.showUrl, '%s%s' % (site,word.lower()))
-                        submenu.append(i)
-                        
-                    item.set_submenu(submenu)
-                 
-            if len(menu.get_children()) > 0:
-                menu.show_all()
-                menu.popup(None, None, None, 1, event.time)
-    
-    def removeArrow(self):
-        '''
-        Remove arrow
-        '''
-        if self.getLetter() is None:
-            x = self.get_child()
-            if x is not None:
-                self.remove(x)
-                self.direction = GameTile.DIR_NONE
-                self.fixed = False
-        if self.handler_is_connected(self.key_press_handler):
-            self.disconnect(self.key_press_handler)     
-        
-    def keyPress_cb(self, widget, event, direction):
-        '''
-        Key press
-        
-        @param widget:
-        @param event:
-        @param direction:
-        '''
-        val = event.keyval
-        board = self.get_parent()
-        
-        if val == gtk.keysyms.Escape:
-            self.removeArrow()
-            self.direction = GameTile.DIR_NONE
-            self.fixed = False
-            return True
-        
-        if val in (gtk.keysyms.BackSpace, gtk.keysyms.Delete):
-            
-            # Handle edges
-            if direction == GameTile.DIR_HORIZ:
-                if self.x == 14 and self.getLetter() is not None:
-                    self.board.removeLetter(self.x,self.y)
-                    tile = board.get(self.x,self.y)
-                    board.set_focus_child(tile)
-                    tile.grab_focus()
-                    tile.direction = direction
-                    tile.fixed = True
-                    tile.handleArrow( self.getArrow(direction) )
-                    return True
-            if direction == GameTile.DIR_VERT and self.getLetter() is not None:
-                if self.y == 14:
-                    self.board.removeLetter(self.x,self.y)
-                    tile = board.get(self.x,self.y)
-                    board.set_focus_child(tile)
-                    tile.grab_focus()
-                    tile.direction = direction
-                    tile.fixed = True
-                    tile.handleArrow( self.getArrow(direction) )
-                    return True
-            
-            tile = None
-            if direction == GameTile.DIR_HORIZ:
-                x = self.x - 1
-                while x >= 0:
-                    if self.board.hasOnboardMove(x, self.y):
-                        tile = board.get(x, self.y)
-                        break
-                    x = x - 1
-            if direction == GameTile.DIR_VERT:
-                y = self.y -1
-                while y >= 0:
-                    if self.board.hasOnboardMove(self.x, y):
-                        tile = board.get(self.x, y)
-                        break
-                    y = y - 1
-            if tile is not None:
-                self.board.removeLetter(tile.x,tile.y)
-                tile = board.get(tile.x,tile.y)
-                board.set_focus_child(tile)
-                tile.grab_focus()
-                tile.direction = direction
-                if self.board.getNumOnBoardMoves() == 0:
-                    tile.fixed = False
-                else:
-                    tile.fixed = True
-                tile.handleArrow( self.getArrow(direction) )
-                self.removeArrow()
-            return True
-        
-        if val == gtk.keysyms.Return:
-            self.board.sendCurrentMove()
-            self.get_parent().clearArrows()
-            return True
-        
-        if val in range(gtk.keysyms.a, gtk.keysyms.z+1):
-            val = val - 32
-                
-        if val in range(gtk.keysyms.A, gtk.keysyms.Z+1):
-            ch = chr(val)
-            
-            if direction == GameTile.DIR_HORIZ:
-                if self.x == 14 and self.getLetter() is not None:
-                    gtk.gdk.beep()
-            if direction == GameTile.DIR_VERT and self.getLetter() is not None:
-                if self.y == 14:
-                    gtk.gdk.beep()
-            
-            tile = None
-            if direction == GameTile.DIR_HORIZ:
-                num = min(14 - self.x, 6)
-                for x in range(1,num+1):
-                    t = board.get(self.x + x, self.y)
-                    if t.getLetter() is None:
-                        tile = t
-                        break
-            if direction == GameTile.DIR_VERT:
-                num = min(14 - self.y, 6)
-                for x in range(1,num+1):
-                    t = board.get(self.x, self.y+x)
-                    if t.getLetter() is None:
-                        tile = t
-                        break
-            
-            placed = self.board.placeLetter(str(ch), self.x, self.y)
-            if tile is not None:
-                if placed:
-                    board.set_focus_child(t)
-                    t.grab_focus()
-                    t.direction = direction
-                    t.handleArrow( self.getArrow(direction) )
-                    tile.fixed = True  
-                    self.removeArrow()
-            
-            return True
-        return False
             
         
         
@@ -998,14 +761,6 @@ class GameBoard(gtk.Table):
         else:
             return None,None,None
     
-    def isEmpty(self):
-        '''
-        Check whether the board has any moves on it
-        
-        @return True if the board has no moves
-        '''
-        return self.empty
-    
     def getMovesAtXY(self, x, y):
         '''
         Get moves at X and Y positions
@@ -1071,13 +826,6 @@ class GameBoard(gtk.Table):
 
         for tile in self.tiles.itervalues():
             tile.refresh()
-    
-    def clearArrows(self):
-        '''
-        Remove arrows
-        '''
-        for tile in self.tiles.itervalues():
-            tile.removeArrow()
         
         
         
