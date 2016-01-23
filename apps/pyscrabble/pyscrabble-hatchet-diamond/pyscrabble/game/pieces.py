@@ -15,14 +15,13 @@ class Letter(object):
     Letter class.  Represents a letter on the gameboard
     '''
     
-    def __init__(self, letter="", score=0, isBlank=False ):
+    def __init__(self, letter="", score=0 ):
         '''
         Initialize the Letter
         
         @param letter: String representing the Letter
         '''
         self.score = score
-        self.__isBlank = isBlank
         self.setLetter( letter )
     
     def clone(self):
@@ -32,7 +31,6 @@ class Letter(object):
         @return: Clone of this Letter
         '''
         l = Letter(self.letter)
-        l.__isBlank = self.isBlank()
         l.score = self.score
         return l
         
@@ -43,19 +41,7 @@ class Letter(object):
         
         @param letter:
         '''
-        if (letter == ""):
-            self.__isBlank = True
-        #else:
-        #    self.__isBlank = False
         self.letter = letter
-    
-    def setIsBlank(self, isBlank):
-        '''
-        Set isBlank property
-        
-        @param isBlank: True / False
-        '''
-        self.__isBlank = isBlank
         
             
     def getLetter(self):
@@ -83,10 +69,7 @@ class Letter(object):
         
         @return: Score of this letter
         '''
-        if self.isBlank():
-            return 0
-        else:
-            return int(self.score)
+        return int(self.score)
     
     def setScore(self, score):
         '''
@@ -121,8 +104,6 @@ class Letter(object):
 
             if a == b:
                 return True
-            elif ((a != b) and (self.isBlank() == True and other.isBlank() == True)):
-                return True
         return False
     
     def __neq__(self, other):
@@ -137,15 +118,6 @@ class Letter(object):
             if self.getLetter() == other.getLetter():
                 return False
         return True
-    
-    def isBlank(self):
-        '''
-        Check if the Letter is a Blank.
-        
-        @return: True if the Letter is a blank letter.
-        '''
-        
-        return self.__isBlank
 
         
 # Represents a tile on the gameboard
@@ -385,7 +357,6 @@ class Move(object):
         '''
         
         self.score = 0
-        self.__hasBlank = False
         self.move = []
         
         if (move != None): # The move is a list of (letter, x-position, y-position) tuples
@@ -420,9 +391,6 @@ class Move(object):
         @param y: Y Position
         @see: L{Letter}
         '''
-        
-        if not self.hasBlank():
-            self.__hasBlank = letter.isBlank()
             
         self.move.append( (letter, x, y) )
     
@@ -446,9 +414,6 @@ class Move(object):
         @param y: Y position
         @see: L{Letter}
         '''
-        
-        if not self.hasBlank():
-            self.__hasBlank = letter.isBlank()
 
         self.move.insert(0, (letter,x,y) )
     
@@ -692,16 +657,6 @@ class Move(object):
         
         elif (self.isVertical()):
             self.move.sort( lambda (t1, x1, y1), (t2, x2, y2):  y1 - y2 )
-    
-    def hasBlank(self):
-        '''
-        Check whether this Move contains a blank letter
-        
-        @return: True if this Move contains a blank Letter
-        @see: L{Letter}
-        '''
-        
-        return self.__hasBlank
             
         
         

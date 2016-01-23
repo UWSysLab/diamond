@@ -38,8 +38,6 @@ class GameTile(gtk.Button):
         DString.Map(self.letterStr, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letter")
         self.letterScore = DLong()
         DLong.Map(self.letterScore, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":score")
-        self.letterIsBlank = DBoolean()
-        DBoolean.Map(self.letterIsBlank, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letterIsBlank")
         self.letterPresent = DBoolean()
         DBoolean.Map(self.letterPresent, "game:" + gameName + ":tile:" + repr(y * BOARD_WIDTH + x) + ":letterPresent")
         
@@ -113,7 +111,7 @@ class GameTile(gtk.Button):
         '''
         #print 'dragging tile gameletter %s' % widget.getLetter().getLetter()
         s = widget.getLetter().getLetter()
-        selection.set(selection.target, 8, '%s:%s:%s' % (s, str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+        selection.set(selection.target, 8, '%s:%s' % (s, str(widget.getLetter().getScore())))
     
     # Callback when a GameLetter is dragged onto this GameTile
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
@@ -137,9 +135,9 @@ class GameTile(gtk.Button):
         if c == self: # Ignore if we drag onto ourselves
             return
         
-        self.setLetter(c, c.getLetter().getLetter(), c.getLetter().getScore(), c.getLetter().isBlank())
+        self.setLetter(c, c.getLetter().getLetter(), c.getLetter().getScore())
     
-    def setLetter(self, widget, letter, score, isBlank, showBlank=True):
+    def setLetter(self, widget, letter, score):
         '''
         Set letter on this Tile
         
@@ -153,16 +151,14 @@ class GameTile(gtk.Button):
         elif isinstance(widget, GameLetter):
             self.board.swapTileAndLetter(self, widget)
         
-    def putLetter(self, letter, showBlank=False):
+    def putLetter(self, letter):
         '''
         Put a Letter on the tie.
         
         @param letter:
-        @param showBlank: True to show blank value
         '''
         self.letterStr.Set(letter.getLetter())
         self.letterScore.Set(letter.getScore())
-        self.letterIsBlank.Set(letter.isBlank())
         self.letterPresent.Set(True)
     
     def clear(self):
@@ -171,7 +167,7 @@ class GameTile(gtk.Button):
         
     def getLetter(self):
         if (self.letterPresent.Value()):
-            return Letter(self.letterStr.Value(), self.letterScore.Value(), self.letterIsBlank.Value())
+            return Letter(self.letterStr.Value(), self.letterScore.Value())
         else:
             return None
         
@@ -240,7 +236,7 @@ class GameTile(gtk.Button):
         
         return self.getLetter()
     
-    def set_label(self, letter, showBlank=False):
+    def set_label(self, letter):
         '''
         Set the Letter/score label on the Tile
         
@@ -262,16 +258,9 @@ class GameTile(gtk.Button):
             l = letter.getLetter()
             s = str(letter.getScore())
             o = manager.OptionManager()
-            if letter.isBlank():
-                if showBlank:
-                    l = ""
-                if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
-                    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
-                    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
-            else:
-                if o.get_default_bool_option(USE_COLOR_TEXT, True):
-                    l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
-                    s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
+            if o.get_default_bool_option(USE_COLOR_TEXT, True):
+                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
+                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
             
             if o.get_default_bool_option(OPTION_TEXT_BOLD, False):
                 l = """<span weight="bold">%s</span>""" % l
@@ -395,7 +384,7 @@ class GameLetter(gtk.ToggleButton):
         '''
         #print 'dragging gameletter %s' % widget.getLetter().getLetter()
         if self.letter != None:
-            selection.set(selection.target, 8, '%s:%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore()), str(int(widget.getLetter().isBlank()))))
+            selection.set(selection.target, 8, '%s:%s' % (widget.getLetter().getLetter(), str(widget.getLetter().getScore())))
     
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
         sourceWidget = context.get_source_widget()
@@ -461,15 +450,9 @@ class GameLetter(gtk.ToggleButton):
         l = letter.getLetter()
         s = str(letter.getScore())
         o = manager.OptionManager()
-        if letter.isBlank():
-            l = ""
-            if o.get_default_bool_option(USE_COLOR_BLANK_TILE, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_BLANK_TILE, DEFAULT_BLANK_TILE), s)
-        else:
-            if o.get_default_bool_option(USE_COLOR_TEXT, True):
-                l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
-                s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
+        if o.get_default_bool_option(USE_COLOR_TEXT, True):
+            l = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), l)
+            s = """<span foreground="%s">%s</span>""" % (o.get_default_option(COLOR_TEXT, DEFAULT_COLOR_TEXT), s)
         
         if o.get_default_bool_option(OPTION_TEXT_BOLD, False):
             l = """<span weight="bold">%s</span>""" % l

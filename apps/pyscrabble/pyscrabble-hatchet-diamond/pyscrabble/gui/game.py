@@ -854,27 +854,6 @@ class GameFrame(gtk.Frame):
                 gobject.idle_add(self.error, util.ErrorMessage(_("Move must cover center tile.")))
                 DObject.TransactionCommit()
                 return
-            
-        # Check for blanks
-        for letter,x,y in self.onBoard.getTiles():
-            if (letter.isBlank() and letter.getLetter() ==""):
-                new = self.showBlankLetterDialog()
-                if (new == ""): # new will be blank if the user cancels the dialog
-                    DObject.TransactionCommit()
-                    return
-                else:
-                    #print 'Blank set on %s' % str(id(letter))
-                    letter.setLetter( new )
-                    
-                    # We need to check if the board is empty
-                    # If it is, putting a Letter on the board will cause it not to be empty.
-                    # If the board is set as not empty, and its the players firsrt move, the
-                    # game will reject the move because it wont be touching any other tiles
-                    #if self.board.isEmpty():
-                        #self.board.putLetter(letter, x, y)
-                        #self.board.empty = True
-                    #else:
-                        #self.board.putLetter(letter, x, y)
     
         try:
             moves = self.getMoves()
@@ -1160,56 +1139,8 @@ class GameFrame(gtk.Frame):
             raise exceptions.MoveNotTouchingException
         else:
             return moves
-    
-    def showBlankLetterDialog(self):
-        '''
-        Show a dialog box where the user can enter a blank letter
-        
-        @return: The letter the user entered or ""
-        '''
-        s = _("Blank Letter")
-        dialog = gtk.Dialog(title="%s" % s, parent=None, buttons=(gtk.STOCK_OK, gtk.RESPONSE_OK, gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL))
-        dialog.set_default_response(gtk.RESPONSE_OK)
-        dialog.vbox.set_spacing( 10 )
-        
-        s = _("Enter value for Blank Letter")
-        header = gtk.Label()
-        header.set_markup("<b><big>%s:</big></b>" % s)
-        dialog.vbox.pack_start( header )
-        
-        entry = gtk.Entry()
-        entry.set_width_chars(5)
-        entry.connect("key-press-event", self.blankDialogKeyPress_cb, dialog)
-        dialog.vbox.pack_start( entry )
-        
-        dialog.show_all()
-        response = dialog.run()
-        
-        ret = ""
-        if response == gtk.RESPONSE_OK:
-            data = unicode(entry.get_text(), 'utf-8')
-            l = data.upper()
-            
-            if (not manager.LettersManager().isValidLetter(self.gameOptions[OPTION_RULES], l)):
-                self.error(util.ErrorMessage(_("Letter is not a valid scrabble letter")))
-            else:
-                ret = l
-        
-        dialog.destroy()
-        return ret
         
     ### Callbacks from client ###
-
-    def blankDialogKeyPress_cb(self, widget, event, dialog):
-        '''
-        Key press event in blank dialog box
-        
-        @param widget:
-        @param event:
-        @param dialog
-        '''
-        if (event.keyval == gtk.keysyms.Return):
-            dialog.response( gtk.RESPONSE_OK )
     
     def dragMotion(self, widget, drag_context, x, y, timestamp, bool=False):
         '''
@@ -1278,8 +1209,6 @@ class GameFrame(gtk.Frame):
         
         for i in range(0, len(letters)):
             letter = letters[i]
-            if letter.isBlank():
-                letter.setLetter("")
             self.gameLetters[i].copyLetter(letter)
             self.letterBox.show_all()
     
@@ -1557,41 +1486,6 @@ class GameFrame(gtk.Frame):
             if isinstance(c, GameLetter):
                 c.refresh()
         
-    
-    def placeLetter(self, letter, x, y):
-        '''
-        Place a letter on the board
-        
-        @param letter: Letter
-        @param x: X
-        @param y: Y
-        '''
-        
-        tmp = self.letterBox.get_children()
-        
-        l = None
-        for _letter in tmp:
-            if isinstance(_letter, GameLetter):
-                if _letter.getLetter().getLetter() == letter:
-                    l = _letter
-        
-        if l is None:
-            for _letter in tmp:
-                if isinstance(_letter, GameLetter):
-                    if _letter.isBlank() and _letter.getLetter().getLetter() == "":
-                        l = _letter
-                        l.setLetter( letter )
-                        l.setIsBlank( True )
-                        break
-                        
-        if l is None:
-            gtk.gdk.beep()
-            return False
-            
-        tile = self.board.get(x,y)
-        _l = l.getLetter()
-        tile.setLetter(l, _l.getLetter(), _l.getScore(), _l.isBlank(), showBlank=False)
-        return True
     
     def selectAllLetters(self):
         '''
