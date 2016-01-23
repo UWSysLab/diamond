@@ -5,7 +5,6 @@
 lookup = http://www.answers.com/
 
 [letters]
-"": (2,0)
 "A": (9,1)
 "B": (2,3)
 "C": (2,3)

@@ -148,8 +148,6 @@ class Player(object):
         '''
         
         for letter in list:
-            if (letter.isBlank()):
-                letter.setLetter("")
             self.letters.remove( letter )
         
     def getLetters(self):
