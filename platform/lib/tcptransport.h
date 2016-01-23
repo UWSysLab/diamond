@@ -1,8 +1,8 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * tcptransport.h:
- *   message-passing network interface that uses TCP message delivery
+ * udptransport.h:
+ *   message-passing network interface that uses UDP message delivery
  *   and libasync
  *
  * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
@@ -32,85 +32,93 @@
 #ifndef _LIB_TCPTRANSPORT_H_
 #define _LIB_TCPTRANSPORT_H_
 
-#include "common/configuration.h"
+#include "lib/configuration.h"
 #include "lib/transport.h"
+#include "lib/transportcommon.h"
 
 #include <event2/event.h>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
 
 #include <map>
+#include <unordered_map>
 #include <list>
+#include <random>
 #include <netinet/in.h>
 
-class TCPtransportAddress : public TransportAddress
+class TCPTransportAddress : public TransportAddress
 {
 public:
-    TCPtransportAddress * clone() const;
+    TCPTransportAddress * clone() const;
 private:
-    TCPtransportAddress(const sockaddr_in &addr);
+    TCPTransportAddress(const sockaddr_in &addr);
+    
     sockaddr_in addr;
-    friend class TCPtransport;
-    friend bool operator==(const TCPtransportAddress &a,
-                           const TCPtransportAddress &b);
-    friend bool operator!=(const TCPtransportAddress &a,
-                           const TCPtransportAddress &b);
+    friend class TCPTransport;
+    friend bool operator==(const TCPTransportAddress &a,
+                           const TCPTransportAddress &b);
+    friend bool operator!=(const TCPTransportAddress &a,
+                           const TCPTransportAddress &b);
+    friend bool operator<(const TCPTransportAddress &a,
+                          const TCPTransportAddress &b);
 };
 
-class TCPtransport : public Transport
+class TCPTransport : public TransportCommon<TCPTransportAddress>
 {
 public:
-    TCPtransport(const transport::Configuration &config);
-    virtual ~TCPtransport();
-    void Register(TransportReceiver *receiver);
-    bool SendMessage(TransportReceiver *src, const TransportAddress &dst,
-                     const Message &m);
+    TCPTransport(event_base *evbase = nullptr);
+    virtual ~TCPTransport();
+    void Register(TransportReceiver *receiver,
+                  const transport::Configuration &config,
+                  int replicaIdx);
     void Run();
+    void Stop();
     int Timer(uint64_t ms, timer_callback_t cb);
     bool CancelTimer(int id);
     void CancelAllTimers();
     
 private:
-    struct TCPtransportTimerInfo
+    struct TCPTransportTimerInfo
     {
-        TCPtransport *transport;
+        TCPTransport *transport;
         timer_callback_t cb;
         event *ev;
         int id;
     };
-    struct TCPtransportTCPListener
+    struct TCPTransportTCPListener
     {
-        TCPtransport *transport;
+        TCPTransport *transport;
         TransportReceiver *receiver;
         int acceptFd;
         int replicaIdx;
         event *acceptEvent;
         std::list<struct bufferevent *> connectionEvents;
     };
-    specpaxos::Configuration config;
     event_base *libeventBase;
     std::vector<event *> listenerEvents;
     std::vector<event *> signalEvents;
     std::map<int, TransportReceiver*> receivers; // fd -> receiver
-    int multicastFd;
     std::map<TransportReceiver*, int> fds; // receiver -> fd
-    std::map<int, TCPtransportAddress> replicaAddresses; // idx -> addr
-    TCPtransportAddress *multicastAddress;
-    std::map<int, int> replicaFds;                       // idx -> fd
     int lastTimerId;
-    std::map<int, TCPtransportTimerInfo *> timers;
-    std::list<TCPtransportTCPListener *> tcpListeners;
-    struct bufferevent * tcpOutgoing;
+    std::map<int, TCPTransportTimerInfo *> timers;
+    std::list<TCPTransportTCPListener *> tcpListeners;
+    std::map<TCPTransportAddress, struct bufferevent *> tcpOutgoing;
+    std::map<struct bufferevent *, TCPTransportAddress> tcpAddresses;
+    
+    bool SendMessageInternal(TransportReceiver *src,
+                             const TCPTransportAddress &dst,
+                             const Message &m, bool multicast = false);
 
-    TCPtransportAddress LookupAddress(const transport::ReplicaAddress &addr,
-                                      int replicaIdx, bool tcp = false);
-    void ConnectTCP(int replicaIdx);
-    bool SendMessageTCP(TransportReceiver *src, int replicaIdx,
-                        const Message &m);
-    void OnReadable(int fd);
-    void OnTimer(TCPtransportTimerInfo *info);
-    static void SocketCallback(evutil_socket_t fd,
-                               short what, void *arg);
+    TCPTransportAddress
+    LookupAddress(const transport::ReplicaAddress &addr);
+    TCPTransportAddress
+    LookupAddress(const transport::Configuration &cfg,
+                  int replicaIdx);
+    const TCPTransportAddress *
+    LookupMulticastAddress(const transport::Configuration*config) { return NULL; };
+
+    void ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst);
+    void OnTimer(TCPTransportTimerInfo *info);
     static void TimerCallback(evutil_socket_t fd,
                               short what, void *arg);
     static void LogCallback(int severity, const char *msg);

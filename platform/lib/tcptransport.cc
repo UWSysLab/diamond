@@ -1,7 +1,7 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * tcptransport.cc:
+ * udptransport.cc:
  *   message-passing network interface that uses TCP message delivery
  *   and libasync
  *
@@ -30,13 +30,14 @@
  **********************************************************************/
 
 #include "lib/assert.h"
-#include "common/configuration.h"
+#include "lib/configuration.h"
 #include "lib/message.h"
 #include "lib/tcptransport.h"
 
 #include <google/protobuf/message.h>
 #include <event2/event.h>
 #include <event2/buffer.h>
+#include <event2/thread.h>
 #include <event2/bufferevent.h>
 
 #include <arpa/inet.h>
@@ -48,15 +49,15 @@
 #include <netdb.h>
 #include <signal.h>
 
+const size_t MAX_TCP_SIZE = 100; // XXX
 const uint32_t MAGIC = 0x06121983;
 
 using std::pair;
 
-TCPTransportAddress::TCPTransportAddress(const sockaddr_in &addr,
-                                         int replicaIdx)
-    : addr(addr), replicaIdx(replicaIdx)
+TCPTransportAddress::TCPTransportAddress(const sockaddr_in &addr)
+    : addr(addr)
 {
-    memset((void *)addr.sin_zero, 0, sizeof(addr.sin_zero));   
+    memset((void *)addr.sin_zero, 0, sizeof(addr.sin_zero));
 }
 
 TCPTransportAddress *
@@ -74,6 +75,11 @@ bool operator==(const TCPTransportAddress &a, const TCPTransportAddress &b)
 bool operator!=(const TCPTransportAddress &a, const TCPTransportAddress &b)
 {
     return !(a == b);
+}
+
+bool operator<(const TCPTransportAddress &a, const TCPTransportAddress &b)
+{
+    return (memcmp(&a.addr, &b.addr, sizeof(a.addr)) < 0);
 }
 
 TCPTransportAddress
@@ -100,12 +106,20 @@ TCPTransport::LookupAddress(const transport::ReplicaAddress &addr)
         return out;
 }
 
+TCPTransportAddress
+TCPTransport::LookupAddress(const transport::Configuration &config,
+                            int idx)
+{
+    const transport::ReplicaAddress &addr = config.replica(idx);
+    return LookupAddress(addr);
+}
+
 static void
 BindToPort(int fd, const string &host, const string &port)
 {
     struct sockaddr_in sin;
 
-    // Otherwise, look up its hostname and port number (which
+    // look up its hostname and port number (which
     // might be a service name)
     struct addrinfo hints;
     hints.ai_family   = AF_INET;
@@ -120,7 +134,7 @@ BindToPort(int fd, const string &host, const string &port)
               host.c_str(), port.c_str(), gai_strerror(res));
     }
     ASSERT(ai->ai_family == AF_INET);
-    ASSERT(ai->ai_socktype == SOCK_STREAM);
+    ASSERT(ai->ai_socktype == (SOCK_STREAM));
     if (ai->ai_addr->sa_family != AF_INET) {
         Panic("getaddrinfo returned a non IPv4 address");        
     }
@@ -128,17 +142,15 @@ BindToPort(int fd, const string &host, const string &port)
         
     freeaddrinfo(ai);
 
-    Debug("Binding to TCP", net_ntoa(sin.sin_addr), htons(sin.sin_port));
+    Debug("Binding to %s %d TCP", inet_ntoa(sin.sin_addr), htons(sin.sin_port));
 
     if (bind(fd, (sockaddr *)&sin, sizeof(sin)) < 0) {
         PPanic("Failed to bind to socket");
     }
 }
 
-TCPTransport::TCPTransport(const transport::Configuration &config)
-    : config(config), tcpOutgoing(config.n, NULL)
+TCPTransport::TCPTransport(event_base *evbase)
 {
-
     lastTimerId = 0;
     
     // Set up libevent
@@ -174,21 +186,11 @@ TCPTransport::~TCPTransport()
     // for (auto kv : timers) {
     //     delete kv.second;
     // }
-
 }
 
 void
-TCPTransport::ConnectTCP()
+TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
 {
-    transport::ReplicaAddress addr = config.replica(0);
-
-    // XXX This assumes that the port is just an integer, not a
-    // service name...
-    char *strtoulPtr;
-    int port = strtoul(addr.port.c_str(), &strtoulPtr, 0);
-    ASSERT(addr.port.c_str()[0] != '\0');
-    ASSERT(*strtoulPtr == '\0');
-
     // Create socket
     int fd;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -200,36 +202,38 @@ TCPTransport::ConnectTCP()
         PWarning("Failed to set O_NONBLOCK on outgoing TCP socket");
     }
 
-    Debug("Establishing TCP connection to replica %d at %s:%d",
-           replicaIdx, addr.host.c_str(), port);
-
     struct bufferevent *bev =
         bufferevent_socket_new(libeventBase, fd,
                                BEV_OPT_CLOSE_ON_FREE);
     bufferevent_setcb(bev, NULL, NULL,
                       TCPOutgoingEventCallback, this);
-    if (bufferevent_socket_connect_hostname(bev,
-                                            NULL, // XXX evdns_base
-                                            AF_INET,
-                                            addr.host.c_str(),
-                                            port) < 0) {
-        Warning("Failed to connect to replica %d via TCP", replicaIdx);
+    if (bufferevent_socket_connect(bev,
+                                   (sockaddr *)&dst.addr,
+                                   sizeof(dst.addr)) < 0) {
+        Warning("Failed to connect to server via TCP");
         return;
     }
     if (bufferevent_enable(bev, EV_READ|EV_WRITE) < 0) {
         Panic("Failed to enable bufferevent");
     }
 
-    tcpOutgoing = bev;
+    tcpOutgoing[dst] = bev;
+    tcpAddresses.insert(std::pair<struct bufferevent *,TCPTransportAddress>(bev,dst));
 }
 
 void
-TCPTransport::Register(TransportReceiver *receiver)
+TCPTransport::Register(TransportReceiver *receiver,
+                       const transport::Configuration &config,
+                       int replicaIdx)
 {
-    struct sockaddr_in sin;
+    ASSERT(replicaIdx < config.n);
     
     TCPTransportTCPListener *info = new TCPTransportTCPListener();
-        
+    //const transport::Configuration *canonicalConfig =
+    RegisterConfiguration(receiver, config, replicaIdx);
+
+    // Create socket
+    int fd;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         PPanic("Failed to create socket to accept TCP connections");
     }
@@ -240,14 +244,22 @@ TCPTransport::Register(TransportReceiver *receiver)
     }
 
     // Set SO_REUSEADDR
+    int n;
     if (setsockopt(fd, SOL_SOCKET,
                    SO_REUSEADDR, (char *)&n, sizeof(n)) < 0) {
         PWarning("Failed to set SO_REUSEADDR on TCP listening socket");
     }
-        
-    // Bind to the same host/port as the UDP connection
-    BindToPort(fd, config.replica(0).host,
-                   config.replica(0).port, true);
+
+    if (replicaIdx != -1) {
+        // Registering a replica. Bind socket to the designated
+        // host/port
+        const string &host = config.replica(replicaIdx).host;
+        const string &port = config.replica(replicaIdx).port;
+        BindToPort(fd, host, port);
+    } else {
+        // Registering a client. Bind to any available host/port
+        BindToPort(fd, "", "any");        
+    }
 
     // Listen for connections
     if (listen(fd, 5) < 0) {
@@ -258,6 +270,7 @@ TCPTransport::Register(TransportReceiver *receiver)
     info->transport = this;
     info->acceptFd = fd;
     info->receiver = receiver;
+    info->replicaIdx = replicaIdx;
     info->acceptEvent = event_new(libeventBase, fd,
                                   EV_READ | EV_PERSIST,
                                   TCPAcceptCallback, (void *)info);
@@ -266,18 +279,19 @@ TCPTransport::Register(TransportReceiver *receiver)
 }
 
 bool
-TCPTransport::SendMessage(TransportReceiver *src,
-                          const Message &m)
+TCPTransport::SendMessageInternal(TransportReceiver *src,
+                                  const TCPTransportAddress &dst,
+                                  const Message &m,
+                                  bool multicast)
 {
-    const TCPTransportAddress &srcAddr =
-        dynamic_cast<const TCPTransportAddress &>(src->GetAddress());
-    
+    auto kv = tcpOutgoing.find(dst);
     // See if we have a connection open
-    if (tcpOutgoing == NULL) {
-        ConnectTCP(replicaIdx);
+    if (kv == tcpOutgoing.end()) {
+        ConnectTCP(src, dst);
+        kv = tcpOutgoing.find(dst);
     }
     
-    struct bufferevent *ev = tcpOutgoing;
+    struct bufferevent *ev = kv->second;
     ASSERT(ev != NULL);
 
     // Serialize message
@@ -290,7 +304,7 @@ TCPTransport::SendMessage(TransportReceiver *src,
                        sizeof(totalLen) + sizeof(int32_t) +
                        sizeof(uint32_t));
 
-    Debug("Sending %ld byte %s message over TCP",
+    Debug("Sending %ld byte %s message to server over TCP",
           totalLen, type.c_str());
     
     char buf[totalLen];
@@ -304,10 +318,6 @@ TCPTransport::SendMessage(TransportReceiver *src,
     ptr += sizeof(size_t);
     ASSERT(ptr-buf < totalLen);
 
-    *((int32_t *) ptr) = srcAddr.replicaIdx;
-    ptr += sizeof(int32_t);
-    ASSERT(ptr-buf < totalLen);
-    
     *((size_t *) ptr) = typeLen;
     ptr += sizeof(size_t);
     ASSERT(ptr-buf < totalLen);
@@ -334,6 +344,12 @@ void
 TCPTransport::Run()
 {
     event_base_dispatch(libeventBase);
+}
+
+void
+TCPTransport::Stop()
+{
+    event_base_loopbreak(libeventBase);
 }
 
 int
@@ -441,7 +457,7 @@ TCPTransport::FatalCallback(int err)
 void
 TCPTransport::SignalCallback(evutil_socket_t fd, short what, void *arg)
 {
-    Notice("Terminating on SIGTERM/SIGINT");
+    Debug("Terminating on SIGTERM/SIGINT");
     TCPTransport *transport = (TCPTransport *)arg;
     event_base_loopbreak(transport->libeventBase);
 }
@@ -481,7 +497,7 @@ TCPTransport::TCPAcceptCallback(evutil_socket_t fd, short what, void *arg)
 
         info->connectionEvents.push_back(bev);
 
-        Notice("Opened incoming TCP connection from %s:%d",
+        Debug("Opened incoming TCP connection from %s:%d",
                inet_ntoa(sin.sin_addr), htons(sin.sin_port));
     } 
 }
@@ -511,7 +527,7 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     
     if (evbuffer_get_length(evbuf) < totalSize) {
         Debug("Don't have %ld bytes for a message yet, only %ld",
-              totalSize, evbuffer_get_length(evbuf));
+               totalSize, evbuffer_get_length(evbuf));
         return;
     }
     Debug("Receiving %ld byte message", totalSize);
@@ -523,13 +539,9 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     // Parse message
     char *ptr = buf + sizeof(*sz) + sizeof(*magic);
 
-    uint32_t replicaIdx = *(uint32_t *)ptr;
-    ptr += sizeof(uint32_t);
-    ASSERT(ptr-buf < totalSize);
-    
     size_t typeLen = *((size_t *)ptr);
     ptr += sizeof(size_t);
-    ASSERT(ptr-buf < totalSize);
+    ASSERT((size_t)(ptr-buf) < totalSize);
     
     ASSERT(ptr+typeLen-buf < totalSize);
     string msgType(ptr, typeLen);
@@ -537,18 +549,18 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     
     size_t msgLen = *((size_t *)ptr);
     ptr += sizeof(size_t);
-    ASSERT(ptr-buf < totalSize);
+    ASSERT((size_t)(ptr-buf) < totalSize);
     
     ASSERT(ptr+msgLen-buf <= totalSize);
     string msg(ptr, msgLen);
     ptr += msgLen;
 
-    auto addr = transport->replicaAddresses.find(replicaIdx);
-    ASSERT(addr != transport->replicaAddresses.end());
+    auto addr = transport->tcpAddresses.find(bev);
+    ASSERT(addr != transport->tcpAddresses.end());
 
     // Dispatch
     info->receiver->ReceiveMessage(addr->second, msgType, msg);
-    Notice("Done processing large %s message", msgType.c_str());
+    Debug("Done processing large %s message", msgType.c_str());
 }
 
 void
@@ -572,28 +584,26 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
                                        short what, void *arg)
 {
     TCPTransport *transport = (TCPTransport *)arg;
-    int idx = -1;
-    for (int i = 0; i < transport->config.n; i++) {
-        if (transport->tcpOutgoing[i] == bev) {
-            idx = i;
-        }
-    }
-    ASSERT(idx != -1);
-
+    auto it = transport->tcpAddresses.find(bev);    
+    ASSERT(it != transport->tcpAddresses.end());
+    TCPTransportAddress addr = it->second;
+    
     if (what & BEV_EVENT_CONNECTED) {
-        Notice("Established outgoing TCP connection to replica %d",
-               idx);
+        Debug("Established outgoing TCP connection to server");
     } else if (what & BEV_EVENT_ERROR) {
-        Warning("Error on outgoing TCP connection to replica %d: %s",
-                idx,
+        Warning("Error on outgoing TCP connection to server: %s",
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
-        transport->tcpOutgoing[idx] = NULL;
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
         return;
     } else if (what & BEV_EVENT_EOF) {
-        Warning("EOF on outgoing TCP connection to replica %d", idx);
+        Warning("EOF on outgoing TCP connection to server");
         bufferevent_free(bev);
-        transport->tcpOutgoing[idx] = NULL;
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
         return;
     }
 }
