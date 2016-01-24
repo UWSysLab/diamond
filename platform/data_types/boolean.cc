@@ -43,7 +43,7 @@ DBoolean::SetNotProtected(const bool b)
    std::string
    DBoolean::Serialize() {
       char buf[50];
-      sprintf(buf, "%" PRIu64 "", _b);
+      sprintf(buf, "%i", _b);
       return string(buf);
    }
 

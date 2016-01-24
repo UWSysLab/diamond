@@ -38,7 +38,7 @@ namespace strongstore {
 
 Client::Client(string configPath, int nShards,
                 int closestReplica)
-    : transport(0.0, 0.0, 0)
+    : transport()
 {
     // Initialize all state here;
     client_id = 0;
@@ -69,7 +69,9 @@ Client::Client(string configPath, int nShards,
     for (int i = 0; i < nShards; i++) {
         string shardConfigPath = configPath + to_string(i) + ".config";
         ShardClient *shardclient = new ShardClient(shardConfigPath,
-            &transport, client_id, i, closestReplica);
+                                                   &transport,
+                                                   client_id, i,
+                                                   closestReplica);
         bclient[i] = new BufferClient(shardclient);
     }
 

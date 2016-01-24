@@ -333,24 +333,24 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
 
     *((uint32_t *) ptr) = MAGIC;
     ptr += sizeof(uint32_t);
-    ASSERT(ptr-buf < totalLen);
+    ASSERT((size_t)(ptr-buf) < totalLen);
     
     *((size_t *) ptr) = totalLen;
     ptr += sizeof(size_t);
-    ASSERT(ptr-buf < totalLen);
+    ASSERT((size_t)(ptr-buf) < totalLen);
 
     *((size_t *) ptr) = typeLen;
     ptr += sizeof(size_t);
-    ASSERT(ptr-buf < totalLen);
+    ASSERT((size_t)(ptr-buf) < totalLen);
 
-    ASSERT(ptr+typeLen-buf < totalLen);
+    ASSERT((size_t)(ptr+typeLen-buf) < totalLen);
     memcpy(ptr, type.c_str(), typeLen);
     ptr += typeLen;
     *((size_t *) ptr) = dataLen;
     ptr += sizeof(size_t);
 
-    ASSERT(ptr-buf < totalLen);
-    ASSERT(ptr+dataLen-buf == totalLen);
+    ASSERT((size_t)(ptr-buf) < totalLen);
+    ASSERT((size_t)(ptr+dataLen-buf) == totalLen);
     memcpy(ptr, data.c_str(), dataLen);
     ptr += dataLen;
 
@@ -565,7 +565,7 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     ptr += sizeof(size_t);
     ASSERT((size_t)(ptr-buf) < totalSize);
     
-    ASSERT(ptr+typeLen-buf < totalSize);
+    ASSERT((size_t)(ptr+typeLen-buf) < totalSize);
     string msgType(ptr, typeLen);
     ptr += typeLen;
     
@@ -573,7 +573,7 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     ptr += sizeof(size_t);
     ASSERT((size_t)(ptr-buf) < totalSize);
     
-    ASSERT(ptr+msgLen-buf <= totalSize);
+    ASSERT((size_t)(ptr+msgLen-buf) <= totalSize);
     string msg(ptr, msgLen);
     ptr += msgLen;
 
