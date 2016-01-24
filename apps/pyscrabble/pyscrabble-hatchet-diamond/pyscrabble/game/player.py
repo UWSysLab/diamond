@@ -104,8 +104,6 @@ class Player(object):
         DStringList.Map(self.letterStrs, "game:" + gameName + ":player:" + self.username + ":letterstrs")
         self.letterScores = DList()
         DList.Map(self.letterScores, "game:" + gameName + ":player:" + self.username + ":letterscores")
-        self.letterIsBlanks = DBooleanList()
-        DBooleanList.Map(self.letterIsBlanks, "game:" + gameName + ":player:" + self.username + ":letterisblanks")
     
     def addScore(self, score):
         '''
@@ -142,11 +140,8 @@ class Player(object):
         '''
         
         for letter in letters:
-            if letter.isBlank():
-                letter.setLetter("")
             self.letterStrs.Append(letter.getLetter().encode("utf-8"))
             self.letterScores.Append(letter.getScore())
-            self.letterIsBlanks.Append(letter.isBlank())
     
     def getNumberOfLettersNeeded(self):
         '''
@@ -167,12 +162,9 @@ class Player(object):
         '''
         
         for letter in list:
-            if (letter.isBlank()):
-                letter.setLetter("")
             index = self.letterStrs.Index(letter.getLetter())
             self.letterStrs.Erase(index)
             self.letterScores.Erase(index)
-            self.letterIsBlanks.Erase(index)
         
     def getLetters(self):
         '''
@@ -183,7 +175,7 @@ class Player(object):
         
         letters = []
         for i in range(0, self.letterStrs.Size()):
-            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i), self.letterIsBlanks.Value(i))) 
+            letters.append(Letter(self.letterStrs.Value(i), self.letterScores.Value(i))) 
         return letters
     
     def reset(self):
@@ -197,7 +189,6 @@ class Player(object):
         self.score.Set(0)
         self.letterStrs.Clear()
         self.letterScores.Clear()
-        self.letterIsBlanks.Clear()
     
     def __eq__(self, other):
         '''
