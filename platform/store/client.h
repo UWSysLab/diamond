@@ -35,7 +35,7 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/configuration.h"
-#include "lib/udptransport.h"
+#include "lib/tcptransport.h"
 #include "store/common/frontend/client.h"
 #include "replication/client.h"
 #include "store/common/frontend/bufferclient.h"
@@ -89,7 +89,7 @@ private:
     std::set<int> participants;
 
     // Transport used by paxos client proxies.
-    UDPTransport transport;
+    TCPTransport transport;
     
     // Thread running the transport event loop.
     std::thread *clientTransport;

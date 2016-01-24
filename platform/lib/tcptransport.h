@@ -66,7 +66,8 @@ private:
 class TCPTransport : public TransportCommon<TCPTransportAddress>
 {
 public:
-    TCPTransport(event_base *evbase = nullptr);
+    TCPTransport(double dropRate = 0.0, double reogrderRate = 0.0,
+                 int dscp = 0, event_base *evbase = nullptr);
     virtual ~TCPTransport();
     void Register(TransportReceiver *receiver,
                   const transport::Configuration &config,

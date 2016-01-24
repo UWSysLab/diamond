@@ -97,7 +97,7 @@ main(int argc, char **argv)
     Usage(argv[0]);
   }
 
-  UDPTransport transport(0.0, 0.0, 0);
+  TCPTransport transport(0.0, 0.0, 0);
 
   TimeStampServer server;
   replication::VRReplica replica(config, index, &transport, 1, &server);

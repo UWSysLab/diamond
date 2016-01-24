@@ -134,7 +134,7 @@ BindToPort(int fd, const string &host, const string &port)
               host.c_str(), port.c_str(), gai_strerror(res));
     }
     ASSERT(ai->ai_family == AF_INET);
-    ASSERT(ai->ai_socktype == (SOCK_STREAM));
+    ASSERT(ai->ai_socktype == SOCK_STREAM);
     if (ai->ai_addr->sa_family != AF_INET) {
         Panic("getaddrinfo returned a non IPv4 address");        
     }
@@ -149,7 +149,8 @@ BindToPort(int fd, const string &host, const string &port)
     }
 }
 
-TCPTransport::TCPTransport(event_base *evbase)
+TCPTransport::TCPTransport(double dropRate, double reorderRate,
+			   int dscp, event_base *evbase)
 {
     lastTimerId = 0;
     
@@ -207,9 +208,11 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
                                BEV_OPT_CLOSE_ON_FREE);
     bufferevent_setcb(bev, NULL, NULL,
                       TCPOutgoingEventCallback, this);
+    
     if (bufferevent_socket_connect(bev,
-                                   (sockaddr *)&dst.addr,
+                                   (struct sockaddr *)&(dst.addr),
                                    sizeof(dst.addr)) < 0) {
+	bufferevent_free(bev);
         Warning("Failed to connect to server via TCP");
         return;
     }
@@ -218,7 +221,10 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
     }
 
     tcpOutgoing[dst] = bev;
-    tcpAddresses.insert(std::pair<struct bufferevent *,TCPTransportAddress>(bev,dst));
+    tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,dst));
+
+    Debug("Opened TCP connection to %s:%d",
+	  inet_ntoa(dst.addr.sin_addr), htons(dst.addr.sin_port));
 }
 
 void
@@ -227,7 +233,8 @@ TCPTransport::Register(TransportReceiver *receiver,
                        int replicaIdx)
 {
     ASSERT(replicaIdx < config.n);
-    
+    struct sockaddr_in sin;
+
     TCPTransportTCPListener *info = new TCPTransportTCPListener();
     //const transport::Configuration *canonicalConfig =
     RegisterConfiguration(receiver, config, replicaIdx);
@@ -276,6 +283,20 @@ TCPTransport::Register(TransportReceiver *receiver,
                                   TCPAcceptCallback, (void *)info);
     event_add(info->acceptEvent, NULL);
     tcpListeners.push_back(info);
+
+    // Tell the receiver its address
+    socklen_t sinsize = sizeof(sin);
+    if (getsockname(fd, (sockaddr *) &sin, &sinsize) < 0) {
+        PPanic("Failed to get socket name");
+    }
+    TCPTransportAddress *addr = new TCPTransportAddress(sin);
+    receiver->SetAddress(addr);
+
+    // Update mappings
+    receivers[fd] = receiver;
+    fds[receiver] = fd;
+
+    Debug("Accepting connections on TCP port %hu", ntohs(sin.sin_port));
 }
 
 bool
@@ -301,7 +322,7 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
     size_t dataLen = data.length();
     size_t totalLen = (typeLen + sizeof(typeLen) +
                        dataLen + sizeof(dataLen) +
-                       sizeof(totalLen) + sizeof(int32_t) +
+                       sizeof(totalLen) +
                        sizeof(uint32_t));
 
     Debug("Sending %ld byte %s message to server over TCP",
@@ -327,12 +348,13 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
     ptr += typeLen;
     *((size_t *) ptr) = dataLen;
     ptr += sizeof(size_t);
+
     ASSERT(ptr-buf < totalLen);
     ASSERT(ptr+dataLen-buf == totalLen);
     memcpy(ptr, data.c_str(), dataLen);
     ptr += dataLen;
 
-    if (bufferevent_write(ev, buf, totalLen) < -1) {
+    if (bufferevent_write(ev, buf, totalLen) < 0) {
         Warning("Failed to write to TCP buffer");
         return false;
     }
@@ -496,7 +518,7 @@ TCPTransport::TCPAcceptCallback(evutil_socket_t fd, short what, void *arg)
         }
 
         info->connectionEvents.push_back(bev);
-
+	transport->tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,TCPTransportAddress(sin)));
         Debug("Opened incoming TCP connection from %s:%d",
                inet_ntoa(sin.sin_addr), htons(sin.sin_port));
     } 
@@ -522,7 +544,7 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     if (x == NULL) {
         return;
     }
-    size_t totalSize = *sz+sizeof(*sz)+sizeof(*magic);
+    size_t totalSize = *sz;
     ASSERT(totalSize < 1073741826);
     
     if (evbuffer_get_length(evbuf) < totalSize) {

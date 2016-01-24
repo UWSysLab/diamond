@@ -33,7 +33,7 @@
 #ifndef _STRONG_SERVER_H_
 #define _STRONG_SERVER_H_
 
-#include "lib/udptransport.h"
+#include "lib/tcptransport.h"
 #include "replication/replica.h"
 #include "store/common/truetime.h"
 #include "store/occstore.h"
