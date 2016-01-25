@@ -239,10 +239,14 @@ TCPTransport::Register(TransportReceiver *receiver,
     //const transport::Configuration *canonicalConfig =
     RegisterConfiguration(receiver, config, replicaIdx);
 
+    if (replicaIdx == -1) {
+	return;
+    }
+
     // Create socket
     int fd;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        PPanic("Failed to create socket to accept TCP connections");
+	PPanic("Failed to create socket to accept TCP connections");
     }
 
     // Put it in non-blocking mode
@@ -257,16 +261,12 @@ TCPTransport::Register(TransportReceiver *receiver,
         PWarning("Failed to set SO_REUSEADDR on TCP listening socket");
     }
 
-    if (replicaIdx != -1) {
-        // Registering a replica. Bind socket to the designated
-        // host/port
-        const string &host = config.replica(replicaIdx).host;
-        const string &port = config.replica(replicaIdx).port;
-        BindToPort(fd, host, port);
-    } else {
-        // Registering a client. Bind to any available host/port
-        BindToPort(fd, "", "any");        
-    }
+
+    // Registering a replica. Bind socket to the designated
+    // host/port
+    const string &host = config.replica(replicaIdx).host;
+    const string &port = config.replica(replicaIdx).port;
+    BindToPort(fd, host, port);
 
     // Listen for connections
     if (listen(fd, 5) < 0) {
