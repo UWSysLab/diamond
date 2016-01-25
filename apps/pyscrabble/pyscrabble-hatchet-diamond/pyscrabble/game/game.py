@@ -43,6 +43,15 @@ class ScrabbleGame:
         DString.Map(self.creator, "game:" + name + ":creator")
         self.timer = None
         self.spectatorsAllowed = True
+        
+        self.onboardLetters = DStringList()
+        DStringList.Map(self.players, "game:" + name + ":onboardletters")
+        self.onboardLetterScores = DList()
+        DList.Map(self.players, "game:" + name + ":onboardletterscores")
+        self.onboardX = DList()
+        DList.Map(self.players, "game:" + name + ":onboardx")
+        self.onboardY = DList()
+        DList.Map(self.players, "game:" + name + ":onboardy")
     
     def reset(self):
         for player in self.getPlayers():
@@ -54,6 +63,8 @@ class ScrabbleGame:
         self.players.Clear()
         self.bag.reset(rules='en')
         self.passedMoves.Set(0)
+        
+        self.clearOnboardMove()
         
         empty = DBoolean()
         DBoolean.Map(empty, "game:" + self.name + ":board:empty")
@@ -70,6 +81,34 @@ class ScrabbleGame:
     
     def getCreator(self):
         return self.creator.Value()
+    
+    def getOnboardMove(self):
+        result = Move()
+        for i in range(0, self.onboardLetters.Size()):
+            result.addMove(Letter(self.onboardLetters.Value(i), self.onboardLetterScores.Value(i)), self.onboardX.Value(i), self.onboardY.Value(i))
+        return result
+    
+    def clearOnboardMove(self):
+        self.onboardLetters.Clear()
+        self.onboardLetterScores.Clear()
+        self.onboardX.Clear()
+        self.onboardY.Clear()
+        
+    def removeFromOnboard(self, letter, x, y):
+        index = -1
+        for i in range(0, self.onboardLetters.Size()):
+            if self.onboardLetters.Value(i) == letter.getLetter() and self.onboardX.Value(i) == x and self.onboardY.Value(i) == y:
+                index = i
+        self.onboardLetters.Erase(index)
+        self.onboardLetterScores.Erase(index)
+        self.onboardX.Erase(index)
+        self.onboardY.Erase(index)
+        
+    def addToOnboard(self, letter, x, y):
+        self.onboardLetters.Append(letter.getLetter())
+        self.onboardLetterScores.Append(letter.getScore())
+        self.onboardX.Append(x)
+        self.onboardY.Append(y)
     
     def getDistribution(self):
         '''

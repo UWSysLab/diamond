@@ -72,7 +72,6 @@ class GameFrame(gtk.Frame):
         self.gameOptions = {OPTION_CENTER_TILE: True, 52: 'en', OPTION_SHOW_COUNT: True}
         
         self.letters = [] # User letter list
-        self.onBoard = Move() # Letters on board for current move
         self.tileTips = gtk.Tooltips()
         
         main = gtk.VBox( False, 5 )
@@ -716,10 +715,10 @@ class GameFrame(gtk.Frame):
         self.player.removeLetters([letter])
         
     def registerMove(self, tile, x, y): 
-        self.onBoard.addMove( tile.getLetter() ,x,y )
+        self.currentGame.addToOnboard( tile.getLetter() ,x,y )
         
     def removeMove(self, tile, x, y):
-        self.onBoard.removeMove( tile.getLetter(), x, y )
+        self.currentGame.removeFromOnboard( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
         threading.Thread(target=self.swapTilesHelper, args=(gTileA, gTileB)).start()
@@ -777,7 +776,7 @@ class GameFrame(gtk.Frame):
         
         @return: Number of moves on the board
         '''
-        return self.onBoard.length()
+        return self.currentGame.getOnboardMove().length()
         
     
     def hasOnboardMove(self, x, y):
@@ -790,7 +789,7 @@ class GameFrame(gtk.Frame):
         tile = self.board.get(x,y)
         if tile is not None:
             if tile.getLetter() is not None:
-                return self.onBoard.contains(tile.getLetter(),x,y)
+                return self.currentGame.getOnboardMove().contains(tile.getLetter(),x,y)
         return False
         
     
@@ -809,8 +808,8 @@ class GameFrame(gtk.Frame):
         
         @param event:
         '''
-        if not self.onBoard.isEmpty():
-            for letter,x,y in self.onBoard.getTiles():
+        if not self.currentGame.getOnboardMove().isEmpty():
+            for letter,x,y in self.currentGame.getOnboardMove().getTiles():
                 #print 'Clearing %s %d,%d' % (letter,x,y)
                 self.player.addLetters([letter])
                 #t = GameTile(x,y,self)
@@ -818,7 +817,7 @@ class GameFrame(gtk.Frame):
                 #self.board.put(t,x,y)
                 t = self.board.get(x, y)
                 t.clear()
-            self.onBoard.clear()
+            self.currentGame.clearOnboardMove()
     
     
     # Callback to send current move
@@ -839,7 +838,7 @@ class GameFrame(gtk.Frame):
             DObject.TransactionCommit()
             return
         
-        if (not self.onBoard.isValid()):
+        if (not self.currentGame.getOnboardMove().isValid()):
             gobject.idle_add(self.error, util.ErrorMessage(_("Move is invalid")))
             DObject.TransactionCommit()
             return
@@ -847,7 +846,7 @@ class GameFrame(gtk.Frame):
         # Make sure the board has a letter in the center or one of the tiles in this move does
         if (self.board.isEmpty()):
             center = False
-            for letter, x, y in self.onBoard.getTiles():
+            for letter, x, y in self.currentGame.getOnboardMove().getTiles():
                 if (x+1,y+1) in CENTER:
                     center = True
             if not center:
@@ -857,7 +856,7 @@ class GameFrame(gtk.Frame):
     
         try:
             moves = self.getMoves()
-            self.gameSendMove(self.currentGameId, self.onBoard, moves)
+            self.gameSendMove(self.currentGameId, self.currentGame.getOnboardMove(), moves)
             #self.client.sendMoves( self.currentGameId, moves, self.onBoard )
             #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
@@ -897,7 +896,7 @@ class GameFrame(gtk.Frame):
                 return
             words.append( word )
         
-        self.acceptMove()
+        self.currentGame.clearOnboardMove()
         score = self.getMovesScore(game, moves)
         letters = self.getLettersFromMove(onboard)
         player.removeLetters( letters )
@@ -1038,12 +1037,12 @@ class GameFrame(gtk.Frame):
         moves = []
         
         if self.board.isEmpty():
-            if not self.onBoard.isContinuous():
+            if not self.currentGame.getOnboardMove().isContinuous():
                 #print 'empty board'
                 raise exceptions.TilesNotConnectedException
         
         list = set()
-        temp = self.onBoard.clone()
+        temp = self.currentGame.getOnboardMove().clone()
         for letter, x, y in temp.getTiles():
             _xs = self.board.getTilesAtX(x)
             for _l, _x, _y in _xs:
@@ -1081,7 +1080,7 @@ class GameFrame(gtk.Frame):
                         m.addMove(l.getLetter(), x, y)
                 ms.append(m)
                 for _m in ms:
-                    if (_m.hasCommonTile(self.onBoard) and _m.length() > 1 and _m.isContinuous()):
+                    if (_m.hasCommonTile(self.currentGame.getOnboardMove()) and _m.length() > 1 and _m.isContinuous()):
                         moves.append(_m)
         
         for _y in groupy.keys():
@@ -1100,12 +1099,12 @@ class GameFrame(gtk.Frame):
                         m.addMove(l.getLetter(), x, y)
                 ms.append(m)
                 for _m in ms:
-                    if (_m.hasCommonTile(self.onBoard) and _m.length() > 1 and _m.isContinuous()):
+                    if (_m.hasCommonTile(self.currentGame.getOnboardMove()) and _m.length() > 1 and _m.isContinuous()):
                         moves.append(_m)
 
         # Make sure that every letter in the "on board" tiles is represented in a word
         found = {}
-        for letter,x,y in self.onBoard.getTiles():
+        for letter,x,y in self.currentGame.getOnboardMove().getTiles():
             found[letter] = False
             for m in moves:
                 if m.contains(letter,x,y):
@@ -1118,7 +1117,7 @@ class GameFrame(gtk.Frame):
         # Make sure that every move is touching the board
         if not self.board.isEmpty():
             for m in moves:
-                if not self.board.moveTouching(m, self.onBoard):
+                if not self.board.moveTouching(m, self.currentGame.getOnboardMove()):
                     raise exceptions.MoveNotTouchingException
         
         # If the tiles on the board are not continuous, make sure that one of the 
@@ -1126,10 +1125,10 @@ class GameFrame(gtk.Frame):
         # from placing disjointed words that still connect to an existing word:
         #         TESTING
         #        TO     ONE
-        if not self.onBoard.isContinuous():
+        if not self.currentGame.getOnboardMove().isContinuous():
             found = False
             for m in moves:
-                if m.containsMove(self.onBoard):
+                if m.containsMove(self.currentGame.getOnboardMove()):
                     found = True
             if not found:
                 raise exceptions.TilesNotConnectedException
@@ -1184,16 +1183,6 @@ class GameFrame(gtk.Frame):
         self.saveButton.set_label(_("Save Game"))
         self.saveButton.disconnect( self.pauseHandlerId )
         self.pauseHandlerId = self.saveButton.connect("clicked", self.doPauseGame)
-    
-    # Move accepted
-    def acceptMove(self):
-        '''
-        Callback from the server that indicates that the move that was sent has been accepted.
-        
-        Clear the board and setCurrentTurn = False
-        '''
-        self.onBoard.clear()
-        self.currentTurn = False
         
     
     # Show/Refresh letters in the letter box
