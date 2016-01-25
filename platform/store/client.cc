@@ -173,10 +173,12 @@ Client::Prepare(uint64_t &ts)
     // In the meantime ... go get a timestamp for OCC
     unique_lock<mutex> lk(cv_m);
 
-    Debug("Sending request to TimeStampServer");
-    tss->Invoke("", bind(&Client::tssCallback, this,
-			 placeholders::_1,
-			 placeholders::_2));
+    transport.Timer(0, [=]() { 
+            Debug("Sending request to TimeStampServer");
+            tss->Invoke("", bind(&Client::tssCallback, this,
+                                 placeholders::_1,
+                                 placeholders::_2));
+        });
         
     Debug("Waiting for TSS reply");
     cv.wait(lk);
