@@ -103,6 +103,30 @@ class TestDiamond(unittest.TestCase):
         list1.Clear()
         self.assertEquals(len(list2.Members()), 0)
 
+    def test_DStringSet(self):
+        set1 = DStringSet()
+        set2 = DStringSet()
+
+        DSet.Map(set1, "f")
+        DSet.Map(set2, "f")
+
+        set1.Clear()
+
+        set1.Add("hello")
+        set1.Add("world")
+        set1.Add("world")
+        set1.Add("diamond")
+
+        self.assertTrue(set2.InSet("hello"))
+        self.assertEquals(set(set2.Members()), set(("hello", "world", "diamond")))
+
+        set1.Remove("world")
+        self.assertFalse(set2.InSet("world"))
+        self.assertEquals(set(set2.Members()), set(("hello", "diamond")))
+
+        set1.Clear()
+        self.assertEquals(len(set2.Members()), 0)
+
 if __name__ == '__main__':
     DiamondInit("../../../test/local", 1, 0)
     unittest.main()

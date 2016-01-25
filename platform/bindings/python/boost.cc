@@ -116,6 +116,31 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .def("Clear", &DSet::Clear)
     ;
 
+    struct string_set_to_tuple {
+        static PyObject * convert(const std::unordered_set<std::string> & orig_set) {
+            boost::python::list result;
+            for (std::unordered_set<std::string>::const_iterator it = orig_set.begin();
+                    it != orig_set.end(); it++) {
+                result.append(boost::python::object(*it));
+            }
+            return boost::python::incref(boost::python::tuple(result).ptr());
+        }
+    };
+
+    boost::python::to_python_converter<std::unordered_set<std::string>,
+            string_set_to_tuple>();
+
+    void (DStringSet::*StringSetAdd)(const std::string &) = &DStringSet::Add;
+    class_<DStringSet, bases<DObject> >("DStringSet")
+        .def("Map", &DStringSet::Map)
+        .staticmethod("Map")
+        .def("Members", &DStringSet::Members)
+        .def("InSet", &DStringSet::InSet)
+        .def("Add", StringSetAdd)
+        .def("Remove", &DStringSet::Remove)
+        .def("Clear", &DStringSet::Clear)
+    ;
+
     struct uint64_vector_to_list {
         static PyObject * convert(const std::vector<uint64_t> & orig_vec) {
             boost::python::list result;
