@@ -128,7 +128,8 @@ BindToPort(int fd, const string &host, const string &port)
     hints.ai_flags    = AI_PASSIVE;
     struct addrinfo *ai;
     int res;
-    if ((res = getaddrinfo(host.c_str(), port.c_str(),
+    if ((res = getaddrinfo(host.c_str(),
+			   port.c_str(),
                            &hints, &ai))) {
         Panic("Failed to resolve host/port %s:%s: %s",
               host.c_str(), port.c_str(), gai_strerror(res));
@@ -203,11 +204,20 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
         PWarning("Failed to set O_NONBLOCK on outgoing TCP socket");
     }
 
+    TCPTransportTCPListener *info = new TCPTransportTCPListener();
+    info->transport = this;
+    info->acceptFd = 0;
+    info->receiver = src;
+    info->replicaIdx = -1;
+    info->acceptEvent = NULL;
+    
+    tcpListeners.push_back(info);
+
     struct bufferevent *bev =
         bufferevent_socket_new(libeventBase, fd,
                                BEV_OPT_CLOSE_ON_FREE);
-    bufferevent_setcb(bev, NULL, NULL,
-                      TCPOutgoingEventCallback, this);
+    bufferevent_setcb(bev, TCPReadableCallback, NULL,
+                      TCPOutgoingEventCallback, info);
     
     if (bufferevent_socket_connect(bev,
                                    (struct sockaddr *)&(dst.addr),
@@ -235,10 +245,14 @@ TCPTransport::Register(TransportReceiver *receiver,
     ASSERT(replicaIdx < config.n);
     struct sockaddr_in sin;
 
-    TCPTransportTCPListener *info = new TCPTransportTCPListener();
     //const transport::Configuration *canonicalConfig =
     RegisterConfiguration(receiver, config, replicaIdx);
 
+    // Clients don't need to accept TCP connections
+    if (replicaIdx == -1) {
+	return;
+    }
+    
     // Create socket
     int fd;
     if ((fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -257,23 +271,19 @@ TCPTransport::Register(TransportReceiver *receiver,
         PWarning("Failed to set SO_REUSEADDR on TCP listening socket");
     }
 
-    if (replicaIdx != -1) {
-        // Registering a replica. Bind socket to the designated
-        // host/port
-        const string &host = config.replica(replicaIdx).host;
-        const string &port = config.replica(replicaIdx).port;
-        BindToPort(fd, host, port);
-    } else {
-        // Registering a client. Bind to any available host/port
-        BindToPort(fd, "", "any");        
-    }
-
+    // Registering a replica. Bind socket to the designated
+    // host/port
+    const string &host = config.replica(replicaIdx).host;
+    const string &port = config.replica(replicaIdx).port;
+    BindToPort(fd, host, port);
+    
     // Listen for connections
     if (listen(fd, 5) < 0) {
         PPanic("Failed to listen for TCP connections");
     }
         
     // Create event to accept connections
+    TCPTransportTCPListener *info = new TCPTransportTCPListener();
     info->transport = this;
     info->acceptFd = fd;
     info->receiver = receiver;
@@ -518,7 +528,9 @@ TCPTransport::TCPAcceptCallback(evutil_socket_t fd, short what, void *arg)
         }
 
         info->connectionEvents.push_back(bev);
-	transport->tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,TCPTransportAddress(sin)));
+	TCPTransportAddress client = TCPTransportAddress(sin);
+	transport->tcpOutgoing[client] = bev;
+	transport->tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,client));
         Debug("Opened incoming TCP connection from %s:%d",
                inet_ntoa(sin.sin_addr), htons(sin.sin_port));
     } 
@@ -605,7 +617,8 @@ void
 TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
                                        short what, void *arg)
 {
-    TCPTransport *transport = (TCPTransport *)arg;
+    TCPTransportTCPListener *info = (TCPTransportTCPListener *)arg;
+    TCPTransport *transport = info->transport;
     auto it = transport->tcpAddresses.find(bev);    
     ASSERT(it != transport->tcpAddresses.end());
     TCPTransportAddress addr = it->second;
