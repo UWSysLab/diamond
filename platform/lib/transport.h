@@ -52,16 +52,15 @@ class TransportReceiver
 public:
     typedef ::google::protobuf::Message Message;
     
-
     virtual ~TransportReceiver();
     virtual void SetAddress(const TransportAddress *addr);
     virtual const TransportAddress& GetAddress();
-
+    virtual bool HasAddress();
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data) = 0;
 
-    
 protected:
+    bool hasAddress = false;
     const TransportAddress *myAddress;
 };
 

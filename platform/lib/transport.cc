@@ -42,12 +42,19 @@ void
 TransportReceiver::SetAddress(const TransportAddress *addr)
 {
     this->myAddress = addr;
+    hasAddress = true;
 }
 
 const TransportAddress &
 TransportReceiver::GetAddress()
 {
     return *(this->myAddress);
+}
+
+bool
+TransportReceiver::HasAddress()
+{
+    return this->hasAddress;
 }
 
 Timeout::Timeout(Transport *transport, uint64_t ms, timer_callback_t cb)
