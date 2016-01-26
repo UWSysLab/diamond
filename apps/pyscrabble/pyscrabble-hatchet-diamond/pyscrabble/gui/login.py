@@ -11,6 +11,14 @@ from pyscrabble import manager
 from pyscrabble import util
 from pyscrabble import gtkutil
 
+import sys
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
+from libpydiamond import *
+import threading
+import gobject
+from pyscrabble.lookup import *
+
 class LoginWindow(gtk.Window):
     '''
     The LoginWindow class presents a Window for the user to log in to the server
@@ -74,24 +82,21 @@ class LoginWindow(gtk.Window):
         @param data:
         '''
         
-        username = util.getUnicode(self.username.get_text())
+        username = self.username.get_text()
         password = util.hashPassword( self.password.get_text() )
         
-        if (self.hostname.get_child().get_text().find(':') == -1):
-            self.error(util.ErrorMessage(_("Hostname value must be hostname:port.")))
-            return
+        threading.Thread(target=self.clickLoginHelper, args=(username, password)).start()
+    
+    def clickLoginHelper(self, username, password):
+        pwString = DString()
+        DString.Map(pwString, "user:" + username + ":hashedpw")
         
-        (host, port) = self.hostname.get_child().get_text().split(':')
-        
-        try:
-            port = int(port)
-        except ValueError:
-            self.error(util.ErrorMessage(_("Port must be a number.")))
-            return
-        
-        self.client = ScrabbleClient(host, port, self)
-        self.client.login( username, password, VERSION )
-        widget.set_sensitive(False)
+        DObject.TransactionBegin()
+        if pwString.Value() == password:
+            gobject.idle_add(self.loginOK)
+        else:
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([INVALID_USERNAME_PASSWORD])))
+        DObject.TransactionCommit()
     
     def loginOK(self):
         '''
@@ -100,24 +105,12 @@ class LoginWindow(gtk.Window):
         Start the MainWindow
         '''
         
-        h = self.hostname.get_child().get_text()
-        if h not in self.history:
-            self.history.append(h)
-        
-        r = manager.ResourceManager()
-        
-        history_file = file(r["config"][SERVER_HISTORY], 'w+')
-        for host in self.history:
-            history_file.write('%s\n' % host)
-        history_file.close()
-        
         o = manager.OptionManager()
         if o.get_default_bool_option(OPTION_SAVE_LOGIN, True):
             o.set_option(OPTION_SAVE_UNAME, self.username.get_text())
             o.set_option(OPTION_SAVE_PWORD, self.password.get_text())
-            o.set_option(OPTION_SAVE_HOST, h)
         
-        MainWindow(self.client, util.getUnicode(self.username.get_text()))
+        MainWindow(self.username.get_text())
         self.destroy()
     
     def error(self, data):

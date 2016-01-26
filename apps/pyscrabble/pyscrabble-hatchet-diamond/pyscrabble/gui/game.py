@@ -41,7 +41,7 @@ class GameFrame(gtk.Frame):
     '''
     
     
-    def __init__(self, client, main, gameId, username, spectating, options):
+    def __init__(self, main, gameId, username, spectating, options):
         '''
         Initialize the game frame
         
@@ -57,8 +57,7 @@ class GameFrame(gtk.Frame):
         self.username = username.encode("utf-8")
         
         # callback to socket client
-        self.client = client
-        self.client.addGameWindow(self, gameId)
+        self.client = None
         self.mainwindow = main
         
         self.currentGameId = gameId
@@ -661,10 +660,6 @@ class GameFrame(gtk.Frame):
         
         # True if we want to initiate the disconnect.  False if the server boots us
         if clientLeaveGame:
-            try:
-                self.client.leaveGame( self.currentGameId )
-            except KeyError: pass # Key error if the client has already removed the game.  This will be the case when the game is over
-                
             self.mainwindow.removeGame(self.currentGameId)
             self.destroy()
         

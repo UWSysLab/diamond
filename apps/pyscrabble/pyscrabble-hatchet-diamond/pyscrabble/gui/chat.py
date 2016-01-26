@@ -25,7 +25,7 @@ class ChatFrame(gtk.Frame):
     This class displays the Chat window where all users on a server congregate.
     '''
     
-    def __init__(self, client, main):
+    def __init__(self, main):
         '''
         Initialize the ChatFrame
         
@@ -36,8 +36,7 @@ class ChatFrame(gtk.Frame):
         '''
         
         gtk.Frame.__init__(self)
-        self.client = client
-        self.client.setChatWindow( self )
+        self.client = None
         self.mainwindow = main
         
         self.username = main.username.encode("utf-8")
@@ -87,9 +86,7 @@ class ChatFrame(gtk.Frame):
         vbox = gtk.VBox(False, 1)
         
         self.userList = gtk.ListStore(str)
-        
-        self.client.getUserList()
-        
+                
         self.userView = gtk.TreeView( gtk.TreeModelSort(self.userList) )
         self.userView.connect("button-release-event", self.mainwindow.userListClicked_cb)
         self.userView.connect("button-press-event", self.mainwindow.userListClicked_cb)
@@ -128,9 +125,7 @@ class ChatFrame(gtk.Frame):
         vbox = gtk.VBox(False, 1)
         
         self.gameList = gtk.TreeStore(str, str, str)
-        
-        self.client.getGameList()
-        
+                
         self.gameView = gtk.TreeView( gtk.TreeModelSort(self.gameList) )
         self.gameView.set_headers_clickable(True)
         self.gameView.connect("button-press-event", self.gameListClicked_cb)

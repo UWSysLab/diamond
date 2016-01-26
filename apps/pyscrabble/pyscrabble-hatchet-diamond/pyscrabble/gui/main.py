@@ -21,7 +21,7 @@ class MainWindow(gtk.Window):
     which contains the chat room and game windows.
     '''
     
-    def __init__(self, client, username=''):
+    def __init__(self, username=''):
         '''
         
         Initialize the main window.
@@ -43,10 +43,6 @@ class MainWindow(gtk.Window):
         self.username = username
         self.set_title( "PyScrabble - %s" % username )
         self.set_default_size( DEFAULT_WIDTH, DEFAULT_HEIGHT )
-        
-        # Reference to client socket
-        self.client = client
-        self.client.setMainWindow( self )
         
         self.loggingOut = False
         
@@ -95,7 +91,6 @@ class MainWindow(gtk.Window):
                 return True
                 
         self.loggingOut = True
-        self.client.logout()
         return True
         #self.stopReactor()
 
@@ -125,7 +120,7 @@ class MainWindow(gtk.Window):
         self.notebook = gtk.Notebook()
         self.notebook.set_tab_pos( gtk.POS_TOP )
         
-        self.chatwin = ChatFrame(self.client, self)
+        self.chatwin = ChatFrame(self)
         
         # Chat frame
         self.notebook.append_page( self.chatwin, gtk.Label(_("Chat")) )
@@ -174,7 +169,7 @@ class MainWindow(gtk.Window):
         @param spectating: True if the user is spectating
         @param options: Game options dict
         '''
-        frame = GameFrame(self.client, self, gameId, self.username, spectating, options)
+        frame = GameFrame(self, gameId, self.username, spectating, options)
         window = gtk.ScrolledWindow()
         window.add_with_viewport( frame )
         window.set_policy( gtk.POLICY_AUTOMATIC, gtk.POLICY_AUTOMATIC )
