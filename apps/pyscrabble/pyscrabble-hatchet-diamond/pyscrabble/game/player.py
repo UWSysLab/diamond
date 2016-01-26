@@ -163,8 +163,9 @@ class Player(object):
         
         for letter in list:
             index = self.letterStrs.Index(letter.getLetter())
-            self.letterStrs.Erase(index)
-            self.letterScores.Erase(index)
+            if index != -1:
+                self.letterStrs.Erase(index)
+                self.letterScores.Erase(index)
         
     def getLetters(self):
         '''

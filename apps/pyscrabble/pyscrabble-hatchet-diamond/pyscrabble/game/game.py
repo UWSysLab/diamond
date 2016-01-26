@@ -1,4 +1,4 @@
-from pyscrabble.game.pieces import Bag
+from pyscrabble.game.pieces import Bag, Move, Letter
 from pyscrabble.game.player import Player,PlayerInfo
 from pyscrabble.exceptions import GameOverException, BagEmptyException
 from pyscrabble.constants import *
@@ -45,13 +45,13 @@ class ScrabbleGame:
         self.spectatorsAllowed = True
         
         self.onboardLetters = DStringList()
-        DStringList.Map(self.players, "game:" + name + ":onboardletters")
+        DStringList.Map(self.onboardLetters, "game:" + name + ":onboardletters")
         self.onboardLetterScores = DList()
-        DList.Map(self.players, "game:" + name + ":onboardletterscores")
+        DList.Map(self.onboardLetterScores, "game:" + name + ":onboardletterscores")
         self.onboardX = DList()
-        DList.Map(self.players, "game:" + name + ":onboardx")
+        DList.Map(self.onboardX, "game:" + name + ":onboardx")
         self.onboardY = DList()
-        DList.Map(self.players, "game:" + name + ":onboardy")
+        DList.Map(self.onboardY, "game:" + name + ":onboardy")
     
     def reset(self):
         for player in self.getPlayers():
@@ -99,10 +99,11 @@ class ScrabbleGame:
         for i in range(0, self.onboardLetters.Size()):
             if self.onboardLetters.Value(i) == letter.getLetter() and self.onboardX.Value(i) == x and self.onboardY.Value(i) == y:
                 index = i
-        self.onboardLetters.Erase(index)
-        self.onboardLetterScores.Erase(index)
-        self.onboardX.Erase(index)
-        self.onboardY.Erase(index)
+        if index != -1:
+            self.onboardLetters.Erase(index)
+            self.onboardLetterScores.Erase(index)
+            self.onboardX.Erase(index)
+            self.onboardY.Erase(index)
         
     def addToOnboard(self, letter, x, y):
         self.onboardLetters.Append(letter.getLetter())

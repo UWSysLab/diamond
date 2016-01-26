@@ -898,8 +898,6 @@ class GameFrame(gtk.Frame):
         
         self.currentGame.clearOnboardMove()
         score = self.getMovesScore(game, moves)
-        letters = self.getLettersFromMove(onboard)
-        player.removeLetters( letters )
         player.addScore( score )
         
         self.removeModifiers(game, moves)
