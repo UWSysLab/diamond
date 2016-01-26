@@ -13,20 +13,10 @@ namespace diamond {
 
 using namespace std;
 
-// Used by diamond_profile.h macros
-pthread_mutex_t  profileMutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t  transactionMutex = PTHREAD_MUTEX_INITIALIZER; // Protects the global transaction structures
-
-long profileEnterTs[MAX_THREAD_ID];
-
-// Used to simulate that the network is offline
-bool networkConnectivity = false;
-
-strongstore::Client* store = NULL;
-bool debugMultiMapIndividual = false;
+diamond::DiamondClient* store = NULL;
 
 void DiamondInit(const std::string &configPath, int nshards, int closestReplica) {
-   store = new strongstore::Client(configPath, nshards, closestReplica);
+   store = new diamond::DiamondClient(configPath);
 }
 
 void DiamondInit() {
@@ -36,42 +26,26 @@ void DiamondInit() {
 void
 DObject::TransactionBegin(void)
 {
-   pthread_mutex_lock(&transactionMutex);
-
    Debug("TRANSACTION BEGIN");
 
    store->Begin();
-
-   pthread_mutex_unlock(&transactionMutex);
 }
 
 int
 DObject::TransactionCommit(void)
 {
-   pthread_mutex_lock(&transactionMutex);
    Debug("TRANSACTION COMMIT");
 
-   int ret = store->Commit();
-
-   pthread_mutex_unlock(&transactionMutex);
-   return ret;
+   return store->Commit();
 }
 
 // XXX: Add an assert so that we don't map inside a transaction?
 int
 DObject::Map(DObject &addr, const string &key)
 {
-    PROFILE_ENTER("MAP");
-    pthread_mutex_lock(&addr._objectMutex);
-
     addr._key = key;
-   
-    int res = addr.Pull();
-    //int res = 0;
-
-    pthread_mutex_unlock(&addr._objectMutex);
-    PROFILE_EXIT("MAP");
-    return res;
+    
+    return addr.Pull();
 }
 
 // XXX: Ensure return codes are correct
@@ -82,25 +56,18 @@ DObject::Pull(){
 
     int ret;
     
-    // Disable stale reads outside of transactions for now
-    // ret = stalestorage.Read(_key,value);
-    // if(ret == ERR_NOTFOUND){
+    ret = store->Get(_key, value);
+    if (ret != REPLY_NOT_FOUND && ret != REPLY_OK) {
+       // Bad reply case
+       Panic("Unable to pull");
+       value = "";
+       return ret;
+    }
 
-        // If it's not on the stalestore
-
-        ret = store->Get(_key, value);
-        if (ret != REPLY_NOT_FOUND && ret != REPLY_OK) {
-            // Bad reply case
-            Panic("Unable to pull");
-            value = "";
-            return ret;
-        }
-
-        if (ret == REPLY_NOT_FOUND) {
-            value = "";
-        }
-    // }
-
+    if (ret == REPLY_NOT_FOUND) {
+       value = "";
+    }
+    
     Deserialize(value);
     return 0;
 }
@@ -108,20 +75,13 @@ DObject::Pull(){
 
 int
 DObject::Push(){
-    string value;
-    Debug("PushAlways()"); 
+    Debug("Push"); 
 
-    value = Serialize();
+    string value = Serialize();
 
-    int ret = store->Put(_key, value);
-    if (ret != REPLY_OK) {
-        return ret;
-    }
-    return 0;
+    return store->Put(_key, value);
 }
 
-// XXX: Thread-safety: make sure Multi-get is thread-safe
-// We're not protecting against situations where the user modifies the parameters concurrently with MultiMap
 int
 DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
 
