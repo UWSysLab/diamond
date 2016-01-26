@@ -111,6 +111,18 @@ class ScrabbleGame:
         self.onboardX.Append(x)
         self.onboardY.Append(y)
     
+    def getName(self):
+        return self.name
+    
+    def getStatus(self):
+        if (self.isStarted()):
+            status = ServerMessage([STATUS_STARTED])
+        else:
+            status = ServerMessage([NOT_STARTED])
+        if (self.isComplete()):
+            status = ServerMessage([COMPLETE])
+        return status
+    
     def getDistribution(self):
         '''
         Get Letter distribution

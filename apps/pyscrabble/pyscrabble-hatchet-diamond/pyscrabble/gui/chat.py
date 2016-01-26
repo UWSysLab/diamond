@@ -14,6 +14,9 @@ sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 import threading
 import gobject
+import ReactiveManager
+from pyscrabble.game.game import *
+from pyscrabble.game.player import *
 
 class ChatFrame(gtk.Frame):
     '''
@@ -22,7 +25,7 @@ class ChatFrame(gtk.Frame):
     This class displays the Chat window where all users on a server congregate.
     '''
     
-    def __init__(self, client, main):
+    def __init__(self, main):
         '''
         Initialize the ChatFrame
         
@@ -33,13 +36,14 @@ class ChatFrame(gtk.Frame):
         '''
         
         gtk.Frame.__init__(self)
-        self.client = client
-        self.client.setChatWindow( self )
+        self.client = None
         self.mainwindow = main
         
-        username = main.username.encode("utf-8")
-        self.gameSet = DStringSet()
-        DStringSet.Map(self.gameSet, "user:" + username + ":games")
+        self.username = main.username.encode("utf-8")
+        self.joinedGamesSet = DStringSet()
+        DStringSet.Map(self.joinedGamesSet, "user:" + self.username + ":games")
+        self.globalGamesList = DStringList()
+        DStringList.Map(self.globalGamesList, "global:games")
         
         main = gtk.VBox( False, 10)
         
@@ -55,12 +59,22 @@ class ChatFrame(gtk.Frame):
         self.show_all()
         
         threading.Thread(target=self.recoverGames, args=()).start()
+        
+        ReactiveManager.add(self.refreshGames)
     
     def recoverGames(self):
         DObject.TransactionBegin()
-        for gameId in self.gameSet.Members():
+        for gameId in self.joinedGamesSet.Members():
             gobject.idle_add(self.newGame, gameId, False, {})
         DObject.TransactionCommit()
+    
+    def refreshGames(self):
+        DObject.TransactionBegin()
+        for gameName in self.globalGamesList.Members():
+            game = ScrabbleGame(gameName)
+            gobject.idle_add(self.gameList.append, game.getName(), game.getNumberOfPlayers(), game.getStatus())
+        DObject.TransactionCommit()
+    
             
     def createUsersWindow(self):
         '''
@@ -72,9 +86,7 @@ class ChatFrame(gtk.Frame):
         vbox = gtk.VBox(False, 1)
         
         self.userList = gtk.ListStore(str)
-        
-        self.client.getUserList()
-        
+                
         self.userView = gtk.TreeView( gtk.TreeModelSort(self.userList) )
         self.userView.connect("button-release-event", self.mainwindow.userListClicked_cb)
         self.userView.connect("button-press-event", self.mainwindow.userListClicked_cb)
@@ -113,9 +125,7 @@ class ChatFrame(gtk.Frame):
         vbox = gtk.VBox(False, 1)
         
         self.gameList = gtk.TreeStore(str, str, str)
-        
-        self.client.getGameList()
-        
+                
         self.gameView = gtk.TreeView( gtk.TreeModelSort(self.gameList) )
         self.gameView.set_headers_clickable(True)
         self.gameView.connect("button-press-event", self.gameListClicked_cb)
@@ -235,7 +245,35 @@ class ChatFrame(gtk.Frame):
             self.error(util.ErrorMessage(_("You have already joined that game.")), True)
             return
         else:
-            self.client.joinGame(gameName)
+            threading.Thread(target=self.joinGameHelper, args=(gameName)).start()
+    
+    def joinGameHelper(self, gameName):
+        DObject.TransactionBegin()
+        game = ScrabbleGame(gameName)
+        if (game.isStarted()):
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([CANNOT_JOIN_STARTED])))
+            DObject.TransactionCommit()
+            return
+        
+        if (game.getNumberOfPlayers() == constants.MAX_PLAYERS):
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_FULL])))
+            DObject.TransactionCommit()
+            return
+                
+        #TODO: decide whether to eliminate pausing
+        #if (game.isPaused() and not game.hasPlayer(p)):
+        #    command.setData( ServerMessage([CANNOT_JOIN_STARTED]) )
+        #    command.setCommand( constants.GAME_JOIN_DENIED )
+        #    client.denyJoinGame(command)
+        #    self.error(util.ErrorMessage(ServerMessage([CANNOT_JOIN_STARTED])))
+        #    return
+
+        p = Player(self.username, gameName)
+        if not game.hasPlayer( p ):
+            game.addPlayer( p )
+        else:
+            game.removePending( p )
+        DObject.TransactionCommit()
         
     
     # Show dialog to create a new game
@@ -410,7 +448,23 @@ class ChatFrame(gtk.Frame):
             options[lookup.OPTION_MOVE_TIME] = long(moveTimeControl.get_value_as_int())
         
         self.gamedialog.destroy()
-        self.client.createGame( gameId, options )
+        threading.Thread(target=self.createGameHelper, args=(gameId, options)).start()
+    
+    def createGameHelper(self, gameId, options):
+        if len(gameId) > constants.MAX_NAME_LENGTH:
+            
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage( [GAME_NAME_MUST_BE_LESS_THAN, str(constants.MAX_NAME_LENGTH), CHARACTERS] ) ))
+            return
+        
+        if self.globalGamesList.Index(gameId) == -1:
+            game = ScrabbleGame( gameId, options )
+            DObject.TransactionBegin()
+            game.reset()
+            game.setCreator(self.username)
+            self.globalGamesList.Append(gameId)
+            DObject.TransactionCommit()
+        else:
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_EXISTS]) ))
     
     
     # Show/Refresh game list
@@ -422,6 +476,7 @@ class ChatFrame(gtk.Frame):
         @see: L{pyscrabble.game.game.ScrabbleGameInfo}
         '''
         
+        print "DELETE ME chat.py: showGameList()"
         self.gameList.clear()
         for game in games:
             iter = self.gameList.append(None, (game.getName(), str(game.getNumberOfPlayers()), game.getStatus()) )
@@ -443,7 +498,7 @@ class ChatFrame(gtk.Frame):
     
     def newGameHelper(self, gameId):
         DObject.TransactionBegin()
-        self.gameSet.Add(gameId)
+        self.joinedGamesSet.Add(gameId)
         DObject.TransactionCommit()
     
     def hasFocus(self, widget=None, event=None):

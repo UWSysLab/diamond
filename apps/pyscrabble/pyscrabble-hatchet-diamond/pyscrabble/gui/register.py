@@ -13,6 +13,17 @@ from pyscrabble import serialize
 from pyscrabble import util
 from twisted.internet import reactor
 
+import sys
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
+from libpydiamond import *
+import threading
+import gobject
+from pyscrabble.lookup import *
+
+def upper(data):
+    return data.upper()
+
 class RegisterWindow(gtk.Window):
     '''
     Window for Viewing the Public Server listing
@@ -263,32 +274,33 @@ class RegisterWindow(gtk.Window):
             self.error(util.ErrorMessage(_("Passwords do not match")),dialog)
             return
         
-        server = gtkutil.getSelectedItem(self.serverView, 0)
-        if server is None:
-            server = self.servers[0][0]
+        threading.Thread(target=self.createNewUserHelper, args=(uname, pw1)).start()
         
-        for h,g,w,l in self.servers:
-            if h == server:
-                g_port = g
-                w_port = w
-                
-        try:
-            loc = 'http://%s:%s/xmlrpc' % (server,w_port)
-            s = xmlrpclib.ServerProxy(loc)
-            val,msg = s.createNewUser(uname, util.hashPassword(pw1))
-        except socket.error:
-            self.error(util.ErrorMessage(_('Could not connect to server')),dialog)
-            return
+    def createNewUserHelper(self, username, password):
+        hashedPassword = util.hashPassword(password)
         
-        if not val:
-            self.error(util.ErrorMessage(lookup.SERVER_MESSAGE_LOOKUP[msg]),dialog)
-            return
-            
-        dialog.destroy()
+        users = DStringList();
+        DStringList.Map(users, "global:users")
         
-        g_loc = '%s:%s' % (server,g_port)
-        self.loginWindow.populateFields_cb(uname, pw1, g_loc)
-        self.destroy()
+        DObject.TransactionBegin()
+        if username.upper() in map(upper, users.Members()):
+            self.error(util.ErrorMessage(ServerMessage([USER_ALREADY_EXISTS])))
+        
+        if username in constants.RESERVED_NAMES:
+            self.error(util.ErrorMessage(ServerMessage([USERNAME_NOT_ALLOWED])))
+        
+        if (len(username) > constants.MAX_NAME_LENGTH):
+            self.error(util.ErrorMessage(ServerMessage([USERNAME_MUST_BE_LESS_THAN])))
+        
+        users.Append(username)
+        
+        pwString = DString()
+        DString.Map(pwString, "user:" + username + ":hashedpw")
+        pwString.Set(hashedPassword)
+        DObject.TransactionCommit()
+        
+        gobject.idle_add(self.loginWindow.populateFields_cb, username, password, "DEBUG")
+        gobject.idle_add(self.destroy)
     
     def addHost_cb(self, widget):
         '''
