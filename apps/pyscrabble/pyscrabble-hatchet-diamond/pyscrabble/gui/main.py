@@ -10,6 +10,10 @@ from pyscrabble import util
 import gtk
 import ConfigParser
 
+import sys
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
+from libpydiamond import *
 
 class MainWindow(gtk.Window):
     '''

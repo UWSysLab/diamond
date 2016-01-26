@@ -8,6 +8,13 @@ from pyscrabble import util
 import gtk
 import pango
 
+import sys
+sys.path.append("../../../platform/build/bindings/python/")
+sys.path.append("../../../platform/bindings/python/")
+from libpydiamond import *
+import threading
+import gobject
+
 class ChatFrame(gtk.Frame):
     '''
     ChatFrame.
@@ -30,6 +37,10 @@ class ChatFrame(gtk.Frame):
         self.client.setChatWindow( self )
         self.mainwindow = main
         
+        username = main.username.encode("utf-8")
+        self.gameSet = DStringSet()
+        DStringSet.Map(self.gameSet, "user:" + username + ":games")
+        
         main = gtk.VBox( False, 10)
         
         self.messageWindowOpen = False
@@ -42,6 +53,14 @@ class ChatFrame(gtk.Frame):
         self.set_border_width( 10 )
         self.add( main )
         self.show_all()
+        
+        threading.Thread(target=self.recoverGames, args=()).start()
+    
+    def recoverGames(self):
+        DObject.TransactionBegin()
+        for gameId in self.gameSet.Members():
+            gobject.idle_add(self.newGame, gameId, False, {})
+        DObject.TransactionCommit()
             
     def createUsersWindow(self):
         '''
@@ -419,8 +438,13 @@ class ChatFrame(gtk.Frame):
         
         self.setGameButtonsState(True)
         
+        gobject.idle_add(self.newGameHelper, gameId)
         self.mainwindow.newGame( gameId, spectating, options )
-        
+    
+    def newGameHelper(self, gameId):
+        DObject.TransactionBegin()
+        self.gameSet.Add(gameId)
+        DObject.TransactionCommit()
     
     def hasFocus(self, widget=None, event=None):
         '''

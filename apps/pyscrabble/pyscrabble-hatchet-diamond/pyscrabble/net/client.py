@@ -337,7 +337,8 @@ class ScrabbleClient(object):
                 self.chatWin.error(util.ErrorMessage( command.getData() ), True)
             
             if (command.getCommand() == GAME_TURN_CURRENT):
-                self.gameWins[command.getGameId()].setCurrentTurn( command.getData() )
+                #self.gameWins[command.getGameId()].setCurrentTurn( command.getData() )
+                print "Get rid of the server code doing this: GAME_TURN_CURRENT called with " + repr(command.getData())
             
             if (command.getCommand() == GAME_TURN_OTHER):
                 self.gameWins[command.getGameId()].otherTurn( command.getData() )

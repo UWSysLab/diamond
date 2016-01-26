@@ -685,9 +685,21 @@ class GameFrame(gtk.Frame):
         self.board.deactivate()
         
         #TODO: verify that this is correct
-        self.player.reset()
+        #TODO: put in transaction
+        
+        self.leaveGameHelper()
         #self.showLetters([])
     
+    def leaveGameHelper(self):
+        DObject.TransactionBegin()
+        gameSet = DStringSet()
+        DStringSet.Map(gameSet, "user:" + self.player.getUsername() + ":games")
+        gameSet.Remove(self.currentGameId)
+        self.clearCurrentMove()
+        self.doGameTurn()
+        self.currentGame.playerLeave(self.player)
+        self.player.reset()
+        DObject.TransactionCommit()
     
     # Game state management methods added by Niel
     def addLetter(self, letter):
