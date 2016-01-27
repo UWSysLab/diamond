@@ -42,8 +42,8 @@ class ChatFrame(gtk.Frame):
         self.username = main.username.encode("utf-8")
         self.joinedGamesSet = DStringSet()
         DStringSet.Map(self.joinedGamesSet, "user:" + self.username + ":games")
-        self.globalGamesList = DStringList()
-        DStringList.Map(self.globalGamesList, "global:games")
+        self.globalGamesSet = DStringSet()
+        DStringSet.Map(self.globalGamesSet, "global:games")
         
         main = gtk.VBox( False, 10)
         
@@ -70,7 +70,7 @@ class ChatFrame(gtk.Frame):
     
     def refreshGames(self):
         gobject.idle_add(self.gameList.clear)
-        for gameName in self.globalGamesList.Members():
+        for gameName in self.globalGamesSet.Members():
             game = ScrabbleGame(gameName)
             gobject.idle_add(self.gameListAppendWrapper, (game.getName(), game.getNumberOfPlayers(), game.getStatus()))
     
@@ -462,12 +462,12 @@ class ChatFrame(gtk.Frame):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage( [GAME_NAME_MUST_BE_LESS_THAN, str(constants.MAX_NAME_LENGTH), CHARACTERS] ) ))
             return
         
-        if self.globalGamesList.Index(gameId) == -1:
+        if not self.globalGamesSet.InSet(gameId):
             game = ScrabbleGame( gameId, options )
             DObject.TransactionBegin()
             game.reset()
             game.setCreator(self.username)
-            self.globalGamesList.Append(gameId)
+            self.globalGamesSet.Add(gameId)
             DObject.TransactionCommit()
         else:
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_EXISTS]) ))

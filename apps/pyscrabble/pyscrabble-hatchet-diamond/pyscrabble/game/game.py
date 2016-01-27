@@ -304,6 +304,11 @@ class ScrabbleGame:
         
         self.players.Remove(player.getUsername())
         self.returnLetters( player.getLetters() )
+        if self.getNumberOfPlayers() == 0:
+            self.reset()
+            globalGamesSet = DStringSet()
+            DStringSet.Map(globalGamesSet, "global:games")
+            globalGamesSet.Remove(self.name)
     
     def addMoves(self, moves, player):
         '''
