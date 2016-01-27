@@ -69,11 +69,13 @@ class ChatFrame(gtk.Frame):
         DObject.TransactionCommit()
     
     def refreshGames(self):
-        DObject.TransactionBegin()
+        gobject.idle_add(self.gameList.clear)
         for gameName in self.globalGamesList.Members():
             game = ScrabbleGame(gameName)
-            gobject.idle_add(self.gameList.append, game.getName(), game.getNumberOfPlayers(), game.getStatus())
-        DObject.TransactionCommit()
+            gobject.idle_add(self.gameListAppendWrapper, (game.getName(), game.getNumberOfPlayers(), game.getStatus()))
+    
+    def gameListAppendWrapper(self, tuple):
+        self.gameList.append(None, tuple)
     
             
     def createUsersWindow(self):
@@ -245,7 +247,7 @@ class ChatFrame(gtk.Frame):
             self.error(util.ErrorMessage(_("You have already joined that game.")), True)
             return
         else:
-            threading.Thread(target=self.joinGameHelper, args=(gameName)).start()
+            threading.Thread(target=self.joinGameHelper, args=(gameName,)).start()
     
     def joinGameHelper(self, gameName):
         DObject.TransactionBegin()
@@ -273,7 +275,11 @@ class ChatFrame(gtk.Frame):
             game.addPlayer( p )
         else:
             game.removePending( p )
+            
+        self.joinedGamesSet.Add(gameName)
         DObject.TransactionCommit()
+        
+        gobject.idle_add(self.mainwindow.newGame, gameName, False, {})
         
     
     # Show dialog to create a new game
@@ -493,13 +499,7 @@ class ChatFrame(gtk.Frame):
         
         self.setGameButtonsState(True)
         
-        gobject.idle_add(self.newGameHelper, gameId)
         self.mainwindow.newGame( gameId, spectating, options )
-    
-    def newGameHelper(self, gameId):
-        DObject.TransactionBegin()
-        self.joinedGamesSet.Add(gameId)
-        DObject.TransactionCommit()
     
     def hasFocus(self, widget=None, event=None):
         '''
