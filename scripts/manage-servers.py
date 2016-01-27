@@ -30,7 +30,6 @@ line = config.readline()
 match = re.match("f\s+(\d+)", line)
 if match:
     numShards = int(match.group(1))
-    print "Number of shards: " + repr(numShards)
 else:
     print "Error: could not get number of shards"
     sys.exit
@@ -46,26 +45,26 @@ for shardNum in range(0, numShards):
         if match:
             hostname = match.group(1)
             if args.action == 'start':
-                os.system("scp " + serverConfigPath + " " + hostname + ":" + remoteServerConfigPath)
-                os.system("scp " + serverExecutablePath + " " + hostname + ":" + remoteServerExecutablePath)
+                os.system("rsync " + serverConfigPath + " " + hostname + ":" + remoteServerConfigPath)
+                os.system("rsync " + serverExecutablePath + " " + hostname + ":" + remoteServerExecutablePath)
                 os.system("ssh -f " + hostname + " '" + remoteServerExecutablePath + " -c " + remoteServerConfigPath + " -i " + repr(replicaNum) + "'");
             elif args.action == 'kill':
-                os.system("ssh " + hostname + " 'pkill " + remoteServerConfigPath + "'");
+                os.system("ssh " + hostname + " 'pkill -f " + remoteServerConfigPath + "'");
             replicaNum = replicaNum + 1
     serverConfig.close()
 
 # launch tss servers
 tssConfig = open(tssConfigPath, 'r')
-i = 0
+replicaNum = 0
 for line in tssConfig:
     match = re.match("replica\s+([\w\.]+):(\d)", line)
     if match:
         hostname = match.group(1)
         if args.action == 'start':
-            os.system("scp " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
-            os.system("scp " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
+            os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
+            os.system("rsync " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
             os.system("ssh -f " + hostname + " '" + remoteTssExecutablePath + " -c " + remoteTssConfigPath + " -i " + repr(replicaNum) + "'");
         elif args.action == 'kill':
-            os.system("ssh " + hostname + " 'pkill " + remoteTssConfigPath + "'");
+            os.system("ssh " + hostname + " 'pkill -f " + remoteTssConfigPath + "'");
         replicaNum = replicaNum + 1
 tssConfig.close()
