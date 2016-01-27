@@ -4,7 +4,6 @@ import argparse
 import os
 import re
 import time
-from pyrem.host import RemoteHost
 
 USER_NAME = "nl35"
 WORKING_DIR = "/biggerraid/users/" + USER_NAME + "/scratch"
@@ -17,9 +16,13 @@ args = parser.parse_args()
 
 serverConfigPath = args.config_prefix + '0.config'
 serverExecutablePath = BUILD_DIR + "/server"
+tssConfigPath = args.config_prefix + '.tss.config'
+tssExecutablePath = BUILD_DIR + "/tss"
 
-remoteServerConfigPath = WORKING_DIR + "/diamond.0.config"
+remoteServerConfigPath = WORKING_DIR + "/diamond0.config"
 remoteServerExecutablePath = WORKING_DIR + "/server"
+remoteTssConfigPath = WORKING_DIR + "/diamond.tss.config"
+remoteTssExecutablePath = WORKING_DIR + "/tss"
 
 serverConfig = open(serverConfigPath, 'r')
 i = 0
@@ -27,20 +30,24 @@ for line in serverConfig:
     match = re.match("replica\s+([\w\.]+):(\d)", line)
     if match:
         hostname = match.group(1)
-        host = RemoteHost(hostname)
         if args.action == 'start':
-            sendConfigFileTask = host.send_file(serverConfigPath, remoteServerConfigPath)
-            sendConfigFileTask.start()
-            sendConfigFileTask.wait()
-            sendExecutableTask = host.send_file(serverExecutablePath, remoteServerExecutablePath)
-            sendExecutableTask.start()
-            sendExecutableTask.wait()
-            command = remoteServerExecutablePath + " -c " + remoteServerConfigPath + " -i " + repr(i)
-            startServerTask = host.run([command], kill_remote=False)
-            startServerTask.start()
+            os.system("scp " + serverConfigPath + " " + hostname + ":" + remoteServerConfigPath)
+            os.system("scp " + serverExecutablePath + " " + hostname + ":" + remoteServerExecutablePath)
+            os.system("ssh -f " + hostname + " '" + remoteServerExecutablePath + " -c " + remoteServerConfigPath + " -i " + repr(i) + "'");
         elif args.action == 'kill':
-            command = "pkill " + remoteServerConfigPath
-            killServerTask = host.run([command])
-            killServerTask.start()
-            killServerTask.wait()
+            os.system("ssh " + hostname + " 'pkill " + remoteServerConfigPath + "'");
+        i = i + 1
+
+tssConfig = open(tssConfigPath, 'r')
+i = 0
+for line in tssConfig:
+    match = re.match("replica\s+([\w\.]+):(\d)", line)
+    if match:
+        hostname = match.group(1)
+        if args.action == 'start':
+            os.system("scp " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
+            os.system("scp " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
+            os.system("ssh -f " + hostname + " '" + remoteTssExecutablePath + " -c " + remoteTssConfigPath + " -i " + repr(i) + "'");
+        elif args.action == 'kill':
+            os.system("ssh " + hostname + " 'pkill " + remoteTssConfigPath + "'");
         i = i + 1
