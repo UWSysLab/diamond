@@ -42,7 +42,7 @@
 #include <string>
 
 class BufferClient
-{
+
 public:
     BufferClient(TxnClient *txnclient);
     ~BufferClient();

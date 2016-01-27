@@ -87,7 +87,7 @@ target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
 if (ANDROID)
      target_link_libraries (diamond -luv)
 else()
-  # Set up the executable for the Diamond server
+  # Set up the executable for the Diamond storage server
   add_executable(server
     ${SRC_DIAMOND_LIB}
     ${SRC_DIAMOND_REPLICATION_PROTO}
