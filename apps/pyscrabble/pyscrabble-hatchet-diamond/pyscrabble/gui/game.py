@@ -24,7 +24,6 @@ from pyscrabble.game.game import *
 from pyscrabble import constants
 import os
 import codecs
-import threading
 
 
 class GameFrame(gtk.Frame):
@@ -533,7 +532,7 @@ class GameFrame(gtk.Frame):
     
     # Trade letters in for new letters
     def tradeLettersBackground(self, button):
-        threading.Thread(target=self.tradeLetters, args=(button)).start()
+        ReactiveManager.runInBackground(self.tradeLetters, button)
         
     def tradeLetters(self, button):
         '''
@@ -591,7 +590,7 @@ class GameFrame(gtk.Frame):
     
     # Start the game
     def startGame(self, button):
-        threading.Thread(target=self.startGameHelper, args=(button)).start()
+        ReactiveManager.runInBackground(self.startGameHelper, button)
     
     def startGameHelper(self, button):
         '''
@@ -685,7 +684,7 @@ class GameFrame(gtk.Frame):
         #TODO: verify that this is correct
         #TODO: put in transaction
         
-        threading.Thread(target=self.leaveGameHelper, args=()).start()
+        ReactiveManager.runInBackground(self.leaveGameHelper)
         #self.showLetters([])
     
     def leaveGameHelper(self):
@@ -731,7 +730,7 @@ class GameFrame(gtk.Frame):
         self.currentGame.removeFromOnboard( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
-        threading.Thread(target=self.swapTilesHelper, args=(gTileA, gTileB)).start()
+        ReactiveManager.runInBackground(self.swapTilesHelper, gTileA, gTileB)
         
     def swapTilesHelper(self, gTileA, gTileB):
         DObject.TransactionBegin()
@@ -751,7 +750,7 @@ class GameFrame(gtk.Frame):
         DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
-        threading.Thread(target=self.swapTileAndLetterHelper, args=(gTile, gLetter)).start()
+        ReactiveManager.runInBackground(self.swapTileAndLetterHelper, gTile, gLetter)
         
     def swapTileAndLetterHelper(self, gTile, gLetter):
         DObject.TransactionBegin()
@@ -805,7 +804,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to clear letters put on board
     def clearCurrentMoveBackground(self, event=None):
-        threading.Thread(target=self.clearCurrentMoveBackgroundHelper, args=()).start()
+        ReactiveManager.runInBackground(self.clearCurrentMoveBackgroundHelper)
     
     def clearCurrentMoveBackgroundHelper(self):
         DObject.TransactionBegin()
@@ -832,7 +831,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to send current move
     def sendCurrentMove(self, event = None):
-        threading.Thread(target=self.sendCurrentMoveHelper, args=(event)).start()
+        ReactiveManager.runInBackground(self.sendCurrentMoveHelper, event)
         
     def sendCurrentMoveHelper(self, event = None):
         '''
@@ -1031,7 +1030,7 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        threading.Thread(target=self.passMoveHelper, args=()).start()
+        ReactiveManager.runInBackground(self.passMoveHelper)
     
     def passMoveHelper(self):
         DObject.TransactionBegin()

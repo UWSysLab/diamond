@@ -12,7 +12,6 @@ import sys
 sys.path.append("../../../platform/build/bindings/python/")
 sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
-import threading
 import gobject
 import ReactiveManager
 from pyscrabble.game.game import *
@@ -58,7 +57,7 @@ class ChatFrame(gtk.Frame):
         self.add( main )
         self.show_all()
         
-        threading.Thread(target=self.recoverGames, args=()).start()
+        ReactiveManager.runInBackground(self.recoverGames)
         
         ReactiveManager.add(self.refreshGames)
     
@@ -247,7 +246,7 @@ class ChatFrame(gtk.Frame):
             self.error(util.ErrorMessage(_("You have already joined that game.")), True)
             return
         else:
-            threading.Thread(target=self.joinGameHelper, args=(gameName,)).start()
+            ReactiveManager.runInBackground(self.joinGameHelper, gameName)
     
     def joinGameHelper(self, gameName):
         DObject.TransactionBegin()
@@ -454,7 +453,7 @@ class ChatFrame(gtk.Frame):
             options[lookup.OPTION_MOVE_TIME] = long(moveTimeControl.get_value_as_int())
         
         self.gamedialog.destroy()
-        threading.Thread(target=self.createGameHelper, args=(gameId, options)).start()
+        ReactiveManager.runInBackground(self.createGameHelper, gameId, options)
     
     def createGameHelper(self, gameId, options):
         if len(gameId) > constants.MAX_NAME_LENGTH:
