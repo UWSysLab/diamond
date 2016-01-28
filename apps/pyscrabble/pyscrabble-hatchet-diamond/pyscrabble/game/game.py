@@ -368,7 +368,7 @@ class ScrabbleGame:
         '''
         
         self.passedMoves.Set(self.passedMoves.Value() + 1)
-        if (self.passedMoves == self.players.Size()):
+        if (self.passedMoves.Value() == self.players.Size()):
             raise GameOverException
     
     def getWinners(self, exclude=None):

@@ -645,8 +645,11 @@ class GameFrame(gtk.Frame):
         
         Notify the user and then disable the buttons
         '''
+        self.leaveGameHelper()
+        gobject.idle_add(self.createGameOverPopup)
+    
+    def createGameOverPopup(self):
         p = gtkutil.Popup( title=self.currentGameId, text=_('Game over'))
-        self.leaveGame(button=None, clientLeaveGame=False)
     
     # Leave a game
     def leaveGame(self, button, clientLeaveGame = True, disableChat = False):
@@ -682,7 +685,7 @@ class GameFrame(gtk.Frame):
         #TODO: verify that this is correct
         #TODO: put in transaction
         
-        self.leaveGameHelper()
+        threading.Thread(target=self.leaveGameHelper, args=()).start()
         #self.showLetters([])
     
     def leaveGameHelper(self):
@@ -932,9 +935,8 @@ class GameFrame(gtk.Frame):
                     p.addScore( letter.getScore() * -1 )
                     player.addScore( letter.getScore() )
             
-            self.sendGameScores(game.getGameId())
-            
-            self.gameOver(game)
+            #self.gameOver(game)
+            self.gameOver()
             return
 
         letters = game.getLetters( player.getNumberOfLettersNeeded() )
@@ -1029,8 +1031,39 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        self.clearCurrentMove()    
-        self.client.passMove( self.currentGameId )
+        threading.Thread(target=self.passMoveHelper, args=()).start()
+    
+    def passMoveHelper(self):
+        DObject.TransactionBegin()
+        self.clearCurrentMove()
+        
+        if not self.player == self.currentGame.getCurrentPlayer():
+            return
+        
+        if (not self.currentGame.isInProgress()):
+            self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
+            return
+        
+        if (self.currentGame.isPaused()):
+            self.error(util.ErrorMessage(ServerMessage([PASS_PAUSED]) ))
+            return
+        
+        try:
+            self.currentGame.passMove()            
+            self.doGameTurn()
+        except exceptions.GameOverException:
+            # If everyone has passed, assume that everyone still has letters
+            # Subtract everyones letter points
+            players = self.currentGame.getPlayers()
+            for player in players:
+                letters = player.getLetters()
+                for letter in letters:
+                    player.addScore( letter.getScore() * -1 )
+                
+            #self.gameOver(self.currentGame)
+            self.gameOver()
+        
+        DObject.TransactionCommit()
     
     def getMoves(self):
         '''

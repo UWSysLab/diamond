@@ -112,7 +112,10 @@ class Player(object):
         @param score: Score to add to Player's score.
         '''
         
-        self.score.Set(self.score.Value() + score)
+        val = self.score.Value() + score
+        if val < 0:
+            val = 0
+        self.score.Set(val)
     
     def getScore(self):
         '''
