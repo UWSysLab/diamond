@@ -3,13 +3,19 @@ import time
 import sys
 sys.path.append("../../build/bindings/python")
 from libpydiamond import *
+from twisted.internet import reactor
 
 txSet = set()
 
+def runInBackground(target, *args, **kwargs):
+    #threading.Thread(target=target, args=args, kwargs=kwargs).start()
+    reactor.callInThread(target, *args, **kwargs)
+
 def start():
-    thread = threading.Thread(target=run, args=())
-    thread.daemon = True
-    thread.start()
+    #thread = threading.Thread(target=run, args=())
+    #thread.daemon = True
+    #thread.start()
+    reactor.callInThread(run)
 
 def run():
     while True:
