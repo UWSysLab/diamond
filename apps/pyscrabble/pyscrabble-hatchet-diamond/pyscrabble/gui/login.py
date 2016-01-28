@@ -15,7 +15,6 @@ import sys
 sys.path.append("../../../platform/build/bindings/python/")
 sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
-import threading
 import gobject
 from pyscrabble.lookup import *
 
@@ -85,7 +84,7 @@ class LoginWindow(gtk.Window):
         username = self.username.get_text()
         password = util.hashPassword( self.password.get_text() )
         
-        threading.Thread(target=self.clickLoginHelper, args=(username, password)).start()
+        ReactiveManager.runInBackground(self.clickLoginHelper, username, password)
     
     def clickLoginHelper(self, username, password):
         pwString = DString()

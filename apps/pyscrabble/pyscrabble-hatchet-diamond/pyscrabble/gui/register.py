@@ -17,7 +17,7 @@ import sys
 sys.path.append("../../../platform/build/bindings/python/")
 sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
-import threading
+import ReactiveManager
 import gobject
 from pyscrabble.lookup import *
 
@@ -274,7 +274,7 @@ class RegisterWindow(gtk.Window):
             self.error(util.ErrorMessage(_("Passwords do not match")),dialog)
             return
         
-        threading.Thread(target=self.createNewUserHelper, args=(uname, pw1)).start()
+        ReactiveManager.runInBackground(self.createNewUserHelper, uname, pw1)
         
     def createNewUserHelper(self, username, password):
         hashedPassword = util.hashPassword(password)

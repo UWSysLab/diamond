@@ -24,7 +24,6 @@ from pyscrabble.game.game import *
 from pyscrabble import constants
 import os
 import codecs
-import threading
 
 
 class GameFrame(gtk.Frame):
@@ -533,7 +532,7 @@ class GameFrame(gtk.Frame):
     
     # Trade letters in for new letters
     def tradeLettersBackground(self, button):
-        threading.Thread(target=self.tradeLetters, args=(button)).start()
+        ReactiveManager.runInBackground(self.tradeLetters, button)
         
     def tradeLetters(self, button):
         '''
@@ -591,7 +590,7 @@ class GameFrame(gtk.Frame):
     
     # Start the game
     def startGame(self, button):
-        threading.Thread(target=self.startGameHelper, args=(button)).start()
+        ReactiveManager.runInBackground(self.startGameHelper, button)
     
     def startGameHelper(self, button):
         '''
@@ -645,8 +644,11 @@ class GameFrame(gtk.Frame):
         
         Notify the user and then disable the buttons
         '''
+        self.leaveGameHelper()
+        gobject.idle_add(self.createGameOverPopup)
+    
+    def createGameOverPopup(self):
         p = gtkutil.Popup( title=self.currentGameId, text=_('Game over'))
-        self.leaveGame(button=None, clientLeaveGame=False)
     
     # Leave a game
     def leaveGame(self, button, clientLeaveGame = True, disableChat = False):
@@ -682,7 +684,7 @@ class GameFrame(gtk.Frame):
         #TODO: verify that this is correct
         #TODO: put in transaction
         
-        self.leaveGameHelper()
+        ReactiveManager.runInBackground(self.leaveGameHelper)
         #self.showLetters([])
     
     def leaveGameHelper(self):
@@ -728,7 +730,7 @@ class GameFrame(gtk.Frame):
         self.currentGame.removeFromOnboard( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
-        threading.Thread(target=self.swapTilesHelper, args=(gTileA, gTileB)).start()
+        ReactiveManager.runInBackground(self.swapTilesHelper, gTileA, gTileB)
         
     def swapTilesHelper(self, gTileA, gTileB):
         DObject.TransactionBegin()
@@ -748,7 +750,7 @@ class GameFrame(gtk.Frame):
         DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
-        threading.Thread(target=self.swapTileAndLetterHelper, args=(gTile, gLetter)).start()
+        ReactiveManager.runInBackground(self.swapTileAndLetterHelper, gTile, gLetter)
         
     def swapTileAndLetterHelper(self, gTile, gLetter):
         DObject.TransactionBegin()
@@ -802,7 +804,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to clear letters put on board
     def clearCurrentMoveBackground(self, event=None):
-        threading.Thread(target=self.clearCurrentMoveBackgroundHelper, args=()).start()
+        ReactiveManager.runInBackground(self.clearCurrentMoveBackgroundHelper)
     
     def clearCurrentMoveBackgroundHelper(self):
         DObject.TransactionBegin()
@@ -829,7 +831,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to send current move
     def sendCurrentMove(self, event = None):
-        threading.Thread(target=self.sendCurrentMoveHelper, args=(event)).start()
+        ReactiveManager.runInBackground(self.sendCurrentMoveHelper, event)
         
     def sendCurrentMoveHelper(self, event = None):
         '''
@@ -932,9 +934,8 @@ class GameFrame(gtk.Frame):
                     p.addScore( letter.getScore() * -1 )
                     player.addScore( letter.getScore() )
             
-            self.sendGameScores(game.getGameId())
-            
-            self.gameOver(game)
+            #self.gameOver(game)
+            self.gameOver()
             return
 
         letters = game.getLetters( player.getNumberOfLettersNeeded() )
@@ -1029,8 +1030,39 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        self.clearCurrentMove()    
-        self.client.passMove( self.currentGameId )
+        ReactiveManager.runInBackground(self.passMoveHelper)
+    
+    def passMoveHelper(self):
+        DObject.TransactionBegin()
+        self.clearCurrentMove()
+        
+        if not self.player == self.currentGame.getCurrentPlayer():
+            return
+        
+        if (not self.currentGame.isInProgress()):
+            self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
+            return
+        
+        if (self.currentGame.isPaused()):
+            self.error(util.ErrorMessage(ServerMessage([PASS_PAUSED]) ))
+            return
+        
+        try:
+            self.currentGame.passMove()            
+            self.doGameTurn()
+        except exceptions.GameOverException:
+            # If everyone has passed, assume that everyone still has letters
+            # Subtract everyones letter points
+            players = self.currentGame.getPlayers()
+            for player in players:
+                letters = player.getLetters()
+                for letter in letters:
+                    player.addScore( letter.getScore() * -1 )
+                
+            #self.gameOver(self.currentGame)
+            self.gameOver()
+        
+        DObject.TransactionCommit()
     
     def getMoves(self):
         '''

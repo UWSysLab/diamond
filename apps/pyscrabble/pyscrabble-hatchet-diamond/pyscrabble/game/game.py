@@ -304,6 +304,11 @@ class ScrabbleGame:
         
         self.players.Remove(player.getUsername())
         self.returnLetters( player.getLetters() )
+        if self.getNumberOfPlayers() == 0:
+            self.reset()
+            globalGamesSet = DStringSet()
+            DStringSet.Map(globalGamesSet, "global:games")
+            globalGamesSet.Remove(self.name)
     
     def addMoves(self, moves, player):
         '''
@@ -363,7 +368,7 @@ class ScrabbleGame:
         '''
         
         self.passedMoves.Set(self.passedMoves.Value() + 1)
-        if (self.passedMoves == self.players.Size()):
+        if (self.passedMoves.Value() == self.players.Size()):
             raise GameOverException
     
     def getWinners(self, exclude=None):
