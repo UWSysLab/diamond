@@ -2,8 +2,8 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * store/common/frontend/bufferclient.cc:
- *   Single shard buffering client implementation.
+ * store/common/frontend/cacheclient.cc:
+ *   Single shard caching client implementation.
  *
  * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *
@@ -29,108 +29,216 @@
  *
  **********************************************************************/
 
-#include "bufferclient.h"
+#include "cacheclient.h"
 
 using namespace std;
 
-BufferClient::BufferClient(TxnClient* txnclient) : txn()
+CacheClient::CacheClient(TxnClient* txnclient)
 {
     this->txnclient = txnclient;
 }
 
-BufferClient::~BufferClient() { }
+CacheClient::~CacheClient() { }
 
 /* Begins a transaction. */
 void
-BufferClient::Begin(uint64_t tid)
+CacheClient::Begin(uint64_t tid)
 {
-    txns_lock.lock();
-    // Initialize data structures.
-    if (txns.find(tid) == txns.end()) {
 	txnclient->Begin(tid);
-    }
-    txns_lock.unlock();
 }
 
 /* Get value for a key.
  * Returns 0 on success, else -1. */
 void
-BufferClient::Get(uint64_t tid, const string &key, Promise *promise)
+CacheClient::Get(const uint64_t tid, const string &key, Promise *promise)
 {
-    txns_lock.lock();
-    if (txns.find(tid) == txns.end()) {
-	txnclient->Begin(tid);
-    }
-    Transaction txn = txns[tid];
-    txns_lock.unlock();
-    
-    // Read your own writes, check the write set first.
-    if (txn.getWriteSet().find(key) != txn.getWriteSet().end()) {
-        promise->Reply(REPLY_OK, (txn.getWriteSet().find(key))->second);
+    cache_lock.lock();
+
+    Version value;
+    // look for it in the cache
+    if (cache.get(key, value)) {
+        // Make some decision about the timestamp?
+        cache_lock.unlock();
+        
+        if (promise != NULL)
+            promise->Reply(REPLY_OK, key, value);
         return;
     }
 
-    // Consistent reads, check the read set.
-    if (txn.getReadSet().find(key) != txn.getReadSet().end()) {
-        // read from the server at same timestamp.
-        txnclient->Get(tid, key, (txn.getReadSet().find(key))->second, promise);
-        return;
-    }
-    
+    cache_lock.unlock();
     // Otherwise, get latest value from server.
     Promise p(GET_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
 
     txnclient->Get(tid, key, pp);
     if (pp->GetReply() == REPLY_OK) {
-        Debug("Adding [%s] with ts %lu", key.c_str(), pp->GetTimestamp().getTimestamp());
-        txn.addReadSet(key, pp->GetTimestamp());
+        Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
+        cache_lock.lock();
+        cache.put(key, pp->GetValue(key));
+        cache_lock.unlock();
+    }
+}
+
+/* Get value for a key.
+ * Returns 0 on success, else -1. */
+void
+CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timestamp, Promise *promise)
+{
+    cache_lock.lock();
+
+    Version value;
+    // look for it in the cache
+    if (cache.get(key, timestamp, value)) {
+        // Make some decision about the timestamp?
+        cache_lock.unlock();
+        
+        if (promise != NULL)
+            promise->Reply(REPLY_OK, key, value);
+        return;
     }
 
+    cache_lock.unlock();
+    // Otherwise, get latest value from server.
+    Promise p(GET_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+
+    txnclient->Get(tid, key, timestamp, pp);
+    if (pp->GetReply() == REPLY_OK) {
+        Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
+        cache_lock.lock();
+        cache.put(key, pp->GetValue(key));
+        cache_lock.unlock();
+    }
+}
+
+void
+CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
+{
+    cache_lock.lock();
+
+    map<string, Version> keysRead;
+    vector<string> keysToRead;
+    Version value;
+
+    for (auto &key : keys) {
+        // look for it in the cache
+        if (cache.get(key, value)) {
+            // Make some decision about the timestamp?
+
+            keysRead[key] = value;  
+        } else {
+            keysToRead.push_back(key);
+        }
+    }
+    cache_lock.unlock();
+    
+    if (keysRead.size() == keys.size()) {
+        // we found everything in the cache. Hooray!
+        if (promise != NULL)
+            promise->Reply(REPLY_OK, keysRead);
+        return;
+    }
+    
+    // Get latest value from server, ignoring consistent reads
+    Promise p(GET_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+
+    txnclient->MultiGet(tid, keysToRead, pp);
+    if (pp->GetReply() == REPLY_OK){
+        map<string, Version> values = pp->GetValues();
+
+        cache_lock.lock();
+        for (auto &value : values) {
+            Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+            cache.put(value.first, value.second);
+            keysRead[value.first] = value.second;
+        }
+        cache_lock.unlock();
+        pp->Reply(REPLY_OK, keysRead);
+    }
+}
+
+void
+CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Timestamp &timestamp, Promise *promise)
+{
+    cache_lock.lock();
+
+    map<string, Version> keysRead;
+    vector<string> keysToRead;
+    Version value;
+
+    for (auto &key : keys) {
+        // look for it in the cache
+        if (cache.get(key, timestamp, value)) {
+            // Make some decision about the timestamp?
+
+            keysRead[key] = value;  
+        } else {
+            keysToRead.push_back(key);
+        }
+    }
+    cache_lock.unlock();
+    
+    if (keysRead.size() == keys.size()) {
+        // we found everything in the cache. Hooray!
+        if (promise != NULL)
+            promise->Reply(REPLY_OK, keysRead);
+        return;
+    }
+    
+    Promise p(GET_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+
+    txnclient->MultiGet(tid, keysToRead, timestamp, pp);
+    if (pp->GetReply() == REPLY_OK){
+        map<string, Version> values = pp->GetValues();
+
+        cache_lock.lock();
+        for (auto &value : values) {
+            Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+            cache.put(value.first, value.second);
+            keysRead[value.first] = value.second;
+        }
+        cache_lock.unlock();
+        pp->Reply(REPLY_OK, keysRead);
+    }
 }
 
 /* Set value for a key. (Always succeeds).
  * Returns 0 on success, else -1. */
 void
-BufferClient::Put(uint64_t tid, const string &key, const string &value, Promise *promise)
+CacheClient::Put(const uint64_t tid, const string &key, const string &value, Promise *promise)
 {
-    txns_lock.lock();
-    if (txns.find(tid) == txns.end()) {
-	txnclient->Begin(tid);
-    }
-    Transaction txn = txns[tid];
-    txns_lock.unlock();
-
-    // Update the write set.
-    txn.addWriteSet(key, value);
-    promise->Reply(REPLY_OK);
+	txnclient->Put(tid, key, value, promise);
 }
 
 /* Prepare the transaction. */
 void
-BufferClient::Prepare(uint64_t tid, const Timestamp &timestamp, Promise *promise)
+CacheClient::Prepare(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
-    if (txns.find(tid) != txns.end()) {
-	txnclient->Prepare(tid, txns[tid], timestamp, promise);
-    }
+    txnclient->Prepare(tid, txn, promise);
 }
 
 void
-BufferClient::Commit(uint64_t timestamp, Promise *promise)
+CacheClient::Commit(const uint64_t tid, const Transaction &txn, const Timestamp &timestamp, Promise *promise)
 {
-    if (txns.find(tid) != txns.end()) {
-	txnclient->Commit(tid, txns[tid], timestamp, promise);
-	txns.erase(tid);
+    Promise p(GET_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+    txnclient->Commit(tid, txn, timestamp, pp);
+
+    // update the cache
+    if (pp->GetReply() == REPLY_OK) {
+        cache_lock.lock();
+        for (auto &write : txn.getWriteSet()) {
+            cache.put(write.first, write.second, pp->GetTimestamp());
+        }
+        cache_lock.unlock();
     }
 }
 
 /* Aborts the ongoing transaction. */
 void
-BufferClient::Abort(Promise *promise)
+CacheClient::Abort(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
-    if (txns.find(tid) != txns.end()) {
-	txnclient->Abort(tid, txns[tid], promise);
-	txns.erase(tid);
-    }
-
+	txnclient->Abort(tid, txn, promise);
 }

@@ -35,8 +35,8 @@
 
 #include "lib/tcptransport.h"
 #include "replication/replica.h"
-#include "store/common/truetime.h"
 #include "store/occstore.h"
+#include "common-proto.pb.h"
 #include "store-proto.pb.h"
 
 namespace strongstore {
@@ -54,6 +54,8 @@ public:
 
 private:
     TxnStore *store;
+
+    void ExecuteGet(proto::Request, string &str2);
 };
 
 } // namespace strongstore

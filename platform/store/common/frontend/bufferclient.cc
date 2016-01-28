@@ -33,7 +33,7 @@
 
 using namespace std;
 
-BufferClient::BufferClient(TxnClient* txnclient) : txn()
+BufferClient::BufferClient(TxnClient* txnclient)
 {
     this->txnclient = txnclient;
 }
@@ -42,12 +42,12 @@ BufferClient::~BufferClient() { }
 
 /* Begins a transaction. */
 void
-BufferClient::Begin(uint64_t tid)
+BufferClient::Begin(const uint64_t tid)
 {
     txns_lock.lock();
     // Initialize data structures.
     if (txns.find(tid) == txns.end()) {
-	txnclient->Begin(tid);
+        txnclient->Begin(tid);
     }
     txns_lock.unlock();
 }
@@ -55,25 +55,29 @@ BufferClient::Begin(uint64_t tid)
 /* Get value for a key.
  * Returns 0 on success, else -1. */
 void
-BufferClient::Get(uint64_t tid, const string &key, Promise *promise)
+BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
 {
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
-	txnclient->Begin(tid);
+        txnclient->Begin(tid);
     }
     Transaction txn = txns[tid];
     txns_lock.unlock();
-    
+
+    auto it = txn.getWriteSet().find(key);
     // Read your own writes, check the write set first.
-    if (txn.getWriteSet().find(key) != txn.getWriteSet().end()) {
-        promise->Reply(REPLY_OK, (txn.getWriteSet().find(key))->second);
+    if (it != txn.getWriteSet().end()) {
+        map<string, Version> ret;
+        ret[key] = Version(0,it->second);
+        promise->Reply(REPLY_OK, ret);
         return;
     }
 
     // Consistent reads, check the read set.
-    if (txn.getReadSet().find(key) != txn.getReadSet().end()) {
+    auto it2 = txn.getReadSet().find(key);
+    if (it2 != txn.getReadSet().end()) {
         // read from the server at same timestamp.
-        txnclient->Get(tid, key, (txn.getReadSet().find(key))->second, promise);
+        txnclient->Get(tid, key, it2->second, promise);
         return;
     }
     
@@ -83,20 +87,55 @@ BufferClient::Get(uint64_t tid, const string &key, Promise *promise)
 
     txnclient->Get(tid, key, pp);
     if (pp->GetReply() == REPLY_OK) {
-        Debug("Adding [%s] with ts %lu", key.c_str(), pp->GetTimestamp().getTimestamp());
-        txn.addReadSet(key, pp->GetTimestamp());
+        Debug("Adding [%s] with ts %lu", key.c_str(), pp->GetValue(key).GetTimestamp());
+        txn.addReadSet(key, pp->GetValue(key).GetTimestamp());
     }
 
 }
 
-/* Set value for a key. (Always succeeds).
- * Returns 0 on success, else -1. */
 void
-BufferClient::Put(uint64_t tid, const string &key, const string &value, Promise *promise)
+BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
 {
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
-	txnclient->Begin(tid);
+        txnclient->Begin(tid);
+    }
+    Transaction txn = txns[tid];
+    txns_lock.unlock();
+
+    vector<string> keysToRead;
+    for (auto key : keys) {
+        // Read your own writes, check the write set first.
+        if (txn.getWriteSet().find(key) == txn.getWriteSet().end()) {
+            keysToRead.push_back(key);
+        }
+    }
+
+    if (keysToRead.size() > 0) {
+        // Get latest value from server, ignoring consistent reads
+        Promise p(GET_TIMEOUT);
+        Promise *pp = (promise != NULL) ? promise : &p;
+
+        txnclient->MultiGet(tid, keysToRead, pp);
+        if (pp->GetReply() == REPLY_OK){
+            std::map<string,Version> values = pp->GetValues();
+            for (auto value : values) {
+                Debug("Adding [%s] with ts %lu", value.first.c_str(), value.second.GetTimestamp());
+                txn.addReadSet(value.first, value.second.GetTimestamp());
+            }
+        }
+    }
+}
+        
+
+/* Set value for a key. (Always succeeds).
+ * Returns 0 on success, else -1. */
+void
+BufferClient::Put(const uint64_t tid, const string &key, const string &value, Promise *promise)
+{
+    txns_lock.lock();
+    if (txns.find(tid) == txns.end()) {
+        txnclient->Begin(tid);
     }
     Transaction txn = txns[tid];
     txns_lock.unlock();
@@ -108,29 +147,29 @@ BufferClient::Put(uint64_t tid, const string &key, const string &value, Promise 
 
 /* Prepare the transaction. */
 void
-BufferClient::Prepare(uint64_t tid, const Timestamp &timestamp, Promise *promise)
+BufferClient::Prepare(const uint64_t tid, Promise *promise)
 {
     if (txns.find(tid) != txns.end()) {
-	txnclient->Prepare(tid, txns[tid], timestamp, promise);
+        txnclient->Prepare(tid, txns[tid], promise);
     }
 }
 
 void
-BufferClient::Commit(uint64_t timestamp, Promise *promise)
+BufferClient::Commit(const uint64_t tid, const Timestamp &timestamp, Promise *promise)
 {
     if (txns.find(tid) != txns.end()) {
-	txnclient->Commit(tid, txns[tid], timestamp, promise);
-	txns.erase(tid);
+        txnclient->Commit(tid, txns[tid], timestamp, promise);
+        txns.erase(tid);
     }
 }
 
 /* Aborts the ongoing transaction. */
 void
-BufferClient::Abort(Promise *promise)
+BufferClient::Abort(const uint64_t tid, Promise *promise)
 {
     if (txns.find(tid) != txns.end()) {
-	txnclient->Abort(tid, txns[tid], promise);
-	txns.erase(tid);
+        txnclient->Abort(tid, txns[tid], promise);
+        txns.erase(tid);
     }
 
 }

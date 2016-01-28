@@ -31,11 +31,11 @@
 
 #include "diamondclient.h"
 
+namespace diamond {
+
 using namespace std;
-
-namespace Diamond {
-
-DiamondClient::Client(string configPath)
+    
+DiamondClient::DiamondClient(string configPath)
     : transport()
 {
     // Initialize all state here;
@@ -51,11 +51,10 @@ DiamondClient::Client(string configPath)
     Debug("Initializing Diamond Store client with id [%lu]", client_id);
 
     /* Start a client for the front-end. */
-    string shardConfigPath = configPath + to_string(i) + ".config";
-    DiamondFrontendClient *frontendclient = new DiamondFrontendClient(configPath,
-								      &transport,
-								      client_id);
-    cclient = new CacheClient(frontendclient);
+    frontend::Client *frontendclient = new frontend::Client(configPath + ".config",
+                                                            &transport,
+                                                            client_id);
+    bclient = new BufferClient((TxnClient *)new CacheClient(frontendclient));
 
     /* Run the transport in a new thread. */
     clientTransport = new thread(&DiamondClient::run_client, this);
@@ -78,52 +77,73 @@ DiamondClient::run_client()
 
 /* check whether there is an ongoing transaction and return it if found */
 bool
-DiamondClient::OngoingTransaction(uint64_t &txnid = 0)
+DiamondClient::OngoingTransaction(uint64_t txnid)
 {
-    thread::id tid = thread::get_id();
+    thread::id tid = this_thread::get_id();
     if (ongoing.find(tid) == ongoing.end()) {
-	return false;
+        return false;
     } else {
-	txnid = ongoing[tid];
-	return true;
+        txnid = ongoing[tid];
+        return true;
     }
 }
     
 /* Begins a transaction. All subsequent operations before a commit() or
  * abort() are part of this transaction.
  */
-uint64_t
+void
 DiamondClient::Begin()
 {
-    thread::id tid = thread::get_id();
+    thread::id tid = this_thread::get_id();
     Debug("BEGIN Transaction");
-    if (!OngoingTransaction()) {
- 	// there's no ongoing transaction, start one
-	txnid_lock.lock();
-	uint64_t txnid = ++txnid_counter;
-	txnid_lock.unlock();
-	ongoing[tid] = txnid;
-	cclient->Begin(txnid);
+    uint64_t txnid = 0;
+    if (!OngoingTransaction(txnid)) {
+        // there's no ongoing transaction, start one
+        txnid_lock.lock();
+        uint64_t txnid = ++txnid_counter;
+        txnid_lock.unlock();
+        ongoing[tid] = txnid;
+        bclient->Begin(txnid);
     }
-    return ongoing[tid];
 }
 
 /* Returns the value corresponding to the supplied key. */
 int
 DiamondClient::Get(const string &key, string &value)
 {
-
-    uint64_t txnid;
+    uint64_t txnid = 0;
     // start a transaction if there isn't one
     if (!OngoingTransaction(txnid)) {
-	txnid = Begin();
+        Begin();
+        OngoingTransaction(txnid);
     }
 	
     // Send the GET operation to appropriate shard.
     Promise promise(GET_TIMEOUT);
 
-    cclient->Get(txnid, key, &promise);
-    value = promise.GetValue();
+    bclient->Get(txnid, key, &promise);
+    value = promise.GetValues()[key].GetValue();
+
+    return promise.GetReply();
+}
+
+int
+DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
+{
+    uint64_t txnid = 0;
+    // start a transaction if there isn't one
+    if (!OngoingTransaction(txnid)) {
+        Begin();
+        OngoingTransaction(txnid);
+    }
+	
+    // Send the GET operation to appropriate shard.
+    Promise promise(GET_TIMEOUT);
+
+    bclient->MultiGet(txnid, keys, &promise);
+    for (auto i : promise.GetValues()) {
+        values[i.first] = i.second.GetValue();
+    }
 
     return promise.GetReply();
 }
@@ -132,16 +152,17 @@ DiamondClient::Get(const string &key, string &value)
 int
 DiamondClient::Put(const string &key, const string &value)
 {
-    uint64_t txnid;
+    uint64_t txnid = 0;
     // start a transaction if there isn't one
     if (!OngoingTransaction(txnid)) {
-	txnid = Begin();
+        Begin();
+        OngoingTransaction(txnid);
     }
 	
     Promise promise(PUT_TIMEOUT);
 
     // Buffering, so no need to wait.
-    cclient->Put(txnid, key, value, &promise);
+    bclient->Put(txnid, key, value, &promise);
     return promise.GetReply();
 }
 
@@ -149,16 +170,16 @@ DiamondClient::Put(const string &key, const string &value)
 bool
 DiamondClient::Commit()
 {
-    uint64_t txnid;
+    uint64_t txnid = 0;
     // if there isn't a transaction just ignore
     if (!OngoingTransaction(txnid)) {
-	Warning("No ongoing transaction.");
-	return true;
+        Warning("No ongoing transaction.");
+        return true;
     }
     
     Promise promise(COMMIT_TIMEOUT);
 
-    cclient->Commit(txnid, &promise);
+    bclient->Commit(txnid, 0, &promise);
     return promise.GetReply();
 }
 
@@ -166,15 +187,15 @@ DiamondClient::Commit()
 void
 DiamondClient::Abort()
 {
-    uint64_t txnid;
+    uint64_t txnid = 0;
     // if there isn't a transaction just ignore
     if (!OngoingTransaction(txnid)) {
-	Warning("No ongoing transaction.");
-	return true;
+        Warning("No ongoing transaction.");
+        return;
     }
     
     Debug("ABORT Transaction");
-    cclient[p]->Abort(txnid);
+    bclient->Abort(txnid);
 }
 
 } // namespace diamond

@@ -33,7 +33,7 @@
 
 using namespace std;
 
-Promise::Promise() 
+Promise::Promise()
 { 
     done = false;
     reply = 0;
@@ -81,19 +81,18 @@ Promise::Reply(int r, Timestamp t)
 }
 
 void
-Promise::Reply(int r, string v)
+Promise::Reply(int r, const string &k, const Version &v)
 {
     lock_guard<mutex> l(lock);
-    value = v;
+    values.insert(make_pair(k, v));
     ReplyInternal(r);
 }
 
 void
-Promise::Reply(int r, Timestamp t, string v)
+Promise::Reply(int r, map<string, Version> &v)
 {
     lock_guard<mutex> l(lock);
-    value = v;
-    timestamp = t;
+    values = v;
     ReplyInternal(r);
 }
 
@@ -117,13 +116,23 @@ Promise::GetTimestamp()
     }
     return timestamp;
 }
-    
-string
-Promise::GetValue()
+
+Version &
+Promise::GetValue(const string &key)
 {
     unique_lock<mutex> l(lock);
     while(!done) {
         cv.wait(l);
     }
-    return value;
+    return values[key];
+}
+
+map<string, Version> &
+Promise::GetValues()
+{
+    unique_lock<mutex> l(lock);
+    while(!done) {
+        cv.wait(l);
+    }
+    return values;
 }

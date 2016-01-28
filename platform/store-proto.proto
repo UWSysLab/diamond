@@ -3,8 +3,8 @@ import "common-proto.proto";
 package strongstore.proto;
 
 message GetMessage {
-    required string key = 1;
-    optional TimestampMessage timestamp = 2;
+    repeated string keys = 1;
+    optional uint64 timestamp = 2;
 }
 
 message PrepareMessage {
@@ -14,6 +14,7 @@ message PrepareMessage {
 
 message CommitMessage {
     required uint64 timestamp = 1;
+    required TransactionMessage txn = 2;      
 }
 
 message AbortMessage {
@@ -36,11 +37,7 @@ message Request {
 }
 
 message Reply {
-     // 0 = OK
-     // -1 = failed
-     // -2 = retry
-     // -3 = abstain/no reply
      required int32 status = 1;
-     optional string value = 2;
+     repeated ReadReply replies = 2;
      optional uint64 timestamp = 3;
 }

@@ -28,6 +28,13 @@ Client::Get(const string &key, string &value)
 }
 
 int
+Client::MultiGet(const vector<string> &keys, map<string, string> &values)
+{
+    Panic("GET Unimplemented");
+    return 0;
+}
+
+int
 Client::Put(const string &key, const string &value)
 {
     Panic("PUT Unimplemented");
@@ -53,17 +60,4 @@ Client::Stats()
     Panic("STATS Unimplemented");
     vector<int> v;
     return v;
-}
-
-/* Takes a key and number of shards; returns shard corresponding to key. */
-uint64_t
-Client::key_to_shard(const string &key, uint64_t nshards)
-{
-    uint64_t hash = 5381;
-    const char* str = key.c_str();
-    for (unsigned int i = 0; i < key.length(); i++) {
-        hash = ((hash << 5) + hash) + (uint64_t)str[i];
-    }
-
-    return (hash % nshards);
 }

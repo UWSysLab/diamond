@@ -68,9 +68,9 @@ ShardClient::~ShardClient()
 
 /* Sends BEGIN to a single shard indexed by i. */
 void
-ShardClient::Begin(uint64_t id)
+ShardClient::Begin(uint64_t tid)
 {
-    Debug("[shard %i] BEGIN: %lu", shard, id);
+    Debug("[shard %i] BEGIN: %lu", shard, tid);
 
     // Wait for any previous pending requests.
     if (blockingBegin != NULL) {
@@ -82,59 +82,48 @@ ShardClient::Begin(uint64_t id)
 
 /* Returns the value corresponding to the supplied key. */
 void
-ShardClient::Get(uint64_t id, const string &key, Promise *promise)
+ShardClient::Get(const uint64_t tid, const string &key, Promise *promise)
 {
-    // Send the GET operation to appropriate shard.
-    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
-
-    // create request
-    string request_str;
-    Request request;
-    request.set_op(Request::GET);
-    request.set_txnid(id);
-    request.mutable_get()->set_key(key);
-    request.SerializeToString(&request_str);
-
-    // set to 1 second by default
-    int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
-
-    transport->Timer(0, [=]() {
-	    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
-	    waiting = promise;    
-	    client->InvokeUnlogged(replica,
-				   request_str,
-				   bind(&ShardClient::GetCallback,
-					this,
-					placeholders::_1,
-					placeholders::_2),
-				   bind(&ShardClient::GetTimeout,
-					this),
-				   timeout); // timeout in ms
-    });
+    MultiGet(tid, vector<string>({key}), promise);
 }
 
 void
-ShardClient::Get(uint64_t id, const string &key,
-                const Timestamp &timestamp, Promise *promise)
+ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
 {
     // Send the GET operation to appropriate shard.
-    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
+    MultiGet(tid, keys, 0, promise);
+}
+
+void
+ShardClient::Get(const uint64_t tid, const string &key,
+                const Timestamp &timestamp, Promise *promise)
+{
+    MultiGet(tid, vector<string>({key}), timestamp, promise);
+}
+
+void
+ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys,
+                      const Timestamp &timestamp, Promise *promise)
+{
+    // Send the GET operation to appropriate shard.
+    Debug("[shard %i] Sending %lu GETS", shard, keys.size());
 
     // create request
     string request_str;
     Request request;
     request.set_op(Request::GET);
-    request.set_txnid(id);
-    request.mutable_get()->set_key(key);
-    timestamp.serialize(request.mutable_get()->mutable_timestamp());
+    request.set_txnid(tid);
+    for (auto &i : keys) {
+        request.mutable_get()->add_keys(i);
+    }
+    request.mutable_get()->set_timestamp(timestamp);
     request.SerializeToString(&request_str);
 
     // set to 1 second by default
     int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
 
     transport->Timer(0, [=]() {
-	    waiting = promise;
-	    Debug("[shard %i] Sending GET [%s]", shard, key.c_str());
+	 	    waiting = promise;    
             client->InvokeUnlogged(replica,
                                    request_str,
                                    bind(&ShardClient::GetCallback,
@@ -146,18 +135,18 @@ ShardClient::Get(uint64_t id, const string &key,
                                    timeout); // timeout in ms
         });
 }
-
+    
 void
-ShardClient::Prepare(uint64_t id, const Transaction &txn,
+ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
                     const Timestamp &timestamp, Promise *promise)
 {
-    Debug("[shard %i] Sending PREPARE: %lu", shard, id);
+    Debug("[shard %i] Sending PREPARE: %lu", shard, tid);
 
     // create prepare request
     string request_str;
     Request request;
     request.set_op(Request::PREPARE);
-    request.set_txnid(id);
+    request.set_txnid(tid);
     txn.serialize(request.mutable_prepare()->mutable_txn());
     request.SerializeToString(&request_str);
 
@@ -172,17 +161,17 @@ ShardClient::Prepare(uint64_t id, const Transaction &txn,
 }
 
 void
-ShardClient::Commit(uint64_t id, const Transaction &txn,
+ShardClient::Commit(const uint64_t tid, const Transaction &txn,
                    uint64_t timestamp, Promise *promise)
 {
 
-    Debug("[shard %i] Sending COMMIT: %lu", shard, id);
+    Debug("[shard %i] Sending COMMIT: %lu", shard, tid);
 
     // create commit request
     string request_str;
     Request request;
     request.set_op(Request::COMMIT);
-    request.set_txnid(id);
+    request.set_txnid(tid);
     request.mutable_commit()->set_timestamp(timestamp);
     request.SerializeToString(&request_str);
 
@@ -200,15 +189,15 @@ ShardClient::Commit(uint64_t id, const Transaction &txn,
 
 /* Aborts the ongoing transaction. */
 void
-ShardClient::Abort(uint64_t id, const Transaction &txn, Promise *promise)
+ShardClient::Abort(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
-    Debug("[shard %i] Sending ABORT: %lu", shard, id);
+    Debug("[shard %i] Sending ABORT: %lu", shard, tid);
     
     // create abort request
     string request_str;
     Request request;
     request.set_op(Request::ABORT);
-    request.set_txnid(id);
+    request.set_txnid(tid);
     txn.serialize(request.mutable_abort()->mutable_txn());
     request.SerializeToString(&request_str);
 
@@ -246,11 +235,19 @@ ShardClient::GetCallback(const string &request_str, const string &reply_str)
     if (waiting != NULL) {
         Promise *w = waiting;
         waiting = NULL;
-        if (reply.has_timestamp()) {
-            w->Reply(reply.status(), Timestamp(reply.timestamp()), reply.value());
-        } else {
-            w->Reply(reply.status(), reply.value());
+        map<string, Version> ret;
+
+        if (reply.status() == REPLY_OK) {
+            for (int i = 0; i < reply.replies_size(); i++) {
+                ReadReply rep = reply.replies(i);
+                if (rep.has_timestamp()) {
+                    ret[rep.key()] = Version(rep.timestamp(), rep.value());
+                } else {
+                    ret[rep.key()] = Version(rep.value());
+                }
+            }
         }
+        w->Reply(reply.status(), ret);
     }
 }
 
@@ -267,7 +264,7 @@ ShardClient::PrepareCallback(const string &request_str, const string &reply_str)
         Promise *w = waiting;
         waiting = NULL;
         if (reply.has_timestamp()) {
-            w->Reply(reply.status(), Timestamp(reply.timestamp(), 0));
+            w->Reply(reply.status(), reply.timestamp());
         } else {
             w->Reply(reply.status(), Timestamp());
         }

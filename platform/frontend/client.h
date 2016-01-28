@@ -40,57 +40,67 @@
 #include "store/common/frontend/txnclient.h"
 #include "store/common/timestamp.h"
 #include "store/common/transaction.h"
-#include "store-proto.pb.h"
+#include "diamond-proto.pb.h"
 
 #include <string>
 #include <mutex>
 #include <condition_variable>
 
 namespace diamond {
+namespace frontend {
 
-class FrontendClient : public TransportReceiver, public TxnClient
+class Client : public TransportReceiver, public TxnClient
 {
 public:
     /* Constructor needs path to shard config. */
-    FrontendClient(
-        const std::string &configPath, 
+    Client(const std::string &configPath, 
         Transport *transport,
         uint64_t client_id);
-    ~ShardClient();
+    ~Client();
 
     // Overriding from TxnClient
-    void Begin(uint64_t id);
-    void Get(uint64_t id,
+    void Begin(const uint64_t tid);
+    void Get(const uint64_t tid,
             const std::string &key,
             Promise *promise = NULL);
-    void Get(uint64_t id,
+    void Get(const uint64_t tid,
             const std::string &key,
             const Timestamp &timestamp, 
             Promise *promise = NULL);
-    void Prepare(uint64_t id, 
+    void MultiGet(const uint64_t tid,
+                  const std::vector<std::string> &keys,
+                  Promise *promise = NULL);
+    void MultiGet(const uint64_t tid,
+                 const std::vector<std::string> &key,
+                 const Timestamp &timestamp, 
+                 Promise *promise = NULL);
+    void Prepare(const uint64_t tid, 
                  const Transaction &txn,
                  const Timestamp &timestamp = Timestamp(),
                  Promise *promise = NULL);
-    void Commit(uint64_t id, 
+    void Commit(const uint64_t tid, 
                 const Transaction &txn,
                 uint64_t timestamp,
                 Promise *promise = NULL);
-    void Abort(uint64_t id, 
+    void Abort(const uint64_t tid, 
                const Transaction &txn,
                Promise *promise = NULL);
 
 private:
+    transport::Configuration *config;
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.
-
-    Promise *waiting; // waiting thread
-
+    uint32_t msgid;
+    
+    std::map<uint32_t, Promise *> waiting; // waiting threads
+    
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type,
                         const std::string &data);
 
 };
 
+} // namespace frontend
 } // namespace diamond
 
 #endif /* _DIAMOND_FRONTEND_CLIENT_H_ */

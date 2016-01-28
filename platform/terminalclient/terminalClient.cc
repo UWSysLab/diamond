@@ -6,9 +6,8 @@
  *
  **********************************************************************/
 
-#include "store/common/truetime.h"
 #include "store/common/frontend/client.h"
-#include "store/client.h"
+#include "client/diamondclient.h"
 
 using namespace std;
 
@@ -16,50 +15,24 @@ int
 main(int argc, char **argv)
 {
     const char *configPath = NULL;
-    int nShards = 1;
-    int closestReplica = -1; // Closest replica id.
 
     Client *client;
 
     int opt;
-    while ((opt = getopt(argc, argv, "c:N:m:r:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:")) != -1) {
         switch (opt) {
         case 'c': // Configuration path
         { 
             configPath = optarg;
             break;
         }
-
-        case 'N': // Number of shards.
-        { 
-            char *strtolPtr;
-            nShards = strtoul(optarg, &strtolPtr, 10);
-            if ((*optarg == '\0') || (*strtolPtr != '\0') ||
-                (nShards <= 0)) {
-                fprintf(stderr, "option -n requires a numeric arg\n");
-            }
-            break;
-        }
-
-        case 'r':
-        {
-            char *strtolPtr;
-            closestReplica = strtod(optarg, &strtolPtr);
-            if ((*optarg == '\0') || (*strtolPtr != '\0'))
-            {
-                fprintf(stderr,
-                        "option -r requires a numeric arg\n");
-            }
-            break;
-        }
-
         default:
             fprintf(stderr, "Unknown argument %s\n", argv[optind]);
             break;
         }
     }
 
-    client = new strongstore::Client(configPath, nShards, closestReplica);
+    client = new diamond::DiamondClient(configPath);
 
     char c, cmd[2048], *tok;
     int clen, status;

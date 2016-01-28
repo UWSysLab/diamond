@@ -3,8 +3,8 @@
 
 using namespace diamond;
 
-int main(int argc , char **argv){
-   DiamondInit(argv[1], 1, 0);
+int main(){
+   DiamondInit()
 
    DLong long1;
    DString str1;

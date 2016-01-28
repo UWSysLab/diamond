@@ -31,49 +31,201 @@
  *
  **********************************************************************/
 
-#include "replication/common/log.h"
-#include "replication/common/replica.h"
+#include "server.h"
 
-#include "lib/message.h"
+namespace diamond {
+namespace frontend {
 
-#include <stdlib.h>
+using namespace proto;
+using namespace std;
 
-namespace replication {
-    
-Replica::Replica(const transport::Configuration &configuration, int myIdx,
-                 Transport *transport, AppReplica *app)
-    : configuration(configuration), myIdx(myIdx),
-      transport(transport), app(app)
+Server::Server(Transport *transport, strongstore::Client *client)
+    : transport(transport), store(client)
 {
-    transport->Register(this, configuration, myIdx);
+
 }
 
-Replica::~Replica()
+Server::~Server()
 {
     
 }
 
 void
-Replica::LeaderUpcall(opnum_t opnum, const string &op, bool &replicate, string &res)
+Server::ReceiveMessage(const TransportAddress &remote,
+                       const string &type, const string &data)
 {
-    Debug("Making leader upcall for operation %s", op.c_str());
-    app->LeaderUpcall(opnum, op, replicate, res);
-    Debug("Upcall result: %s %s", replicate ? "yes":"no", res.c_str());
+    static GetMessage get;
+    static CommitMessage commit;
+    static AbortMessage abort;
+
+    if (type == get.GetTypeName()) {
+        get.ParseFromString(data);
+        HandleGet(remote, get);
+    } else if (type == commit.GetTypeName()) {
+        commit.ParseFromString(data);
+        HandleCommit(remote, commit);
+    } else if (type == abort.GetTypeName()) {
+        abort.ParseFromString(data);
+        HandleAbort(remote, abort);
+    } else {
+        Panic("Received unexpected message type in OR proto: %s",
+              type.c_str());
+    }
 }
 
 void
-Replica::ReplicaUpcall(opnum_t opnum, const string &op, string &res)
+Server::HandleGet(const TransportAddress &remote,
+                  const GetMessage &msg)
 {
-    Debug("Making upcall for operation %s", op.c_str());
-    app->ReplicaUpcall(opnum, op, res);
+    pair<Timestamp,string> value;
+    int status;
+
+    vector<string> keys;
+    map<string, Version> values;
     
-    Debug("Upcall result: %s", res.c_str());
+    for (int i = 0; i < msg.keys_size(); i++) {
+        keys.push_back(msg.keys(i));
+    }
+
+    if (keys.size() > 1) {
+        if (msg.has_timestamp()) {
+            status = store->MultiGet(msg.txnid(), keys, msg.timestamp(), values);
+        } else {
+            status = store->MultiGet(msg.txnid(), keys, values);
+        }
+    } else {
+        Version v;
+        if (msg.has_timestamp()) {
+            status = store->Get(msg.txnid(), keys[0], msg.timestamp(), v);
+        } else {
+            status = store->Get(msg.txnid(), keys[0], v);
+        }
+        values[keys[0]] = v;
+    }
+
+    GetReply reply;
+    reply.set_status(status);
+    reply.set_msgid(msg.msgid());
+    for (auto value : values) {
+        ReadReply *r = reply.add_replies();
+        r->set_key(value.first);
+        r->set_value(value.second.GetValue());
+        if (value.second.GetTimestamp() == 0) {
+            r->set_timestamp(value.second.GetTimestamp());
+        }
+    }
+
+    transport->SendMessage(this, remote, reply);
 }
 
 void
-Replica::UnloggedUpcall(const string &op, string &res)
+Server::HandleCommit(const TransportAddress &remote,
+                     const CommitMessage &msg)
 {
-    app->UnloggedUpcall(op, res);
+    Timestamp ts;
+    int status = store->Commit(msg.txnid(), Transaction(msg.txn()), ts);
+
+    CommitReply reply;
+    reply.set_status(status);
+    reply.set_txnid(msg.txnid());
+    reply.set_msgid(msg.msgid());
+    reply.set_timestamp(ts);
+    transport->SendMessage(this, remote, reply);
 }
 
-} // namespace replication
+void
+Server::HandleAbort(const TransportAddress &remote,
+                    const AbortMessage &msg)
+{
+    store->Abort(msg.txnid(), Transaction(msg.txn()));
+
+    AbortReply reply;
+    reply.set_status(REPLY_OK);
+    reply.set_txnid(msg.txnid());
+    reply.set_msgid(msg.msgid());
+    transport->SendMessage(this, remote, reply);
+}
+
+} // namespace frontend
+} // namespace diamond
+
+int
+main(int argc, char **argv)
+{
+    unsigned int maxShard = 1;
+    int closestReplica = 0;
+    const char *configPath = NULL;
+    const char *backendConfig = NULL;
+    // Parse arguments
+    int opt;
+    while ((opt = getopt(argc, argv, "c:i:m:e:s:N:b")) != -1) {
+        switch (opt) {
+        case 'c':
+            configPath = optarg;
+            break;
+
+        case 'b':
+            backendConfig = optarg;
+            break;
+
+        case 'i':
+        {
+            char *strtolPtr;
+            closestReplica = strtoul(optarg, &strtolPtr, 10);
+            if ((*optarg == '\0') || (*strtolPtr != '\0') || (closestReplica < 0))
+            {
+                fprintf(stderr, "option -i requires a numeric arg\n");
+            }
+            break;
+        }
+        
+        case 'N':
+        {
+            char *strtolPtr;
+            maxShard = strtoul(optarg, &strtolPtr, 10);
+            if ((*optarg == '\0') || (*strtolPtr != '\0') || (maxShard <= 0))
+            {
+                fprintf(stderr, "option -e requires a numeric arg\n");
+            }
+            break;
+        }
+
+        default:
+            fprintf(stderr, "Unknown argument %s\n", argv[optind]);
+        }
+
+
+    }
+
+    if (!configPath) {
+        fprintf(stderr, "option -c is required\n");
+    }
+
+    if (!backendConfig) {
+        fprintf(stderr, "option -b is required\n");
+    }
+
+    if (closestReplica == -1) {
+        fprintf(stderr, "option -i is required\n");
+    }
+
+    // Load configuration
+    std::ifstream configStream(configPath);
+    if (configStream.fail()) {
+        fprintf(stderr, "unable to read configuration file: %s\n", configPath);
+    }
+    transport::Configuration config(configStream);
+
+    TCPTransport transport(0.0, 0.0, 0);
+
+    strongstore::Client *client = new strongstore::Client(backendConfig, maxShard, closestReplica);
+
+    diamond::frontend::Server server = diamond::frontend::Server(&transport, client);
+
+    // The server's transport for handling incoming connections
+    transport.Register(&server, config, 0);
+
+    transport.Run();
+
+    return 0;
+}

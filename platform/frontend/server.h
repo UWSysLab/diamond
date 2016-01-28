@@ -35,37 +35,36 @@
 
 
 #include "lib/configuration.h"
-#include "replication/common/log.h"
-#include "request.pb.h"
-#include "lib/transport.h"
-#include "replication/common/viewstamp.h"
-
+#include "lib/tcptransport.h"
+#include "diamond-proto.pb.h"
+#include "store/client.h"
+#include "store/common/backend/txnstore.h"
 namespace diamond {
-    
-class FrontendServer : public TransportReceiver, public TxnStore
+namespace frontend {
+
+class Server : public TransportReceiver, public TxnStore
 {
 public:
-    Replica(const transport::Configuration &config, int myIdx, Transport *transport, AppReplica *app);
-    virtual ~Replica();
+    Server(Transport *transport, strongstore::Client *client);
+    virtual ~Server();
     
 protected:
-    void LeaderUpcall(opnum_t opnum, const string &op, bool &replicate, string &res);
-    void ReplicaUpcall(opnum_t opnum, const string &op, string &res);
-    template<class MSG> void Execute(opnum_t opnum,
-                                     const Request & msg,
-                                     MSG &reply);
-    void UnloggedUpcall(const string &op, string &res);
-    template<class MSG> void ExecuteUnlogged(const UnloggedRequest & msg,
-                                               MSG &reply);
+    void ReceiveMessage(const TransportAddress &remote,
+                        const std::string &type, const std::string &data);
+
+    void HandleGet(const TransportAddress &remote,
+                   const proto::GetMessage &msg);
+    void HandleCommit(const TransportAddress &remote,
+                      const proto::CommitMessage &msg);
+    void HandleAbort(const TransportAddress &remote,
+                     const proto::AbortMessage &msg);
     
-protected:
-    transport::Configuration configuration;
-    int myIdx;
+private:
     Transport *transport;
-    AppReplica *app;
-    ReplicaStatus status;
+    strongstore::Client *store;
 };
-    
+
+} // namespace frontend
 } // namespace diamond
 
 #endif  /* _DIAMOND_FRONTEND_SERVER_H */

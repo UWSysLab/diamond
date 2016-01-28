@@ -38,13 +38,13 @@ TxnClient::TxnClient() { }
 TxnClient::~TxnClient() { }
 
 void
-TxnClient::Begin(uint64_t id)
+TxnClient::Begin(const uint64_t tid)
 {
     Panic("Unimplemented BEGIN");
 }
     
 void
-TxnClient::Get(uint64_t id,
+TxnClient::Get(const uint64_t tid,
                const string &key,
                Promise *promise)
 {
@@ -53,7 +53,7 @@ TxnClient::Get(uint64_t id,
 }
 
 void
-TxnClient::Get(uint64_t id, 
+TxnClient::Get(const uint64_t tid, 
                const string &key,
                const Timestamp &timestamp,
                Promise *promise)
@@ -63,7 +63,26 @@ TxnClient::Get(uint64_t id,
 }
 
 void
-TxnClient::Put(uint64_t id,
+TxnClient::MultiGet(const uint64_t tid,
+                    const vector<string> &keys,
+                    Promise *promise)
+{
+    Panic("Unimplemented MULTIGET");
+    return;
+}
+
+void
+TxnClient::MultiGet(const uint64_t tid, 
+                    const vector<string> &keys,
+                    const Timestamp &timestamp,
+                    Promise *promise)
+{
+    Panic("Unimplemented MULTIGET");
+    return;
+}
+
+void
+TxnClient::Put(const uint64_t tid,
                const string &key,
                const string &value,
                Promise *promise)
@@ -73,18 +92,17 @@ TxnClient::Put(uint64_t id,
 }
 
 void
-TxnClient::Prepare(uint64_t id,
+TxnClient::Prepare(const uint64_t tid,
                    const Transaction &txn,
-                   const Timestamp &timestamp,
                    Promise *promise)
 {
     Panic("Unimplemented PREPARE");
 }
 
 void
-TxnClient::Commit(uint64_t id,
+TxnClient::Commit(const uint64_t tid,
                   const Transaction &txn,
-                  uint64_t timestamp,
+                  const Timestamp &timestamp,
                   Promise *promise)
 {
     Panic("Unimplemented COMMIT");
@@ -92,10 +110,23 @@ TxnClient::Commit(uint64_t id,
 }
     
 void
-TxnClient::Abort(uint64_t id,
+TxnClient::Abort(const uint64_t tid,
                  const Transaction &txn,
                  Promise *promise)
 {
     Panic("Unimplemented ABORT");
     return;
+}
+
+/* Takes a key and number of shards; returns shard corresponding to key. */
+uint64_t
+TxnClient::key_to_shard(const string &key, const uint64_t nshards)
+{
+    uint64_t hash = 5381;
+    const char* str = key.c_str();
+    for (unsigned int i = 0; i < key.length(); i++) {
+        hash = ((hash << 5) + hash) + (uint64_t)str[i];
+    }
+
+    return (hash % nshards);
 }

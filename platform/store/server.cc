@@ -49,6 +49,29 @@ Server::~Server()
 }
 
 void
+Server::ExecuteGet(Request request, string &str2)
+{
+    Version val;
+    int status;
+    Reply reply;
+
+    for (int i = 0; i < request.get().keys_size(); i++) {
+        ReadReply *rr = reply.add_replies();
+        if (request.get().has_timestamp()) {
+            status = store->Get(request.txnid(), request.get().keys(i),
+                                request.get().timestamp(), val);
+        } else {
+            status = store->Get(request.txnid(), request.get().keys(i), val);
+        }
+        if (status == REPLY_OK) {
+            rr->set_value(val.GetValue());
+            rr->set_timestamp(val.GetTimestamp());
+        }
+    }
+    reply.SerializeToString(&str2);
+}
+    
+void
 Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string &str2)
 {
     Debug("Received LeaderUpcall: %lu %s", opnum, str1.c_str());
@@ -61,24 +84,8 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 
     switch (request.op()) {
     case strongstore::proto::Request::GET:
-        if (request.get().has_timestamp()) {
-            pair<Timestamp, string> val;
-            status = store->Get(request.txnid(), request.get().key(),
-                               request.get().timestamp(), val);
-            if (status == 0) {
-                reply.set_value(val.second);
-            }
-        } else {
-            pair<Timestamp, string> val;
-            status = store->Get(request.txnid(), request.get().key(), val);
-            if (status == 0) {
-                reply.set_value(val.second);
-                reply.set_timestamp(val.first.getTimestamp());
-            }
-        }
+        ExecuteGet(request, str2);
         replicate = false;
-        reply.set_status(status);
-        reply.SerializeToString(&str2);
         break;
     case strongstore::proto::Request::PREPARE:
         // Prepare is the only case that is conditionally run at the leader
@@ -154,31 +161,12 @@ Server::UnloggedUpcall(const string &str1, string &str2)
 {
     Request request;
     Reply reply;
-    int status;
-    
     request.ParseFromString(str1);
 
     ASSERT(request.op() == strongstore::proto::Request::GET);
 
-    if (request.get().has_timestamp()) {
-        pair<Timestamp, string> val;
-        status = store->Get(request.txnid(), request.get().key(),
-                            request.get().timestamp(), val);
-        if (status == 0) {
-            reply.set_value(val.second);
-        }
-    } else {
-        pair<Timestamp, string> val;
-        status = store->Get(request.txnid(), request.get().key(), val);
-        if (status == 0) {
-            reply.set_value(val.second);
-            reply.set_timestamp(val.first.getTimestamp());
-        }
-    }
-    
-    reply.set_status(status);
-    reply.SerializeToString(&str2);
-}
+    ExecuteGet(request, str2);
+ }
 
 void
 Server::Load(const string &key, const string &value, const Timestamp timestamp)

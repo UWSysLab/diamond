@@ -2,8 +2,8 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * store/common/frontend/bufferclient.h:
- *   Single shard buffering client implementation.
+ * store/common/frontend/cacheclient.h:
+ *   Single shard caching client implementation.
  *
  * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *
@@ -29,8 +29,8 @@
  *
  **********************************************************************/
 
-#ifndef _BUFFER_CLIENT_H_
-#define _BUFFER_CLIENT_H_
+#ifndef _CACHE_CLIENT_H_
+#define _CACHE_CLIENT_H_
 
 #include "includes/error.h"
 #include "lib/assert.h"
@@ -38,40 +38,51 @@
 #include "store/common/transaction.h"
 #include "store/common/promise.h"
 #include "store/common/frontend/txnclient.h"
+#include "store/common/backend/versionstore.h"
 
 #include <string>
+#include <vector>
 
-class BufferClient
+class CacheClient {
 
 public:
-    BufferClient(TxnClient *txnclient);
-    ~BufferClient();
+    CacheClient(TxnClient *txnclient);
+    ~CacheClient();
 
     // Begin a transaction with given tid.
     void Begin(uint64_t tid);
 
     // Get value corresponding to key.
-    void Get(uint64_t tid, const string &key, Promise *promise = NULL);
+    void Get(const uint64_t tid, const string &key, Promise *promise = NULL);
+
+    // Get value corresponding to key.
+    void Get(const uint64_t tid, const string &key, const Timestamp &timestamp, Promise *promise = NULL);
+    
+    // Get value corresponding to key.
+    void MultiGet(const uint64_t tid, const std::vector<string> &keys, Promise *promise = NULL);
+
+    // Get value corresponding to keys.
+    void MultiGet(const uint64_t tid, const std::vector<string> &keys, const Timestamp &timestamp, Promise *promise = NULL);
 
     // Put value for given key.
-    void Put(uint64_t tid, const string &key, const string &value, Promise *promise = NULL);
+    void Put(const uint64_t tid, const string &key, const string &value, Promise *promise = NULL);
 
-    // Prepare (Spanner requires a prepare timestamp)
-    void Prepare(uint64_t tid, const Timestamp &timestamp = Timestamp(), Promise *promise = NULL); 
+    // Prepare 
+    void Prepare(const uint64_t tid, const Transaction &txn, Promise *promise = NULL); 
 
-    // Commit the ongoing transaction.
-    void Commit(uint64_t tid, uint64_t timestamp = 0, Promise *promise = NULL);
+    // Commit the transaction.
+    void Commit(const uint64_t tid, const Transaction &txn, const Timestamp &timestamp = 0, Promise *promise = NULL);
 
     // Abort the running transaction.
-    void Abort(Promise *promise = NULL);
+    void Abort(const uint64_t tid, const Transaction &txn, Promise *promise = NULL);
 
 private:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;
 
-    // Transactions to keep track of read and write set.
-    std::map<uint64_t, Transaction &> txns;
-    std::mutex txns_lock;
+    // Read cache
+    VersionedKVStore cache;
+    std::mutex cache_lock;
 };
 
-#endif /* _BUFFER_CLIENT_H_ */
+#endif /* _CACHE_CLIENT_H_ */

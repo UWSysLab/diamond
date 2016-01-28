@@ -273,10 +273,10 @@ TEST(DBoolean, Map) {
     DBoolean bool1;
     DBoolean bool2;
 
-    int ret = DBoolean::Map(bool1, std::string("test:cpp:bool"));
+    DBoolean::Map(bool1, std::string("test:cpp:bool"));
     bool1 = true;
 
-    ret = DBoolean::Map(bool2, std::string("test:cpp:bool"));
+    DBoolean::Map(bool2, std::string("test:cpp:bool"));
     EXPECT_EQ(bool2.Value(), true);
 
     bool2 = false;

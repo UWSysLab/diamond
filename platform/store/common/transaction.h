@@ -28,7 +28,7 @@ private:
     std::unordered_map<std::string, std::string> writeSet;
 
 public:
-    Transaction();
+    Transaction() {};
     Transaction(const TransactionMessage &msg);
     ~Transaction();
 

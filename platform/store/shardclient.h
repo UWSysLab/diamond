@@ -63,23 +63,30 @@ public:
     ~ShardClient();
 
     // Overriding from TxnClient
-    void Begin(uint64_t id);
-    void Get(uint64_t id,
+    void Begin(uint64_t tid);
+    void Get(const uint64_t tid,
             const std::string &key,
             Promise *promise = NULL);
-    void Get(uint64_t id,
+    void Get(const uint64_t tid,
             const std::string &key,
             const Timestamp &timestamp, 
             Promise *promise = NULL);
-    void Prepare(uint64_t id, 
+    void MultiGet(const uint64_t tid,
+                  const std::vector<std::string> &keys,
+                  Promise *promise = NULL);
+    void MultiGet(const uint64_t tid,
+                  const std::vector<std::string> &keys,
+                  const Timestamp &timestamp, 
+                  Promise *promise = NULL);
+    void Prepare(const uint64_t tid, 
                  const Transaction &txn,
-                 const Timestamp &timestamp = Timestamp(),
+                 const Timestamp &timestamp = 0,
                  Promise *promise = NULL);
-    void Commit(uint64_t id, 
+    void Commit(const uint64_t tid, 
                 const Transaction &txn,
                 uint64_t timestamp,
                 Promise *promise = NULL);
-    void Abort(uint64_t id, 
+    void Abort(const uint64_t tid, 
                const Transaction &txn,
                Promise *promise = NULL);
 

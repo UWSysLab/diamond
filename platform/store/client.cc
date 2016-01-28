@@ -48,10 +48,9 @@ Client::Client(string configPath, int nShards,
         uniform_int_distribution<uint64_t> dis;
         client_id = dis(gen);
     }
-    t_id = (client_id/10000)*10000;
 
     nshards = nShards;
-    bclient.reserve(nshards);
+    cclient.reserve(nshards);
 
     Debug("Initializing Diamond Store client with id [%lu]", client_id);
 
@@ -72,7 +71,7 @@ Client::Client(string configPath, int nShards,
                                                    &transport,
                                                    client_id, i,
                                                    closestReplica);
-        bclient[i] = new BufferClient(shardclient);
+        cclient[i] = new CacheClient(shardclient);
     }
 
     /* Run the transport in a new thread. */
@@ -85,7 +84,7 @@ Client::~Client()
 {
     transport.Stop();
     delete tss;
-    for (auto b : bclient) {
+    for (auto b : cclient) {
         delete b;
     }
     clientTransport->join();
@@ -104,59 +103,116 @@ Client::run_client()
  * Return a TID for the transaction.
  */
 void
-Client::Begin()
+Client::Begin(const uint64_t tid)
 {
     Debug("BEGIN Transaction");
-    t_id++;
-    participants.clear();
-    commit_sleep = -1;
-    for (int i = 0; i < nshards; i++) {
-        bclient[i]->Begin(t_id);
-    }
 }
 
 /* Returns the value corresponding to the supplied key. */
 int
-Client::Get(const string &key, string &value)
+Client::Get(const uint64_t tid, const string &key, Version &value)
 {
     // Contact the appropriate shard to get the value.
     int i = key_to_shard(key, nshards);
 
-    // If needed, add this shard to set of participants and send BEGIN.
-    if (participants.find(i) == participants.end()) {
-        participants.insert(i);
-    }
+    // Send the GET operation to appropriate shard.
+    Promise promise(GET_TIMEOUT);
+
+    cclient[i]->Get(tid, key, &promise);
+    value = promise.GetValue(key);
+
+    return promise.GetReply();
+}
+
+int
+Client::Get(const uint64_t tid, const string &key, const Timestamp &t, Version &value)
+{
+    // Contact the appropriate shard to get the value.
+    int i = key_to_shard(key, nshards);
 
     // Send the GET operation to appropriate shard.
     Promise promise(GET_TIMEOUT);
 
-    bclient[i]->Get(key, &promise);
-    value = promise.GetValue();
+    cclient[i]->Get(tid, key, t, &promise);
+    value = promise.GetValue(key);
 
     return promise.GetReply();
 }
 
-/* Sets the value corresponding to the supplied key. */
 int
-Client::Put(const string &key, const string &value)
+Client::MultiGet(const uint64_t tid, const vector<string> &keys,
+                 map<string, Version> &values)
 {
-    // Contact the appropriate shard to set the value.
-    int i = key_to_shard(key, nshards);
+    map<int, vector<string>> participants;
 
-    // If needed, add this shard to set of participants and send BEGIN.
-    if (participants.find(i) == participants.end()) {
-        participants.insert(i);
+    for (auto &key : keys) {
+        int i = key_to_shard(key, nshards);
+        participants[i].push_back(key);
     }
 
-    Promise promise(PUT_TIMEOUT);
+    vector<Promise *> promises;
+    for (auto &p : participants) {
+        // Send the GET operation to appropriate shard.
+        Promise *promise = new Promise(GET_TIMEOUT);
+        promises.push_back(promise);
 
-    // Buffering, so no need to wait.
-    bclient[i]->Put(key, value, &promise);
-    return promise.GetReply();
+        cclient[p.first]->MultiGet(tid, p.second, promise);
+    }
+
+    int r = REPLY_OK;
+    for (auto p : promises) {
+        if (p->GetReply() != REPLY_OK) {
+            r = p->GetReply();
+        }
+        for (auto &v : p->GetValues()) {
+            values[v.first] = v.second;
+        }
+        delete p;
+    }
+    return r;
 }
+int
+Client::MultiGet(const uint64_t tid, const vector<string> &keys,
+                 const Timestamp &timestamp,
+                 map<string, Version> &values)
+{
+    map<int, vector<string>> participants;
+
+    for (auto &key : keys) {
+        int i = key_to_shard(key, nshards);
+        participants[i].push_back(key);
+    }
+
+    vector<Promise *> promises;
+    for (auto &p : participants) {
+        // Send the GET operation to appropriate shard.
+        promises.push_back(new Promise(GET_TIMEOUT));
+
+        cclient[p.first]->MultiGet(tid, p.second, timestamp, promises.back());
+    }
+
+    int r = REPLY_OK;
+    for (auto p : promises) {
+        if (p->GetReply() != REPLY_OK) {
+            r = p->GetReply();
+        }
+        for (auto &v : p->GetValues()) {
+            values[v.first] = v.second;
+        }
+        delete p;
+    }
+    return r;
+}
+/* Sets the value corresponding to the supplied key. */
+// int
+// Client::Put(const uint64_t tid, const string &key, const string &value)
+// {
+//     Warning("Should not call PUT on backend store");
+//     return REPLY_OK;
+// }
 
 int
-Client::Prepare(uint64_t &ts)
+Client::Prepare(const uint64_t tid, const map<int, Transaction> &participants, Timestamp &ts)
 {
     int status;
 
@@ -164,10 +220,10 @@ Client::Prepare(uint64_t &ts)
     Debug("PREPARE Transaction");
     list<Promise *> promises;
 
-    for (auto p : participants) {
+    for (auto &p : participants) {
         Debug("Sending prepare to shard [%d]", p);
         promises.push_back(new Promise(PREPARE_TIMEOUT));
-        bclient[p]->Prepare(Timestamp(),promises.back());
+        cclient[p.first]->Prepare(tid, p.second, promises.back());
     }
 
     // In the meantime ... go get a timestamp for OCC
@@ -197,8 +253,8 @@ Client::Prepare(uint64_t &ts)
             }
         }
         // Also, find the max of all prepare timestamp returned.
-        if (p->GetTimestamp().getTimestamp() > ts) {
-            ts = p->GetTimestamp().getTimestamp();
+        if (p->GetTimestamp() > ts) {
+            ts = p->GetTimestamp();
         }
         delete p;
     }
@@ -207,14 +263,26 @@ Client::Prepare(uint64_t &ts)
 
 /* Attempts to commit the ongoing transaction. */
 bool
-Client::Commit()
+Client::Commit(const uint64_t tid, const Transaction &txn, Timestamp &ts)
 {
     // Implementing 2 Phase Commit
-    uint64_t ts = 0;
+    ts = 0;
     int status;
+    map<int, Transaction> participants;
 
+    // split up the transaction across shards
+    for (auto &r : txn.getReadSet()) {
+        int i = key_to_shard(r.first, nshards);
+        participants[i].addReadSet(r.first, r.second);
+    }
+
+    for (auto &w : txn.getWriteSet()) {
+        int i = key_to_shard(w.first, nshards);
+        participants[i].addWriteSet(w.first, w.second);
+    }
+    
     for (int i = 0; i < COMMIT_RETRIES; i++) {
-        status = Prepare(ts);
+        status = Prepare(tid, participants, ts);
         if (status == REPLY_OK || status == REPLY_FAIL) {
             break;
         }
@@ -224,26 +292,43 @@ Client::Commit()
         // Send commits
         Debug("COMMIT Transaction at [%lu]", ts);
 
-        for (auto p : participants) {
-            Debug("Sending commit to shard [%d]", p);
-            bclient[p]->Commit(ts);
+        for (auto &p : participants) {
+            Debug("Sending commit to shard [%d]", p.first);
+            cclient[p.first]->Commit(tid, p.second, ts);
         }
         return true;
     }
 
     // 4. If not, send abort to all shards.
-    Abort();
+    Abort(tid, participants);
     return false;
 }
 
+void
+Client::Abort(const uint64_t tid, const map<int, Transaction> &participants) {
+    for (auto &p : participants) {
+        cclient[p.first]->Abort(tid, p.second);
+    }
+}    
 /* Aborts the ongoing transaction. */
 void
-Client::Abort()
+Client::Abort(const uint64_t tid, const Transaction &txn)
 {
     Debug("ABORT Transaction");
-    for (auto p : participants) {
-        bclient[p]->Abort();
+    map<int, Transaction> participants;
+
+    // split up the transaction across shards
+    for (auto r : txn.getReadSet()) {
+        int i = key_to_shard(r.first, nshards);
+        participants[i].addReadSet(r.first, r.second);
     }
+
+    for (auto w : txn.getWriteSet()) {
+        int i = key_to_shard(w.first, nshards);
+        participants[i].addWriteSet(w.first, w.second);
+    }
+
+    Abort(tid, participants);
 }
 
 /* Return statistics of most recent transaction. */

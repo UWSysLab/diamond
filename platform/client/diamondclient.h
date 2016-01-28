@@ -2,7 +2,7 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * diamondclient.h:
+ * client/diamondclient.h:
  *   Diamond transactional store interface
  *
  * Copyright 2015 Irene Zhang  <iyzhang@cs.washington.edu>
@@ -36,29 +36,31 @@
 #include "lib/message.h"
 #include "lib/configuration.h"
 #include "lib/tcptransport.h"
+#include "frontend/client.h"
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
-#include "store-proto.pb.h"
-#include "store/shardclient.h"
+#include "store/common/frontend/bufferclient.h"
 
 #include <condition_variable>
 #include <mutex>
 #include <string>
 #include <set>
 #include <thread>
+#include <vector>
 
 namespace diamond {
 
-class DiamondClient : public strongstore::Client
+class DiamondClient : public Client
 {
 public:
-    Client(string configPath);
-    ~Client();
+    DiamondClient(std::string configPath);
+    ~DiamondClient();
 
     // Overriding functions from ::Client
     void Begin();
-    int Get(const string &key, string &value);
-    int Put(const string &key, const string &value);
+    int Get(const std::string &key, std::string &value);
+    int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
+    int Put(const std::string &key, const std::string &value);
     bool Commit();
     void Abort();
 
@@ -66,7 +68,7 @@ private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
-    bool ongoingTransaction(uint64_t txnid = 0);
+    bool OngoingTransaction(uint64_t txnid);
     
     // Unique ID for this client.
     uint64_t client_id;
@@ -86,7 +88,7 @@ private:
     std::thread *clientTransport;
 
     // Caching client for the store
-    CacheClient *cclient;
+    BufferClient *bclient;
 };
 
 } // namespace diamond

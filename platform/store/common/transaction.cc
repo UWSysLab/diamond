@@ -11,14 +11,11 @@
 
 using namespace std;
 
-Transaction::Transaction() :
-    readSet(), writeSet() { }
-
 Transaction::Transaction(const TransactionMessage &msg) 
 {
     for (int i = 0; i < msg.readset_size(); i++) {
         ReadMessage readMsg = msg.readset(i);
-        readSet[readMsg.key()] = Timestamp(readMsg.readtime());
+        readSet[readMsg.key()] = readMsg.readtime();
     }
 
     for (int i = 0; i < msg.writeset_size(); i++) {
@@ -61,7 +58,7 @@ Transaction::serialize(TransactionMessage *msg) const
     for (auto read : readSet) {
         ReadMessage *readMsg = msg->add_readset();
         readMsg->set_key(read.first);
-        read.second.serialize(readMsg->mutable_readtime());
+        readMsg->set_readtime(read.second);
     }
 
     for (auto write : writeSet) {

@@ -44,9 +44,9 @@ VersionedKVStore::inStore(const string &key)
 }
 
 void
-VersionedKVStore::getValue(const string &key, const Timestamp &t, set<VersionedKVStore::VersionedValue>::iterator &it)
+VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
 {
-    VersionedValue v(t);
+    Version v(t);
     it = store[key].upper_bound(v);
 
     // if there is no valid version at this timestamp
@@ -61,12 +61,11 @@ VersionedKVStore::getValue(const string &key, const Timestamp &t, set<VersionedK
 /* Returns the most recent value and timestamp for given key.
  * Error if key does not exist. */
 bool
-VersionedKVStore::get(const string &key, pair<Timestamp, string> &value)
+VersionedKVStore::get(const string &key, Version &value)
 {
     // check for existence of key in store
     if (inStore(key)) {
-        VersionedValue v = *(store[key].rbegin());
-        value = make_pair(v.write, v.value);
+        value = *(store[key].rbegin());
         return true;
     }
     return false;
@@ -75,13 +74,13 @@ VersionedKVStore::get(const string &key, pair<Timestamp, string> &value)
 /* Returns the value valid at given timestamp.
  * Error if key did not exist at the timestamp. */
 bool
-VersionedKVStore::get(const string &key, const Timestamp &t, pair<Timestamp, string> &value)
+VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
 {
     if (inStore(key)) {
-        set<VersionedValue>::iterator it;
+        set<Version>::iterator it;
         getValue(key, t, it);
         if (it != store[key].end()) {
-            value = make_pair((*it).write, (*it).value);
+            value = *it;
             return true;
         }
     }
@@ -93,14 +92,14 @@ VersionedKVStore::getRange(const string &key, const Timestamp &t,
 			   pair<Timestamp, Timestamp> &range)
 {
     if (inStore(key)) {
-        set<VersionedValue>::iterator it;
+        set<Version>::iterator it;
         getValue(key, t, it);
 
         if (it != store[key].end()) {
-            range.first = (*it).write;
+            range.first = it->GetTimestamp();
             it++;
             if (it != store[key].end()) {
-                range.second = (*it).write;
+                range.second = it->GetTimestamp();
             }
             return true;
         }
@@ -112,7 +111,14 @@ void
 VersionedKVStore::put(const string &key, const string &value, const Timestamp &t)
 {
     // Key does not exist. Create a list and an entry.
-    store[key].insert(VersionedValue(t, value));
+    put(key, Version(t, value));
+}
+
+void
+VersionedKVStore::put(const string &key, const Version &v)
+{
+    // Key does not exist. Create a list and an entry.
+    store[key].insert(v);
 }
 
 /*
@@ -124,15 +130,15 @@ VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const 
 {
     // Hmm ... could read a key we don't have if we are behind ... do we commit this or wait for the log update?
     if (inStore(key)) {
-        set<VersionedValue>::iterator it;
+        set<Version>::iterator it;
         getValue(key, readTime, it);
         
         if (it != store[key].end()) {
             // figure out if anyone has read this version before
             if (lastReads.find(key) != lastReads.end() &&
-                lastReads[key].find((*it).write) != lastReads[key].end()) {
-                if (lastReads[key][(*it).write] < commit) {
-                    lastReads[key][(*it).write] = commit;
+                lastReads[key].find(it->GetTimestamp()) != lastReads[key].end()) {
+                if (lastReads[key][it->GetTimestamp()] < commit) {
+                    lastReads[key][it->GetTimestamp()] = commit;
                 }
             }
         }
@@ -143,10 +149,10 @@ bool
 VersionedKVStore::getLastRead(const string &key, Timestamp &lastRead)
 {
     if (inStore(key)) {
-        VersionedValue v = *(store[key].rbegin());
+        Version v = *(store[key].rbegin());
         if (lastReads.find(key) != lastReads.end() &&
-            lastReads[key].find(v.write) != lastReads[key].end()) {
-            lastRead = lastReads[key][v.write];
+            lastReads[key].find(v.GetTimestamp()) != lastReads[key].end()) {
+            lastRead = lastReads[key][v.GetTimestamp()];
             return true;
         }
     }
@@ -160,14 +166,14 @@ bool
 VersionedKVStore::getLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
 {
     if (inStore(key)) {
-        set<VersionedValue>::iterator it;
+        set<Version>::iterator it;
         getValue(key, t, it);
         ASSERT(it != store[key].end());
 
         // figure out if anyone has read this version before
         if (lastReads.find(key) != lastReads.end() &&
-            lastReads[key].find((*it).write) != lastReads[key].end()) {
-            lastRead = lastReads[key][(*it).write];
+            lastReads[key].find(it->GetTimestamp()) != lastReads[key].end()) {
+            lastRead = lastReads[key][it->GetTimestamp()];
             return true;
         }
     }

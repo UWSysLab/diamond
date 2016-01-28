@@ -14,6 +14,7 @@
 #include "lib/message.h"
 #include <string>
 #include <vector>
+#include <map>
 
 class Client
 {
@@ -27,6 +28,9 @@ public:
     // Get the value corresponding to key.
     virtual int Get(const std::string &key, std::string &value);
 
+    // Get the value corresponding to key.
+    virtual int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
+
     // Set the value for the given key.
     virtual int Put(const std::string &key, const std::string &value);
 
@@ -38,9 +42,6 @@ public:
 
     // Returns statistics (vector of integers) about most recent transaction.
     virtual std::vector<int> Stats();
-
-    // Sharding logic: Given key, generates a number b/w 0 to nshards-1
-    uint64_t key_to_shard(const std::string &key, uint64_t nshards);
 };
 
 #endif /* _CLIENT_API_H_ */

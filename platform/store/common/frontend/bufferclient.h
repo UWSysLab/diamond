@@ -39,8 +39,6 @@
 #include "store/common/promise.h"
 #include "store/common/frontend/txnclient.h"
 
-#include <string>
-
 class BufferClient
 {
 public:
@@ -51,26 +49,29 @@ public:
     void Begin(uint64_t tid);
 
     // Get value corresponding to key.
-    void Get(uint64_t tid, const string &key, Promise *promise = NULL);
+    void Get(const uint64_t tid, const std::string &key, Promise *promise = NULL);
+
+    // Get value corresponding to key.
+    void MultiGet(const uint64_t tid, const std::vector<std::string> &keys, Promise *promise = NULL);
 
     // Put value for given key.
-    void Put(uint64_t tid, const string &key, const string &value, Promise *promise = NULL);
+    void Put(const uint64_t tid, const string &key, const string &value, Promise *promise = NULL);
 
     // Prepare (Spanner requires a prepare timestamp)
-    void Prepare(uint64_t tid, const Timestamp &timestamp = Timestamp(), Promise *promise = NULL); 
+    void Prepare(const uint64_t tid, Promise *promise = NULL); 
 
     // Commit the ongoing transaction.
-    void Commit(uint64_t tid, uint64_t timestamp = 0, Promise *promise = NULL);
+    void Commit(const uint64_t tid, const Timestamp &timestamp, Promise *promise = NULL);
 
     // Abort the running transaction.
-    void Abort(Promise *promise = NULL);
+    void Abort(const uint64_t tid, Promise *promise = NULL);
 
 private:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;
 
     // Transactions to keep track of read and write set.
-    std::map<uint64_t, Transaction &> txns;
+    std::map<uint64_t, Transaction> txns;
     std::mutex txns_lock;
 };
 

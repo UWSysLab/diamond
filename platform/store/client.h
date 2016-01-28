@@ -36,10 +36,10 @@
 #include "lib/message.h"
 #include "lib/configuration.h"
 #include "lib/tcptransport.h"
+#include "store/common/frontend/txnclient.h"
 #include "store/common/frontend/client.h"
 #include "replication/client.h"
-#include "store/common/frontend/bufferclient.h"
-#include "store/common/truetime.h"
+#include "store/common/frontend/cacheclient.h"
 #include "store-proto.pb.h"
 #include "store/shardclient.h"
 
@@ -51,19 +51,28 @@
 
 namespace strongstore {
 
-class Client : public ::Client
+class Client : public ::TxnClient
 {
 public:
-    Client(string configPath, int nshards,
-            int closestReplica);
+    Client(string configPath, int nshards, int closestReplica);
     ~Client();
 
     // Overriding functions from ::Client
-    void Begin();
-    int Get(const string &key, string &value);
-    int Put(const string &key, const string &value);
-    bool Commit();
-    void Abort();
+    void Begin(const uint64_t tid);
+    int Get(const uint64_t tid, const std::string &key,
+            Version &value);
+    int Get(const uint64_t tid, const std::string &key,
+            const Timestamp &timestamp,
+            Version &value);
+
+    int MultiGet(const uint64_t tid, const std::vector<std::string> &keys, std::map<std::string, Version> &value);
+
+    int MultiGet(const uint64_t tid, const std::vector<std::string> &key,
+                 const Timestamp &timestamp,
+                 std::map<std::string, Version> &value);
+
+    bool Commit(const uint64_t tid, const Transaction &txn, Timestamp &ts);
+    void Abort(const uint64_t tid, const Transaction &txn);
     std::vector<int> Stats();
 
 private:
@@ -73,20 +82,18 @@ private:
     // timestamp server call back
     void tssCallback(const string &request, const string &reply);
 
+    // local Abort function
+    void Abort(const uint64_t tid, const std::map<int, Transaction> &participants);
     // local Prepare function
-    int Prepare(uint64_t &ts);
-
+    int Prepare(const uint64_t tid, const std::map<int, Transaction> &participants, Timestamp &ts);
     // Unique ID for this client.
     uint64_t client_id;
 
-    // Ongoing transaction ID.
-    uint64_t t_id;
-
+    // index of closest replica to read 
+    int closestReplica = 0;
+    
     // Number of shards in SpanStore.
     long nshards;
-
-    // List of participants in the ongoing transaction.
-    std::set<int> participants;
 
     // Transport used by paxos client proxies.
     TCPTransport transport;
@@ -94,14 +101,11 @@ private:
     // Thread running the transport event loop.
     std::thread *clientTransport;
 
-    // Buffering client for each shard.
-    std::vector<BufferClient *> bclient;
+    // Caching client for each shard.
+    std::vector<CacheClient *> cclient;
 
     // Timestamp server shard.
     replication::VRClient *tss; 
-
-    // TrueTime server.
-    TrueTime timeServer;
 
     // Synchronization variables.
     std::condition_variable cv;

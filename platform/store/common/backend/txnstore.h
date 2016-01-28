@@ -38,6 +38,7 @@
 #include "lib/message.h"
 #include "store/common/transaction.h"
 #include "store/common/timestamp.h"
+#include "store/common/version.h"
 
 class TxnStore
 {
@@ -47,27 +48,27 @@ public:
     virtual ~TxnStore();
 
     // add key to read set
-    virtual int Get(uint64_t id, const std::string &key,
-        std::pair<Timestamp, std::string> &value);
+    virtual int Get(const uint64_t tid, const std::string &key,
+        Version &value);
 
-    virtual int Get(uint64_t id, const std::string &key,
-        const Timestamp &timestamp, std::pair<Timestamp, std::string> &value);
+    virtual int Get(const uint64_t tid, const std::string &key,
+                    const Timestamp &timestamp, Version &value);
 
     // add key to write set
-    virtual int Put(uint64_t id, const std::string &key,
+    virtual int Put(const uint64_t tid, const std::string &key,
         const std::string &value);
 
     // check whether we can commit this transaction (and lock the read/write set)
-    virtual int Prepare(uint64_t id, const Transaction &txn);
+    virtual int Prepare(const uint64_t tid, const Transaction &txn);
 
-    virtual int Prepare(uint64_t id, const Transaction &txn,
+    virtual int Prepare(const uint64_t tid, const Transaction &txn,
         const Timestamp &timestamp, Timestamp &proposed);
 
     // commit the transaction
-    virtual void Commit(uint64_t id, uint64_t timestamp = 0);
+    virtual void Commit(const uint64_t tid, uint64_t timestamp = 0);
 
     // abort a running transaction
-    virtual void Abort(uint64_t id, const Transaction &txn = Transaction());
+    virtual void Abort(const uint64_t tid, const Transaction &txn = Transaction());
 
     // load keys
     virtual void Load(const std::string &key, const std::string &value,

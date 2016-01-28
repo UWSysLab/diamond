@@ -37,22 +37,22 @@
 #include "lib/message.h"
 #include "lib/transport.h"
 #include "transaction.h"
+#include "version.h"
 #include <condition_variable>
 #include <mutex>
 
 class Promise
 {
 private:
-    bool done;
+    bool done = false;
     int timeout;
-    int reply;
-    Timestamp timestamp;
-    std::string value;
+    int reply = 0;
+    Timestamp timestamp = 0;
+    std::map<std::string, Version> values;
     std::mutex lock;
     std::condition_variable cv;
 
     void ReplyInternal(int r);
-
 public:
     Promise();
     Promise(int timeoutMS); // timeout in milliseconds
@@ -61,16 +61,17 @@ public:
     // reply to this promise and unblock any waiting threads
     void Reply(int r);
     void Reply(int r, Timestamp t);
-    void Reply(int r, std::string v);
-    void Reply(int r, Timestamp t, std::string v);
-
+    void Reply(int r, const std::string &k, const Version &v);
+    void Reply(int r, std::map<std::string, Version> &v);
     // Return configured timeout
     int GetTimeout();
 
     // block on this until response comes back
     int GetReply();
     Timestamp GetTimestamp();
-    std::string GetValue();
+    //Timestamp GetTimestamp();
+    Version & GetValue(const std::string &key);
+    std::map<std::string, Version> & GetValues();
 };
 
 #endif /* _PROMISE_H_ */

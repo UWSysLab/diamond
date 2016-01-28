@@ -3,7 +3,7 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "lib/timestamp.h"
-#include "store/client.h"
+#include "client/diamondclient.h"
 #include <unordered_map>
 #include <map>
 #include <inttypes.h>

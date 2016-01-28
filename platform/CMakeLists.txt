@@ -49,7 +49,10 @@ PROTOBUF_GENERATE_CPP(SRC_DIAMOND_REPLICATION_PROTO HDR_DIAMOND_REPLICATION_PROT
 
 PROTOBUF_GENERATE_CPP(SRC_DIAMOND_STORE_PROTO HDR_DIAMOND_STORE_PROTO
   ${DIAMOND_SOURCE_DIR}/common-proto.proto
-  ${DIAMOND_SOURCE_DIR}/store-proto.proto)
+  ${DIAMOND_SOURCE_DIR}/store-proto.proto
+  ${DIAMOND_SOURCE_DIR}/diamond-proto.proto
+  ${DIAMOND_SOURCE_DIR}/latency-format.proto)
+
 include_directories(${PROJECT_BINARY_DIR})
 
 if(APPLE)
@@ -66,6 +69,8 @@ add_subdirectory(data_types)
 add_subdirectory(lib)
 add_subdirectory(replication)
 add_subdirectory(store)
+add_subdirectory(frontend)
+add_subdirectory(client)
 
 # ---------------------------------------------------------
 # Build targets
@@ -75,20 +80,21 @@ add_subdirectory(store)
 add_library(diamond SHARED
             ${SRC_DIAMOND_LIB}
 	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_REPLICATION_PROTO}
-	    ${HDR_DIAMOND_REPLICATION_PROTO}
 	    ${SRC_DIAMOND_STORE_PROTO}
 	    ${HDR_DIAMOND_STORE_PROTO}
-	    ${SRC_DIAMOND_REPLICATION_CLIENT}
-            ${SRC_DIAMOND_STORE_CLIENT})
-target_link_libraries(diamond ${PROTOBUF_LIBRARIES})
-target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
+        ${SRC_DIAMOND_STORE_COMMON}
+        ${SRC_DIAMOND_CLIENT}
+        ${SRC_DIAMOND_FRONT_END_CLIENT})
+target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} event_pthreads)
 
 if (ANDROID)
      target_link_libraries (diamond -luv)
 else()
+  find_package (OpenSSL REQUIRED)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+
   # Set up the executable for the Diamond storage server
-  add_executable(server
+  add_executable(storeserver
     ${SRC_DIAMOND_LIB}
     ${SRC_DIAMOND_REPLICATION_PROTO}
     ${HDR_DIAMOND_REPLICATION_PROTO}
@@ -96,8 +102,20 @@ else()
     ${HDR_DIAMOND_STORE_PROTO}
     ${SRC_DIAMOND_REPLICATION_SERVER}
     ${SRC_DIAMOND_STORE_SERVER})
-  target_link_libraries(server ${PROTOBUF_LIBRARIES})
-  target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(storeserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
+
+  add_executable(frontserver
+    ${SRC_DIAMOND_LIB}
+	${SRC_DIAMOND_STORE_PROTO}
+	${HDR_DIAMOND_STORE_PROTO}
+    ${SRC_DIAMOND_REPLICATION_PROTO}
+    ${HDR_DIAMOND_REPLICATION_PROTO}
+	${SRC_DIAMOND_REPLICATION_CLIENT}
+    ${SRC_DIAMOND_STORE_CLIENT}
+    ${SRC_DIAMOND_STORE_COMMON}
+    ${SRC_DIAMOND_FRONT_END_SERVER})
+  target_link_libraries(frontserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
+
 
   # compile the timestamp server
   add_subdirectory(timeserver)
@@ -107,19 +125,11 @@ else()
     ${SRC_DIAMOND_REPLICATION_PROTO}
     ${HDR_DIAMOND_REPLICATION_PROTO}
     ${SRC_DIAMOND_REPLICATION_SERVER})
-  target_link_libraries(tss ${PROTOBUF_LIBRARIES})
-  target_link_libraries(diamond ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(tss ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
   # Add python bindings for Linux and Mac OSX
   add_subdirectory(bindings/python)
  
-  # add openssl
-  find_package (OpenSSL REQUIRED)
-  include_directories(${OPENSSL_INCLUDE_DIR})
-  target_link_libraries (server ${OPENSSL_LIBRARIES})
-  target_link_libraries (diamond ${OPENSSL_LIBRARIES})
-  target_link_libraries (tss ${OPENSSL_LIBRARIES})
-
   # Set up testing infrastructure
   enable_testing()
 
@@ -163,31 +173,30 @@ else()
 
       add_dependencies(${GTEST_LIBRARIES} googletest)
       add_dependencies(${GTEST_MAIN_LIBRARIES} googletest)
+    else()
+      set(GTEST_ROOT "/usr/src/")
     endif()
-    
-    include_directories(${GTEST_INCLUDE_DIRS})
 
+    include_directories(${GTEST_INCLUDE_DIRS})
     # Add tests
-    add_subdirectory(test)
-    add_subdirectory(terminalclient)
+    #add_subdirectory(test)
+    # Build the terminal client
+    add_subdirectory(terminalclient)    
   endif()
 
   # Add Libevent
 find_package (LibEvent)
 if (LibEvent_FOUND)
   include_directories(${LIBEVENT_INCLUDE_DIR})
-  target_link_libraries (server ${LIBEVENT_LIB})
+  target_link_libraries (storeserver ${LIBEVENT_LIB})
+  target_link_libraries (frontserver ${LIBEVENT_LIB})
   target_link_libraries (diamond ${LIBEVENT_LIB})
   target_link_libraries (tss ${LIBEVENT_LIB})
 else()
   find_package (LibUV REQUIRED)
   include_directories(${LIBUV_INCLUDE_DIRS})
   target_link_libraries (diamond ${LIBUV_LIBRARIES})
-  target_link_libraries (server ${LIBUV_LIBRARIES})
+  target_link_libraries (storeserver ${LIBUV_LIBRARIES})
+  target_link_libraries (frontserver ${LIBEVENT_LIB})
   target_link_libraries (tss ${LIBUV_LIBRARIES})
 endif (LibEvent_FOUND)
-
-target_link_libraries (diamond event_pthreads)
-target_link_libraries (server event_pthreads)
-target_link_libraries (tss event_pthreads)
-

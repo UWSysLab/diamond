@@ -1,11 +1,12 @@
-message TimestampMessage {
-    required uint64 id = 1;
-    required uint64 timestamp = 2;
-}
-
 message ReadMessage {
     required string key = 1;
-    required TimestampMessage readtime = 2;
+    required uint64 readtime = 2;
+}
+
+message ReadReply {
+     required string key = 2;
+     required string value = 3;
+     optional uint64 timestamp = 4;
 }
 
 message WriteMessage {

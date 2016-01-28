@@ -39,6 +39,7 @@
 #include "store/common/backend/versionstore.h"
 #include "store/common/backend/txnstore.h"
 #include "store/common/transaction.h"
+#include "store/common/version.h"
 
 #include <vector>
 #include <unordered_map>
@@ -55,11 +56,11 @@ public:
     ~OCCStore();
 
     // Overriding from TxnStore.
-    int Get(uint64_t id, const std::string &key, std::pair<Timestamp, std::string> &value);
-    int Get(uint64_t id, const std::string &key, const Timestamp &timestamp, std::pair<Timestamp, std::string> &value);
-    int Prepare(uint64_t id, const Transaction &txn);
-    void Commit(uint64_t id, uint64_t timestamp);
-    void Abort(uint64_t id, const Transaction &txn = Transaction());
+    int Get(const uint64_t tid, const std::string &key, Version &value);
+    int Get(const uint64_t tid, const std::string &key, const Timestamp &timestamp, Version &value);
+    int Prepare(const uint64_t tid, const Transaction &txn);
+    void Commit(const uint64_t tid, uint64_t timestamp);
+    void Abort(const uint64_t tid, const Transaction &txn = Transaction());
     void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
 
 private:

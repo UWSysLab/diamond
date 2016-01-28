@@ -39,36 +39,36 @@ TxnStore::TxnStore() {}
 TxnStore::~TxnStore() {}
 
 int
-TxnStore::Get(uint64_t id, const string &key, pair<Timestamp, string> &value)
+TxnStore::Get(const uint64_t tid, const string &key, Version &value)
 {
     Panic("Unimplemented GET");
     return 0;
 }
 
 int
-TxnStore::Get(uint64_t id, const string &key, const Timestamp &timestamp,
-    pair<Timestamp, string> &value)
+TxnStore::Get(const uint64_t tid, const string &key, const Timestamp &timestamp,
+    Version &value)
 {
     Panic("Unimplemented GET");
     return 0;
 }
 
 int
-TxnStore::Put(uint64_t id, const string &key, const string &value)
+TxnStore::Put(const uint64_t tid, const string &key, const string &value)
 {
     Panic("Unimplemented PUT");
     return 0;
 }
 
 int
-TxnStore::Prepare(uint64_t id, const Transaction &txn)
+TxnStore::Prepare(const uint64_t tid, const Transaction &txn)
 {
     Panic("Unimplemented PREPARE");
     return 0;
 }
 
 int
-TxnStore::Prepare(uint64_t id, const Transaction &txn,
+TxnStore::Prepare(const uint64_t tid, const Transaction &txn,
     const Timestamp &timestamp, Timestamp &proposed)
 {
     Panic("Unimplemented PREPARE");
@@ -76,13 +76,13 @@ TxnStore::Prepare(uint64_t id, const Transaction &txn,
 }
 
 void
-TxnStore::Commit(uint64_t id, uint64_t timestamp)
+TxnStore::Commit(const uint64_t tid, uint64_t timestamp)
 {
     Panic("Unimplemented COMMIT");
 }
 
 void
-TxnStore::Abort(uint64_t id, const Transaction &txn)
+TxnStore::Abort(const uint64_t tid, const Transaction &txn)
 {
     Panic("Unimplemented ABORT");
 }

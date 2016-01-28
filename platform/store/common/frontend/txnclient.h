@@ -38,6 +38,7 @@
 #include "store/common/transaction.h"
 
 #include <string>
+#include <vector>
 
 #define DEFAULT_TIMEOUT_MS 250
 #define DEFAULT_MULTICAST_TIMEOUT_MS 500
@@ -66,37 +67,48 @@ public:
     virtual void Begin(uint64_t id);
     
     // Get the value corresponding to key (valid at given timestamp).
-    virtual void Get(uint64_t id,
+    virtual void Get(const uint64_t tid,
                      const std::string &key,
                      Promise *promise = NULL);
 
-    virtual void Get(uint64_t id,
+    virtual void Get(const uint64_t tid,
                      const std::string &key,
                      const Timestamp &timestamp,
                      Promise *promise = NULL);
 
+    virtual void MultiGet(const uint64_t tid,
+                          const std::vector<std::string> &keys,
+                          Promise *promise = NULL);
+
+    virtual void MultiGet(const uint64_t tid,
+                          const std::vector<std::string> &key,
+                          const Timestamp &timestamp,
+                          Promise *promise = NULL);
+
     // Set the value for the given key.
-    virtual void Put(uint64_t id,
+    virtual void Put(const uint64_t tid,
                      const std::string &key,
                      const std::string &value,
                      Promise *promise = NULL);
 
     // Prepare the transaction.
-    virtual void Prepare(uint64_t id,
+    virtual void Prepare(const uint64_t tid,
                          const Transaction &txn,
-                         const Timestamp &timestamp = Timestamp(),
                          Promise *promise = NULL);
 
     // Commit all Get(s) and Put(s) since Begin().
-    virtual void Commit(uint64_t id,
+    virtual void Commit(const uint64_t tid,
                         const Transaction &txn = Transaction(), 
-                        uint64_t timestamp = 0,
+                        const uint64_t &timestamp = 0,
                         Promise *promise = NULL);
     
     // Abort all Get(s) and Put(s) since Begin().
-    virtual void Abort(uint64_t id, 
+    virtual void Abort(const uint64_t tid, 
                        const Transaction &txn = Transaction(), 
                        Promise *promise = NULL);
+
+    // Sharding logic: Given key, generates a number b/w 0 to nshards-1
+    uint64_t key_to_shard(const std::string &key, const uint64_t nshards);
 };
 
 #endif /* _TXN_CLIENT_H_ */
