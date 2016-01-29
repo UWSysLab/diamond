@@ -15,11 +15,15 @@ parser.add_argument('action', choices=['start', 'kill'], help='the action to tak
 parser.add_argument('config_prefix', help='the config file prefix')
 args = parser.parse_args()
 
-serverExecutablePath = BUILD_DIR + "/server"
+frontendConfigPath = args.config_prefix + ".frontend.config"
+frontendExecutablePath = BUILD_DIR + "/frontserver"
+backendExecutablePath = BUILD_DIR + "/server"
 tssConfigPath = args.config_prefix + ".tss.config"
 tssExecutablePath = BUILD_DIR + "/tss"
 
-remoteServerExecutablePath = WORKING_DIR + "/server"
+remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend.config"
+remoteFrontendExecutablePath = WORKING_DIR + "/frontserver"
+remoteBackendExecutablePath = WORKING_DIR + "/server"
 remoteTssConfigPath = WORKING_DIR + "/diamond.tss.config"
 remoteTssExecutablePath = WORKING_DIR + "/tss"
 
@@ -34,24 +38,45 @@ else:
     print "Error: could not get number of shards"
     sys.exit
 
-# launch servers
+# launch frontend server
+frontendConfig = open(frontendConfigPath, 'r')
+for line in frontendConfig:
+    match = re.match("replica\s+([\w\.]+):(\d)", line)
+    if match:
+        hostname = match.group(1)
+        if args.action == 'start':
+            os.system("rsync " + frontendConfigPath + " " + hostname + ":" + remoteFrontendConfigPath)
+            os.system("rsync " + frontendExecutablePath + " " + hostname + ":" + remoteFrontendExecutablePath)
+            os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
+            for shardNum in range(0, numShards):
+                backendConfigPath = args.config_prefix + repr(shardNum) + ".config"
+                remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
+                os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
+            remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
+            os.system("ssh -f " + hostname + " '" + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + "'");
+        elif args.action == 'kill':
+            os.system("ssh " + hostname + " 'pkill -f " + remoteFrontendConfigPath + "'");
+
+
+
+# launch backend servers
 for shardNum in range(0, numShards):
-    serverConfigPath = args.config_prefix + repr(shardNum) + ".config"
-    remoteServerConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
-    serverConfig = open(serverConfigPath, 'r')
+    backendConfigPath = args.config_prefix + repr(shardNum) + ".config"
+    remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
+    backendConfig = open(backendConfigPath, 'r')
     replicaNum = 0
-    for line in serverConfig:
+    for line in backendConfig:
         match = re.match("replica\s+([\w\.]+):(\d)", line)
         if match:
             hostname = match.group(1)
             if args.action == 'start':
-                os.system("rsync " + serverConfigPath + " " + hostname + ":" + remoteServerConfigPath)
-                os.system("rsync " + serverExecutablePath + " " + hostname + ":" + remoteServerExecutablePath)
-                os.system("ssh -f " + hostname + " '" + remoteServerExecutablePath + " -c " + remoteServerConfigPath + " -i " + repr(replicaNum) + "'");
+                os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
+                os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
+                os.system("ssh -f " + hostname + " '" + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + "'");
             elif args.action == 'kill':
-                os.system("ssh " + hostname + " 'pkill -f " + remoteServerConfigPath + "'");
+                os.system("ssh " + hostname + " 'pkill -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
-    serverConfig.close()
+    backendConfig.close()
 
 # launch tss servers
 tssConfig = open(tssConfigPath, 'r')
