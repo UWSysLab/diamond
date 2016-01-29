@@ -158,7 +158,7 @@ main(int argc, char **argv)
     const char *backendConfig = NULL;
     // Parse arguments
     int opt;
-    while ((opt = getopt(argc, argv, "c:i:m:e:s:N:b")) != -1) {
+    while ((opt = getopt(argc, argv, "c:i:m:e:s:N:b:")) != -1) {
         switch (opt) {
         case 'c':
             configPath = optarg;
