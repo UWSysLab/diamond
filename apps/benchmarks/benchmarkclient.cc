@@ -9,40 +9,30 @@ namespace po = boost::program_options;
 using namespace diamond;
 
 int main(int argc, char ** argv) {
+    std::string configPrefix;
+    int numVarsTotal = 10;
+    int numVarsRead = 2;
+    int numVarsWrite = 2;
+    int numSeconds = 10;
+
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
-        ("config", po::value<std::string>(), "frontend config file prefix (required)")
-        ("numvarstotal", po::value<int>(), "total number of shared variables to use")
-        ("numvarsread", po::value<int>(), "number of shared variables to read per transaction")
-        ("numvarswrite", po::value<int>(), "number of shared variables to write per transaction")
-        ("time", po::value<int>(), "number of seconds to run")
+        ("config", po::value<std::string>(&configPrefix)->required(), "frontend config file prefix (required)")
+        ("numvarstotal", po::value<int>(&numVarsTotal), "total number of shared variables to use")
+        ("numvarsread", po::value<int>(&numVarsRead), "number of shared variables to read per transaction")
+        ("numvarswrite", po::value<int>(&numVarsWrite), "number of shared variables to write per transaction")
+        ("time", po::value<int>(&numSeconds), "number of seconds to run")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    po::notify(vm);
-    if (vm.count("help") || !vm.count("config")) {
+    if (vm.count("help")) {
         std::cout << desc << std::endl;
         return 1;
     }
-    int numVarsTotal = 10;
-    if (vm.count("numvarstotal")) {
-        numVarsTotal = vm["numvarstotal"].as<int>();
-    }
-    int numVarsRead = 2;
-    if (vm.count("numvarsread")) {
-        numVarsRead = vm["numvarsread"].as<int>();
-    }
-    int numVarsWrite = 2;
-    if (vm.count("numvarswrite")) {
-        numVarsWrite = vm["numvarswrite"].as<int>();
-    }
-    int numSeconds = 10;
-    if (vm.count("time")) {
-        numSeconds = vm["time"].as<int>();
-    }
+    po::notify(vm);
 
-    DiamondInit(vm["config"].as<std::string>(), 1, 0);
+    DiamondInit(configPrefix, 1, 0);
 
     DString dstrings[numVarsTotal];
     for (int i = 0; i < numVarsTotal; i++) {
