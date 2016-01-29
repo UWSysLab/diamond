@@ -221,7 +221,7 @@ Client::Prepare(const uint64_t tid, const map<int, Transaction> &participants, T
     list<Promise *> promises;
 
     for (auto &p : participants) {
-        Debug("Sending prepare to shard [%d]", p);
+        Debug("Sending prepare to shard [%d]", p.first);
         promises.push_back(new Promise(PREPARE_TIMEOUT));
         cclient[p.first]->Prepare(tid, p.second, promises.back());
     }

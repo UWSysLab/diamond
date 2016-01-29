@@ -43,11 +43,11 @@
 #include <string>
 #include <vector>
 
-class CacheClient {
+class CacheClient : public TxnClient {
 
 public:
     CacheClient(TxnClient *txnclient);
-    ~CacheClient();
+    virtual ~CacheClient();
 
     // Begin a transaction with given tid.
     void Begin(uint64_t tid);
