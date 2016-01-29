@@ -42,23 +42,32 @@ int main(int argc, char ** argv) {
     bool done = false;
     time_t startTime = time(NULL);
     int numTransactions = 0;
+    int numAborts = 0;
     while (!done) {
-        DObject::TransactionBegin();
-        for (int j = 0; j < numVarsRead; j++) {
-            int varIndex = rand() % numVarsTotal;
-            std::string val("testing");
-            dstrings[varIndex].Set(val);
+        int committed = 0;
+        std::string val("testing " + std::to_string(rand()));
+        while (!committed) {
+            DObject::TransactionBegin();
+            for (int j = 0; j < numVarsRead; j++) {
+                int varIndex = rand() % numVarsTotal;
+                std::string temp = dstrings[varIndex].Value();
+            }
+            for (int k = 0; k < numVarsWrite; k++) {
+                int varIndex = rand() % numVarsTotal;
+                dstrings[varIndex].Set(val);
+            }
+            committed = DObject::TransactionCommit();
+            if (!committed) {
+                numAborts++;
+            }
         }
-        for (int k = 0; k < numVarsWrite; k++) {
-            int varIndex = rand() % numVarsTotal;
-            std::string temp = dstrings[varIndex].Value();
-        }
-        DObject::TransactionCommit();
+        numTransactions++;
 
         time_t currentTime = time(NULL);
         double seconds = difftime(currentTime, startTime);
         done = (seconds >= numSeconds);
     }
 
-    std::cout << numTransactions << std::endl;
+    std::cout << "Transactions: " << numTransactions << std::endl;
+    std::cout << "Aborts: " << numAborts << std::endl;
 }
