@@ -6,8 +6,7 @@ import re
 import time
 import sys
 
-USER_NAME = "nl35"
-WORKING_DIR = "/biggerraid/users/" + USER_NAME + "/scratch"
+WORKING_DIR = "/biggerraid/users/nl35/scratch"
 BUILD_DIR = "../platform/build"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
