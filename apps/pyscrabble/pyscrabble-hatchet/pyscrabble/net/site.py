@@ -1,6 +1,5 @@
 from formless import webform
 from nevow import rend, loaders, static, tags as T, flat, inevow
-from pyscrabble.net import interfaces
 from pyscrabble import manager
 from pyscrabble import util
 from twisted.internet import reactor
