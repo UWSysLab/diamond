@@ -58,7 +58,8 @@ public:
     void put(const std::string &key, const std::string &value, const Timestamp &t);
     void put(const std::string &key, const Version &v);
     void commitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
-
+    void remove(const std::string &key);
+    
 private:
 
     /* Global store which keeps key -> (timestamp, value) list. */

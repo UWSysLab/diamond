@@ -145,6 +145,14 @@ VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const 
     } // otherwise, ignore the read
 }
 
+void
+VersionedKVStore::remove(const string &key) {
+    auto it = store.find(key);
+    if (it != store.end()) {
+	store.erase(it);
+    }
+}
+
 bool
 VersionedKVStore::getLastRead(const string &key, Timestamp &lastRead)
 {
