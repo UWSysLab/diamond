@@ -935,6 +935,7 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() )
             
             #self.gameOver(game)
+            self.currentGame.setComplete()
             self.gameOver()
             return
 
@@ -1060,6 +1061,7 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() * -1 )
                 
             #self.gameOver(self.currentGame)
+            self.currentGame.setComplete()
             self.gameOver()
         
         DObject.TransactionCommit()

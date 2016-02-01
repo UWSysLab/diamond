@@ -260,14 +260,6 @@ class ChatFrame(gtk.Frame):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_FULL])))
             DObject.TransactionCommit()
             return
-                
-        #TODO: decide whether to eliminate pausing
-        #if (game.isPaused() and not game.hasPlayer(p)):
-        #    command.setData( ServerMessage([CANNOT_JOIN_STARTED]) )
-        #    command.setCommand( constants.GAME_JOIN_DENIED )
-        #    client.denyJoinGame(command)
-        #    self.error(util.ErrorMessage(ServerMessage([CANNOT_JOIN_STARTED])))
-        #    return
 
         p = Player(self.username, gameName)
         if not game.hasPlayer( p ):

@@ -27,8 +27,8 @@ class ScrabbleGame:
         DStringList.Map(self.players, "game:" + name + ":players")
         self.started = DBoolean()
         DBoolean.Map(self.started, "game:" + name + ":started")
-        self.paused = False
-        self.complete = False
+        self.complete = DBoolean()
+        DBoolean.Map(self.complete, "game:" + name + ":complete")
         self.moves = []
         self.words = []
         self.usedModifiers = []
@@ -37,7 +37,6 @@ class ScrabbleGame:
         self.currentPlayer = DString()
         DString.Map(self.currentPlayer, "game:" + name + ":currentplayer")
         self.log = []
-        self.pending = []
         self.bag = Bag( rules='en' )
         self.creator = DString()
         DString.Map(self.creator, "game:" + name + ":creator")
@@ -60,6 +59,7 @@ class ScrabbleGame:
         self.setCreator("")
         self.currentPlayer.Set("")
         self.started.Set(False)
+        self.complete.Set(False)
         self.players.Clear()
         self.bag.reset(rules='en')
         self.passedMoves.Set(0)
@@ -223,7 +223,7 @@ class ScrabbleGame:
         @return: True if the game is complete.  
         '''
         
-        return self.complete
+        return self.complete.Value()
     
     def start(self):
         '''
@@ -395,38 +395,6 @@ class ScrabbleGame:
                 winners.append( player )
         return winners
     
-    def pause(self):
-        '''
-        Pause the game.
-        '''
-        
-        self.paused = True
-        
-        self.players.remove( self.currentPlayer )
-        self.players.insert(0, self.currentPlayer )
-        
-        for player in self.players:
-            if player not in self.pending:
-                self.pending.append( player )
-        
-    
-    def unPause(self):
-        '''
-        Unpause the game.
-        '''
-        
-        self.paused = False
-        self.pending = []
-    
-    def isPaused(self):
-        '''
-        Check whether the game is paused.
-        
-        @return: True if the game is paused.
-        '''
-        
-        return self.paused
-    
     def returnLetters(self, letters):
         '''
         Return letters to the Bag.
@@ -474,7 +442,7 @@ class ScrabbleGame:
         '''
         Mark this game as complete
         '''
-        self.complete = True
+        self.complete.Set(True)
     
     def appendLogMessage(self, log):
         '''
@@ -495,31 +463,6 @@ class ScrabbleGame:
         @return: Game Log
         '''
         return self.log[:]
-    
-    def getPending(self):
-        '''
-        Get list of players pending to join the game
-        
-        @return: List of players still pending to re-join a paused game
-        '''
-        return self.pending
-        
-    def removePending(self, player):
-        '''
-        Remove a player from the pending list
-        
-        @param player: Player
-        '''
-        self.pending.remove( player )
-    
-    def addPending(self, player):
-        '''
-        Add pending player
-        
-        @param player: Player
-        '''
-        if player not in self.pending:
-            self.pending.append( player )
         
     
     def getCountLetters(self):

@@ -1,7 +1,6 @@
 from twisted.internet import reactor
 import pygtk
 import gtk
-from pyscrabble.net.client import ScrabbleClient
 from pyscrabble.gui.main import MainWindow
 from pyscrabble.gtkconstants import *
 from pyscrabble.constants import *
