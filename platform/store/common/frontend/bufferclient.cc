@@ -44,10 +44,12 @@ BufferClient::~BufferClient() { }
 void
 BufferClient::Begin(const uint64_t tid)
 {
+    Debug("BEGIN [%lu]", tid);
     txns_lock.lock();
     // Initialize data structures.
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
+    	txns[tid] = Transaction();
     }
     txns_lock.unlock();
 }
@@ -57,12 +59,15 @@ BufferClient::Begin(const uint64_t tid)
 void
 BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
 {
+    Debug("GET %s", key.c_str());
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
+	txns_lock.unlock();
+    } else {
+	txns_lock.unlock();
     }
-    Transaction txn = txns[tid];
-    txns_lock.unlock();
+    Transaction &txn = txns[tid];
 
     auto it = txn.getWriteSet().find(key);
     // Read your own writes, check the write set first.
@@ -72,7 +77,7 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
         promise->Reply(REPLY_OK, ret);
         return;
     }
-
+    
     // Consistent reads, check the read set.
     auto it2 = txn.getReadSet().find(key);
     if (it2 != txn.getReadSet().end()) {
@@ -87,7 +92,7 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
 
     txnclient->Get(tid, key, pp);
     if (pp->GetReply() == REPLY_OK) {
-        Debug("Adding [%s] with ts %lu", key.c_str(), pp->GetValue(key).GetTimestamp());
+        Debug("Adding [%s] with ts %lu to the read set", key.c_str(), pp->GetValue(key).GetTimestamp());
         txn.addReadSet(key, pp->GetValue(key).GetTimestamp());
     }
 
@@ -96,11 +101,12 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
 void
 BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
 {
+    Debug("MULTIGET %lu", keys.size());
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
     }
-    Transaction txn = txns[tid];
+    Transaction &txn = txns[tid];
     txns_lock.unlock();
 
     vector<string> keysToRead;
@@ -120,7 +126,7 @@ BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *
         if (pp->GetReply() == REPLY_OK){
             std::map<string,Version> values = pp->GetValues();
             for (auto value : values) {
-                Debug("Adding [%s] with ts %lu", value.first.c_str(), value.second.GetTimestamp());
+                Debug("Adding [%s] with ts %lu to the read set", value.first.c_str(), value.second.GetTimestamp());
                 txn.addReadSet(value.first, value.second.GetTimestamp());
             }
         }
@@ -133,11 +139,12 @@ BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *
 void
 BufferClient::Put(const uint64_t tid, const string &key, const string &value, Promise *promise)
 {
+    Debug("PUT [%lu] %s %s", tid, key.c_str(), value.c_str());
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
     }
-    Transaction txn = txns[tid];
+    Transaction &txn = txns[tid];
     txns_lock.unlock();
 
     // Update the write set.
@@ -149,6 +156,7 @@ BufferClient::Put(const uint64_t tid, const string &key, const string &value, Pr
 void
 BufferClient::Prepare(const uint64_t tid, Promise *promise)
 {
+    Debug("PREPARE [%lu]", tid);
     if (txns.find(tid) != txns.end()) {
         txnclient->Prepare(tid, txns[tid], promise);
     }
@@ -157,6 +165,7 @@ BufferClient::Prepare(const uint64_t tid, Promise *promise)
 void
 BufferClient::Commit(const uint64_t tid, const Timestamp &timestamp, Promise *promise)
 {
+    Debug("COMMIT [%lu]", tid);
     if (txns.find(tid) != txns.end()) {
         txnclient->Commit(tid, txns[tid], timestamp, promise);
         txns.erase(tid);
@@ -167,6 +176,7 @@ BufferClient::Commit(const uint64_t tid, const Timestamp &timestamp, Promise *pr
 void
 BufferClient::Abort(const uint64_t tid, Promise *promise)
 {
+    Debug("ABORT [%lu]", tid);
     if (txns.find(tid) != txns.end()) {
         txnclient->Abort(tid, txns[tid], promise);
         txns.erase(tid);

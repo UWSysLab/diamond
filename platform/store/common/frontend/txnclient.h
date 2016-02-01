@@ -60,55 +60,52 @@
 class TxnClient
 {
 public:
-    TxnClient();
-    ~TxnClient();
+    TxnClient() { };
+    ~TxnClient() { };
 
     // Begin a transaction.
-    virtual void Begin(uint64_t id);
+    virtual void Begin(uint64_t tid) = 0;
     
     // Get the value corresponding to key (valid at given timestamp).
     virtual void Get(const uint64_t tid,
                      const std::string &key,
-                     Promise *promise = NULL);
+                     Promise *promise = NULL) = 0;
 
     virtual void Get(const uint64_t tid,
                      const std::string &key,
                      const Timestamp &timestamp,
-                     Promise *promise = NULL);
+                     Promise *promise = NULL) = 0;
 
     virtual void MultiGet(const uint64_t tid,
                           const std::vector<std::string> &keys,
-                          Promise *promise = NULL);
+                          Promise *promise = NULL) = 0;
 
     virtual void MultiGet(const uint64_t tid,
                           const std::vector<std::string> &key,
                           const Timestamp &timestamp,
-                          Promise *promise = NULL);
+                          Promise *promise = NULL) = 0;
 
     // Set the value for the given key.
     virtual void Put(const uint64_t tid,
                      const std::string &key,
                      const std::string &value,
-                     Promise *promise = NULL);
+                     Promise *promise = NULL) = 0;
 
     // Prepare the transaction.
     virtual void Prepare(const uint64_t tid,
                          const Transaction &txn,
-                         Promise *promise = NULL);
+                         Promise *promise = NULL) = 0;
 
     // Commit all Get(s) and Put(s) since Begin().
     virtual void Commit(const uint64_t tid,
-                        const Transaction &txn = Transaction(), 
-                        const uint64_t &timestamp = 0,
-                        Promise *promise = NULL);
+                        const Transaction &txn, 
+                        const Timestamp &timestamp = 0,
+                        Promise *promise = NULL) = 0;
     
     // Abort all Get(s) and Put(s) since Begin().
     virtual void Abort(const uint64_t tid, 
                        const Transaction &txn = Transaction(), 
-                       Promise *promise = NULL);
-
-    // Sharding logic: Given key, generates a number b/w 0 to nshards-1
-    uint64_t key_to_shard(const std::string &key, const uint64_t nshards);
+                       Promise *promise = NULL) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */

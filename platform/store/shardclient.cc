@@ -135,10 +135,19 @@ ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys,
                                    timeout); // timeout in ms
         });
 }
-    
+
+void
+ShardClient::Put(const uint64_t tid,
+		 const std::string &key,
+		 const std::string &value,
+		 Promise *promise)
+{
+    Panic("No server-side puts!");
+}
+
 void
 ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
-                    const Timestamp &timestamp, Promise *promise)
+		     Promise *promise)
 {
     Debug("[shard %i] Sending PREPARE: %lu", shard, tid);
 
@@ -162,7 +171,7 @@ ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
 
 void
 ShardClient::Commit(const uint64_t tid, const Transaction &txn,
-                   uint64_t timestamp, Promise *promise)
+		    const Timestamp &timestamp, Promise *promise)
 {
 
     Debug("[shard %i] Sending COMMIT: %lu", shard, tid);
@@ -173,6 +182,7 @@ ShardClient::Commit(const uint64_t tid, const Transaction &txn,
     request.set_op(Request::COMMIT);
     request.set_txnid(tid);
     request.mutable_commit()->set_timestamp(timestamp);
+    txn.serialize(request.mutable_commit()->mutable_txn());
     request.SerializeToString(&request_str);
 
     blockingBegin = new Promise(COMMIT_TIMEOUT);
@@ -240,11 +250,7 @@ ShardClient::GetCallback(const string &request_str, const string &reply_str)
         if (reply.status() == REPLY_OK) {
             for (int i = 0; i < reply.replies_size(); i++) {
                 ReadReply rep = reply.replies(i);
-                if (rep.has_timestamp()) {
-                    ret[rep.key()] = Version(rep.timestamp(), rep.value());
-                } else {
-                    ret[rep.key()] = Version(rep.value());
-                }
+		ret[rep.key()] = Version(rep.timestamp(), rep.value());
             }
         }
         w->Reply(reply.status(), ret);
@@ -286,7 +292,7 @@ ShardClient::CommitCallback(const string &request_str, const string &reply_str)
     if (waiting != NULL) {
         Promise *w = waiting;
         waiting = NULL;
-        w->Reply(reply.status());
+        w->Reply(reply.status(), reply.timestamp());
     }
     Debug("[shard %i] Received COMMIT callback [%d]", shard, reply.status());
 }

@@ -78,13 +78,16 @@ public:
                   const std::vector<std::string> &keys,
                   const Timestamp &timestamp, 
                   Promise *promise = NULL);
+    void Put(const uint64_t tid,
+                     const std::string &key,
+                     const std::string &value,
+                     Promise *promise = NULL);
     void Prepare(const uint64_t tid, 
                  const Transaction &txn,
-                 const Timestamp &timestamp = 0,
                  Promise *promise = NULL);
     void Commit(const uint64_t tid, 
                 const Transaction &txn,
-                uint64_t timestamp,
+                const Timestamp &timestamp = 0,
                 Promise *promise = NULL);
     void Abort(const uint64_t tid, 
                const Transaction &txn,

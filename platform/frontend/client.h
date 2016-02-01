@@ -54,8 +54,8 @@ class Client : public TransportReceiver, public TxnClient
 public:
     /* Constructor needs path to shard config. */
     Client(const std::string &configPath, 
-        Transport *transport,
-        uint64_t client_id);
+	   Transport *transport,
+	   uint64_t client_id);
     ~Client();
 
     // Overriding from TxnClient
@@ -74,13 +74,16 @@ public:
                  const std::vector<std::string> &key,
                  const Timestamp &timestamp, 
                  Promise *promise = NULL);
+    void Put(const uint64_t tid,
+	     const std::string &key,
+	     const std::string &value,
+	     Promise *promise = NULL);
     void Prepare(const uint64_t tid, 
                  const Transaction &txn,
-                 const Timestamp &timestamp = Timestamp(),
                  Promise *promise = NULL);
     void Commit(const uint64_t tid, 
                 const Transaction &txn,
-                uint64_t timestamp,
+                const Timestamp &timestamp = 0,
                 Promise *promise = NULL);
     void Abort(const uint64_t tid, 
                const Transaction &txn,

@@ -68,7 +68,7 @@ private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
-    bool OngoingTransaction(uint64_t txnid);
+    uint64_t OngoingTransaction();
     
     // Unique ID for this client.
     uint64_t client_id;

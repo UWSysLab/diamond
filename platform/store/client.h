@@ -51,7 +51,7 @@
 
 namespace strongstore {
 
-class Client : public ::TxnClient
+class Client 
 {
 public:
     Client(string configPath, int nshards, int closestReplica);
@@ -71,6 +71,15 @@ public:
                  const Timestamp &timestamp,
                  std::map<std::string, Version> &value);
 
+    void Put(const uint64_t tid,
+                     const std::string &key,
+                     const std::string &value,
+                     Promise *promise = NULL);
+    
+    void Prepare(const uint64_t tid, 
+                 const Transaction &txn,
+                 Promise *promise = NULL);
+    
     bool Commit(const uint64_t tid, const Transaction &txn, Timestamp &ts);
     void Abort(const uint64_t tid, const Transaction &txn);
     std::vector<int> Stats();
@@ -86,6 +95,10 @@ private:
     void Abort(const uint64_t tid, const std::map<int, Transaction> &participants);
     // local Prepare function
     int Prepare(const uint64_t tid, const std::map<int, Transaction> &participants, Timestamp &ts);
+
+    // Sharding logic: Given key, generates a number b/w 0 to nshards-1
+    uint64_t key_to_shard(const std::string &key, const uint64_t nshards);
+
     // Unique ID for this client.
     uint64_t client_id;
 

@@ -6,7 +6,7 @@ message ReadMessage {
 message ReadReply {
      required string key = 2;
      required string value = 3;
-     optional uint64 timestamp = 4;
+     required uint64 timestamp = 4;
 }
 
 message WriteMessage {

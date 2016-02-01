@@ -42,7 +42,7 @@
 namespace diamond {
 namespace frontend {
 
-class Server : public TransportReceiver, public TxnStore
+class Server : public TransportReceiver
 {
 public:
     Server(Transport *transport, strongstore::Client *client);

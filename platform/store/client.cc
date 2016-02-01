@@ -211,6 +211,23 @@ Client::MultiGet(const uint64_t tid, const vector<string> &keys,
 //     return REPLY_OK;
 // }
 
+void
+Client::Put(const uint64_t tid,
+	    const std::string &key,
+	    const std::string &value,
+	    Promise *promise)
+{
+    Panic("Don't call this function!");
+}
+    
+void
+Client::Prepare(const uint64_t tid, 
+		const Transaction &txn,
+		Promise *promise)
+{
+    Panic("Don't call this function!");
+}
+    
 int
 Client::Prepare(const uint64_t tid, const map<int, Transaction> &participants, Timestamp &ts)
 {
@@ -351,6 +368,19 @@ Client::tssCallback(const string &request, const string &reply)
     
     // Wake up thread waiting for the reply.
     cv.notify_all();
+}
+
+/* Takes a key and number of shards; returns shard corresponding to key. */
+uint64_t
+Client::key_to_shard(const string &key, const uint64_t nshards)
+{
+    uint64_t hash = 5381;
+    const char* str = key.c_str();
+    for (unsigned int i = 0; i < key.length(); i++) {
+        hash = ((hash << 5) + hash) + (uint64_t)str[i];
+    }
+
+    return (hash % nshards);
 }
 
 } // namespace strongstore

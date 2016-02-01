@@ -17,8 +17,8 @@ namespace frontend {
 using namespace proto;
 using namespace std;
     
-    Client::Client(const string &configPath, Transport *transport,
-                   uint64_t client_id) :
+Client::Client(const string &configPath, Transport *transport,
+	       uint64_t client_id) :
     transport(transport), client_id(client_id)
 { 
     ifstream configStream(configPath);
@@ -76,10 +76,6 @@ Client::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promis
         msg.add_keys(key);
     }
     msg.set_txnid(tid);
-
-    for (auto key : keys) {
-        msg.add_keys(key);
-    }
     msg.set_msgid(msgid++);
 
     // Send message
@@ -106,10 +102,6 @@ Client::MultiGet(const uint64_t tid, const vector<string> &keys, const Timestamp
         msg.add_keys(key);
     }
     msg.set_txnid(tid);
-
-    for (auto key : keys) {
-        msg.add_keys(key);
-    }
     msg.set_msgid(msgid++);
     msg.set_timestamp(timestamp);
 
@@ -124,28 +116,27 @@ Client::MultiGet(const uint64_t tid, const vector<string> &keys, const Timestamp
         });
 }
 
-// void
-// Client::Put(const uint64_t tid, const string &key, 
-//               const string &value, Promise *promise)
-// {
-//     Debug("Sending PUT [%s %s]", key.c_str(), value.c_str());
-//     Panic("Don't support PUT");
-// }
+void
+Client::Put(const uint64_t tid, const string &key, 
+              const string &value, Promise *promise)
+{
+    Debug("Sending PUT [%s %s]", key.c_str(), value.c_str());
+    Panic("Don't support PUT");
+}
 
 void
 Client::Prepare(const uint64_t tid,
-                  const Transaction &txn,
-                  const Timestamp &timestamp,
-                  Promise *promise)
+		const Transaction &txn,
+		Promise *promise)
 {
     Debug("Ignore PREPARE");
-    
+    Panic("Don't support PREPARE");
 }
 
 void
 Client::Commit(const uint64_t tid,
                  const Transaction &txn,
-                 uint64_t timestamp,
+                 const Timestamp &timestamp,
                  Promise *promise)
 {
     Debug("Sending COMMIT");
@@ -154,11 +145,14 @@ Client::Commit(const uint64_t tid,
     msg.set_txnid(tid);
     txn.serialize(msg.mutable_txn());
     msg.set_msgid(msgid++);
+    msg.set_clientid(client_id);
+
 
     // Send messages
     transport->Timer(0, [=]() {
             if (transport->SendMessageToReplica(this, 0, msg)) {
-                waiting[msg.msgid()] = promise;
+		if (promise != NULL)
+		    waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
                 promise->Reply(REPLY_NETWORK_FAILURE);
             }
@@ -176,11 +170,13 @@ Client::Abort(const uint64_t tid,
     msg.set_txnid(tid);
     txn.serialize(msg.mutable_txn());
     msg.set_msgid(msgid++);
+    msg.set_clientid(client_id);
 
     // Send messages
     transport->Timer(0, [=]() {
             if (transport->SendMessageToReplica(this, 0, msg)) {
-                waiting[msg.msgid()] = promise;
+		if (promise != NULL) 
+		    waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
                 promise->Reply(REPLY_NETWORK_FAILURE);
             }
@@ -203,18 +199,15 @@ Client::ReceiveMessage(const TransportAddress &remote,
         // Handle Get
         getReply.ParseFromString(data);
         auto it = waiting.find(getReply.msgid());
-        
+
         if (it != waiting.end()) {
+	    Debug("Received GET response [%u]", getReply.msgid());
             map<string, Version> ret;
             int status = getReply.status(); 
             if (status == REPLY_OK) {
                 for (int i = 0; i < getReply.replies_size(); i++) {
                     ReadReply rep = getReply.replies(i);
-                    if (rep.has_timestamp()) {
-                        ret[rep.key()] = Version(rep.timestamp(), rep.value());
-                    } else {
-                        ret[rep.key()] = Version(rep.value());
-                    }
+		    ret[rep.key()] = Version(rep.timestamp(), rep.value());
                 }
             }
             it->second->Reply(status, ret);
@@ -222,17 +215,19 @@ Client::ReceiveMessage(const TransportAddress &remote,
         }
     } else if (type == commitReply.GetTypeName()) {
         commitReply.ParseFromString(data);
-        auto it = waiting.find(getReply.msgid());
-        
-        if (it != waiting.end()) {
+        auto it = waiting.find(commitReply.msgid());
+
+        if (it != waiting.end() && it->second != NULL) {
+	    Debug("Received COMMIT response [%u] %i", commitReply.msgid(), commitReply.status());
             it->second->Reply(commitReply.status(), commitReply.timestamp());
             waiting.erase(it);
         }
     } else if (type == abortReply.GetTypeName()) {
         abortReply.ParseFromString(data);
-        auto it = waiting.find(getReply.msgid());
-        
-        if (it != waiting.end()) {
+        auto it = waiting.find(abortReply.msgid());
+
+        if (it != waiting.end() && it->second != NULL) {
+	    Debug("Received ABORT response [%u]", abortReply.msgid());
             it->second->Reply(abortReply.status());
             waiting.erase(it);
         }

@@ -56,18 +56,25 @@ Server::ExecuteGet(Request request, string &str2)
     Reply reply;
 
     for (int i = 0; i < request.get().keys_size(); i++) {
-        ReadReply *rr = reply.add_replies();
+	string key = request.get().keys(i);
         if (request.get().has_timestamp()) {
-            status = store->Get(request.txnid(), request.get().keys(i),
+            status = store->Get(request.txnid(), key,
                                 request.get().timestamp(), val);
         } else {
-            status = store->Get(request.txnid(), request.get().keys(i), val);
+            status = store->Get(request.txnid(), key, val);
         }
+
         if (status == REPLY_OK) {
+	    ReadReply *rr = reply.add_replies();
+	    rr->set_key(key);
             rr->set_value(val.GetValue());
             rr->set_timestamp(val.GetTimestamp());
-        }
+        } else {
+	    reply.set_status(status);
+	    break;
+	}
     }
+    reply.set_status(REPLY_OK);	
     reply.SerializeToString(&str2);
 }
     
@@ -131,7 +138,7 @@ Server::ReplicaUpcall(opnum_t opnum,
     Debug("Received Upcall: %lu %s", opnum, str1.c_str());
     Request request;
     Reply reply;
-    int status = 0;
+    int status = REPLY_OK;
     
     request.ParseFromString(str1);
 
@@ -145,6 +152,7 @@ Server::ReplicaUpcall(opnum_t opnum,
         break;
     case strongstore::proto::Request::COMMIT:
         store->Commit(request.txnid(), request.commit().timestamp());
+	reply.set_timestamp(request.commit().timestamp());
         break;
     case strongstore::proto::Request::ABORT:
         store->Abort(request.txnid(), Transaction(request.abort().txn()));

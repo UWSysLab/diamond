@@ -82,8 +82,9 @@ Server::HandleGet(const TransportAddress &remote,
 
     vector<string> keys;
     map<string, Version> values;
-    
+
     for (int i = 0; i < msg.keys_size(); i++) {
+	Debug("GET %s", msg.keys(i).c_str());
         keys.push_back(msg.keys(i));
     }
 
@@ -106,11 +107,11 @@ Server::HandleGet(const TransportAddress &remote,
     GetReply reply;
     reply.set_status(status);
     reply.set_msgid(msg.msgid());
-    for (auto value : values) {
-        ReadReply *r = reply.add_replies();
-        r->set_key(value.first);
-        r->set_value(value.second.GetValue());
-        if (value.second.GetTimestamp() == 0) {
+    if (status == REPLY_OK) {
+	for (auto value : values) {
+	    ReadReply *r = reply.add_replies();
+	    r->set_key(value.first);
+	    r->set_value(value.second.GetValue());
             r->set_timestamp(value.second.GetTimestamp());
         }
     }
@@ -123,10 +124,14 @@ Server::HandleCommit(const TransportAddress &remote,
                      const CommitMessage &msg)
 {
     Timestamp ts;
-    int status = store->Commit(msg.txnid(), Transaction(msg.txn()), ts);
+    bool ret = store->Commit(msg.txnid(), Transaction(msg.txn()), ts);
 
     CommitReply reply;
-    reply.set_status(status);
+    if (ret) {
+	reply.set_status(REPLY_OK);
+    } else {
+	reply.set_status(REPLY_FAIL);
+    }
     reply.set_txnid(msg.txnid());
     reply.set_msgid(msg.msgid());
     reply.set_timestamp(ts);
