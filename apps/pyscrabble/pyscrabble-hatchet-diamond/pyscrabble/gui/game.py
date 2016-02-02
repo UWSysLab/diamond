@@ -486,7 +486,6 @@ class GameFrame(gtk.Frame):
         leaveButton = gtk.Button(label=_("Leave Game"))
         
         self.startButton.connect("clicked", self.startGame)
-        self.pauseHandlerId = self.saveButton.connect("clicked", self.doPauseGame)
         leaveButton.connect("clicked", self.askLeaveGame_cb)
         
         self.actionBox.add(self.startButton)
@@ -568,24 +567,6 @@ class GameFrame(gtk.Frame):
             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
             
         DObject.TransactionCommit()
-    
-    # Pause the game
-    def doPauseGame(self, button):
-        '''
-        User action to Pause the game
-        
-        @param button: Button that was clicked
-        '''
-        self.client.pauseGame( self.currentGameId )
-    
-    # Unpause the game
-    def doUnpauseGame(self, button):
-        '''
-        User action to Unpause the game
-        
-        @param button: Button that was clicked
-        '''
-        self.client.unPauseGame( self.currentGameId )
         
     
     # Start the game
@@ -1190,31 +1171,6 @@ class GameFrame(gtk.Frame):
             widget.stop_emission("drag-motion")
         
         return False
-    
-    # Pause the game
-    def pauseGame(self):
-        '''
-        Callback to pause the game
-        '''
-        
-        self.startButton.hide()
-        self.saveButton.set_sensitive(True) #Enable save button, game is started
-        
-        p = gtkutil.Popup( self.currentGameId, _("Game is saved."))
-        self.saveButton.set_label(_("Resume Game"))
-        self.saveButton.disconnect( self.pauseHandlerId )
-        self.pauseHandlerId = self.saveButton.connect("clicked", self.doUnpauseGame)
-        self.board.deactivate()
-    
-    # Unpause the game
-    def unpauseGame(self):
-        '''
-        Callback to unpause the game
-        '''
-        p = gtkutil.Popup( self.currentGameId,_("Game has been resumed."))
-        self.saveButton.set_label(_("Save Game"))
-        self.saveButton.disconnect( self.pauseHandlerId )
-        self.pauseHandlerId = self.saveButton.connect("clicked", self.doPauseGame)
         
     
     # Show/Refresh letters in the letter box
