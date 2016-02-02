@@ -246,6 +246,13 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, const Timestamp 
             cache.put(write.first, write.second, pp->GetTimestamp());
         }
         cache_lock.unlock();
+    } else if (pp->GetReply() == REPLY_FAIL) {
+	cache_lock.lock();
+	for (auto &write : txn.getReadSet()) {
+	    Debug("Removing [%s] from the cache", write.first.c_str());
+	    cache.remove(write.first);
+	}
+	cache_lock.unlock();
     }
 }
 
