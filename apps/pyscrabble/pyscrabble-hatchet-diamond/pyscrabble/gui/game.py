@@ -889,9 +889,6 @@ class GameFrame(gtk.Frame):
         if not player == game.getCurrentPlayer():
             return
         
-        if (game.isPaused()):
-            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([MOVE_GAME_PAUSED])))
-            return
         if (not game.isInProgress()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS])) )
             return
@@ -1042,10 +1039,6 @@ class GameFrame(gtk.Frame):
         
         if (not self.currentGame.isInProgress()):
             self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
-            return
-        
-        if (self.currentGame.isPaused()):
-            self.error(util.ErrorMessage(ServerMessage([PASS_PAUSED]) ))
             return
         
         try:
