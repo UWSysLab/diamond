@@ -16,14 +16,14 @@ args = parser.parse_args()
 
 frontendConfigPath = args.config_prefix + ".frontend.config"
 frontendExecutablePath = BUILD_DIR + "/frontserver"
-backendExecutablePath = BUILD_DIR + "/server"
+backendExecutablePath = BUILD_DIR + "/storeserver"
 tssConfigPath = args.config_prefix + ".tss.config"
 tssExecutablePath = BUILD_DIR + "/tss"
 
 remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend.config"
 remoteFrontendExecutablePath = WORKING_DIR + "/frontserver"
 remoteFrontendOutputPath = WORKING_DIR + "/output.frontend.txt"
-remoteBackendExecutablePath = WORKING_DIR + "/server"
+remoteBackendExecutablePath = WORKING_DIR + "/storeserver"
 remoteTssConfigPath = WORKING_DIR + "/diamond.tss.config"
 remoteTssExecutablePath = WORKING_DIR + "/tss"
 

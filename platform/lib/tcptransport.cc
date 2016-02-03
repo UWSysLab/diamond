@@ -387,6 +387,8 @@ TCPTransport::Stop()
 int
 TCPTransport::Timer(uint64_t ms, timer_callback_t cb)
 {
+    std::lock_guard<std::mutex> lck(mtx);
+    
     TCPTransportTimerInfo *info = new TCPTransportTimerInfo();
 
     struct timeval tv;
@@ -411,12 +413,14 @@ TCPTransport::Timer(uint64_t ms, timer_callback_t cb)
 bool
 TCPTransport::CancelTimer(int id)
 {
+    std::lock_guard<std::mutex> lck(mtx);
     TCPTransportTimerInfo *info = timers[id];
 
     if (info == NULL) {
         return false;
     }
 
+    timers.erase(info->id);
     event_del(info->ev);
     event_free(info->ev);
     delete info;
@@ -436,9 +440,13 @@ TCPTransport::CancelAllTimers()
 void
 TCPTransport::OnTimer(TCPTransportTimerInfo *info)
 {
-    timers.erase(info->id);
-    event_del(info->ev);
-    event_free(info->ev);
+    {
+	    std::lock_guard<std::mutex> lck(mtx);
+	    
+	    timers.erase(info->id);
+	    event_del(info->ev);
+	    event_free(info->ev);
+    }
     
     info->cb();
 
