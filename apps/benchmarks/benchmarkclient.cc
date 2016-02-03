@@ -37,7 +37,8 @@ int main(int argc, char ** argv) {
 
     DString dstrings[numVarsTotal];
     for (int i = 0; i < numVarsTotal; i++) {
-        DObject::Map(dstrings[i], "benchmark:var" + i);
+        std::string key("benchmark:var" + std::to_string(i));
+        DObject::Map(dstrings[i], key);
     }
 
     bool done = false;
