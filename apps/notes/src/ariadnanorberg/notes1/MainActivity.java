@@ -1,8 +1,10 @@
 package ariadnanorberg.notes1;
 
-import android.app.Activity;
-import android.content.Intent;
 import com.parse.Parse;
+
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,8 +16,12 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		Parse.enableLocalDatastore(this);
-		Parse.initialize(this);
-		
+		Parse.initialize(new Parse.Configuration.Builder(this)
+			.applicationId("WsCxdr90gpqXO5rPQ6FvVJE46X8Tghr48sEUMaDN")
+			.clientKey("qessDyZkCChhXdKo6BZRhiFk8ZHaKPjJEQDMhVin")
+			.server("http://localhost:1337/parse")
+			.build()
+		);
 		final Button viewNotes = (Button) findViewById(R.id.viewNotes);
 	}
 
