@@ -211,9 +211,6 @@ class ScrabbleGame:
         @return: True if the game is started and unpaused.
         '''
         
-        if (self.isPaused()):
-            return False
-            
         return self.started.Value()
     
     def isComplete(self):
@@ -496,8 +493,6 @@ class ScrabbleGameInfo(object):
             
             if (game.isStarted()):
                 self.status = ServerMessage([STATUS_STARTED])
-            elif (game.isPaused()):
-                self.status = ServerMessage([SAVED])
             else:
                 self.status = ServerMessage([NOT_STARTED])
             
