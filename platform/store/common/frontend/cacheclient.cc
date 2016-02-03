@@ -234,7 +234,7 @@ void
 CacheClient::Commit(const uint64_t tid, const Transaction &txn, const Timestamp &timestamp, Promise *promise)
 {
     Debug("COMMIT [%lu]", tid);
-    Promise p(GET_TIMEOUT);
+    Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
     txnclient->Commit(tid, txn, timestamp, pp);
 
@@ -248,9 +248,9 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, const Timestamp 
         cache_lock.unlock();
     } else if (pp->GetReply() == REPLY_FAIL) {
 	cache_lock.lock();
-	for (auto &write : txn.getReadSet()) {
-	    Debug("Removing [%s] from the cache", write.first.c_str());
-	    cache.remove(write.first);
+	for (auto &read : txn.getReadSet()) {
+	    Debug("Removing [%s] from the cache", read.first.c_str());
+	    cache.remove(read.first);
 	}
 	cache_lock.unlock();
     }
@@ -260,6 +260,18 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, const Timestamp 
 void
 CacheClient::Abort(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
-    Debug("COMMIT [%lu]", tid);
-    txnclient->Abort(tid, txn, promise);
+    Debug("ABORT [%lu]", tid);
+
+    Promise p(COMMIT_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+
+    txnclient->Abort(tid, txn, pp);
+    if (pp->GetReply() == REPLY_OK) {
+	cache_lock.lock();
+	for (auto &read : txn.getReadSet()) {
+	    Debug("Removing [%s] from the cache", read.first.c_str());
+	    cache.remove(read.first);
+	}
+	cache_lock.unlock();
+    }
 }
