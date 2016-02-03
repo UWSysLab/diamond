@@ -1,6 +1,7 @@
 #include <boost/program_options.hpp>
 #include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include <string>
 
 #include <includes/data_types.h>
