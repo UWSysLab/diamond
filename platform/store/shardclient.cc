@@ -123,7 +123,7 @@ ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys,
     int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
 
     transport->Timer(0, [=]() {
-	 	    waiting = promise;    
+	    waiting = promise;    
             client->InvokeUnlogged(replica,
                                    request_str,
                                    bind(&ShardClient::GetCallback,
