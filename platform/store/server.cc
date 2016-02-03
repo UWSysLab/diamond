@@ -71,7 +71,8 @@ Server::ExecuteGet(Request request, string &str2)
             rr->set_timestamp(val.GetTimestamp());
         } else {
 	    reply.set_status(status);
-	    break;
+	    reply.SerializeToString(&str2);
+	    return;
 	}
     }
     reply.set_status(REPLY_OK);	
