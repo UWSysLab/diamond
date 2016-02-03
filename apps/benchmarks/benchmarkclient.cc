@@ -37,17 +37,21 @@ int main(int argc, char ** argv) {
 
     DString dstrings[numVarsTotal];
     for (int i = 0; i < numVarsTotal; i++) {
-        DObject::Map(dstrings[i], "benchmark:var" + i);
+        std::string key("benchmark:var" + std::to_string(i));
+        DObject::Map(dstrings[i], key);
     }
 
     bool done = false;
     time_t startTime = time(NULL);
     int numTransactions = 0;
-    int numAborts = 0;
+    int totalNumAborts = 0;
+    int numAbandoned = 0;
     while (!done) {
+        int numAborts = 0;
         int committed = 0;
+        bool doneTrying = false;
         std::string val("testing " + std::to_string(rand()));
-        while (!committed) {
+        while (!committed && !doneTrying) {
             DObject::TransactionBegin();
             for (int j = 0; j < numVarsRead; j++) {
                 int varIndex = rand() % numVarsTotal;
@@ -61,14 +65,24 @@ int main(int argc, char ** argv) {
             if (!committed) {
                 numAborts++;
             }
+            if (numAborts >= 100) {
+                doneTrying = true;
+            }
         }
-        numTransactions++;
+        if (doneTrying) {
+            numAbandoned++;
+        }
+        else {
+            numTransactions++;
+        }
+        totalNumAborts += numAborts;
 
         time_t currentTime = time(NULL);
         double seconds = difftime(currentTime, startTime);
         done = (seconds >= numSeconds);
     }
 
-    std::cout << "Transactions: " << numTransactions << std::endl;
-    std::cout << "Aborts: " << numAborts << std::endl;
+    std::cout << "Transactions committed: " << numTransactions << std::endl;
+    std::cout << "Abandoned transactions (aborted 100 times): " << numAbandoned << std::endl;
+    std::cout << "Total num aborts: " << totalNumAborts << std::endl;
 }
