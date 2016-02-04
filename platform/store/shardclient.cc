@@ -91,7 +91,34 @@ void
 ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
 {
     // Send the GET operation to appropriate shard.
-    MultiGet(tid, keys, 0, promise);
+    // Send the GET operation to appropriate shard.
+    Debug("[shard %i] Sending %lu GETS", shard, keys.size());
+
+    // create request
+    string request_str;
+    Request request;
+    request.set_op(Request::GET);
+    request.set_txnid(tid);
+    for (auto &i : keys) {
+        request.mutable_get()->add_keys(i);
+    }
+    request.SerializeToString(&request_str);
+
+    // set to 1 second by default
+    int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
+
+    transport->Timer(0, [=]() {
+	    waiting = promise;    
+            client->InvokeUnlogged(replica,
+                                   request_str,
+                                   bind(&ShardClient::GetCallback,
+                                        this,
+                                        placeholders::_1,
+                                        placeholders::_2),
+                                   bind(&ShardClient::GetTimeout,
+                                        this),
+                                   timeout); // timeout in ms
+        });
 }
 
 void
