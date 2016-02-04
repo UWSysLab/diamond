@@ -62,10 +62,14 @@ class ChatFrame(gtk.Frame):
         ReactiveManager.add(self.refreshGames)
     
     def recoverGames(self):
-        DObject.TransactionBegin()
-        for gameId in self.joinedGamesSet.Members():
+        gameIds = None
+        committed = 0
+        while not committed:
+            DObject.TransactionBegin()
+            gameIds = self.joinedGamesSet.Members();
+            committed = DObject.TransactionCommit()
+        for gameId in gameIds:
             gobject.idle_add(self.newGame, gameId, False, {})
-        DObject.TransactionCommit()
     
     def refreshGames(self):
         gobject.idle_add(self.gameList.clear)
@@ -249,28 +253,29 @@ class ChatFrame(gtk.Frame):
             ReactiveManager.runInBackground(self.joinGameHelper, gameName)
     
     def joinGameHelper(self, gameName):
-        DObject.TransactionBegin()
-        game = ScrabbleGame(gameName)
-        if (game.isStarted()):
-            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([CANNOT_JOIN_STARTED])))
-            DObject.TransactionCommit()
-            return
-        
-        if (game.getNumberOfPlayers() == constants.MAX_PLAYERS):
-            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_FULL])))
-            DObject.TransactionCommit()
-            return
-
-        p = Player(self.username, gameName)
-        if not game.hasPlayer( p ):
-            game.addPlayer( p )
-        else:
-            game.removePending( p )
+        committed = 0
+        errorMsg = None
+        while not committed:
+            DObject.TransactionBegin()
+            game = ScrabbleGame(gameName)
+            if (game.isStarted()):
+                errorMsg = util.ErrorMessage(ServerMessage([CANNOT_JOIN_STARTED]))
             
-        self.joinedGamesSet.Add(gameName)
-        DObject.TransactionCommit()
+            if (game.getNumberOfPlayers() == constants.MAX_PLAYERS):
+                errorMsg = util.ErrorMessage(ServerMessage([GAME_FULL]))
+    
+            if errorMsg == None:
+                p = Player(self.username, gameName)
+                if not game.hasPlayer( p ):
+                    game.addPlayer( p )   
+                self.joinedGamesSet.Add(gameName)
+            
+            committed = DObject.TransactionCommit()
         
-        gobject.idle_add(self.mainwindow.newGame, gameName, False, {})
+        if errorMsg != None:
+            gobject.idle_add(self.error, errorMsg)
+        else:
+            gobject.idle_add(self.mainwindow.newGame, gameName, False, {})
         
     
     # Show dialog to create a new game
@@ -455,11 +460,13 @@ class ChatFrame(gtk.Frame):
         
         if not self.globalGamesSet.InSet(gameId):
             game = ScrabbleGame( gameId, options )
-            DObject.TransactionBegin()
-            game.reset()
-            game.setCreator(self.username)
-            self.globalGamesSet.Add(gameId)
-            DObject.TransactionCommit()
+            committed = 0
+            while not committed:
+                DObject.TransactionBegin()
+                game.reset()
+                game.setCreator(self.username)
+                self.globalGamesSet.Add(gameId)
+                committed = DObject.TransactionCommit()
         else:
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_EXISTS]) ))
     
