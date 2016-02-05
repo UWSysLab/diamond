@@ -201,7 +201,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(getReply.msgid());
 
         if (it != waiting.end()) {
-	    Debug("Received GET response [%u]", getReply.msgid());
+	    Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
             map<string, Version> ret;
             int status = getReply.status(); 
             if (status == REPLY_OK) {
