@@ -8,6 +8,8 @@
 #include <map>
 #include <inttypes.h>
 #include <set>
+#include <sstream>
+#include <thread>
 
 namespace diamond {
 
@@ -21,6 +23,12 @@ void DiamondInit(const std::string &configPath, int nshards, int closestReplica)
 
 void DiamondInit() {
    DiamondInit("../../test/local", 1, 0);
+}
+
+string GetThreadId() {
+    stringstream ss;
+    ss << this_thread::get_id();
+    return ss.str();
 }
 
 void
@@ -45,7 +53,8 @@ DObject::Map(DObject &addr, const string &key)
 {
     addr._key = key;
     
-    return addr.Pull();
+    //return addr.Pull();
+    return 0;
 }
 
 // XXX: Ensure return codes are correct
