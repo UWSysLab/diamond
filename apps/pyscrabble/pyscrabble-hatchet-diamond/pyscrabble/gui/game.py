@@ -1018,10 +1018,12 @@ class GameFrame(gtk.Frame):
         self.clearCurrentMove()
         
         if not self.player == self.currentGame.getCurrentPlayer():
+            DObject.TransactionCommit()
             return
         
         if (not self.currentGame.isInProgress()):
-            self.error(util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
+            gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
+            DObject.TransactionCommit()
             return
         
         try:
