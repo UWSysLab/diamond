@@ -157,12 +157,18 @@ class GameFrame(gtk.Frame):
     def appendWrapper(self, tuple):
         self.userList.append(tuple)
     
+    # runs in background thread
     def drawUI(self):
         currentPlayerName = self.currentGame.getCurrentPlayer().getUsername()
         started = self.currentGame.started.Value()
         thisPlayerName = self.player.getUsername()
+        if currentPlayerName == thisPlayerName:
+            self.board.activate()
+        else:
+            self.board.deactivate()
         gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName)
     
+    # runs in UI thread
     def drawUIHelper(self, started, thisPlayerName, currentPlayerName):
         if started:
             self.startButton.hide()
@@ -182,16 +188,12 @@ class GameFrame(gtk.Frame):
             self.cancelButton.set_sensitive(True)
             self.shuffleButton.set_sensitive(True)
             
-            self.board.activate()
-            
         else:
             self.okButton.set_sensitive(False)
             self.passButton.set_sensitive(False)
             self.tradeButton.set_sensitive(False)
             self.cancelButton.set_sensitive(False)
             self.shuffleButton.set_sensitive(True)
-            
-            self.board.deactivate()
                         
             if currentPlayerName is not None:
                 sel = self.userView.get_selection()
@@ -1275,13 +1277,20 @@ class GameFrame(gtk.Frame):
         
         self.showError(data)
         
-        if self.isCurrentTurn():
-            self.okButton.set_sensitive(True)
-        
-        o = manager.OptionManager()
-        
-        if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
-            self.clearCurrentMoveBackground()
+        ReactiveManager.runInBackground(self.errorHelper)
+    
+    def errorHelper(self):
+        committed = 0
+        while not committed:
+            DObject.TransactionBegin()
+            if self.isCurrentTurn():
+                gobject.idle_add(self.okButton.set_sensitive, True)
+            
+            o = manager.OptionManager()
+            
+            if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
+                self.clearCurrentMove()
+            committed = DObject.TransactionCommit()
     
     def info(self, log):
         '''

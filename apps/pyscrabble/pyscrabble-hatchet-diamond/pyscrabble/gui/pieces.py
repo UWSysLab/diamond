@@ -12,6 +12,7 @@ sys.path.append("../../../platform/build/bindings/python/")
 sys.path.append("../../../platform/bindings/python/")
 from libpydiamond import *
 import ReactiveManager
+import gobject
 
 # Class representing a Tile on the Gameboard            
 class GameTile(gtk.Button):
@@ -68,22 +69,33 @@ class GameTile(gtk.Button):
         g.putLetter( self.getLetter() )
         return g
     
+    # runs in background thread
     def activate(self):
+        letterPresent = self.letterPresent.Value()
+        gobject.idle_add(self.activateHelper, letterPresent)
+    
+    # runs in UI thread
+    def activateHelper(self, letterPresent):
         '''
         Activate this tile.
         
         Allow letters to be dragged onto it.
         '''
-        self.deactivate()
+        self.deactivateHelper()
             
         self.handler_id = self.connect("drag_data_received", self.letterDragged);
         self.drag_dest_set(gtk.DEST_DEFAULT_MOTION | gtk.DEST_DEFAULT_HIGHLIGHT | gtk.DEST_DEFAULT_DROP, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
-        if self.letterPresent.Value():
+        if letterPresent:
             self.source_handler_id = self.connect("drag_data_get", self.dragLetter)
             self.drag_source_set(gtk.gdk.BUTTON1_MASK, [( "image/x-xpixmap", 0, 81 )], gtk.gdk.ACTION_COPY)
         self.active = True
     
+    # runs in background thread
     def deactivate(self):
+        gobject.idle_add(self.deactivateHelper)
+    
+    # runs in UI thread
+    def deactivateHelper(self):
         '''
         Deactivate this tile.
         
@@ -110,8 +122,7 @@ class GameTile(gtk.Button):
         @param eventTime:
         '''
         #print 'dragging tile gameletter %s' % widget.getLetter().getLetter()
-        s = widget.getLetter().getLetter()
-        selection.set(selection.target, 8, '%s:%s' % (s, str(widget.getLetter().getScore())))
+        selection.set(selection.target, 8, '%s:%s' % ("a", "0"))
     
     # Callback when a GameLetter is dragged onto this GameTile
     def letterDragged(self, widget, context, x, y, selection, targetType, eventType):
@@ -135,15 +146,13 @@ class GameTile(gtk.Button):
         if c == self: # Ignore if we drag onto ourselves
             return
         
-        self.setLetter(c, c.getLetter().getLetter(), c.getLetter().getScore())
+        self.setLetter(c)
     
-    def setLetter(self, widget, letter, score):
+    def setLetter(self, widget):
         '''
         Set letter on this Tile
         
         @param widget: Widget that was dragged
-        @param letter: Letter value
-        @param score: Score value
         '''
         
         if isinstance(widget, GameTile):
