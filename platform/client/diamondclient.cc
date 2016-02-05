@@ -34,7 +34,9 @@
 namespace diamond {
 
 using namespace std;
-    
+
+thread_local uint64_t ongoingTxn = 0;
+
 DiamondClient::DiamondClient(string configPath)
     : transport()
 {
@@ -80,20 +82,14 @@ DiamondClient::run_client()
 uint64_t
 DiamondClient::OngoingTransaction()
 {
-    uint64_t txnid;
-    thread::id tid = this_thread::get_id();
-
-    if (ongoing.find(tid) == ongoing.end()) {
+    if (ongoingTxn == 0) {
 	Debug("Diamondclient::BEGIN Transaction");
 	txnid_lock.lock();
-	txnid = ++txnid_counter;
-        txnid_lock.unlock();
-        ongoing[tid] = txnid;
-        bclient->Begin(txnid);
-	return txnid;
-    } else {
-	return ongoing[tid];
-    }
+	ongoingTxn = ++txnid_counter;
+	txnid_lock.unlock();
+	bclient->Begin(ongoingTxn);
+    } 
+    return ongoingTxn;
 }
     
 /* Begins a transaction. All subsequent operations before a commit() or
@@ -166,7 +162,7 @@ DiamondClient::Commit()
     
     bclient->Commit(txnid, ts, &promise);
     int status = promise.GetReply();
-    ongoing.erase(this_thread::get_id());
+    ongoingTxn = 0;
     
     return status == REPLY_OK;
 }
@@ -183,7 +179,7 @@ DiamondClient::Abort()
     
     bclient->Abort(txnid, &promise);
     promise.GetReply();
-    ongoing.erase(this_thread::get_id());
+    ongoingTxn = 0;
 }
 
 } // namespace diamond
