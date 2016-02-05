@@ -165,7 +165,10 @@ DiamondClient::Commit()
     Timestamp ts = 0;
     
     bclient->Commit(txnid, ts, &promise);
-    return promise.GetReply() == REPLY_OK;
+    int status = promise.GetReply();
+    ongoing.erase(this_thread::get_id());
+    
+    return status == REPLY_OK;
 }
 
 /* Aborts the ongoing transaction. */
@@ -176,6 +179,8 @@ DiamondClient::Abort()
 
     Debug("ABORT [%lu]",txnid);
     bclient->Abort(txnid);
+    promise.GetReply();
+    ongoing.erase(this_thread::get_id());
 }
 
 } // namespace diamond
