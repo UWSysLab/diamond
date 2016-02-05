@@ -178,7 +178,10 @@ DiamondClient::Abort()
     uint64_t txnid = OngoingTransaction();
 
     Debug("ABORT [%lu]",txnid);
-    bclient->Abort(txnid);
+
+    Promise promise(COMMIT_TIMEOUT);
+    
+    bclient->Abort(txnid, &promise);
     promise.GetReply();
     ongoing.erase(this_thread::get_id());
 }
