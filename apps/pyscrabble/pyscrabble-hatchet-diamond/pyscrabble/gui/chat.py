@@ -458,16 +458,18 @@ class ChatFrame(gtk.Frame):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage( [GAME_NAME_MUST_BE_LESS_THAN, str(constants.MAX_NAME_LENGTH), CHARACTERS] ) ))
             return
         
-        if not self.globalGamesSet.InSet(gameId):
-            game = ScrabbleGame( gameId, options )
-            committed = 0
-            while not committed:
-                DObject.TransactionBegin()
+        alreadyExists = False
+        committed = 0
+        while not committed:
+            DObject.TransactionBegin()
+            alreadyExists = self.globalGamesSet.InSet(gameId)
+            if not alreadyExists:
+                game = ScrabbleGame(gameId, options)
                 game.reset()
                 game.setCreator(self.username)
                 self.globalGamesSet.Add(gameId)
-                committed = DObject.TransactionCommit()
-        else:
+            committed = DObject.TransactionCommit()
+        if alreadyExists:
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_EXISTS]) ))
     
     

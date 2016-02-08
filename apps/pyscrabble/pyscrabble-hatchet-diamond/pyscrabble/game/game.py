@@ -37,7 +37,7 @@ class ScrabbleGame:
         self.currentPlayer = DString()
         DString.Map(self.currentPlayer, "game:" + name + ":currentplayer")
         self.log = []
-        self.bag = Bag( rules='en' )
+        self.bag = Bag( self.name, rules='en' )
         self.creator = DString()
         DString.Map(self.creator, "game:" + name + ":creator")
         self.timer = None

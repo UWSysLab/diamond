@@ -227,18 +227,19 @@ class Bag:
     Bag represents a "Bag" of Letters
     '''
     
-    def __init__(self, rules):
+    def __init__(self, gameName, rules):
         '''
         Initialize the Letter bag
         
         @see: L{Letter}
         '''
+        self.gameName = gameName
         self.letterStrs = DStringList()
-        DStringList.Map(self.letterStrs, "testgame:bag:letterstrs")
+        DStringList.Map(self.letterStrs, "game:" + self.gameName + ":bag:letterstrs")
         self.letterScores = DList()
-        DList.Map(self.letterScores, "testgame:bag:letterscores")
+        DList.Map(self.letterScores, "game:" + self.gameName + ":bag:letterscores")
         self.rules = DString()
-        DString.Map(self.rules, "testgame:bag:rules")
+        DString.Map(self.rules, "game:" + self.gameName + ":bag:rules")
     
     def reset(self, rules):
         self.rules.Set(rules)

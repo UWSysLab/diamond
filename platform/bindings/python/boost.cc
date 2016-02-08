@@ -11,6 +11,8 @@
 #include <string>
 #include <unordered_set>
 #include <boost/python.hpp>
+#include <sstream>
+#include <thread>
 
 namespace diamond {
     
@@ -22,6 +24,8 @@ BOOST_PYTHON_MODULE(libpydiamond)
     void (*DiamondInitWithArgs)(const std::string &, int nshards, int closestReplicat) = &DiamondInit;
     def("DiamondInit", DiamondInitNoArgs);
     def("DiamondInit", DiamondInitWithArgs);
+
+    def("GetThreadId", &GetThreadId);
 
     void (*TransactionBegin)(void) = &DObject::TransactionBegin;
     class_<DObject, boost::noncopyable>("DObject", no_init)

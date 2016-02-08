@@ -35,7 +35,7 @@ namespace diamond {
 
 using namespace std;
 
-thread_local uint64_t ongoingTxn = 0;
+thread_local uint64_t txnid = 0;
 
 DiamondClient::DiamondClient(string configPath)
     : transport()
@@ -77,20 +77,6 @@ DiamondClient::run_client()
 {
     transport.Run();
 }
-
-/* check whether there is an ongoing transaction and return it if found */
-uint64_t
-DiamondClient::OngoingTransaction()
-{
-    if (ongoingTxn == 0) {
-	Debug("Diamondclient::BEGIN Transaction");
-	txnid_lock.lock();
-	ongoingTxn = ++txnid_counter;
-	txnid_lock.unlock();
-	bclient->Begin(ongoingTxn);
-    } 
-    return ongoingTxn;
-}
     
 /* Begins a transaction. All subsequent operations before a commit() or
  * abort() are part of this transaction.
@@ -98,15 +84,23 @@ DiamondClient::OngoingTransaction()
 void
 DiamondClient::Begin()
 {
-    OngoingTransaction();
+    if (txnid == 0) {
+	Debug("Diamondclient::BEGIN Transaction");
+	txnid_lock.lock();
+	txnid = ++txnid_counter;
+	txnid_lock.unlock();
+	bclient->Begin(txnid);
+    }
 }
 
 /* Returns the value corresponding to the supplied key. */
 int
 DiamondClient::Get(const string &key, string &value)
 {
-    uint64_t txnid = OngoingTransaction();
-
+    if (txnid == 0) {
+	Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+    }
+    
     Debug("GET [%lu] %s", txnid, key.c_str());
     // Send the GET operation to appropriate shard.
     Promise promise(GET_TIMEOUT);
@@ -120,7 +114,9 @@ DiamondClient::Get(const string &key, string &value)
 int
 DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
 {
-    uint64_t txnid = OngoingTransaction();
+    if (txnid == 0) {
+	Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+    }
 
     Debug("MULTIGET [%lu] %lu", txnid, keys.size());
     // Send the GET operation to appropriate shard.
@@ -138,7 +134,9 @@ DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
 int
 DiamondClient::Put(const string &key, const string &value)
 {
-    uint64_t txnid = OngoingTransaction();
+    if (txnid == 0) {
+	Panic("Doing a PUT outside a transaction. YOU ARE A BAD PERSON!!");
+    }
 
     Debug("PUT [%lu] %s %s", txnid, key.c_str(), value.c_str());
     Promise promise(PUT_TIMEOUT);
@@ -152,7 +150,9 @@ DiamondClient::Put(const string &key, const string &value)
 bool
 DiamondClient::Commit()
 {
-    uint64_t txnid = OngoingTransaction();
+    if (txnid == 0) {
+	Panic("Doing a COMMIT outside a transaction. YOU ARE A BAD PERSON!!");
+    }
 
     Debug("COMMIT [%lu]", txnid);
     
@@ -162,7 +162,7 @@ DiamondClient::Commit()
     
     bclient->Commit(txnid, ts, &promise);
     int status = promise.GetReply();
-    ongoingTxn = 0;
+    txnid = 0;
     
     return status == REPLY_OK;
 }
@@ -171,7 +171,9 @@ DiamondClient::Commit()
 void
 DiamondClient::Abort()
 {
-    uint64_t txnid = OngoingTransaction();
+    if (txnid == 0) {
+	Panic("Doing an ABORT outside a transaction. YOU ARE A BAD PERSON!!");
+    }
 
     Debug("ABORT [%lu]",txnid);
 
@@ -179,7 +181,7 @@ DiamondClient::Abort()
     
     bclient->Abort(txnid, &promise);
     promise.GetReply();
-    ongoingTxn = 0;
+    txnid = 0;
 }
 
 } // namespace diamond
