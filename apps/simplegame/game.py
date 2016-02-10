@@ -8,9 +8,10 @@ import ReactiveManager
 def main():
     parser = argparse.ArgumentParser(description='Play a silly game.')
     parser.add_argument('name', help='your name')
+    parser.add_argument('config_prefix', help='frontend config file prefix')
     args = parser.parse_args()
 
-    DiamondInit("../../platform/test/niel.frontend", 0, 1);
+    DiamondInit(args.config_prefix, 0, 1);
 
     myName = args.name
 
