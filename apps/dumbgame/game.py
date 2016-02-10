@@ -50,8 +50,7 @@ def takeTurn(players, move, name, incr):
     if currentPlayer == name:
         DLong.Map(score, "dumbgame:" + name + ":score")
         score.Set(score.Value() + incr)
-        move.Increment()
-    
+        move.Set(move.Value() + 1)
 
 def displayGame(players, move, myName):
     for name in players.Members():
@@ -59,10 +58,9 @@ def displayGame(players, move, myName):
         DLong.Map(score, "dumbgame:" + name + ":score")
         currentPlayer = players.Value(move.Value() % players.Size())
         print "Player: " + name + " score: " + repr(score.Value())
-        if currentPlayer == myName:
-            print "It's your turn! Enter your move:"
-        else:
-            print "It's " + currentPlayer + "'s turn"
-
+    if currentPlayer == myName:
+        print "It's your turn! Enter your move:"
+    else:
+        print "It's " + currentPlayer + "'s turn"
 
 if __name__ == "__main__": main()
