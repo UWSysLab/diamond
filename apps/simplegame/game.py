@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import argparse
 import sys
 sys.path.append("../../platform/build/bindings/python/")
@@ -46,9 +48,9 @@ def addPlayer(players, name):
         players.Append(name)
 
 def takeTurn(players, move, name, incr):
-    score = DLong()
     currentPlayer = players.Value(move.Value() % players.Size())
     if currentPlayer == name:
+        score = DLong()
         DLong.Map(score, "simplegame:" + name + ":score")
         score.Set(score.Value() + incr)
         move.Set(move.Value() + 1)
@@ -57,8 +59,8 @@ def displayGame(players, move, myName):
     for name in players.Members():
         score = DLong()
         DLong.Map(score, "simplegame:" + name + ":score")
-        currentPlayer = players.Value(move.Value() % players.Size())
         print "Player: " + name + " score: " + repr(score.Value())
+    currentPlayer = players.Value(move.Value() % players.Size())
     if currentPlayer == myName:
         print "It's your turn! Enter your move:"
     else:
