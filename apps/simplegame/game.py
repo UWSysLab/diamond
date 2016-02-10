@@ -16,8 +16,8 @@ def main():
 
     players = DStringList()
     move = DCounter()
-    DStringList.Map(players, "dumbgame:players")
-    DCounter.Map(move, "dumbgame:move")
+    DStringList.Map(players, "simplegame:players")
+    DCounter.Map(move, "simplegame:move")
 
     ReactiveManager.txn_execute(addPlayer, players, myName)
 
@@ -37,7 +37,7 @@ def resetGame(players, move):
     move.Set(0)
     for name in players.Members():
         score = DLong()
-        DLong.Map(score, "dumbgame:" + name + ":score")
+        DLong.Map(score, "simplegame:" + name + ":score")
         score.Set(0)
 
 def addPlayer(players, name):
@@ -48,14 +48,14 @@ def takeTurn(players, move, name, incr):
     score = DLong()
     currentPlayer = players.Value(move.Value() % players.Size())
     if currentPlayer == name:
-        DLong.Map(score, "dumbgame:" + name + ":score")
+        DLong.Map(score, "simplegame:" + name + ":score")
         score.Set(score.Value() + incr)
         move.Set(move.Value() + 1)
 
 def displayGame(players, move, myName):
     for name in players.Members():
         score = DLong()
-        DLong.Map(score, "dumbgame:" + name + ":score")
+        DLong.Map(score, "simplegame:" + name + ":score")
         currentPlayer = players.Value(move.Value() % players.Size())
         print "Player: " + name + " score: " + repr(score.Value())
     if currentPlayer == myName:
