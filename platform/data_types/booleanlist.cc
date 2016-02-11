@@ -141,4 +141,14 @@ DBooleanList::Size() {
     return ret;
 }
 
+void DBooleanList::Set(const int index, const bool val) {
+    pthread_mutex_lock(&_objectMutex);
+
+    Pull();
+    _vec[index] = val;
+    Push();
+
+    pthread_mutex_unlock(&_objectMutex);
+}
+
 } // namespace diamond

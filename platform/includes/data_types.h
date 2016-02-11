@@ -176,6 +176,7 @@ public:
     void Insert(const int index, const uint64_t val);
     void Erase(const int index);
     void Remove(const uint64_t val); /* Removes the first copy of val, if present */
+    void Set(const int index, const uint64_t val);
     uint64_t Lpop();
     void Clear();
     int Size();
@@ -204,6 +205,7 @@ public:
     void Insert(const int index, const std::string val);
     void Erase(const int index);
     void Remove(const std::string val); /* Removes the first copy of val, if present */
+    void Set(const int index, const std::string val);
     std::string Lpop();
     void Clear();
     int Size();
@@ -230,6 +232,7 @@ public:
     void Append(const std::vector<bool> &vec);
     void Insert(const int index, const bool val);
     void Erase(const int index);
+    void Set(const int index, const bool val);
     void Clear();
     int Size();
     DBooleanList & operator=(const std::vector<bool> &vec) { Append(vec); return *this; };
