@@ -1,19 +1,19 @@
 #include "../../platform/includes/data_types.h"
 #include <string>
 
-DStringList players;
-DLong score;
-DCounter move;
-
 using std;
 using diamond;
 
-void addPlayer(string name) {
+diamond::DStringList players;
+diamond::DLong score;
+diamond::DCounter move;
+
+void addPlayer(std::string name) {
    players.Append(name);
 }
 
-void takeTurn(string name, int inc) {
-   string currentPlayer = players[move % players.Size()];
+void takeTurn(std::string name, int inc) {
+   std::string currentPlayer = players[move % players.Size()];
    if (currentPlayer == name) {
       score += inc;
       if (score == 100) {
@@ -24,9 +24,9 @@ void takeTurn(string name, int inc) {
    }
 }
 
-void displayGame(string myName) {
+void displayGame(std::string myName) {
    cout << "Current total: " << score;
-   string currentPlayer = players[move % players.Size()];
+   std::string currentPlayer = players[move % players.Size()];
   
    if (score >= 100) {
       cout << " Game Ended.\n";
@@ -40,19 +40,19 @@ void displayGame(string myName) {
 int main(int argc, char **argv) {
    DiamondInit(argv[1], 0, 1);
    
-   string myName = string(argv[2]);
+   std::string myName = std::string(argv[2]);
    int inc;
    
-   map(players, "100game:players");
-   map(score, "100game:score");
-   map(move, "100game:move");
+   diamond::map(players, "100game:players");
+   diamond::map(score, "100game:score");
+   diamond::map(move, "100game:move");
     
-   TxnExecute(&addPlayer, myName);
-   TxnReactive(&displayGame, myName);
+   diamond::txn_execute(&addPlayer, myName);
+   diamond::txn_react(&displayGame, myName);
 
    while (score < 100) {
       cin >> inc;
-      TxnExecute(&takeTurn, inc);
+      diamond::txn_execute(&takeTurn, inc);
    }
 
    return 0;
