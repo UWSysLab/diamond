@@ -18,6 +18,8 @@ void takeTurn(std::string name, int inc) {
       } else {
          move++;
       }
+   } else {
+      diamond::abort_txn();
    }
 }
 
@@ -44,12 +46,12 @@ int main(int argc, char **argv) {
    diamond::map(score, "100game:score");
    diamond::map(move, "100game:move");
     
-   diamond::txn_execute(&addPlayer, myName);
-   diamond::txn_react(&displayGame, myName);
+   diamond::execute_txn(&addPlayer, myName);
+   diamond::reactive_txn(&displayGame, myName);
 
    while (score < 100) {
       cin >> inc;
-      diamond::txn_execute(&takeTurn, inc);
+      diamond::execute_txn(&takeTurn, inc);
    }
 
    return 0;
