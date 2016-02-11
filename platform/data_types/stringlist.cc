@@ -174,4 +174,15 @@ DStringList::Size() {
     return ret;
 }
 
+void
+DStringList::Set(const int index, const string val) {
+    pthread_mutex_lock(&_objectMutex);
+
+    Pull();
+    _vec[index] = val;
+    Push();
+
+    pthread_mutex_unlock(&_objectMutex);
+}
+
 } // namespace diamond

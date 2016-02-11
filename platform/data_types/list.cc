@@ -186,4 +186,15 @@ DList::Size() {
     return ret;
 }
 
+void
+DList::Set(const int index, const uint64_t val) {
+    pthread_mutex_lock(&_objectMutex);
+
+    Pull();
+    _vec[index] = val;
+    Push();
+
+    pthread_mutex_unlock(&_objectMutex);
+}
+
 } // namespace diamond
