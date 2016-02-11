@@ -18,48 +18,46 @@ def main():
     myName = args.name
 
     players = DStringList()
+    scores = DList()
     move = DCounter()
     DStringList.Map(players, "simplegame:players")
+    DList.Map(scores, "simplegame:scores")
     DCounter.Map(move, "simplegame:move")
 
-    ReactiveManager.txn_execute(addPlayer, players, myName)
+    ReactiveManager.txn_execute(addPlayer, players, scores, myName)
 
-    ReactiveManager.add(displayGame, players, move, myName)
+    ReactiveManager.add(displayGame, players, scores, move, myName)
 
     while True:
         words = sys.stdin.readline().split()
         if words[0].lower() == "reset".lower():
-            ReactiveManager.txn_execute(resetGame, players, move)
+            ReactiveManager.txn_execute(resetGame, players, scores, move)
         elif words[0].lower() == "exit".lower():
             sys.exit()
         else:
             action = int(words[0])
-            ReactiveManager.txn_execute(takeTurn, players, move, myName, action)
+            ReactiveManager.txn_execute(takeTurn, players, scores, move, myName, action)
 
-def resetGame(players, move):
+def resetGame(players, scores, move):
     move.Set(0)
-    for name in players.Members():
-        score = DLong()
-        DLong.Map(score, "simplegame:" + name + ":score")
-        score.Set(0)
+    for i in range(scores.Size()):
+        scores.Set(i, 0)
 
-def addPlayer(players, name):
+def addPlayer(players, scores, name):
     if players.Index(name) == -1:
         players.Append(name)
+        scores.Append(0)
 
-def takeTurn(players, move, name, incr):
-    currentPlayer = players.Value(move.Value() % players.Size())
+def takeTurn(players, scores, move, name, incr):
+    currentIndex = move.Value() % players.Size()
+    currentPlayer = players.Value(currentIndex)
     if currentPlayer == name:
-        score = DLong()
-        DLong.Map(score, "simplegame:" + name + ":score")
-        score.Set(score.Value() + incr)
+        scores.Set(currentIndex, scores.Value(currentIndex) + incr)
         move.Set(move.Value() + 1)
 
-def displayGame(players, move, myName):
-    for name in players.Members():
-        score = DLong()
-        DLong.Map(score, "simplegame:" + name + ":score")
-        print "Player: " + name + " score: " + repr(score.Value())
+def displayGame(players, scores, move, myName):
+    for i in range(players.Size()):
+        print "Player: " + players.Value(i) + " score: " + repr(scores.Value(i))
     currentPlayer = players.Value(move.Value() % players.Size())
     if currentPlayer == myName:
         print "It's your turn! Enter your move:"
