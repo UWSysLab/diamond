@@ -1,9 +1,6 @@
 #include "../../platform/includes/data_types.h"
 #include <string>
 
-using std;
-using diamond;
-
 diamond::DStringList players;
 diamond::DLong score;
 diamond::DCounter move;
