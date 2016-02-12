@@ -1,9 +1,16 @@
 #include "includes/transactions.h"
 
-#include <pthread.h>
-
 namespace diamond {
-    void * execute_txn_helper(void * arg) {
+    void startTxnManager() {
+        txnThread = new std::thread(&startTxnManagerHelper);
+    }
+
+    void startTxnManagerHelper() {
+        txnEventBase = event_base_new();
+        event_base_dispatch(txnEventBase);
+    }
+
+    /*void * execute_txn_helper(void * arg) {
         DObject::TransactionBegin();
         txn_function_t * funcPtr = (txn_function_t *)arg;
         txn_function_t func = *funcPtr;
@@ -18,5 +25,5 @@ namespace diamond {
         txn_function_t * funcPtr = new txn_function_t();
         pthread_create(&thread, NULL, execute_txn_helper, (void *)funcPtr);
         return 0; // what should we return?
-    }
+    }*/
 }

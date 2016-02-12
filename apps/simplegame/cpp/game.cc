@@ -40,12 +40,9 @@ int main(int argc, char ** argv) {
 
     DiamondInit(configPrefix, 1, 0);
 
-    //std::function<void()> funcObj = std::bind(myFunction, "stringcheese");
-    //execute_txn(funcObj);
     int num = 2;
     std::string str("lambdas are cool");
-    execute_txn([str] () { std::cout << "Lambda string time: " << str << std::endl; } );
-    //std::cout << "Variadic functions sent us to hell, but we're going even deeper: " << num << std::endl;
+    execute_txn([num] () { std::cout << "Lambda time: " << num << std::endl; } );
 
     while(true) {
     }
