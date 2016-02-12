@@ -71,6 +71,7 @@ add_subdirectory(replication)
 add_subdirectory(store)
 add_subdirectory(frontend)
 add_subdirectory(client)
+add_subdirectory(transactions)
 
 # ---------------------------------------------------------
 # Build targets
@@ -80,6 +81,7 @@ add_subdirectory(client)
 add_library(diamond SHARED
             ${SRC_DIAMOND_LIB}
 	    ${SRC_DIAMOND_DATA_TYPES}
+	    ${SRC_DIAMOND_TRANSACTIONS}
 	    ${SRC_DIAMOND_STORE_PROTO}
 	    ${HDR_DIAMOND_STORE_PROTO}
         ${SRC_DIAMOND_STORE_COMMON}
