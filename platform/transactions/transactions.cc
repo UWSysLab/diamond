@@ -93,4 +93,11 @@ namespace diamond {
         txn_id id = txnManager->ReactiveTxn(func);
         return id;
     }
+
+    void reactive_stop(txn_id id) {
+        //TODO: implement
+    }
+    void abort_txn() {
+        //TODO: implement
+    }
 }

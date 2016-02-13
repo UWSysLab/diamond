@@ -43,6 +43,9 @@ int execute_txn(txn_function_t func, txn_callback_t callback);
 int execute_txn(txn_function_t func);
 txn_id reactive_txn(txn_function_t func);
 
+void reactive_stop(txn_id id);
+void abort_txn();
+
 }
 
 #endif
