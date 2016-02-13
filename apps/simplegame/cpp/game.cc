@@ -56,7 +56,7 @@ int main(int argc, char ** argv) {
     // Set up our reactive print outs
     txn_id id = reactive_txn([myName] () {
          cout << "Current total: " << score.Value() << "\n";
-         string cp = players.Value(currentMove.Value() % players.Size());  
+         string cp = players[currentMove.Value() % players.Size()];  
          if (score.Value() >= 100)
             cout << cp << " won! Game Over!\n";
          else if (cp == myName)
@@ -70,11 +70,11 @@ int main(int argc, char ** argv) {
         int inc = 0;
         cin >> inc;
         int ret = execute_txn([myName, inc] () {
-	    string cp = players.Value(currentMove.Value() % players.Size());
+	    string cp = players[currentMove.Value() % players.Size()];
 	    // If it's the user's turn, make move
 	    if (cp == myName && inc >= 1 && inc <= 10) {
 	       score += inc;
-	       if (score.Value() < 100) currentMove.Set(currentMove.Value() + 1);
+	       if (score.Value() < 100) ++currentMove;
 	    } else {
 	       abort_txn();
 	    }
