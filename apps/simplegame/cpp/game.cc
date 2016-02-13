@@ -3,6 +3,8 @@
 #include <ctime>
 #include <iostream>
 #include <string>
+#include <ctime>
+#include <unistd.h>
 
 #include <includes/data_types.h>
 #include <includes/transactions.h>
@@ -38,12 +40,26 @@ int main(int argc, char ** argv) {
     }
     po::notify(vm);
 
-    DiamondInit(configPrefix, 1, 0);
+    //DiamondInit(configPrefix, 1, 0);
+    StartTxnManager();
+
+    sleep(1);
 
     int num = 2;
     std::string str("lambdas are cool");
     execute_txn([num] () { std::cout << "Lambda time: " << num << std::endl; } );
 
-    while(true) {
+    time_t startTime = time(NULL);
+    double prevSeconds = 0;
+    bool done = false;
+    while(!done) {
+        time_t currentTime = time(NULL);
+        double seconds = difftime(currentTime, startTime);
+        done = (seconds >= 10);
+
+        if (prevSeconds != seconds) {
+            std::cout << "Another second passes" << std::endl;
+        }
+        prevSeconds = seconds;
     }
 }
