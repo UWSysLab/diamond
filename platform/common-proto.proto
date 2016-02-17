@@ -4,9 +4,10 @@ message ReadMessage {
 }
 
 message ReadReply {
-     required string key = 2;
-     required string value = 3;
-     required uint64 timestamp = 4;
+     required string key = 1;
+     required string value = 2;
+     required uint64 timestamp = 3;
+     required uint64 end = 4;    
 }
 
 message WriteMessage {

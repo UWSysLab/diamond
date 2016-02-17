@@ -11,17 +11,40 @@
 namespace diamond {
 
 typedef std::function<void (void)> txn_function_t;
-typedef struct function_holder { txn_function_t func; } function_holder_t;
+typedef std::function<void (int)> txn_callback_t;
+typedef uint64_t txn_id;
 
-txn_function_t globalFunc;
-event_base * txnEventBase;
-std::thread * txnThread;
+typedef struct txn_info {
+    txn_function_t func;
+    txn_callback_t callback;
+} txn_info_t;
+
+class TxnManager {
+  public:
+    void Start();
+    int ExecuteTxn(txn_function_t func, txn_callback_t callback);
+    txn_id ReactiveTxn(txn_function_t func);
+
+  private:
+    txn_function_t globalFunc;
+    event_base * txnEventBase;
+    std::thread * txnThread;
+
+    void startHelper();
+    static void executeTxnCallback(evutil_socket_t fd, short what, void * arg);
+    static void reactiveTxnCallback(evutil_socket_t fd, short what, void * arg);
+    static void signalCallback(evutil_socket_t fd, short what, void * arg);
+};
+
+TxnManager * txnManager = NULL;
 
 void StartTxnManager();
-void StartTxnManagerHelper();
+int execute_txn(txn_function_t func, txn_callback_t callback);
 int execute_txn(txn_function_t func);
-void execute_txn_callback(evutil_socket_t fd, short what, void * arg);
-void signalCallback(evutil_socket_t fd, short what, void * arg);
+txn_id reactive_txn(txn_function_t func);
+
+void reactive_stop(txn_id id);
+void abort_txn();
 
 }
 

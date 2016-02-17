@@ -109,10 +109,9 @@ Server::HandleGet(const TransportAddress &remote,
     reply.set_msgid(msg.msgid());
     if (status == REPLY_OK) {
 	for (auto value : values) {
-	    ReadReply *r = reply.add_replies();
-	    r->set_key(value.first);
-	    r->set_value(value.second.GetValue());
-            r->set_timestamp(value.second.GetTimestamp());
+	    ReadReply *rep = reply.add_replies();
+	    rep->set_key(value.first);
+	    value.second.Serialize(rep);
         }
     }
 

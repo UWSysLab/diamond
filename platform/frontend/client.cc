@@ -206,8 +206,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
             int status = getReply.status(); 
             if (status == REPLY_OK) {
                 for (int i = 0; i < getReply.replies_size(); i++) {
-                    ReadReply rep = getReply.replies(i);
-		    ret[rep.key()] = Version(rep.timestamp(), rep.value());
+		    ret[getReply.replies(i).key()] = Version(getReply.replies(i));
                 }
             }
             it->second->Reply(status, ret);

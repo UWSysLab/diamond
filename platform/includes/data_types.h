@@ -181,6 +181,7 @@ public:
     void Clear();
     int Size();
     DList & operator=(const std::vector<uint64_t> &vec) { Append(vec); return *this; };
+    uint64_t operator[](const int index) { return Value(index); }
     
 private:
     std::vector<uint64_t> _vec;
@@ -210,6 +211,7 @@ public:
     void Clear();
     int Size();
     DStringList & operator=(const std::vector<std::string> &vec) { Append(vec); return *this; };
+    std::string operator[](const int index) { return Value(index); }
     
 private:
     std::vector<std::string> _vec;
@@ -236,6 +238,7 @@ public:
     void Clear();
     int Size();
     DBooleanList & operator=(const std::vector<bool> &vec) { Append(vec); return *this; };
+    bool operator[](const int index) { return Value(index); }
     
 private:
     std::vector<bool> _vec;

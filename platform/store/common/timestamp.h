@@ -10,6 +10,9 @@
 #ifndef _TIMESTAMP_H
 #define _TIMESTAMP_H_
 
+#define INVALID_TIMESTAMP 0
+#define MAX_TIMESTAMP UINTMAX_MAX
 typedef uint64_t Timestamp;
+
 
 #endif /* _TIMESTAMP_H_ */
