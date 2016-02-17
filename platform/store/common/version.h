@@ -10,25 +10,32 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
+#include "interval.h"
 #include <string>
+#include "common-proto.pb.h"
 
 class Version {
-    Timestamp write;
+    Interval valid;
     std::string value;
 public:
-    Version() : write(0), value("tmp") { };
-    Version(Timestamp commit) : write(commit), value("tmp") { };
-    Version(std::string val) : write(0), value(val) { };
-    Version(Timestamp commit, std::string val) : write(commit), value(val) { };
+    Version() : valid(), value("tmp") { };
+    Version(const Timestamp commit) : valid(commit), value("tmp") { };
+    Version(const std::string &val) : valid(), value(val) { };
+    Version(const Timestamp commit, const std::string &val) : valid(commit), value(val) { };
 
     std::string GetValue() const { return value; };
-    Timestamp GetTimestamp() const { return write; }; 
+    Timestamp GetTimestamp() const { return valid.Start(); };
+    Interval GetInterval() const { return valid; };
+    void SetEnd(const Timestamp commit) { valid.SetEnd(commit); };
+    
     friend bool operator> (const Version &v1, const Version &v2) {
-        return v1.write > v2.write;
+        return v1.valid.Start() > v2.valid.Start();
     };
     friend bool operator< (const Version &v1, const Version &v2) {
-        return v1.write < v2.write;
+        return v1.valid.Start() < v2.valid.Start();
     };
+    void Serialize(ReadReply *msg);
+    void Deserialize(ReadReply *msg);
 };
 
 #endif /* _VERSION_H_ */

@@ -31,6 +31,7 @@
  **********************************************************************/
 
 #include "server.h"
+#include "store/common/version.h"
 
 using namespace std;
 
@@ -65,10 +66,7 @@ Server::ExecuteGet(Request request, string &str2)
         }
 
         if (status == REPLY_OK) {
-	    ReadReply *rr = reply.add_replies();
-	    rr->set_key(key);
-            rr->set_value(val.GetValue());
-            rr->set_timestamp(val.GetTimestamp());
+            val.Serialize(reply.add_replies());
         } else {
 	    reply.set_status(status);
 	    reply.SerializeToString(&str2);

@@ -66,6 +66,7 @@ VersionedKVStore::get(const string &key, Version &value)
     // check for existence of key in store
     if (inStore(key)) {
         value = *(store[key].rbegin());
+        value.SetEnd(MAX_TIMESTAMP);
         return true;
     }
     return false;
@@ -81,6 +82,13 @@ VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
         getValue(key, t, it);
         if (it != store[key].end()) {
             value = *it;
+            if (it == store[key].begin()) {
+                value.SetEnd(MAX_TIMESTAMP);
+            } else {
+                it--;
+                value.SetEnd(it->GetTimestamp());
+                ASSERT(it->GetTimestamp() > value.GetTimestamp());
+            }
             return true;
         }
     }
@@ -128,21 +136,16 @@ VersionedKVStore::put(const string &key, const Version &v)
 void
 VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const Timestamp &commit)
 {
-    // Hmm ... could read a key we don't have if we are behind ... do we commit this or wait for the log update?
-    if (inStore(key)) {
-        set<Version>::iterator it;
-        getValue(key, readTime, it);
-        
-        if (it != store[key].end()) {
-            // figure out if anyone has read this version before
-            if (lastReads.find(key) != lastReads.end() &&
-                lastReads[key].find(it->GetTimestamp()) != lastReads[key].end()) {
-                if (lastReads[key][it->GetTimestamp()] < commit) {
-                    lastReads[key][it->GetTimestamp()] = commit;
-                }
-            }
+    set<Version>::iterator it;
+    getValue(key, readTime, it);
+    if (it != store[key].end()) {
+        Version v = *it;
+        if (readTime > v.GetInterval().End()) {
+            v.SetEnd(readTime);
+            store[key].erase(it);
+            store[key].insert(v);
         }
-    } // otherwise, ignore the read
+    }
 }
 
 void
@@ -158,9 +161,8 @@ VersionedKVStore::getLastRead(const string &key, Timestamp &lastRead)
 {
     if (inStore(key)) {
         Version v = *(store[key].rbegin());
-        if (lastReads.find(key) != lastReads.end() &&
-            lastReads[key].find(v.GetTimestamp()) != lastReads[key].end()) {
-            lastRead = lastReads[key][v.GetTimestamp()];
+        if (v.GetInterval().End() != MAX_TIMESTAMP) { 
+            lastRead = v.GetInterval().End();
             return true;
         }
     }
@@ -177,11 +179,10 @@ VersionedKVStore::getLastRead(const string &key, const Timestamp &t, Timestamp &
         set<Version>::iterator it;
         getValue(key, t, it);
         ASSERT(it != store[key].end());
-
+        Version v = *it;
         // figure out if anyone has read this version before
-        if (lastReads.find(key) != lastReads.end() &&
-            lastReads[key].find(it->GetTimestamp()) != lastReads[key].end()) {
-            lastRead = lastReads[key][it->GetTimestamp()];
+        if (v.GetInterval().End() != MAX_TIMESTAMP) { 
+            lastRead = v.GetInterval().End();
             return true;
         }
     }
