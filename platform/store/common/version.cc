@@ -10,6 +10,11 @@
 #ifndef _VERSION_H_
 #include "version.h"
 
+Version::Version(const ReadReply &msg) {
+    value = msg.value();
+    valid = Interval(msg.timestamp(), msg.end());
+}
+
 void
 Version::Serialize(ReadReply *msg) {
     msg->set_value(value);

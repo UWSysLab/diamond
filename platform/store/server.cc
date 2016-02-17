@@ -66,7 +66,9 @@ Server::ExecuteGet(Request request, string &str2)
         }
 
         if (status == REPLY_OK) {
-            val.Serialize(reply.add_replies());
+	    ReadReply *rep = reply.add_replies();
+	    rep->set_key(key);
+            val.Serialize(rep);
         } else {
 	    reply.set_status(status);
 	    reply.SerializeToString(&str2);
