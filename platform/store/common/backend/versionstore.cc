@@ -43,18 +43,18 @@ VersionedKVStore::inStore(const string &key)
     return store.find(key) != store.end() && store[key].size() > 0;
 }
 
-void
+bool
 VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
 {
     Version v(t);
-    it = store[key].upper_bound(v);
+    it = store[key].lower_bound(v);
 
     // if there is no valid version at this timestamp
     if (it == store[key].begin()) {
-        it = store[key].end();
-    } else {
-        it--;
+        return false;
     }
+    it--;
+    return true;
 }
 
 
@@ -79,13 +79,12 @@ VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-        getValue(key, t, it);
-        if (it != store[key].end()) {
+        if (getValue(key, t, it)) {
             value = *it;
-            if (it == store[key].begin()) {
+	    it++;
+            if (it == store[key].end()) {
                 value.SetEnd(MAX_TIMESTAMP);
             } else {
-                it--;
                 value.SetEnd(it->GetTimestamp());
                 ASSERT(it->GetTimestamp() > value.GetTimestamp());
             }
