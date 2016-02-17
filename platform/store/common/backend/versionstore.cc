@@ -96,18 +96,12 @@ VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
 
 bool
 VersionedKVStore::getRange(const string &key, const Timestamp &t,
-			   pair<Timestamp, Timestamp> &range)
+			   Interval &range)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-        getValue(key, t, it);
-
-        if (it != store[key].end()) {
-            range.first = it->GetTimestamp();
-            it++;
-            if (it != store[key].end()) {
-                range.second = it->GetTimestamp();
-            }
+	if (getValue(key, t, it)) {
+	    range = it->GetInterval();
             return true;
         }
     }
@@ -125,6 +119,9 @@ void
 VersionedKVStore::put(const string &key, const Version &v)
 {
     // Key does not exist. Create a list and an entry.
+    if (store.contains(key)) {
+	(store[key].rbegin())->SetEnd(v.GetInterval().Start());
+    }
     store[key].insert(v);
 }
 
@@ -136,10 +133,9 @@ void
 VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const Timestamp &commit)
 {
     set<Version>::iterator it;
-    getValue(key, readTime, it);
-    if (it != store[key].end()) {
+    if (getValue(key, readTime, it)) {
         Version v = *it;
-        if (readTime > v.GetInterval().End()) {
+        if (readTime < v.GetInterval().End()) {
             v.SetEnd(readTime);
             store[key].erase(it);
             store[key].insert(v);
@@ -176,14 +172,14 @@ VersionedKVStore::getLastRead(const string &key, const Timestamp &t, Timestamp &
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-        getValue(key, t, it);
-        ASSERT(it != store[key].end());
-        Version v = *it;
-        // figure out if anyone has read this version before
-        if (v.GetInterval().End() != MAX_TIMESTAMP) { 
-            lastRead = v.GetInterval().End();
-            return true;
-        }
+        if (getValue(key, t, it)) {
+	    Version v = *it;
+	    // figure out if anyone has read this version before
+	    if (v.GetInterval().End() != MAX_TIMESTAMP) { 
+		lastRead = v.GetInterval().End();
+		return true;
+	    }
+	}
     }
     return false;	
 }
