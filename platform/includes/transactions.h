@@ -3,9 +3,9 @@
 
 #include "includes/data_types.h"
 #include <cstdarg>
-#include <functional>
 #include <event2/event.h>
 #include <event2/thread.h>
+#include <functional>
 #include <thread>
 
 namespace diamond {
@@ -26,13 +26,14 @@ class TxnManager {
     txn_id ReactiveTxn(txn_function_t func);
 
   private:
-    txn_function_t globalFunc;
     event_base * txnEventBase;
     std::thread * txnThread;
+    std::thread * reactiveThread;
+    std::vector<txn_function_t> reactiveList;
 
     void startHelper();
+    void reactiveLoop();
     static void executeTxnCallback(evutil_socket_t fd, short what, void * arg);
-    static void reactiveTxnCallback(evutil_socket_t fd, short what, void * arg);
     static void signalCallback(evutil_socket_t fd, short what, void * arg);
 };
 

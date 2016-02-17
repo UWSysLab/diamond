@@ -16,6 +16,19 @@ namespace diamond {
         evsignal_add(sigintEvent, NULL);
 
         txnThread = new std::thread(&TxnManager::startHelper, this);
+        reactiveThread = new std::thread(&TxnManager::reactiveLoop, this);
+    }
+
+    void TxnManager::reactiveLoop() {
+        while(true) {
+            sleep(1);
+            for (auto it = reactiveList.begin(); it != reactiveList.end(); it++) {
+                txn_function_t func = *it;
+                DObject::TransactionBegin();
+                func();
+                DObject::TransactionCommit();
+            }
+        }
     }
 
     void TxnManager::startHelper() {
@@ -49,21 +62,8 @@ namespace diamond {
 
     //TODO: figure out and use interface for actual reactive txns instead of polling
     txn_id TxnManager::ReactiveTxn(txn_function_t func) {
-        struct timeval one_second = {1, 0};
-        txn_info_t * info = new txn_info_t();
-        info->func = func;
-        info->callback = NULL;
-        event * ev = event_new(txnEventBase, -1, EV_PERSIST, reactiveTxnCallback, info);
-        event_add(ev, &one_second);
+        reactiveList.push_back(func);
         return 0;
-    }
-
-    //TODO: as above
-    void TxnManager::reactiveTxnCallback(evutil_socket_t fd, short what, void * arg) {
-        txn_info_t * info = (txn_info_t *)arg;
-        DObject::TransactionBegin();
-        info->func();
-        DObject::TransactionCommit();
     }
 
     void StartTxnManager() {
