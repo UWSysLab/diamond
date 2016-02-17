@@ -52,7 +52,7 @@ public:
 
     bool get(const std::string &key, Version &value);
     bool get(const std::string &key, const Timestamp &t, Version &value);
-    bool getRange(const std::string &key, const Timestamp &t, std::pair<Timestamp, Timestamp> &range);
+    bool getRange(const std::string &key, const Timestamp &t, Interval &range);
     bool getLastRead(const std::string &key, Timestamp &readTime);
     bool getLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
     void put(const std::string &key, const std::string &value, const Timestamp &t);
@@ -66,7 +66,7 @@ private:
     std::unordered_map< std::string, std::set<Version> > store;
     std::unordered_map< std::string, std::map< Timestamp, Timestamp > > lastReads;
     bool inStore(const std::string &key);
-    void getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
+    bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */
