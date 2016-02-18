@@ -47,7 +47,7 @@ bool
 VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
 {
     Version v(t);
-    it = store[key].lower_bound(v);
+    it = store[key].upper_bound(v);
 
     // if there is no valid version at this timestamp
     if (it == store[key].begin()) {
