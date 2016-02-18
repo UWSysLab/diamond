@@ -40,26 +40,11 @@ OCCStore::OCCStore() : store() { }
 OCCStore::~OCCStore() { }
 
 int
-OCCStore::Get(const uint64_t tid, const string &key, Version &value)
-{
-    Debug("[%lu] GET %s", tid, key.c_str());
-
-    // Get latest from store
-    if (store.get(key, value)) {
-        Debug("[%lu] GET %s %lu", tid, key.c_str(), value.GetTimestamp());
-        return REPLY_OK;
-    } else {
-        return REPLY_NOT_FOUND;
-    }
-}
-
-int
-OCCStore::Get(const uint64_t tid, const string &key, const Timestamp &timestamp, Version &value)
+OCCStore::Get(const uint64_t tid, const string &key, Version &value, const Timestamp &timestamp)
 {
     Debug("[%lu] GET %s", tid, key.c_str());
     
-    // Get version at timestamp from store
-    if (store.get(key, timestamp, value)) {
+    if (store.Get(key, timestamp, value)) {
         return REPLY_OK;
     } else {
         return REPLY_NOT_FOUND;
@@ -81,9 +66,9 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     set<string> pRW = getPreparedReadWrites();
 
     // Check for conflicts with the read set.
-    for (auto &read : txn.getReadSet()) {
+    for (auto &read : txn.GetReadSet()) {
         Version cur;
-        bool ret = store.get(read.first, cur);
+        bool ret = store.Get(read.first, cur);
 
 	    // ASSERT(ret);
         if (!ret)
@@ -109,7 +94,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     }
 
     // Check for conflicts with the write set.
-    for (auto &write : txn.getWriteSet()) {
+    for (auto &write : txn.GetWriteSet()) {
         // If there is a pending read or write for this key, abort.
         if (pRW.find(write.first) != pRW.end()) {
             Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
@@ -126,24 +111,24 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 }
 
 void
-OCCStore::Commit(const uint64_t tid, uint64_t timestamp)
+OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp)
 {
     Debug("[%lu] COMMIT", tid);
     ASSERT(prepared.find(tid) != prepared.end());
 
     Transaction txn = prepared[tid];
 
-    for (auto &write : txn.getWriteSet()) {
-        store.put(write.first, // key
-                    write.second, // value
-                    Timestamp(timestamp)); // timestamp
+    for (auto &write : txn.GetWriteSet()) {
+        store.Put(write.first, // key
+                  write.second, // value
+                  timestamp); // timestamp
     }
 
     prepared.erase(tid);
 }
 
 void
-OCCStore::Abort(const uint64_t tid, const Transaction &txn)
+OCCStore::Abort(const uint64_t tid)
 {
     Debug("[%lu] ABORT", tid);
     prepared.erase(tid);
@@ -152,7 +137,7 @@ OCCStore::Abort(const uint64_t tid, const Transaction &txn)
 void
 OCCStore::Load(const string &key, const string &value, const Timestamp &timestamp)
 {
-    store.put(key, value, timestamp);
+    store.Put(key, value, timestamp);
 }
 
 set<string>
@@ -161,7 +146,7 @@ OCCStore::getPreparedWrites()
     // gather up the set of all writes that we are currently prepared for
     set<string> writes;
     for (auto &t : prepared) {
-        for (auto &write : t.second.getWriteSet()) {
+        for (auto &write : t.second.GetWriteSet()) {
             writes.insert(write.first);
         }
     }
@@ -174,10 +159,10 @@ OCCStore::getPreparedReadWrites()
     // gather up the set of all writes that we are currently prepared for
     set<string> readwrites;
     for (auto &t : prepared) {
-        for (auto &write : t.second.getWriteSet()) {
+        for (auto &write : t.second.GetWriteSet()) {
             readwrites.insert(write.first);
         }
-        for (auto &read : t.second.getReadSet()) {
+        for (auto &read : t.second.GetReadSet()) {
             readwrites.insert(read.first);
         }
     }

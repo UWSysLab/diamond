@@ -19,6 +19,9 @@
 
 class Transaction {
 private:
+    Timestamp timestamp = MAX_TIMESTAMP;
+    bool readOnly = false;
+    
     // map between key and timestamp at
     // which the read happened and how
     // many times this key has been read
@@ -29,15 +32,21 @@ private:
 
 public:
     Transaction() {};
+    Transaction(const Timestamp timestamp) : timestamp(timestamp) {};
+    Transaction(const Timestamp timestamp, bool readOnly) : timestamp(timestamp), readOnly(readOnly) {};
     Transaction(const TransactionMessage &msg);
     ~Transaction();
 
-    const std::unordered_map<std::string, Timestamp>& getReadSet() const;
-    const std::unordered_map<std::string, std::string>& getWriteSet() const;
+    const Timestamp GetTimestamp() const { return timestamp; };
+    void SetTimestamp(const Timestamp &ts) { timestamp = ts; };
+    const bool IsReadOnly() const { return readOnly; }
+    const bool HasTimestamp() const { return timestamp < MAX_TIMESTAMP; };
+    const std::unordered_map<std::string, Timestamp>& GetReadSet() const;
+    const std::unordered_map<std::string, std::string>& GetWriteSet() const;
     
-    void addReadSet(const std::string &key, const Timestamp &readTime);
-    void addWriteSet(const std::string &key, const std::string &value);
-    void serialize(TransactionMessage *msg) const;
+    void AddReadSet(const std::string &key, const Timestamp &readTime);
+    void AddWriteSet(const std::string &key, const std::string &value);
+    void Serialize(TransactionMessage *msg) const;
 };
 
 #endif /* _TRANSACTION_H_ */

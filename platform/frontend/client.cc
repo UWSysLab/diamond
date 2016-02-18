@@ -44,18 +44,16 @@ Client::Begin(const uint64_t tid)
 }
 
 void
-Client::Get(const uint64_t tid, const string &key, Promise *promise)
+Client::BeginRO(const uint64_t tid, const Timestamp &timestamp)
 {
-    Debug("Sending GET [%s]", key.c_str());
-    vector<string> keys;
-    keys.push_back(key);
-    MultiGet(tid, keys, promise);
+    Debug("BEGIN READ-ONLY [%lu]", tid);
 }
 
 void
-Client::Get(const uint64_t tid, const string &key,
-              const Timestamp &timestamp,
-              Promise *promise)
+Client::Get(const uint64_t tid,
+            const string &key,
+            const Timestamp &timestamp,
+            Promise *promise)
 {
     Debug("Sending GET [%s]", key.c_str());
 
@@ -65,33 +63,10 @@ Client::Get(const uint64_t tid, const string &key,
 }
 
 void
-Client::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
-{
-    Debug("Sending MULTIGET [%lu keys]", keys.size());
-
-    // Fill out protobuf
-    GetMessage msg;
-    msg.set_clientid(client_id);
-    for (auto key : keys) {
-        msg.add_keys(key);
-    }
-    msg.set_txnid(tid);
-    msg.set_msgid(msgid++);
-
-    // Send message
-    transport->Timer(0, [=]() {
-            if (transport->SendMessageToReplica(this, 0, msg)) {
-                if (promise != NULL)
-                    waiting[msg.msgid()] = promise;
-            } else if (promise != NULL) {
-                promise->Reply(REPLY_NETWORK_FAILURE);
-            }
-        });
-
-}
-
-void
-Client::MultiGet(const uint64_t tid, const vector<string> &keys, const Timestamp &timestamp, Promise *promise)
+Client::MultiGet(const uint64_t tid,
+                 const vector<string> &keys,
+                 const Timestamp &timestamp,
+                 Promise *promise)
 {
     Debug("Sending MULTIGET [%lu keys] at %lu", keys.size(), timestamp);
 
@@ -117,8 +92,10 @@ Client::MultiGet(const uint64_t tid, const vector<string> &keys, const Timestamp
 }
 
 void
-Client::Put(const uint64_t tid, const string &key, 
-              const string &value, Promise *promise)
+Client::Put(const uint64_t tid,
+            const string &key, 
+            const string &value,
+            Promise *promise)
 {
     Debug("Sending PUT [%s %s]", key.c_str(), value.c_str());
     Panic("Don't support PUT");
@@ -126,8 +103,8 @@ Client::Put(const uint64_t tid, const string &key,
 
 void
 Client::Prepare(const uint64_t tid,
-		const Transaction &txn,
-		Promise *promise)
+                const Transaction &txn,
+                Promise *promise)
 {
     Debug("Ignore PREPARE");
     Panic("Don't support PREPARE");
@@ -135,15 +112,14 @@ Client::Prepare(const uint64_t tid,
 
 void
 Client::Commit(const uint64_t tid,
-                 const Transaction &txn,
-                 const Timestamp &timestamp,
-                 Promise *promise)
+               const Transaction &txn,
+               Promise *promise)
 {
     Debug("Sending COMMIT");
     
     CommitMessage msg;
     msg.set_txnid(tid);
-    txn.serialize(msg.mutable_txn());
+    txn.Serialize(msg.mutable_txn());
     msg.set_msgid(msgid++);
     msg.set_clientid(client_id);
 
@@ -161,14 +137,12 @@ Client::Commit(const uint64_t tid,
 
 void
 Client::Abort(const uint64_t tid,
-                const Transaction &txn,
-                Promise *promise)
+              Promise *promise)
 {
     Debug("Sending ABORT");
 
     AbortMessage msg;
     msg.set_txnid(tid);
-    txn.serialize(msg.mutable_txn());
     msg.set_msgid(msgid++);
     msg.set_clientid(client_id);
 

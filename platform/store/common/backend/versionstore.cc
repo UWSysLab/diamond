@@ -43,7 +43,7 @@ VersionedKVStore::inStore(const string &key)
     return store.find(key) != store.end() && store[key].size() > 0;
 }
 
-void
+bool
 VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
 {
     Version v(t);
@@ -51,17 +51,18 @@ VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::
 
     // if there is no valid version at this timestamp
     if (it == store[key].begin()) {
-        it = store[key].end();
+        return false;
     } else {
         it--;
     }
+    return true;
 }
 
 
 /* Returns the most recent value and timestamp for given key.
  * Error if key does not exist. */
 bool
-VersionedKVStore::get(const string &key, Version &value)
+VersionedKVStore::Get(const string &key, Version &value)
 {
     // check for existence of key in store
     if (inStore(key)) {
@@ -75,7 +76,7 @@ VersionedKVStore::get(const string &key, Version &value)
 /* Returns the value valid at given timestamp.
  * Error if key did not exist at the timestamp. */
 bool
-VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
+VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
@@ -96,7 +97,7 @@ VersionedKVStore::get(const string &key, const Timestamp &t, Version &value)
 }
 
 bool
-VersionedKVStore::getRange(const string &key, const Timestamp &t,
+VersionedKVStore::GetRange(const string &key, const Timestamp &t,
 			   pair<Timestamp, Timestamp> &range)
 {
     if (inStore(key)) {
@@ -116,14 +117,14 @@ VersionedKVStore::getRange(const string &key, const Timestamp &t,
 }
 
 void
-VersionedKVStore::put(const string &key, const string &value, const Timestamp &t)
+VersionedKVStore::Put(const string &key, const string &value, const Timestamp &t)
 {
     // Key does not exist. Create a list and an entry.
-    put(key, Version(t, value));
+    Put(key, Version(t, value));
 }
 
 void
-VersionedKVStore::put(const string &key, const Version &v)
+VersionedKVStore::Put(const string &key, const Version &v)
 {
     // Key does not exist. Create a list and an entry.
     store[key].insert(v);
@@ -134,11 +135,10 @@ VersionedKVStore::put(const string &key, const Version &v)
  * the version of the key that the txn read.
  */
 void
-VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const Timestamp &commit)
+VersionedKVStore::CommitGet(const string &key, const Timestamp &readTime, const Timestamp &commit)
 {
     set<Version>::iterator it;
-    getValue(key, readTime, it);
-    if (it != store[key].end()) {
+    if (getValue(key, readTime, it)) {
         Version v = *it;
         if (readTime > v.GetInterval().End()) {
             v.SetEnd(readTime);
@@ -149,15 +149,15 @@ VersionedKVStore::commitGet(const string &key, const Timestamp &readTime, const 
 }
 
 void
-VersionedKVStore::remove(const string &key) {
+VersionedKVStore::Remove(const string &key) {
     auto it = store.find(key);
     if (it != store.end()) {
-	store.erase(it);
+        store.erase(it);
     }
 }
 
 bool
-VersionedKVStore::getLastRead(const string &key, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key, Timestamp &lastRead)
 {
     if (inStore(key)) {
         Version v = *(store[key].rbegin());
@@ -173,12 +173,12 @@ VersionedKVStore::getLastRead(const string &key, Timestamp &lastRead)
  * Get the latest read for the write valid at timestamp t
  */
 bool
-VersionedKVStore::getLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-        getValue(key, t, it);
-        ASSERT(it != store[key].end());
+        bool ret = getValue(key, t, it);
+        ASSERT(ret);
         Version v = *it;
         // figure out if anyone has read this version before
         if (v.GetInterval().End() != MAX_TIMESTAMP) { 

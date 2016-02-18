@@ -17,6 +17,7 @@ message WriteMessage {
 
 // A serialized transaction
 message TransactionMessage {
-    repeated ReadMessage readset = 1;
-    repeated WriteMessage writeset = 2;
+    required uint64 timestamp = 1;
+    repeated ReadMessage readset = 2;
+    repeated WriteMessage writeset = 3;
 }

@@ -61,28 +61,22 @@ class TxnClient
 {
 public:
     TxnClient() { };
-    ~TxnClient() { };
+    virtual ~TxnClient() { };
 
     // Begin a transaction.
-    virtual void Begin(uint64_t tid) = 0;
+    virtual void Begin(const uint64_t tid) = 0;
+    virtual void BeginRO(const uint64_t tid,
+                         const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
     
     // Get the value corresponding to key (valid at given timestamp).
     virtual void Get(const uint64_t tid,
                      const std::string &key,
+                     const Timestamp &timestamp = MAX_TIMESTAMP,
                      Promise *promise = NULL) = 0;
-
-    virtual void Get(const uint64_t tid,
-                     const std::string &key,
-                     const Timestamp &timestamp,
-                     Promise *promise = NULL) = 0;
-
-    virtual void MultiGet(const uint64_t tid,
-                          const std::vector<std::string> &keys,
-                          Promise *promise = NULL) = 0;
 
     virtual void MultiGet(const uint64_t tid,
                           const std::vector<std::string> &key,
-                          const Timestamp &timestamp,
+                          const Timestamp &timestamp = MAX_TIMESTAMP,
                           Promise *promise = NULL) = 0;
 
     // Set the value for the given key.
@@ -93,18 +87,16 @@ public:
 
     // Prepare the transaction.
     virtual void Prepare(const uint64_t tid,
-                         const Transaction &txn,
+                         const Transaction &txn = Transaction(),
                          Promise *promise = NULL) = 0;
 
     // Commit all Get(s) and Put(s) since Begin().
     virtual void Commit(const uint64_t tid,
-                        const Transaction &txn, 
-                        const Timestamp &timestamp = 0,
+                        const Transaction &txn = Transaction(),
                         Promise *promise = NULL) = 0;
     
     // Abort all Get(s) and Put(s) since Begin().
-    virtual void Abort(const uint64_t tid, 
-                       const Transaction &txn = Transaction(), 
+    virtual void Abort(const uint64_t tid,
                        Promise *promise = NULL) = 0;
 };
 

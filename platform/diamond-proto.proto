@@ -34,7 +34,6 @@ message AbortMessage {
     required uint64 clientid = 1;
     required uint64 txnid = 2;
     required uint32 msgid = 3;
-    required TransactionMessage txn = 4;
 }
 
 message AbortReply {

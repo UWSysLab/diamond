@@ -68,7 +68,7 @@ ShardClient::~ShardClient()
 
 /* Sends BEGIN to a single shard indexed by i. */
 void
-ShardClient::Begin(uint64_t tid)
+ShardClient::Begin(const uint64_t tid)
 {
     Debug("[shard %i] BEGIN: %lu", shard, tid);
 
@@ -80,45 +80,17 @@ ShardClient::Begin(uint64_t tid)
     }
 }
 
-/* Returns the value corresponding to the supplied key. */
 void
-ShardClient::Get(const uint64_t tid, const string &key, Promise *promise)
+ShardClient::BeginRO(const uint64_t tid, const Timestamp &timestamp)
 {
-    MultiGet(tid, vector<string>({key}), promise);
-}
+    Debug("[shard %i] BEGIN: %lu", shard, tid);
 
-void
-ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *promise)
-{
-    // Send the GET operation to appropriate shard.
-    // Send the GET operation to appropriate shard.
-    Debug("[shard %i] Sending %lu GETS", shard, keys.size());
-
-    // create request
-    string request_str;
-    Request request;
-    request.set_op(Request::GET);
-    request.set_txnid(tid);
-    for (auto &i : keys) {
-        request.mutable_get()->add_keys(i);
+    // Wait for any previous pending requests.
+    if (blockingBegin != NULL) {
+        blockingBegin->GetReply();
+        delete blockingBegin;
+        blockingBegin = NULL;
     }
-    request.SerializeToString(&request_str);
-
-    // set to 1 second by default
-    int timeout = (promise != NULL) ? promise->GetTimeout() : 1000;
-
-    transport->Timer(0, [=]() {
-	    waiting = promise;    
-            client->InvokeUnlogged(replica,
-                                   request_str,
-                                   bind(&ShardClient::GetCallback,
-                                        this,
-                                        placeholders::_1,
-                                        placeholders::_2),
-                                   bind(&ShardClient::GetTimeout,
-                                        this),
-                                   timeout); // timeout in ms
-        });
 }
 
 void
@@ -165,16 +137,16 @@ ShardClient::MultiGet(const uint64_t tid, const vector<string> &keys,
 
 void
 ShardClient::Put(const uint64_t tid,
-		 const std::string &key,
-		 const std::string &value,
-		 Promise *promise)
+                 const std::string &key,
+                 const std::string &value,
+                 Promise *promise)
 {
     Panic("No server-side puts!");
 }
 
 void
 ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
-		     Promise *promise)
+                     Promise *promise)
 {
     Debug("[shard %i] Sending PREPARE: %lu", shard, tid);
 
@@ -183,7 +155,7 @@ ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
     Request request;
     request.set_op(Request::PREPARE);
     request.set_txnid(tid);
-    txn.serialize(request.mutable_prepare()->mutable_txn());
+    txn.Serialize(request.mutable_prepare()->mutable_txn());
     request.SerializeToString(&request_str);
 
     transport->Timer(0, [=]() {
@@ -197,8 +169,7 @@ ShardClient::Prepare(const uint64_t tid, const Transaction &txn,
 }
 
 void
-ShardClient::Commit(const uint64_t tid, const Transaction &txn,
-		    const Timestamp &timestamp, Promise *promise)
+ShardClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
 
     Debug("[shard %i] Sending COMMIT: %lu", shard, tid);
@@ -208,8 +179,6 @@ ShardClient::Commit(const uint64_t tid, const Transaction &txn,
     Request request;
     request.set_op(Request::COMMIT);
     request.set_txnid(tid);
-    request.mutable_commit()->set_timestamp(timestamp);
-    txn.serialize(request.mutable_commit()->mutable_txn());
     request.SerializeToString(&request_str);
 
     blockingBegin = new Promise(COMMIT_TIMEOUT);
@@ -226,7 +195,7 @@ ShardClient::Commit(const uint64_t tid, const Transaction &txn,
 
 /* Aborts the ongoing transaction. */
 void
-ShardClient::Abort(const uint64_t tid, const Transaction &txn, Promise *promise)
+ShardClient::Abort(const uint64_t tid, Promise *promise)
 {
     Debug("[shard %i] Sending ABORT: %lu", shard, tid);
     
@@ -235,7 +204,6 @@ ShardClient::Abort(const uint64_t tid, const Transaction &txn, Promise *promise)
     Request request;
     request.set_op(Request::ABORT);
     request.set_txnid(tid);
-    txn.serialize(request.mutable_abort()->mutable_txn());
     request.SerializeToString(&request_str);
 
     blockingBegin = new Promise(ABORT_TIMEOUT);
