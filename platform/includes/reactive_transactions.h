@@ -24,34 +24,29 @@ std::set<txn_function_t> funcSet;
 std::map<rtxn_id, txn_function_t> funcMap;
 std::map<rtxn_id, std::set<std::string> > readsetMap;
 
-void reactive_txn(txn_function_t func) {
+rtxn_id reactive_txn(txn_function_t func) {
+    rtxn_id id = generateId();
     DObject::TransactionBegin(global_ts); // run transaction at time global_ts
     func();
     std::set<std::string> readset = DObject::ReactiveCommit();
     if (!funcSet.containsValue(func)) {
-        rtxn_id id = getNewId();
         funcSet.insert(func);
         funcMap[id] = func;
         readsetMap[id] = readset;
 
         registerRtxn(id, global_ts, readset);
     }
+    return id;
 }
 
 // main reactive loop
 void runReactiveLoop() {
     while(true) {
-        rtxn_info info = getNextPendingRtxn();
-        rtxn_id id = info.id;
-        timestamp ts = info.ts;
+        rtxn_id id = getNextPendingRtxn(); // keep id<->ts map in diamondclient
         txn_function_t func = funcMap.get(id);
-        DObject::TransactionBegin(ts); // run transaction at time ts
+        DObject::ReactiveBegin(id, ts); // run transaction at time ts
         func();
-        std::set<std::string> readset = DObject::ReactiveCommit();
-        oldReadset = readsetMap.get(id);
-        if (readset != oldReadset) {
-            updateReadSet(id, ts, readset);
-        }
+        DObject::ReactiveCommit(id); // check for and initiate read-set-change in here
     }
 }
 
