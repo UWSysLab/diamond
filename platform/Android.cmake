@@ -51,7 +51,7 @@ endif()
 
 # global C flags
 set(ANDROID_NDK_GLOBAL_CFLAGS "-DANDROID -fomit-frame-pointer -fno-strict-aliasing -finline-limit=64 -ffunction-sections -funwind-tables")
-set(ANDROID_NDK_GLOBAL_CXXFLAGS "-fno-exceptions -fno-rtti")
+#set(ANDROID_NDK_GLOBAL_CXXFLAGS "-fno-exceptions -fno-rtti")
 
 # set the Android Platform
 set(ANDROID_API_SUPPORTED "android-8;android-9;android-14;android-21")
