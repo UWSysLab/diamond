@@ -18,7 +18,7 @@ public class Diamond {
 
     static { Loader.load(); }
     public static native void DiamondInit();
-    public static native void DiamondInit(@ByRef @StdString String server);
+    public static native void DiamondInit(@ByRef @StdString String server, int nshards, int closestReplica);
 
     public static class Callback extends FunctionPointer {
         static { Loader.load(); }
@@ -88,7 +88,7 @@ public class Diamond {
                 }
             }
 
-            DObject.PrefetchGlobalAddSet(keyVector);
+            //DObject.PrefetchGlobalAddSet(keyVector);
         }
 
         public int Size() {
@@ -135,7 +135,7 @@ public class Diamond {
             throw new RuntimeException(e);
         }
 
-        DObject.PrefetchGlobalAddSet(objVector);
+        //DObject.PrefetchGlobalAddSet(objVector);
     }
 
     public static void MapObject(Object obj, String key) {
@@ -208,18 +208,21 @@ public class Diamond {
         @Name("MultiMap")
         public static native int NativeMultiMap(@ByRef DiamondUtil.DObjectVector objects, @ByRef DiamondUtil.StringVector keys);
 
+        /*
         public native void Lock();
         public native void ContinueLock();
         public native void Unlock();
         public native void Signal();
         public native void Broadcast();
         public native void Wait();
+        */
 
         public static native void TransactionBegin();
         public static native int TransactionCommit();
-        public static native void TransactionRollback();
-        public static native void TransactionRetry();
+        //public static native void TransactionRollback();
+        //public static native void TransactionRetry();
 
+        /*
         public static native void TransactionOptionPrefetch(@ByRef DiamondUtil.DObjectVector txPrefetch);
 
         public static native void PrefetchGlobalAddSet(@ByRef DiamondUtil.StringVector prefetchSet);
@@ -231,6 +234,7 @@ public class Diamond {
         public static native void SetGlobalRedisWait(boolean enable, int replicas, int timeout);
 
         public static native void DebugMultiMapIndividualSet(boolean enable);
+        */
     }
    
    public static class DString extends DObject {

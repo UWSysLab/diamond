@@ -43,6 +43,8 @@ public class DiamondTest
      */
     public void testDString()
     {
+        Diamond.DObject.TransactionBegin();
+
        Diamond.DString s1 = new Diamond.DString("", "a");
        Diamond.DString s2 = new Diamond.DString("", "a");
 
@@ -51,6 +53,8 @@ public class DiamondTest
        assert(s2.Value().equals("13"));
        assert(s1.Value().equals("13"));
        //System.out.println("DString test ok!");
+
+        Diamond.DObject.TransactionCommit();
     }
 
    /**
@@ -58,6 +62,8 @@ public class DiamondTest
      */
     public void testDLong()
     {
+        Diamond.DObject.TransactionBegin();
+
        Diamond.DLong s1 = new Diamond.DLong(0, "b");
        Diamond.DLong s2 = new Diamond.DLong(0, "b");
 
@@ -66,6 +72,8 @@ public class DiamondTest
        assert(s2.Value() == 13);
        assert(s1.Value() == 13);
        //System.out.println("DLong test ok!");
+
+        Diamond.DObject.TransactionCommit();
     }
 
     /**
@@ -73,6 +81,8 @@ public class DiamondTest
      */
     public void testDStringList()
     {
+        Diamond.DObject.TransactionBegin();
+
         Diamond.DStringList list1 = new Diamond.DStringList("c");
         Diamond.DStringList list2 = new Diamond.DStringList("c");
 
@@ -97,10 +107,14 @@ public class DiamondTest
         assert(list2.Members().equals(membersList));
 
         //System.out.println("DStringList test ok!");
+
+        Diamond.DObject.TransactionCommit();
     }
 
     public void testDList()
     {
+        Diamond.DObject.TransactionBegin();
+
         Diamond.DList list1 = new Diamond.DList("f");
         Diamond.DList list2 = new Diamond.DList("f");
 
@@ -123,9 +137,13 @@ public class DiamondTest
         membersList.add((long)4);
         membersList.add((long)16);
         assert(list2.Members().equals(membersList));
+
+        Diamond.DObject.TransactionCommit();
     }
 
     public void testDStringSet() {
+        Diamond.DObject.TransactionBegin();
+
         Diamond.DStringSet set1 = new Diamond.DStringSet();
         Diamond.DStringSet set2 = new Diamond.DStringSet();
 
@@ -149,9 +167,13 @@ public class DiamondTest
         assert(!set2.InSet("Hello"));
         assert(set2.InSet("World"));
         assert(set2.Members().size() == 1);
+
+        Diamond.DObject.TransactionCommit();
     }
 
     public void testDSet() {
+        Diamond.DObject.TransactionBegin();
+
         Diamond.DSet set1 = new Diamond.DSet();
         Diamond.DSet set2 = new Diamond.DSet();
 
@@ -176,9 +198,13 @@ public class DiamondTest
         assert(!set2.InSet(1));
         assert(set2.InSet(2));
         assert(set2.Members().size() == 1);
+
+        Diamond.DObject.TransactionCommit();
     }
 
-    public void testMultiMap() {
+    /*public void testMultiMap() {
+        Diamond.DObject.TransactionBegin();
+
         Diamond.DString string1 = new Diamond.DString();
         Diamond.DString string2 = new Diamond.DString();
         Diamond.DLong long1 = new Diamond.DLong();
@@ -220,7 +246,9 @@ public class DiamondTest
         assert(long2.Value() == 42);
         assert(list2.Index("Hello") == 0);
         assert(list2.Value(1).equals("World"));
-    }
+
+        Diamond.DObject.TransactionCommit();
+    }*/
 
     public static class TestObject {
         Diamond.DString dstr;
@@ -238,7 +266,9 @@ public class DiamondTest
         }
     }
 
-    public void testMapObject() {
+    /*public void testMapObject() {
+        Diamond.DObject.TransactionBegin();
+
         TestObject testObj1 = new TestObject();
         Diamond.MapObject(testObj1, "javatest:testobj", new TestObjectFunction());
 
@@ -253,9 +283,13 @@ public class DiamondTest
 
         assert(testObj2.dstr.Value().equals("map object test"));
         assert(testObj2.dl.Value() == 15);
-    }
 
-    public void testMapObjectRange() {
+        Diamond.DObject.TransactionCommit();
+    }*/
+
+    /*public void testMapObjectRange() {
+        Diamond.DObject.TransactionBegin();
+
         String key = "javatest:objectlist";
         Diamond.DStringList keyList = new Diamond.DStringList();
         Diamond.DObject.Map(keyList, key);
@@ -311,10 +345,14 @@ public class DiamondTest
         assert(testObjC3.dstr.Value().equals("testC"));
         assert(testObjC3.dl.Value() == 18);
         assert(objList3.Size() == 3);
-    }
+
+        Diamond.DObject.TransactionCommit();
+    }*/
 
     // This test is just a basic sanity check and should not be used as an example of anything
-    public void testPrefetchMapObjectRange() {
+    /*public void testPrefetchMapObjectRange() {
+        Diamond.DObject.TransactionBegin();
+
         String key = "javatest:prefetch:objectlist";
         Diamond.DStringList keyList = new Diamond.DStringList();
         Diamond.DObject.Map(keyList, key);
@@ -358,7 +396,9 @@ public class DiamondTest
         assert(b2str.equals("testB"));
         assert(b2l == 17);
         assert(objList2.Size() == 3);
-    }
+
+        Diamond.DObject.TransactionCommit();
+    }*/
 
 //    class TransactionTestRunnable implements Runnable {
 //        int txAttempts = 0;

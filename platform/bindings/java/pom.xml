@@ -71,11 +71,11 @@
               <argument>-Xcompiler</argument>
               <argument>-iquote../..</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../../../build</argument>
+              <argument>-L../../build</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../../../build:../../../build/hiredis/src/</argument>
+              <argument>-Wl,-rpath,../../build</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
@@ -98,8 +98,8 @@
               <argument>target/classes/arm-lib/</argument>
               <argument>-properties</argument>
               <argument>android-arm</argument>
-              <argument>-Dplatform.root=../../../toolchains/android/toolchain/sysroot</argument>
-              <argument>-Dplatform.compiler=../../../toolchains/android/toolchain/bin/arm-linux-androideabi-g++</argument>
+              <argument>-Dplatform.root=../../toolchains/android/toolchain/sysroot</argument>
+              <argument>-Dplatform.compiler=../../toolchains/android/toolchain/bin/arm-linux-androideabi-g++</argument>
               <argument>-Xcompiler</argument>
               <argument>-std=c++0x</argument>
               <argument>-Xcompiler</argument>
@@ -119,15 +119,15 @@
               <argument>-Xcompiler</argument>
               <argument>-iquote../..</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../../../build-arm</argument>
+              <argument>-L../../build-arm</argument>
               <argument>-Xcompiler</argument>
-              <argument>-L../../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
+              <argument>-L../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
               <argument>-Xcompiler</argument>
               <argument>-ldiamond</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../../../build-arm:../../../build-arm/hiredis/src</argument>
+              <argument>-Wl,-rpath,../../build-arm:../../build-arm/hiredis/src</argument>
               <argument>-Xcompiler</argument>
-              <argument>-Wl,-rpath,../../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
+              <argument>-Wl,-rpath,../../toolchains/android/ndk/sources/cxx-stl/gnu-libstdc++/4.9/libs/armeabi-v7a/</argument>
               <!-- <argument>-jarprefix</argument> -->
               <!-- <argument>diamond</argument> -->
             </arguments>
