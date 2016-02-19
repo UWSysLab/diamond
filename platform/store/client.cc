@@ -274,7 +274,7 @@ Client::Commit(const uint64_t tid, const Transaction &txn, Promise *promise)
 {
     // Implementing 2 Phase Commit
     Timestamp ts = 0;
-    int status;
+    int status = REPLY_OK;
     map<int, Transaction> participants;
 
     // split up the transaction across shards
@@ -287,22 +287,29 @@ Client::Commit(const uint64_t tid, const Transaction &txn, Promise *promise)
         int i = key_to_shard(w.first, nshards);
         participants[i].AddWriteSet(w.first, w.second);
     }
-    
-    for (int i = 0; i < COMMIT_RETRIES; i++) {
-        status = Prepare(tid, participants, ts);
-        if (status == REPLY_OK || status == REPLY_FAIL) {
-            break;
-        }
-    }
 
+
+    // Do two phase commit
+    if (txn.IsolationMode() == LINEARIZABLE ||
+	txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+        for (int i = 0; i < COMMIT_RETRIES; i++) {
+	    status = Prepare(tid, participants, ts);
+	    if (status == REPLY_OK || status == REPLY_FAIL) {
+		break;
+	    }
+	}
+    }
+    
     if (status == REPLY_OK) {
         // Send commits
         Debug("COMMIT Transaction at [%lu]", ts);
         for (auto &p : participants) {
+	    p.second.SetTimestamp(ts);
             Debug("Sending commit to shard [%d]", p.first);
-            cclient[p.first]->Commit(tid, ts);
+            cclient[p.first]->Commit(tid, p.second);
         }
         promise->Reply(REPLY_OK, ts);
+	return;
     }
 
     // 4. If not, send abort to all shards.

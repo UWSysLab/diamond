@@ -63,7 +63,7 @@ public:
     int Prepare(const uint64_t tid, const Transaction &txn);
 
     // commit the transaction
-    void Commit(const uint64_t tid, const Timestamp &timestamp);
+    void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction());
 
     // abort a running transaction
     void Abort(const uint64_t tid);

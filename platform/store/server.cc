@@ -93,7 +93,7 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         break;
     case strongstore::proto::Request::PREPARE:
         // Prepare is the only case that is conditionally run at the leader
-        status = store->Prepare(request.prepare().txnid(), Transaction(request.prepare().txn()));
+        status = store->Prepare(request.txnid(), Transaction(request.prepare().txn()));
 
         // if prepared, then replicate result
         if (status == 0) {
@@ -146,7 +146,11 @@ Server::ReplicaUpcall(opnum_t opnum,
         store->Prepare(request.txnid(), Transaction(request.prepare().txn()));
         break;
     case strongstore::proto::Request::COMMIT:
-        store->Commit(request.txnid(), request.commit().timestamp());
+	if (request.commit().has_txn()) {
+	    store->Commit(request.txnid(), request.commit().timestamp(), Transaction(request.commit().txn()));
+	} else {
+	    store->Commit(request.txnid(), request.commit().timestamp());
+	}
         reply.set_timestamp(request.commit().timestamp());
         break;
     case strongstore::proto::Request::ABORT:

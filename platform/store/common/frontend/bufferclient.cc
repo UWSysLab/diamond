@@ -202,7 +202,17 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
         Transaction txn = txns[tid];
         txns.erase(tid);
         txns_lock.unlock();
-        
+
+	// If eventual consistency, do no checks
+	if (txn.IsolationMode() == EVENTUAL) {
+	    if (promise != NULL) {
+		promise->Reply(REPLY_OK);
+	    }
+	    txnclient->Commit(tid, txn, NULL);
+	    return;
+	}
+
+	// If SI with no writes or read-only, just locally check the read set
         if ((txn.IsolationMode() == READ_ONLY) ||
             ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
             // Run local checks
@@ -214,7 +224,6 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
                 if (promise != NULL) {
                     promise->Reply(REPLY_OK, txn.GetTimestamp());
                 }
-                txnclient->Commit(tid, txn, NULL); 
             } else {
                 if (promise != NULL) {
                     promise->Reply(REPLY_FAIL);

@@ -66,42 +66,46 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     set<string> pRW = getPreparedReadWrites();
 
     // Check for conflicts with the read set.
-    for (auto &read : txn.GetReadSet()) {
-        Version cur;
-        bool ret = store.Get(read.first, cur);
+    if (txn.IsolationMode() == LINEARIZABLE) {
+	for (auto &read : txn.GetReadSet()) {
+	    Version cur;
+	    bool ret = store.Get(read.first, cur);
 
 	    // ASSERT(ret);
-        if (!ret)
-            continue;
+	    if (!ret)
+		continue;
 
-        // If this key has been written since we read it, abort.
-        if (cur.GetTimestamp() > read.second.Start()) {
-            Debug("[%lu] ABORT rw conflict key:%s %lu %lu",
-                  tid, read.first.c_str(), cur.GetTimestamp(),
-                  read.second.Start());
+	    // If this key has been written since we read it, abort.
+	    if (cur.GetTimestamp() > read.second.Start()) {
+		Debug("[%lu] ABORT rw conflict key:%s %lu %lu",
+		      tid, read.first.c_str(), cur.GetTimestamp(),
+		      read.second.Start());
             
-            Abort(tid);
-            return REPLY_FAIL;
-        }
+		Abort(tid);
+		return REPLY_FAIL;
+	    }
 
-        // If there is a pending write for this key, abort.
-        if (pWrites.find(read.first) != pWrites.end()) {
-            Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
-                  tid, read.first.c_str());
-            Abort(tid);
-            return REPLY_FAIL;
-        }
+	    // If there is a pending write for this key, abort.
+	    if (pWrites.find(read.first) != pWrites.end()) {
+		Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
+		      tid, read.first.c_str());
+		Abort(tid);
+		return REPLY_FAIL;
+	    }
+	}
     }
 
-    // Check for conflicts with the write set.
-    for (auto &write : txn.GetWriteSet()) {
-        // If there is a pending read or write for this key, abort.
-        if (pRW.find(write.first) != pRW.end()) {
-            Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
-                    write.first.c_str());
-            Abort(tid);
-            return REPLY_FAIL;
-        }
+    if (txn.IsolationMode() == LINEARIZABLE || txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+	// Check for conflicts with the write set.
+	for (auto &write : txn.GetWriteSet()) {
+	    // If there is a pending read or write for this key, abort.
+	    if (pRW.find(write.first) != pRW.end()) {
+		Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
+		      write.first.c_str());
+		Abort(tid);
+		return REPLY_FAIL;
+	    }
+	}
     }
 
     // Otherwise, prepare this transaction for commit
@@ -111,14 +115,17 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 }
 
 void
-OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp)
+OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn)
 {
+    Transaction t;
     Debug("[%lu] COMMIT", tid);
-    ASSERT(prepared.find(tid) != prepared.end());
+    if (prepared.find(tid) != prepared.end()) {
+	t = prepared[tid];
+    } else {
+	t = txn;
+    }
 
-    Transaction txn = prepared[tid];
-
-    for (auto &write : txn.GetWriteSet()) {
+    for (auto &write : t.GetWriteSet()) {
         store.Put(write.first, // key
                   write.second, // value
                   timestamp); // timestamp

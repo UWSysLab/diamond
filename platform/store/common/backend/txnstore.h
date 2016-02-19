@@ -56,7 +56,7 @@ public:
     virtual int Prepare(const uint64_t tid, const Transaction &txn) = 0;
 
     // commit the transaction
-    virtual void Commit(const uint64_t tid, const Timestamp &timestamp) = 0;
+    virtual void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction()) = 0;
 
     // abort a running transaction
     virtual void Abort(const uint64_t tid) = 0;
