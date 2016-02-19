@@ -95,13 +95,8 @@ VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 }
 
 bool
-<<<<<<< HEAD
-VersionedKVStore::getRange(const string &key, const Timestamp &t,
-			   Interval &range)
-=======
 VersionedKVStore::GetRange(const string &key, const Timestamp &t,
-			   pair<Timestamp, Timestamp> &range)
->>>>>>> f97490db0f2bf41e69027642ac428b25ab2cbe7f
+			   Interval &range)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
@@ -182,7 +177,6 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-<<<<<<< HEAD
         if (getValue(key, t, it)) {
 	    Version v = *it;
 	    // figure out if anyone has read this version before
@@ -191,16 +185,6 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 		return true;
 	    }
 	}
-=======
-        bool ret = getValue(key, t, it);
-        ASSERT(ret);
-        Version v = *it;
-        // figure out if anyone has read this version before
-        if (v.GetInterval().End() != MAX_TIMESTAMP) { 
-            lastRead = v.GetInterval().End();
-            return true;
-        }
->>>>>>> f97490db0f2bf41e69027642ac428b25ab2cbe7f
     }
     return false;	
 }

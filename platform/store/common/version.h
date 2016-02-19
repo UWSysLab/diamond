@@ -22,11 +22,7 @@ public:
     Version(const Timestamp commit) : valid(commit), value("tmp") { };
     Version(const std::string &val) : valid(), value(val) { };
     Version(const Timestamp commit, const std::string &val) : valid(commit), value(val) { };
-<<<<<<< HEAD
     Version(const ReadReply &msg);
-=======
-    Version(const Interval interval, const std::string &val) : valid(interval), value(val) { };
->>>>>>> f97490db0f2bf41e69027642ac428b25ab2cbe7f
     
     std::string GetValue() const { return value; };
     Timestamp GetTimestamp() const { return valid.Start(); };

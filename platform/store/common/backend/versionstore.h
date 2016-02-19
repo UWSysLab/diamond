@@ -52,7 +52,7 @@ public:
 
     bool Get(const std::string &key, Version &value);
     bool Get(const std::string &key, const Timestamp &t, Version &value);
-    bool GetRange(const std::string &key, const Timestamp &t, std::pair<Timestamp, Timestamp> &range);
+    bool GetRange(const std::string &key, const Timestamp &t, Interval &range);
     bool GetLastRead(const std::string &key, Timestamp &readTime);
     bool GetLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
     void Put(const std::string &key, const std::string &value, const Timestamp &t);
