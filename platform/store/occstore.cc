@@ -75,10 +75,10 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             continue;
 
         // If this key has been written since we read it, abort.
-        if (cur.GetTimestamp() > read.second) {
+        if (cur.GetTimestamp() > read.second.Start()) {
             Debug("[%lu] ABORT rw conflict key:%s %lu %lu",
                   tid, read.first.c_str(), cur.GetTimestamp(),
-                  read.second);
+                  read.second.Start());
             
             Abort(tid);
             return REPLY_FAIL;

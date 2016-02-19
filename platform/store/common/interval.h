@@ -7,7 +7,7 @@
  *
  **********************************************************************/
 
-#ifndef _INTERVAL_H
+#ifndef _INTERVAL_H_
 #define _INTERVAL_H_
 
 #include <algorithm>

@@ -13,6 +13,7 @@ using namespace std;
 
 Transaction::Transaction(const TransactionMessage &msg) 
 {
+    mode = msg.mode();
     timestamp = msg.timestamp();
     for (int i = 0; i < msg.readset_size(); i++) {
         ReadMessage readMsg = msg.readset(i);
@@ -27,7 +28,7 @@ Transaction::Transaction(const TransactionMessage &msg)
 
 Transaction::~Transaction() { }
 
-const unordered_map<string, Timestamp>&
+const unordered_map<string, Interval>&
 Transaction::GetReadSet() const
 {
     return readSet;
@@ -41,9 +42,9 @@ Transaction::GetWriteSet() const
 
 void
 Transaction::AddReadSet(const string &key,
-                        const Timestamp &readTime)
+                        const Interval &readVersion)
 {
-    readSet[key] = readTime;
+    readSet[key] = readVersion;
 }
 
 void
@@ -56,11 +57,13 @@ Transaction::AddWriteSet(const string &key,
 void
 Transaction::Serialize(TransactionMessage *msg) const
 {
+    msg->set_mode(mode);
     msg->set_timestamp(timestamp);
     for (auto read : readSet) {
         ReadMessage *readMsg = msg->add_readset();
         readMsg->set_key(read.first);
-        readMsg->set_readtime(read.second);
+        readMsg->set_readtime(read.second.Start());
+        readMsg->set_end(read.second.End());
     }
 
     for (auto write : writeSet) {

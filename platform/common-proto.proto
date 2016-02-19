@@ -1,6 +1,7 @@
 message ReadMessage {
     required string key = 1;
     required uint64 readtime = 2;
+    required uint64 end = 3;
 }
 
 message ReadReply {
@@ -17,7 +18,8 @@ message WriteMessage {
 
 // A serialized transaction
 message TransactionMessage {
-    required uint64 timestamp = 1;
-    repeated ReadMessage readset = 2;
-    repeated WriteMessage writeset = 3;
+    required int32 mode = 1;
+    required uint64 timestamp = 2;
+    repeated ReadMessage readset = 3;
+    repeated WriteMessage writeset = 4;
 }

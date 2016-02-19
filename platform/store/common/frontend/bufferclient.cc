@@ -62,7 +62,7 @@ BufferClient::BeginRO(const uint64_t tid, const Timestamp &timestamp)
     // Initialize data structures.
     if (txns.find(tid) == txns.end()) {
         txnclient->BeginRO(tid);
-    	txns[tid] = Transaction(timestamp, true);
+    	txns[tid] = Transaction(READ_ONLY, timestamp);
     }
     txns_lock.unlock();
 }
@@ -76,17 +76,16 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
     txns_lock.lock();
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
-	txns_lock.unlock();
-    } else {
-	txns_lock.unlock();
     }
     Transaction &txn = txns[tid];
+    txns_lock.unlock();
 
+    
     auto it = txn.GetWriteSet().find(key);
     // Read your own writes, check the write set first.
     if (it != txn.GetWriteSet().end()) {
         map<string, Version> ret;
-        ret[key] = Version(0,it->second);
+        ret[key] = Version(0, it->second);
         promise->Reply(REPLY_OK, ret);
         return;
     }
@@ -100,9 +99,15 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
     
     if (pp->GetReply() == REPLY_OK) {
         Debug("Adding [%s] with ts %lu to the read set", key.c_str(), pp->GetValue(key).GetTimestamp());
-        txn.AddReadSet(key, pp->GetValue(key).GetTimestamp());
+        txn.AddReadSet(key, pp->GetValue(key).GetInterval());
+        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
+            !txn.HasTimestamp()) {
+            txn.SetTimestamp(pp->GetValue(key).GetInterval().End());
+            txns_lock.lock();
+            txns[tid] = txn;
+            txns_lock.unlock();
+        }
     }
-
 }
 
 void
@@ -132,10 +137,17 @@ BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *
         txnclient->MultiGet(tid, keysToRead, txn.GetTimestamp(), pp);
         
         if (pp->GetReply() == REPLY_OK){
-            std::map<string,Version> values = pp->GetValues();
-            for (auto value : values) {
+            std::map<string, Version> values = pp->GetValues();
+            for (auto &value : values) {
                 Debug("Adding [%s] with ts %lu to the read set", value.first.c_str(), value.second.GetTimestamp());
-                txn.AddReadSet(value.first, value.second.GetTimestamp());
+                txn.AddReadSet(value.first, value.second.GetInterval());
+            }
+            if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
+                !txn.HasTimestamp()) {
+                txn.SetTimestamp((values.begin())->second.GetInterval().End());
+                txns_lock.lock();
+                txns[tid] = txn;
+                txns_lock.unlock();
             }
         }
     }
@@ -169,8 +181,14 @@ void
 BufferClient::Prepare(const uint64_t tid, Promise *promise)
 {
     Debug("PREPARE [%lu]", tid);
+
+    txns_lock.lock();
     if (txns.find(tid) != txns.end()) {
+        Transaction txn = txns[tid];
+        txns_lock.unlock();
         txnclient->Prepare(tid, txns[tid], promise);
+    } else {
+        txns_lock.unlock();
     }
 }
 
@@ -178,9 +196,37 @@ void
 BufferClient::Commit(const uint64_t tid, Promise *promise)
 {
     Debug("COMMIT [%lu]", tid);
+
+    txns_lock.lock();
     if (txns.find(tid) != txns.end()) {
-        txnclient->Commit(tid, txns[tid], promise);
+        Transaction txn = txns[tid];
         txns.erase(tid);
+        txns_lock.unlock();
+        
+        if ((txn.IsolationMode() == READ_ONLY) ||
+            ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
+            // Run local checks
+            Interval i(0);
+            for (auto &read : txn.GetReadSet()) {
+                Intersect(i, read.second);
+            }
+            if (i.Start() <= i.End()) {
+                if (promise != NULL) {
+                    promise->Reply(REPLY_OK, txn.GetTimestamp());
+                }
+                txnclient->Commit(tid, txn, NULL); 
+            } else {
+                if (promise != NULL) {
+                    promise->Reply(REPLY_FAIL);
+                }
+            }
+            return;
+        }
+
+        // Otherwise go wide-area for checks
+        txnclient->Commit(tid, txn, promise);
+    } else {
+        txns_lock.unlock();
     }
 }
 
@@ -189,9 +235,13 @@ void
 BufferClient::Abort(const uint64_t tid, Promise *promise)
 {
     Debug("ABORT [%lu]", tid);
+    txns_lock.lock();
     if (txns.find(tid) != txns.end()) {
-        txnclient->Abort(tid, promise);
         txns.erase(tid);
+        txns_lock.unlock();
+        txnclient->Abort(tid, promise);
+    } else {
+        txns_lock.unlock();
     }
-
 }
+
