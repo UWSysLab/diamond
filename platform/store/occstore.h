@@ -56,11 +56,18 @@ public:
     ~OCCStore();
 
     // Overriding from TxnStore.
-    int Get(const uint64_t tid, const std::string &key, Version &value);
-    int Get(const uint64_t tid, const std::string &key, const Timestamp &timestamp, Version &value);
+    int Get(const uint64_t tid, const std::string &key, Version &value,
+            const Timestamp &timestamp = MAX_TIMESTAMP);
+
+    // check whether we can commit this transaction (and lock the read/write set)
     int Prepare(const uint64_t tid, const Transaction &txn);
-    void Commit(const uint64_t tid, uint64_t timestamp);
-    void Abort(const uint64_t tid, const Transaction &txn = Transaction());
+
+    // commit the transaction
+    void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction());
+
+    // abort a running transaction
+    void Abort(const uint64_t tid);
+
     void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
 
 private:

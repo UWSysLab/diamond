@@ -51,37 +51,64 @@
 
 namespace strongstore {
 
-class Client 
+class Client : public TxnClient
 {
 public:
     Client(string configPath, int nshards, int closestReplica);
     ~Client();
 
-    // Overriding functions from ::Client
+    // Overriding functions from TxnClient
+    // Begin a transaction.
     void Begin(const uint64_t tid);
-    int Get(const uint64_t tid, const std::string &key,
-            Version &value);
-    int Get(const uint64_t tid, const std::string &key,
-            const Timestamp &timestamp,
-            Version &value);
+    void BeginRO(const uint64_t tid,
+                 const Timestamp &timestamp = MAX_TIMESTAMP);
+    
+    // Get the value corresponding to key (valid at given timestamp).
+    void Get(const uint64_t tid,
+             const std::string &key,
+             const Timestamp &timestamp = MAX_TIMESTAMP,
+             Promise *promise = NULL);
 
-    int MultiGet(const uint64_t tid, const std::vector<std::string> &keys, std::map<std::string, Version> &value);
+    void MultiGet(const uint64_t tid,
+                  const std::vector<std::string> &key,
+                  const Timestamp &timestamp = MAX_TIMESTAMP,
+                  Promise *promise = NULL);
 
-    int MultiGet(const uint64_t tid, const std::vector<std::string> &key,
-                 const Timestamp &timestamp,
-                 std::map<std::string, Version> &value);
+    // Blocking versions
+    int Get(const uint64_t tid,
+            const std::string &key,
+            Version &value,
+            const Timestamp &timestamp = MAX_TIMESTAMP);
 
+    int MultiGet(const uint64_t tid,
+                 const std::vector<std::string> &key,
+                 std::map<string, Version> &values,
+                 const Timestamp &timestamp = MAX_TIMESTAMP);
+
+    // Set the value for the given key.
     void Put(const uint64_t tid,
-                     const std::string &key,
-                     const std::string &value,
-                     Promise *promise = NULL);
-    
-    void Prepare(const uint64_t tid, 
-                 const Transaction &txn,
+             const std::string &key,
+             const std::string &value,
+             Promise *promise = NULL);
+
+    // Prepare the transaction.
+    void Prepare(const uint64_t tid,
+                 const Transaction &txn = Transaction(),
                  Promise *promise = NULL);
+
+    // Commit all Get(s) and Put(s) since Begin().
+    void Commit(const uint64_t tid,
+                const Transaction &txn = Transaction(),
+                Promise *promise = NULL);
+
+    // Blocking commit
+    bool Commit(const uint64_t tid,
+                const Transaction &txn,
+                Timestamp &timestamp);
     
-    bool Commit(const uint64_t tid, const Transaction &txn, Timestamp &ts);
-    void Abort(const uint64_t tid, const Transaction &txn);
+    // Abort all Get(s) and Put(s) since Begin().
+    void Abort(const uint64_t tid,
+               Promise *promise = NULL);
     std::vector<int> Stats();
 
 private:

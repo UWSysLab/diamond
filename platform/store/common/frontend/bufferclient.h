@@ -45,9 +45,10 @@ public:
     BufferClient(TxnClient *txnclient);
     ~BufferClient();
 
-    // Begin a transaction with given tid.
+// Begin a transaction with given tid.
     void Begin(uint64_t tid);
-
+    void BeginRO(uint64_t tid, const Timestamp &timestamp = MAX_TIMESTAMP);
+    
     // Get value corresponding to key.
     void Get(const uint64_t tid, const std::string &key, Promise *promise = NULL);
 
@@ -61,7 +62,7 @@ public:
     void Prepare(const uint64_t tid, Promise *promise = NULL); 
 
     // Commit the ongoing transaction.
-    void Commit(const uint64_t tid, const Timestamp &timestamp, Promise *promise = NULL);
+    void Commit(const uint64_t tid, Promise *promise = NULL);
 
     // Abort the running transaction.
     void Abort(const uint64_t tid, Promise *promise = NULL);

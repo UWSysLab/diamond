@@ -85,11 +85,23 @@ void
 DiamondClient::Begin()
 {
     if (txnid == 0) {
-	Debug("Diamondclient::BEGIN Transaction");
-	txnid_lock.lock();
-	txnid = ++txnid_counter;
-	txnid_lock.unlock();
-	bclient->Begin(txnid);
+        Debug("Diamondclient::BEGIN Transaction");
+        txnid_lock.lock();
+        txnid = ++txnid_counter;
+        txnid_lock.unlock();
+        bclient->Begin(txnid);
+    }
+}
+
+void
+DiamondClient::BeginRO()
+{
+    if (txnid == 0) {
+        Debug("Diamondclient::BEGIN Transaction");
+        txnid_lock.lock();
+        txnid = ++txnid_counter;
+        txnid_lock.unlock();
+        bclient->BeginRO(txnid);
     }
 }
 
@@ -158,9 +170,7 @@ DiamondClient::Commit()
     
     Promise promise(COMMIT_TIMEOUT);
 
-    Timestamp ts = 0;
-    
-    bclient->Commit(txnid, ts, &promise);
+    bclient->Commit(txnid, &promise);
     int status = promise.GetReply();
     txnid = 0;
     

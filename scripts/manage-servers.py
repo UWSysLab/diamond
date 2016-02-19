@@ -6,8 +6,8 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/biggerraid/users/nl35/scratch"
-BUILD_DIR = "../platform/build"
+WORKING_DIR = "~/proj/diamond/src/platform/build"
+BUILD_DIR = "~/proj/diamond/src/platform/build"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')

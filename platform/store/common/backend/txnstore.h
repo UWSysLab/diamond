@@ -40,39 +40,29 @@
 #include "store/common/timestamp.h"
 #include "store/common/version.h"
 
+namespace strongstore {
+    
 class TxnStore
 {
 public:
 
-    TxnStore();
-    virtual ~TxnStore();
+    TxnStore() { };
+    virtual ~TxnStore() { };
 
-    // add key to read set
-    virtual int Get(const uint64_t tid, const std::string &key,
-        Version &value);
-
-    virtual int Get(const uint64_t tid, const std::string &key,
-                    const Timestamp &timestamp, Version &value);
-
-    // add key to write set
-    virtual int Put(const uint64_t tid, const std::string &key,
-        const std::string &value);
+    virtual int Get(const uint64_t tid, const std::string &key, Version &value,
+                    const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
 
     // check whether we can commit this transaction (and lock the read/write set)
-    virtual int Prepare(const uint64_t tid, const Transaction &txn);
-
-    virtual int Prepare(const uint64_t tid, const Transaction &txn,
-        const Timestamp &timestamp, Timestamp &proposed);
+    virtual int Prepare(const uint64_t tid, const Transaction &txn) = 0;
 
     // commit the transaction
-    virtual void Commit(const uint64_t tid, uint64_t timestamp = 0);
+    virtual void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction()) = 0;
 
     // abort a running transaction
-    virtual void Abort(const uint64_t tid, const Transaction &txn = Transaction());
+    virtual void Abort(const uint64_t tid) = 0;
 
-    // load keys
-    virtual void Load(const std::string &key, const std::string &value,
-        const Timestamp &timestamp);
+    virtual void Load(const std::string &key, const std::string &value, const Timestamp &timestamp) = 0;
+    
 };
-
+}
 #endif /* _TXN_STORE_H_ */
