@@ -180,7 +180,7 @@ ShardClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     request.set_op(Request::COMMIT);
     request.set_txnid(tid);
     if (txn.IsolationMode() == EVENTUAL) {
-	txn.Serialize(request.mutable_commit()->mutable_txn());
+        txn.Serialize(request.mutable_commit()->mutable_txn());
     }
     request.mutable_commit()->set_timestamp(txn.GetTimestamp());
     request.SerializeToString(&request_str);

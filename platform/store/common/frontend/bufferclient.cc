@@ -49,7 +49,7 @@ BufferClient::Begin(const uint64_t tid)
     // Initialize data structures.
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
-    	txns[tid] = Transaction();
+    	txns[tid] = Transaction(SNAPSHOT_ISOLATION);
     }
     txns_lock.unlock();
 }
@@ -197,46 +197,54 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
 {
     Debug("COMMIT [%lu]", tid);
 
+    Transaction txn;
     txns_lock.lock();
     if (txns.find(tid) != txns.end()) {
-        Transaction txn = txns[tid];
+        txn = txns[tid];
         txns.erase(tid);
         txns_lock.unlock();
-
-	// If eventual consistency, do no checks
-	if (txn.IsolationMode() == EVENTUAL) {
-	    if (promise != NULL) {
-		promise->Reply(REPLY_OK);
-	    }
-	    txnclient->Commit(tid, txn, NULL);
-	    return;
-	}
-
+    } else {
+        // couldn't find the transaction
+        txns_lock.unlock();
+        return;
+    }
+    
 	// If SI with no writes or read-only, just locally check the read set
-        if ((txn.IsolationMode() == READ_ONLY) ||
-            ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
-            // Run local checks
-            Interval i(0);
-            for (auto &read : txn.GetReadSet()) {
-                Intersect(i, read.second);
-            }
-            if (i.Start() <= i.End()) {
-                if (promise != NULL) {
-                    promise->Reply(REPLY_OK, txn.GetTimestamp());
-                }
-            } else {
-                if (promise != NULL) {
-                    promise->Reply(REPLY_FAIL);
-                }
-            }
-            return;
+    // Commit all reads locally
+    if ((txn.IsolationMode() == READ_ONLY) ||
+        ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
+        // Run local checks
+        Interval i(0);
+        for (auto &read : txn.GetReadSet()) {
+            Intersect(i, read.second);
         }
+        if (i.Start() <= i.End()) {
+            if (promise != NULL) {
+                promise->Reply(REPLY_OK, txn.GetTimestamp());
+            }
+        } else {
+            if (promise != NULL) {
+                promise->Reply(REPLY_FAIL);
+            }
+        }
+        return;
+    }
+    
+    // save some energy sending the read set with SI and eventual consistency
+    if (txn.IsolationMode() == SNAPSHOT_ISOLATION || txn.IsolationMode() == EVENTUAL) {
+        txn.ClearReadSet();
+    }
 
+    // If eventual consistency, do no checks and don't wait for a response
+    if (txn.IsolationMode() == EVENTUAL) {
+        if (promise != NULL) {
+            promise->Reply(REPLY_OK);
+        }
+        txnclient->Commit(tid, txn, NULL);
+    } else {
         // Otherwise go wide-area for checks
         txnclient->Commit(tid, txn, promise);
-    } else {
-        txns_lock.unlock();
-    }
+    } 
 }
 
 /* Aborts the ongoing transaction. */

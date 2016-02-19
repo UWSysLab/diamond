@@ -67,45 +67,67 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
     // Check for conflicts with the read set.
     if (txn.IsolationMode() == LINEARIZABLE) {
-	for (auto &read : txn.GetReadSet()) {
-	    Version cur;
-	    bool ret = store.Get(read.first, cur);
+        for (auto &read : txn.GetReadSet()) {
+            Version cur;
+            const string &key = read.first;
+            const Interval &valid = read.second;
+            bool ret = store.Get(key, cur);
 
-	    // ASSERT(ret);
-	    if (!ret)
-		continue;
-
-	    // If this key has been written since we read it, abort.
-	    if (cur.GetTimestamp() > read.second.Start()) {
-		Debug("[%lu] ABORT rw conflict key:%s %lu %lu",
-		      tid, read.first.c_str(), cur.GetTimestamp(),
-		      read.second.Start());
+            ASSERT(ret);
             
-		Abort(tid);
-		return REPLY_FAIL;
-	    }
+            // If this key has been written since we read it, abort.
+            if (cur.GetTimestamp() > valid.Start()) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict key:%s %lu %lu",
+                      tid, key.c_str(), cur.GetTimestamp(),
+                      valid.Start());
+            
+                Abort(tid);
+                return REPLY_FAIL;
+            }
 
-	    // If there is a pending write for this key, abort.
-	    if (pWrites.find(read.first) != pWrites.end()) {
-		Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
-		      tid, read.first.c_str());
-		Abort(tid);
-		return REPLY_FAIL;
-	    }
-	}
+            // If there is a pending write for this key, abort.
+            if (pWrites.find(read.first) != pWrites.end()) {
+                Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
+                      tid, read.first.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        }
     }
 
     if (txn.IsolationMode() == LINEARIZABLE || txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-	// Check for conflicts with the write set.
-	for (auto &write : txn.GetWriteSet()) {
-	    // If there is a pending read or write for this key, abort.
-	    if (pRW.find(write.first) != pRW.end()) {
-		Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
-		      write.first.c_str());
-		Abort(tid);
-		return REPLY_FAIL;
-	    }
-	}
+        // Check for conflicts with the write set.
+        for (auto &write : txn.GetWriteSet()) {
+            const string &key = write.first;
+            if (txn.IsolationMode() == LINEARIZABLE) {
+                // If there is a pending read or write for this key, abort.
+                if (pRW.find(key) != pRW.end()) {
+                    Debug("[%lu] ABORT LINEARIZABLE ww conflict w/ prepared key:%s", tid,
+                          key.c_str());
+                    Abort(tid);
+                    return REPLY_FAIL;
+                }
+            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+                // if there is a pending write, abort
+                if (pWrites.find(key) != pWrites.end()) {
+                    Debug("[%lu] ABORT SNAPSHOT ISOLATION ww conflict w/ prepared key:%s", tid,
+                          key.c_str());
+                    Abort(tid);
+                    return REPLY_FAIL;
+                }
+                // if there is write between the read snapshot and now
+                Version cur;
+                bool ret = store.Get(key, cur);
+                ASSERT(ret);
+                if (cur.GetTimestamp() > txn.GetTimestamp()) {
+                    Debug("[%lu] ABORT SNAPSHOT ISOLATION ww conflict w/ prepared key:%s", tid,
+                          key.c_str());
+                    Abort(tid);
+                    return REPLY_FAIL;
+                }
+
+            }
+        }
     }
 
     // Otherwise, prepare this transaction for commit
@@ -120,9 +142,9 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
     Transaction t;
     Debug("[%lu] COMMIT", tid);
     if (prepared.find(tid) != prepared.end()) {
-	t = prepared[tid];
+        t = prepared[tid];
     } else {
-	t = txn;
+        t = txn;
     }
 
     for (auto &write : t.GetWriteSet()) {

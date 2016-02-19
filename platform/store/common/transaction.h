@@ -24,7 +24,7 @@
 
 class Transaction {
 public:
-    Transaction() {};
+    Transaction() : mode(LINEARIZABLE) { };
     Transaction(int mode) : mode(mode) { };
     Transaction(int mode, const Timestamp timestamp) : mode(mode), timestamp(timestamp) {};
     Transaction(const TransactionMessage &msg);
@@ -39,10 +39,11 @@ public:
     const std::unordered_map<std::string, std::string>& GetWriteSet() const;
     
     void AddReadSet(const std::string &key, const Interval &readVersion);
+    void ClearReadSet();
     void AddWriteSet(const std::string &key, const std::string &value);
     void Serialize(TransactionMessage *msg) const;
 private:
-    int mode = LINEARIZABLE;
+    int mode;
     Timestamp timestamp = MAX_TIMESTAMP;
     
     // map between key and timestamp at

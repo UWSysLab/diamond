@@ -115,6 +115,9 @@ private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
+    // get a timestamp from the timeserver
+    uint64_t getTSS();
+    
     // timestamp server call back
     void tssCallback(const string &request, const string &reply);
 
