@@ -49,32 +49,40 @@ public:
     CacheClient(TxnClient *txnclient);
     virtual ~CacheClient();
 
-    // Begin a transaction with given tid.
-    void Begin(uint64_t tid);
-
-    // Get value corresponding to key.
-    void Get(const uint64_t tid, const string &key, Promise *promise = NULL);
-
-    // Get value corresponding to key.
-    void Get(const uint64_t tid, const string &key, const Timestamp &timestamp, Promise *promise = NULL);
+    void Begin(const uint64_t tid);
+    void BeginRO(const uint64_t tid,
+                 const Timestamp &timestamp = MAX_TIMESTAMP);
     
-    // Get value corresponding to key.
-    void MultiGet(const uint64_t tid, const std::vector<string> &keys, Promise *promise = NULL);
+    // Get the value corresponding to key (valid at given timestamp).
+    void Get(const uint64_t tid,
+             const std::string &key,
+             const Timestamp &timestamp = MAX_TIMESTAMP,
+             Promise *promise = NULL);
 
-    // Get value corresponding to keys.
-    void MultiGet(const uint64_t tid, const std::vector<string> &keys, const Timestamp &timestamp, Promise *promise = NULL);
+    void MultiGet(const uint64_t tid,
+                  const std::vector<std::string> &key,
+                  const Timestamp &timestamp = MAX_TIMESTAMP,
+                  Promise *promise = NULL);
 
-    // Put value for given key.
-    void Put(const uint64_t tid, const string &key, const string &value, Promise *promise = NULL);
+    // Set the value for the given key.
+    void Put(const uint64_t tid,
+             const std::string &key,
+             const std::string &value,
+             Promise *promise = NULL);
 
-    // Prepare 
-    void Prepare(const uint64_t tid, const Transaction &txn, Promise *promise = NULL); 
+    // Prepare the transaction.
+    void Prepare(const uint64_t tid,
+                 const Transaction &txn = Transaction(),
+                 Promise *promise = NULL);
 
-    // Commit the transaction.
-    void Commit(const uint64_t tid, const Transaction &txn, const Timestamp &timestamp = 0, Promise *promise = NULL);
-
-    // Abort the running transaction.
-    void Abort(const uint64_t tid, const Transaction &txn, Promise *promise = NULL);
+    // Commit all Get(s) and Put(s) since Begin().
+    void Commit(const uint64_t tid,
+                const Transaction &txn = Transaction(),
+                Promise *promise = NULL);
+    
+    // Abort all Get(s) and Put(s) since Begin().
+    void Abort(const uint64_t tid,
+               Promise *promise = NULL);
 
 private:
     // Underlying single shard transaction client implementation.
@@ -83,6 +91,7 @@ private:
     // Read cache
     VersionedKVStore cache;
     std::mutex cache_lock;
+    std::map<uint64_t, Transaction> prepared;
 };
 
 #endif /* _CACHE_CLIENT_H_ */

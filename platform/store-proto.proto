@@ -8,17 +8,17 @@ message GetMessage {
 }
 
 message PrepareMessage {
-    required TransactionMessage txn = 1;
-    optional uint64 timestamp = 2;
+    required uint64 txnid = 1;
+    required TransactionMessage txn = 2;
 }
 
 message CommitMessage {
-    required uint64 timestamp = 1;
-    required TransactionMessage txn = 2;      
+    required uint64 txnid = 1;
+    required uint64 timestamp = 2;      
 }
 
 message AbortMessage {
-     required TransactionMessage txn = 1;
+     required uint64 txnid = 1;
 }
 
 message Request {

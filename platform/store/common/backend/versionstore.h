@@ -50,15 +50,15 @@ public:
     VersionedKVStore();
     ~VersionedKVStore();
 
-    bool get(const std::string &key, Version &value);
-    bool get(const std::string &key, const Timestamp &t, Version &value);
-    bool getRange(const std::string &key, const Timestamp &t, Interval &range);
-    bool getLastRead(const std::string &key, Timestamp &readTime);
-    bool getLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
-    void put(const std::string &key, const std::string &value, const Timestamp &t);
-    void put(const std::string &key, const Version &v);
-    void commitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
-    void remove(const std::string &key);
+    bool Get(const std::string &key, Version &value);
+    bool Get(const std::string &key, const Timestamp &t, Version &value);
+    bool GetRange(const std::string &key, const Timestamp &t, std::pair<Timestamp, Timestamp> &range);
+    bool GetLastRead(const std::string &key, Timestamp &readTime);
+    bool GetLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
+    void Put(const std::string &key, const std::string &value, const Timestamp &t);
+    void Put(const std::string &key, const Version &v);
+    void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
+    void Remove(const std::string &key);
     
 private:
 

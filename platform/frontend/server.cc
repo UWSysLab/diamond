@@ -89,18 +89,10 @@ Server::HandleGet(const TransportAddress &remote,
     }
 
     if (keys.size() > 1) {
-        if (msg.has_timestamp()) {
-            status = store->MultiGet(msg.txnid(), keys, msg.timestamp(), values);
-        } else {
-            status = store->MultiGet(msg.txnid(), keys, values);
-        }
+        status = store->MultiGet(msg.txnid(), keys, values, msg.timestamp());
     } else {
         Version v;
-        if (msg.has_timestamp()) {
-            status = store->Get(msg.txnid(), keys[0], msg.timestamp(), v);
-        } else {
-            status = store->Get(msg.txnid(), keys[0], v);
-        }
+        status = store->Get(msg.txnid(), keys[0], v, msg.timestamp());
         values[keys[0]] = v;
     }
 
@@ -123,13 +115,12 @@ Server::HandleCommit(const TransportAddress &remote,
                      const CommitMessage &msg)
 {
     Timestamp ts;
-    bool ret = store->Commit(msg.txnid(), Transaction(msg.txn()), ts);
-
     CommitReply reply;
-    if (ret) {
-	reply.set_status(REPLY_OK);
+    Transaction txn(msg.txn());
+    if (store->Commit(msg.txnid(), txn, ts)) {
+        reply.set_status(REPLY_OK);
     } else {
-	reply.set_status(REPLY_FAIL);
+        reply.set_status(REPLY_FAIL);
     }
     reply.set_txnid(msg.txnid());
     reply.set_msgid(msg.msgid());
@@ -141,7 +132,7 @@ void
 Server::HandleAbort(const TransportAddress &remote,
                     const AbortMessage &msg)
 {
-    store->Abort(msg.txnid(), Transaction(msg.txn()));
+    store->Abort(msg.txnid());
 
     AbortReply reply;
     reply.set_status(REPLY_OK);

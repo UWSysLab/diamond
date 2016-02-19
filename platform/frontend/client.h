@@ -58,35 +58,39 @@ public:
 	   uint64_t client_id);
     ~Client();
 
-    // Overriding from TxnClient
     void Begin(const uint64_t tid);
+    void BeginRO(const uint64_t tid,
+                 const Timestamp &timestamp = MAX_TIMESTAMP);
+    
+    // Get the value corresponding to key (valid at given timestamp).
     void Get(const uint64_t tid,
-            const std::string &key,
-            Promise *promise = NULL);
-    void Get(const uint64_t tid,
-            const std::string &key,
-            const Timestamp &timestamp, 
-            Promise *promise = NULL);
+             const std::string &key,
+             const Timestamp &timestamp = MAX_TIMESTAMP,
+             Promise *promise = NULL);
+
     void MultiGet(const uint64_t tid,
-                  const std::vector<std::string> &keys,
+                  const std::vector<std::string> &key,
+                  const Timestamp &timestamp = MAX_TIMESTAMP,
                   Promise *promise = NULL);
-    void MultiGet(const uint64_t tid,
-                 const std::vector<std::string> &key,
-                 const Timestamp &timestamp, 
-                 Promise *promise = NULL);
+
+    // Set the value for the given key.
     void Put(const uint64_t tid,
-	     const std::string &key,
-	     const std::string &value,
-	     Promise *promise = NULL);
-    void Prepare(const uint64_t tid, 
-                 const Transaction &txn,
+             const std::string &key,
+             const std::string &value,
+             Promise *promise = NULL);
+
+    // Prepare the transaction.
+    void Prepare(const uint64_t tid,
+                 const Transaction &txn = Transaction(),
                  Promise *promise = NULL);
-    void Commit(const uint64_t tid, 
-                const Transaction &txn,
-                const Timestamp &timestamp = 0,
+
+    // Commit all Get(s) and Put(s) since Begin().
+    void Commit(const uint64_t tid,
+                const Transaction &txn = Transaction(),
                 Promise *promise = NULL);
-    void Abort(const uint64_t tid, 
-               const Transaction &txn,
+    
+    // Abort all Get(s) and Put(s) since Begin().
+    void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
 private:

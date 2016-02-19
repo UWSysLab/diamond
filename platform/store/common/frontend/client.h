@@ -19,29 +19,27 @@
 class Client
 {
 public:
-    Client();
-    ~Client();
+    Client() { };
+    virtual ~Client() { };
 
     // Begin a transaction.
-    virtual void Begin();
+    virtual void Begin() = 0;
+    virtual void BeginRO() = 0;
 
     // Get the value corresponding to key.
-    virtual int Get(const std::string &key, std::string &value);
+    virtual int Get(const std::string &key, std::string &value) = 0;
 
     // Get the value corresponding to key.
-    virtual int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
+    virtual int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value) = 0;
 
     // Set the value for the given key.
-    virtual int Put(const std::string &key, const std::string &value);
+    virtual int Put(const std::string &key, const std::string &value) = 0;
 
     // Commit all Get(s) and Put(s) since Begin().
-    virtual bool Commit();
+    virtual bool Commit() = 0;
     
     // Abort all Get(s) and Put(s) since Begin().
-    virtual void Abort();
-
-    // Returns statistics (vector of integers) about most recent transaction.
-    virtual std::vector<int> Stats();
+    virtual void Abort() = 0;
 };
 
 #endif /* _CLIENT_API_H_ */

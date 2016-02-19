@@ -58,6 +58,7 @@ public:
 
     // Overriding functions from ::Client
     void Begin();
+    void BeginRO();
     int Get(const std::string &key, std::string &value);
     int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
     int Put(const std::string &key, const std::string &value);
