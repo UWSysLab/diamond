@@ -176,16 +176,10 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
 
     // update the cache
     int reply = pp->GetReply();
-    Transaction t;
-
     cache_lock.lock();
-    if (prepared.find(tid) != prepared.end()) {
-        t = prepared[tid];
-        prepared.erase(tid);
-    } else {
-        t = txn;
-    }
-    
+    const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
+    prepared.erase(tid);
+        
     // update the cache
     if (reply == REPLY_OK) {
         for (auto &write : t.GetWriteSet()) {

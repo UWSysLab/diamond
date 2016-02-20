@@ -42,7 +42,7 @@ OCCStore::~OCCStore() { }
 int
 OCCStore::Get(const uint64_t tid, const string &key, Version &value, const Timestamp &timestamp)
 {
-    Debug("[%lu] GET %s", tid, key.c_str());
+    Debug("[%lu] GET %s at %lu", tid, key.c_str(), timestamp);
     
     if (store.Get(key, timestamp, value)) {
         return REPLY_OK;

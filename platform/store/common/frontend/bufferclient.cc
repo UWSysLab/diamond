@@ -193,19 +193,19 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
 {
     Debug("COMMIT [%lu]", tid);
 
-    Transaction txn;
     txns_lock.lock();
-    if (txns.find(tid) != txns.end()) {
-        txn = txns[tid];
-        txns.erase(tid);
+    if (txns.find(tid) == txns.end()) {
+	// couldn't find the transaction
         txns_lock.unlock();
-    } else {
-        // couldn't find the transaction
-        txns_lock.unlock();
+	if (promise != NULL) promise->Reply(REPLY_FAIL);
         return;
     }
-    
-	// If SI with no writes or read-only, just locally check the read set
+
+    const Transaction txn = txns[tid];
+    txns.erase(tid);
+    txns_lock.unlock();
+       
+    // If SI with no writes or read-only, just locally check the read set
     // Commit all reads locally
     if ((txn.IsolationMode() == READ_ONLY) ||
         ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
@@ -215,14 +215,10 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
             Intersect(i, read.second);
         }
         if (i.Start() <= i.End()) {
-            if (promise != NULL) {
-                promise->Reply(REPLY_OK, txn.GetTimestamp());
-            }
+            if (promise != NULL) promise->Reply(REPLY_OK, txn.GetTimestamp());
         } else {
-            if (promise != NULL) {
-                promise->Reply(REPLY_FAIL);
-            }
-        }
+            if (promise != NULL)  promise->Reply(REPLY_FAIL);
+	}
         return;
     }
     
