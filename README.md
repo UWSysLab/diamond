@@ -79,7 +79,21 @@ that you downloaded there.
 		$ cd platform/toolchains/android
 		$ ./ndk/build/tools/make-standalone-toolchain.sh --toolchain=arm-linux-androideabi-4.9 --arch=arm --platform=android-21 --install-dir=toolchain
 
-5. Compile the C++ Diamond library:
+5. Compile libevent for Android:
+
+		$ cd external/libevent
+		$ ./autogen.sh
+		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi --disable-openssl
+		$ make
+
+6. Compile libprotobuf for Android:
+
+		$ cd external/protobuf-2.5.0
+		$ ./autogen.sh
+		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi
+		$ make
+
+7. Compile the C++ Diamond library:
 		
 		$ cd platform
 		$ mkdir build-arm
@@ -87,7 +101,7 @@ that you downloaded there.
 		$ cmake .. -DCMAKE_TOOLCHAIN_FILE=../Android.cmake
 		$ make
 
-6. Compile Java bindings for Diamond:
+8. Compile Java bindings for Diamond:
 
 		$ cd platform/src/bindings/java
 		$ mvn package
