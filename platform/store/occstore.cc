@@ -86,7 +86,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             }
 
             // If there is a pending write for this key, abort.
-            if (pWrites.find(read.first) != pWrites.end()) {
+            if (pWrites.find(key) != pWrites.end()) {
                 Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
                       tid, read.first.c_str());
                 Abort(tid);
@@ -118,8 +118,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
                 // if there is write between the read snapshot and now
                 Version cur;
                 bool ret = store.Get(key, cur);
-                ASSERT(ret);
-                if (cur.GetTimestamp() > txn.GetTimestamp()) {
+                if (ret && cur.GetTimestamp() > txn.GetTimestamp()) {
                     Debug("[%lu] ABORT SNAPSHOT ISOLATION ww conflict w/ prepared key:%s", tid,
                           key.c_str());
                     Abort(tid);

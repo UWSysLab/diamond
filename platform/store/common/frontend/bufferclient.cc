@@ -49,7 +49,7 @@ BufferClient::Begin(const uint64_t tid)
     // Initialize data structures.
     if (txns.find(tid) == txns.end()) {
         txnclient->Begin(tid);
-    	txns[tid] = Transaction(SNAPSHOT_ISOLATION);
+    	txns[tid] = Transaction(LINEARIZABLE);
     }
     txns_lock.unlock();
 }
@@ -102,10 +102,8 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
         txn.AddReadSet(key, pp->GetValue(key).GetInterval());
         if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
             !txn.HasTimestamp()) {
-            txn.SetTimestamp(pp->GetValue(key).GetInterval().End());
-            txns_lock.lock();
-            txns[tid] = txn;
-            txns_lock.unlock();
+            txn.SetTimestamp(pp->GetValue(key).GetTimestamp());
+	    Debug("Setting ts to %lu", txn.GetTimestamp());
         }
     }
 }
@@ -144,10 +142,8 @@ BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *
             }
             if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
                 !txn.HasTimestamp()) {
-                txn.SetTimestamp((values.begin())->second.GetInterval().End());
-                txns_lock.lock();
-                txns[tid] = txn;
-                txns_lock.unlock();
+                txn.SetTimestamp((values.begin())->second.GetTimestamp());
+		Debug("Setting ts to %lu", txn.GetTimestamp());
             }
         }
     }
@@ -230,11 +226,6 @@ BufferClient::Commit(const uint64_t tid, Promise *promise)
         return;
     }
     
-    // save some energy sending the read set with SI and eventual consistency
-    if (txn.IsolationMode() == SNAPSHOT_ISOLATION || txn.IsolationMode() == EVENTUAL) {
-        txn.ClearReadSet();
-    }
-
     // If eventual consistency, do no checks and don't wait for a response
     if (txn.IsolationMode() == EVENTUAL) {
         if (promise != NULL) {
