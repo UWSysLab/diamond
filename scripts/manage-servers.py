@@ -6,8 +6,8 @@ import re
 import time
 import sys
 
-WORKING_DIR = "~/proj/diamond/src/platform/build"
-BUILD_DIR = "~/proj/diamond/src/platform/build"
+WORKING_DIR = "/scratch/nl35"
+BUILD_DIR = "../platform/build"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
@@ -53,7 +53,7 @@ for line in frontendConfig:
                 remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
             remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
-            os.system("ssh -f " + hostname + " '" + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " > " + remoteFrontendOutputPath + " 2>&1'");
+            os.system("ssh -f " + hostname + " 'unbuffer " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " > " + remoteFrontendOutputPath + " 2>&1'");
         elif args.action == 'kill':
             os.system("ssh " + hostname + " 'pkill -f " + remoteFrontendConfigPath + "'");
 
@@ -73,7 +73,7 @@ for shardNum in range(0, numShards):
             if args.action == 'start':
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
-                os.system("ssh -f " + hostname + " '" + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " > " + remoteBackendOutputPath + " 2>&1'");
+                os.system("ssh -f " + hostname + " 'unbuffer " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
@@ -90,7 +90,7 @@ for line in tssConfig:
         if args.action == 'start':
             os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
             os.system("rsync " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
-            os.system("ssh -f " + hostname + " '" + remoteTssExecutablePath + " -c " + remoteTssConfigPath + " -i " + repr(replicaNum) + " > " + remoteTssOutputPath + " 2>&1'");
+            os.system("ssh -f " + hostname + " 'unbuffer " + remoteTssExecutablePath + " -c " + remoteTssConfigPath + " -i " + repr(replicaNum) + " > " + remoteTssOutputPath + " 2>&1'");
         elif args.action == 'kill':
             os.system("ssh " + hostname + " 'pkill -f " + remoteTssConfigPath + "'");
         replicaNum = replicaNum + 1
