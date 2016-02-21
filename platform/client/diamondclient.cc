@@ -57,8 +57,8 @@ DiamondClient::DiamondClient(string configPath)
     frontend::Client *frontendclient = new frontend::Client(configPath + ".config",
                                                             &transport,
                                                             client_id);
-    CacheClient *cclient = new CacheClient(frontendclient);
-    bclient = new BufferClient(cclient);
+    ReactiveClient *rclient = new ReactiveClient(frontendclient);
+    bclient = new BufferClient(rclient);
 
     /* Run the transport in a new thread. */
     clientTransport = new thread(&DiamondClient::run_client, this);

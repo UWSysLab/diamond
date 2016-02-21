@@ -76,7 +76,7 @@ public:
                  Promise *promise = NULL);
 
     // Commit all Get(s) and Put(s) since Begin().
-    void Commit(const uint64_t tid,
+    virtual void Commit(const uint64_t tid,
                 const Transaction &txn = Transaction(),
                 Promise *promise = NULL);
     
@@ -84,7 +84,7 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
-private:
+protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;
 

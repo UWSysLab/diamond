@@ -40,6 +40,7 @@
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
 #include "store/common/frontend/bufferclient.h"
+#include "store/common/frontend/reactiveclient.h"
 
 #include <condition_variable>
 #include <mutex>
