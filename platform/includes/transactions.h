@@ -12,18 +12,22 @@ namespace diamond {
 
 typedef std::function<void (void)> txn_function_t;
 typedef std::function<void (int)> txn_callback_t;
-typedef uint64_t txn_id;
 
 typedef struct txn_info {
     txn_function_t func;
     txn_callback_t callback;
 } txn_info_t;
 
+typedef struct reg_info {
+    txn_function_t func;
+    uint64_t reactive_id;
+} reg_info_t;
+
 class TxnManager {
   public:
     void Start();
     int ExecuteTxn(txn_function_t func, txn_callback_t callback);
-    txn_id ReactiveTxn(txn_function_t func);
+    uint64_t ReactiveTxn(txn_function_t func);
 
   private:
     event_base * txnEventBase;
@@ -31,10 +35,17 @@ class TxnManager {
     std::thread * reactiveThread;
     std::vector<txn_function_t> reactiveList;
 
+    std::vector<txn_function_t> funcList;
+    std::map<uint64_t, txn_function_t> funcMap;
+    uint64_t nextId = 0;
+
     void startHelper();
     void reactiveLoop();
+    uint64_t generateId();
+    uint64_t getNextReactiveTxn();
     static void executeTxnCallback(evutil_socket_t fd, short what, void * arg);
     static void signalCallback(evutil_socket_t fd, short what, void * arg);
+    static void registerCallback(evutil_socket_t fd, short what, void * arg);
 };
 
 TxnManager * txnManager = NULL;
@@ -42,9 +53,9 @@ TxnManager * txnManager = NULL;
 void StartTxnManager();
 int execute_txn(txn_function_t func, txn_callback_t callback);
 int execute_txn(txn_function_t func);
-txn_id reactive_txn(txn_function_t func);
+uint64_t reactive_txn(txn_function_t func);
 
-void reactive_stop(txn_id id);
+void reactive_stop(uint64_t reactive_id);
 void abort_txn();
 
 }

@@ -19,15 +19,20 @@ namespace diamond {
         reactiveThread = new std::thread(&TxnManager::reactiveLoop, this);
     }
 
-    void TxnManager::reactiveLoop() {
+    uint64_t TxnManager::getNextReactiveTxn() {
         while(true) {
             sleep(1);
-            for (auto it = reactiveList.begin(); it != reactiveList.end(); it++) {
-                txn_function_t func = *it;
-                DObject::TransactionBegin();
-                func();
-                DObject::TransactionCommit();
-            }
+        }
+        return 0;
+    }
+
+    void TxnManager::reactiveLoop() {
+        while(true) {
+            uint64_t reactive_id = getNextReactiveTxn();
+            txn_function_t func = funcMap[reactive_id];
+            DObject::BeginReactive(reactive_id);
+            func();
+            DObject::TransactionCommit();
         }
     }
 
@@ -60,10 +65,32 @@ namespace diamond {
         delete info;
     }
 
-    //TODO: figure out and use interface for actual reactive txns instead of polling
-    txn_id TxnManager::ReactiveTxn(txn_function_t func) {
+    //TODO: figure out how to handle duplicate registrations of the same function in C++
+    //TODO: recovery?
+    uint64_t TxnManager::ReactiveTxn(txn_function_t func) {
+        uint64_t reactive_id = generateId();
+        funcMap[reactive_id] = func;
         reactiveList.push_back(func);
-        return 0;
+
+        reg_info_t * info = new reg_info_t();
+        info->func = func;
+        info->reactive_id = reactive_id;
+        event * ev = event_new(txnEventBase, -1, 0, registerCallback, info);
+        event_add(ev, NULL);
+        event_active(ev, 0, 1);
+
+        return reactive_id;
+    }
+
+    void TxnManager::registerCallback(evutil_socket_t fd, short what, void * arg) {
+        reg_info_t * info = (reg_info_t *)arg;
+        DObject::BeginReactive(info->reactive_id);
+        info->func();
+        int committed = DObject::TransactionCommit();
+        if (!committed) {
+            Panic("Reactive transaction did not commit");
+        }
+        delete info;
     }
 
     void StartTxnManager() {
@@ -86,18 +113,24 @@ namespace diamond {
         return ret;
     }
 
-    txn_id reactive_txn(txn_function_t func) {
+    uint64_t reactive_txn(txn_function_t func) {
         if (txnManager == NULL) {
             Panic("txnManager is null"); 
         }
-        txn_id id = txnManager->ReactiveTxn(func);
-        return id;
+        uint64_t reactive_id = txnManager->ReactiveTxn(func);
+        return reactive_id;
     }
 
-    void reactive_stop(txn_id id) {
+    void reactive_stop(uint64_t reactive_id) {
         //TODO: implement
     }
     void abort_txn() {
         //TODO: implement
+    }
+
+    uint64_t TxnManager::generateId() {
+        uint64_t result = nextId;
+        nextId++;
+        return result;
     }
 }
