@@ -48,6 +48,7 @@ public:
 // Begin a transaction with given tid.
     void Begin(uint64_t tid);
     void BeginRO(uint64_t tid, const Timestamp &timestamp = MAX_TIMESTAMP);
+    void BeginReactive(uint64_t tid, const Timestamp &timestamp, const uint64_t reactive_id);
     
     // Get value corresponding to key.
     void Get(const uint64_t tid, const std::string &key, Promise *promise = NULL);

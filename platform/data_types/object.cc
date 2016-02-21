@@ -47,6 +47,12 @@ DObject::TransactionCommit(void)
    return store->Commit();
 }
 
+void DObject::BeginReactive(uint64_t reactive_id) {
+    Debug("BEGIN REACTIVE TRANSACTION");
+
+    store->BeginReactive(reactive_id);
+}
+
 // XXX: Add an assert so that we don't map inside a transaction?
 int
 DObject::Map(DObject &addr, const string &key)

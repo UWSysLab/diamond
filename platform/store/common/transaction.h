@@ -27,6 +27,7 @@ public:
     Transaction() {};
     Transaction(int mode) : mode(mode) { };
     Transaction(int mode, const Timestamp timestamp) : mode(mode), timestamp(timestamp) {};
+    Transaction(int mode, const Timestamp timestamp, uint64_t reactive_id) : mode(mode), timestamp(timestamp), reactive_id(reactive_id), reactive(true) {};
     Transaction(const TransactionMessage &msg);
     ~Transaction();
 
@@ -35,6 +36,8 @@ public:
     const bool IsReadOnly() const { return mode == READ_ONLY; };
     const int IsolationMode() const { return mode; };
     const bool HasTimestamp() const { return timestamp < MAX_TIMESTAMP; };
+    const bool IsReactive() const { return reactive; };
+    const uint64_t GetReactiveId() const { return reactive_id; };
     const std::unordered_map<std::string, Interval>& GetReadSet() const;
     const std::unordered_map<std::string, std::string>& GetWriteSet() const;
     
@@ -44,6 +47,8 @@ public:
 private:
     int mode = LINEARIZABLE;
     Timestamp timestamp = MAX_TIMESTAMP;
+    uint64_t reactive_id = 0;
+    bool reactive = false;
     
     // map between key and timestamp at
     // which the read happened and how

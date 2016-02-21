@@ -65,6 +65,8 @@ public:
     bool Commit();
     void Abort();
 
+    void BeginReactive(uint64_t reactive_id);
+
 private:    
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
@@ -88,6 +90,13 @@ private:
 
     // Caching client for the store
     BufferClient *bclient;
+
+    // Reactive ID <-> timestamp map
+    std::map<uint64_t, Timestamp> timestamp_map;
+    std::mutex timestamp_map_lock;
+
+    // Timestamp of last reactive read
+    Timestamp last_reactive;
 };
 
 } // namespace diamond

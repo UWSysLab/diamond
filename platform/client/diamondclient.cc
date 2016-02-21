@@ -49,6 +49,7 @@ DiamondClient::DiamondClient(string configPath)
         client_id = dis(gen);
     }
     txnid_counter = (client_id/10000)*10000;
+    last_reactive = Timestamp(0);
 
     Debug("Initializing Diamond Store client with id [%lu]", client_id);
 
@@ -102,6 +103,26 @@ DiamondClient::BeginRO()
         txnid = ++txnid_counter;
         txnid_lock.unlock();
         bclient->BeginRO(txnid);
+    }
+}
+
+void
+DiamondClient::BeginReactive(uint64_t reactive_id)
+{
+    if (txnid == 0) {
+        Debug("Diamondclient::BEGIN_REACTIVE Transaction");
+        txnid_lock.lock();
+        txnid = ++txnid_counter;
+        txnid_lock.unlock();
+       
+        Timestamp timestamp = last_reactive;
+        timestamp_map_lock.lock();
+        if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
+            timestamp = timestamp_map[reactive_id];
+        }
+        timestamp_map_lock.unlock();
+
+        bclient->BeginReactive(txnid, timestamp, reactive_id);
     }
 }
 

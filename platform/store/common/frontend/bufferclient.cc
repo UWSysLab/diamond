@@ -67,6 +67,19 @@ BufferClient::BeginRO(const uint64_t tid, const Timestamp &timestamp)
     txns_lock.unlock();
 }
 
+void
+BufferClient::BeginReactive(const uint64_t tid, const Timestamp &timestamp, const uint64_t reactive_id)
+{
+    Debug("BEGIN REACTIVE [%lu]", tid);
+    txns_lock.lock();
+    // Initialize data structures.
+    if (txns.find(tid) == txns.end()) {
+        txnclient->BeginRO(tid);
+    	txns[tid] = Transaction(READ_ONLY, timestamp, reactive_id);
+    }
+    txns_lock.unlock();
+}
+
 /* Get value for a key.
  * Returns 0 on success, else -1. */
 void

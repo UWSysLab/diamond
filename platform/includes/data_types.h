@@ -36,6 +36,7 @@ public:
     static int Map(DObject &addr, const std::string &key);
     static void TransactionBegin(void);
     static int TransactionCommit(void);
+    static void BeginReactive(uint64_t reactive_id);
      
 protected:
     DObject() : _key("dummykey") {};
