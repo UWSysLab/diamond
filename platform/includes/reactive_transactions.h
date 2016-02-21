@@ -7,14 +7,13 @@ typedef struct rtxn_info {
     timestamp ts;
 }
 
-rtxn_info getNextPendingRtxn();
-rtxn_id getNewId();
-void registerRtxn(rtxn_id id, timestamp ts, const std::set<std::string> & readset);
-void updateReadSet(rtxn_id id, timestamp ts, const std::set<std::string> & readset);
-void removeRtxn(rtxn_id id);
+rtxn_info getPendingReactiveTxn();
+rtxn_id generateId();
+void removeReactiveTxn(rtxn_id id);
 
-// We need a method DObject::ReactiveCommit() that is like TransactionCommit()
-// but returns a std::set<std::string> holding the read set
+// no longer visible to language bindings
+void registerReactiveTxn(rtxn_id id, timestamp ts, const std::set<std::string> & readset);
+void updateReadSet(rtxn_id id, timestamp ts, const std::set<std::string> & readset);
 
 /*
  * This is the code that will go in each binding's TransactionManager
@@ -22,19 +21,15 @@ void removeRtxn(rtxn_id id);
 
 std::set<txn_function_t> funcSet;
 std::map<rtxn_id, txn_function_t> funcMap;
-std::map<rtxn_id, std::set<std::string> > readsetMap;
 
 rtxn_id reactive_txn(txn_function_t func) {
     rtxn_id id = generateId();
-    DObject::TransactionBegin(global_ts); // run transaction at time global_ts
+    DObject::ReactiveBegin(id); // run transaction at time of last reactive txn 
     func();
-    std::set<std::string> readset = DObject::ReactiveCommit();
+    DObject::TransactionCommit(); // check for and initiate registration in here
     if (!funcSet.containsValue(func)) {
         funcSet.insert(func);
         funcMap[id] = func;
-        readsetMap[id] = readset;
-
-        registerRtxn(id, global_ts, readset);
     }
     return id;
 }
@@ -42,11 +37,11 @@ rtxn_id reactive_txn(txn_function_t func) {
 // main reactive loop
 void runReactiveLoop() {
     while(true) {
-        rtxn_id id = getNextPendingRtxn(); // keep id<->ts map in diamondclient
+        rtxn_id id = getPendingReactiveTxn(); // keep id<->ts map in diamondclient
         txn_function_t func = funcMap.get(id);
-        DObject::ReactiveBegin(id, ts); // run transaction at time ts
+        DObject::ReactiveBegin(id); // diamondclient will run transaction at time ts
         func();
-        DObject::ReactiveCommit(id); // check for and initiate read-set-change in here
+        DObject::TransactionCommit(); // check for and initiate read-set-change in here
     }
 }
 
