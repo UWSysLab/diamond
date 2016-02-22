@@ -41,7 +41,7 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
     Debug("COMMIT [%lu]", tid);
     Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    txnclient->Commit(tid, txn, pp);
+    CacheClient::Commit(tid, txn, pp);
 
     int reply = pp->GetReply();
 
