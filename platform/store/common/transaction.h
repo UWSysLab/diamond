@@ -16,6 +16,7 @@
 #include "common-proto.pb.h"
 
 #include <unordered_map>
+#include <set>
 
 #define LINEARIZABLE 0
 #define SNAPSHOT_ISOLATION 1
@@ -40,9 +41,11 @@ public:
     const uint64_t GetReactiveId() const { return reactive_id; };
     const std::unordered_map<std::string, Interval>& GetReadSet() const;
     const std::unordered_map<std::string, std::string>& GetWriteSet() const;
+    const std::set<std::string>& GetRegSet() const;
     
     void AddReadSet(const std::string &key, const Interval &readVersion);
     void AddWriteSet(const std::string &key, const std::string &value);
+    void AddRegSet(const std::string &key);
     void Serialize(TransactionMessage *msg) const;
 private:
     int mode = LINEARIZABLE;
@@ -58,6 +61,8 @@ private:
     // map between key and value(s)
     std::unordered_map<std::string, std::string> writeSet;
 
+    // set of keys to register for reactive transactions
+    std::set<std::string> regSet;
 
 };
 
