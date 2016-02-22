@@ -115,7 +115,7 @@ Client::Commit(const uint64_t tid,
                const Transaction &txn,
                Promise *promise)
 {
-    Debug("Sending COMMIT");
+    Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());
     
     CommitMessage msg;
     msg.set_txnid(tid);

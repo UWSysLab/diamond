@@ -48,6 +48,12 @@ Transaction::AddReadSet(const string &key,
 }
 
 void
+Transaction::ClearReadSet()
+{
+    readSet.clear();
+}
+
+void
 Transaction::AddWriteSet(const string &key,
                          const string &value)
 {
