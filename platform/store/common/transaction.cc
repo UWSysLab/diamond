@@ -24,6 +24,11 @@ Transaction::Transaction(const TransactionMessage &msg)
         WriteMessage writeMsg = msg.writeset(i);
         writeSet[writeMsg.key()] = writeMsg.value();
     }
+
+    for (int i = 0; i < msg.incrementset_size(); i++) {
+        IncrementMessage incMsg = msg.incrementset(i);
+        incrementSet[incMsg.key()] = incMsg.inc();
+    }
 }
 
 Transaction::~Transaction() { }
@@ -61,6 +66,13 @@ Transaction::AddWriteSet(const string &key,
 }
 
 void
+Transaction::AddIncrementSet(const string &key,
+                             const int inc)
+{
+    incrementSet[key] = inc;
+}
+
+void
 Transaction::Serialize(TransactionMessage *msg) const
 {
     msg->set_mode(mode);
@@ -77,4 +89,11 @@ Transaction::Serialize(TransactionMessage *msg) const
         writeMsg->set_key(write.first);
         writeMsg->set_value(write.second);
     }
+
+    for (auto inc : incrementSet) {
+        IncrementMessage *incMsg = msg->add_incrementset();
+        incMsg->set_key(inc.first);
+        incMsg->set_inc(inc.second);
+    }
+
 }

@@ -39,7 +39,6 @@
 #include "frontend/client.h"
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
-#include "store/common/frontend/bufferclient.h"
 
 #include <condition_variable>
 #include <mutex>
@@ -62,6 +61,7 @@ public:
     int Get(const std::string &key, std::string &value);
     int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
     int Put(const std::string &key, const std::string &value);
+    int Increment(const std::string &key, const int inc);
     bool Commit();
     void Abort();
 
@@ -87,7 +87,7 @@ private:
     std::thread *clientTransport;
 
     // Caching client for the store
-    BufferClient *bclient;
+    CacheClient *client;
 };
 
 } // namespace diamond

@@ -14,14 +14,21 @@
 #include <string>
 #include "common-proto.pb.h"
 
+#define WRITE 0
+#define INCREMENT 1
+#define APPEND 2
+
 class Version {
     Interval valid;
+    // Operation that created this version
     std::string value;
+    int op = WRITE;
 public:
     Version() : valid(), value("tmp") { };
     Version(const Timestamp commit) : valid(commit), value("tmp") { };
     Version(const std::string &val) : valid(), value(val) { };
     Version(const Timestamp commit, const std::string &val) : valid(commit), value(val) { };
+    Version(const Timestamp commit, const std::string &val, const int op) : valid(commit), value(val), op(op) { };
     Version(const ReadReply &msg);
     
     std::string GetValue() const { return value; };

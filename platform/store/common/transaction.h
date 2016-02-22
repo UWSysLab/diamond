@@ -41,6 +41,7 @@ public:
     void AddReadSet(const std::string &key, const Interval &readVersion);
     void ClearReadSet();
     void AddWriteSet(const std::string &key, const std::string &value);
+    void AddIncrementSet(const std::string &key, const int inc);
     void Serialize(TransactionMessage *msg) const;
 private:
     int mode;
@@ -54,7 +55,8 @@ private:
     // map between key and value(s)
     std::unordered_map<std::string, std::string> writeSet;
 
-
+    // increment set
+    std::unordered_map<std::string, int> incrementSet;
 };
 
 #endif /* _TRANSACTION_H_ */
