@@ -40,6 +40,12 @@ Transaction::GetWriteSet() const
     return writeSet;
 }
 
+const set<string>&
+Transaction::GetRegSet() const
+{
+    return regSet;
+}
+
 void
 Transaction::AddReadSet(const string &key,
                         const Interval &readVersion)
@@ -52,6 +58,12 @@ Transaction::AddWriteSet(const string &key,
                          const string &value)
 {
     writeSet[key] = value;
+}
+
+void
+Transaction::AddRegSet(const string &key)
+{
+    regSet.insert(key);
 }
 
 void

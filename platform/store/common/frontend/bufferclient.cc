@@ -93,6 +93,7 @@ BufferClient::Get(const uint64_t tid, const string &key, Promise *promise)
     Transaction &txn = txns[tid];
     txns_lock.unlock();
 
+    txn.AddRegSet(key);
     
     auto it = txn.GetWriteSet().find(key);
     // Read your own writes, check the write set first.
@@ -133,6 +134,10 @@ BufferClient::MultiGet(const uint64_t tid, const vector<string> &keys, Promise *
     }
     Transaction &txn = txns[tid];
     txns_lock.unlock();
+
+    for (auto key : keys) {
+        txn.AddRegSet(key);
+    }
 
     vector<string> keysToRead;
     for (auto key : keys) {

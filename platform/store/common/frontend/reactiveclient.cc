@@ -43,13 +43,17 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
     Promise *pp = (promise != NULL) ? promise : &p;
     txnclient->Commit(tid, txn, pp);
 
-    // update the cache
     int reply = pp->GetReply();
 
-    std::string readsetstr;
-    std::unordered_map<std::string, Interval> readset = txn.GetReadSet();
-    for (auto it = readset.begin(); it != readset.end(); it++) {
-        readsetstr = readsetstr + " " + it->first;
+    if (txn.IsReactive()) {
+        if (reply != REPLY_OK) {
+            Panic("Reactive transaction failed to commit");
+        }
+        std::string regsetstr("|");
+        std::set<std::string> regset = txn.GetRegSet();
+        for (auto it = regset.begin(); it != regset.end(); it++) {
+            regsetstr = regsetstr + *it + "|";
+        }
+        Panic("TODO: initiate registration for reactive_id %lu, registration set: %s", txn.GetReactiveId(), regsetstr.c_str());
     }
-    Panic("TODO: initiate registration for reactive_id %lu, read set: %s", txn.GetReactiveId(), readsetstr.c_str());
 }
