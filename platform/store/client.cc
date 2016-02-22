@@ -197,7 +197,23 @@ Client::Put(const uint64_t tid,
 {
     Panic("Don't call this function!");
 }
-    
+
+uint64_t
+Client::getTSS() {
+    unique_lock<mutex> lk(cv_m);
+
+    transport.Timer(0, [=]() { 
+            Debug("Sending request to TimeStampServer");
+            tss->Invoke("", bind(&Client::tssCallback, this,
+                                 placeholders::_1,
+                                 placeholders::_2));
+        });
+        
+    Debug("Waiting for TSS reply");
+    cv.wait(lk);
+    return stol(replica_reply, NULL, 10);
+}
+
 void
 Client::Prepare(const uint64_t tid,
                 const Transaction &txn,
@@ -222,20 +238,8 @@ Client::Prepare(const uint64_t tid, const map<int, Transaction> &participants, T
     }
 
     // In the meantime ... go get a timestamp for OCC
-    unique_lock<mutex> lk(cv_m);
-
-    transport.Timer(0, [=]() { 
-            Debug("Sending request to TimeStampServer");
-            tss->Invoke("", bind(&Client::tssCallback, this,
-                                 placeholders::_1,
-                                 placeholders::_2));
-        });
-        
-    Debug("Waiting for TSS reply");
-    cv.wait(lk);
-    ts = stol(replica_reply, NULL, 10);
-    Debug("TSS reply received: %lu", ts);
-
+    ts = getTSS();
+    
     // 2. Wait for reply from all shards. (abort on timeout)
     Debug("Waiting for PREPARE replies");
 
@@ -280,36 +284,45 @@ Client::Commit(const uint64_t tid, const Transaction &txn, Promise *promise)
     // split up the transaction across shards
     for (auto &r : txn.GetReadSet()) {
         int i = key_to_shard(r.first, nshards);
+        if (participants.find(i) == participants.end()) {
+            participants[i] = Transaction(txn.IsolationMode(), txn.GetTimestamp());
+        }
         participants[i].AddReadSet(r.first, r.second);
     }
 
     for (auto &w : txn.GetWriteSet()) {
         int i = key_to_shard(w.first, nshards);
+        if (participants.find(i) == participants.end()) {
+            participants[i] = Transaction(txn.IsolationMode(), txn.GetTimestamp());
+        }
         participants[i].AddWriteSet(w.first, w.second);
     }
 
 
-    // Do two phase commit
+    // Do two phase commit for linearizable and SI
     if (txn.IsolationMode() == LINEARIZABLE ||
-	txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+        txn.IsolationMode() == SNAPSHOT_ISOLATION) {
         for (int i = 0; i < COMMIT_RETRIES; i++) {
-	    status = Prepare(tid, participants, ts);
-	    if (status == REPLY_OK || status == REPLY_FAIL) {
-		break;
-	    }
-	}
+            status = Prepare(tid, participants, ts);
+            if (status == REPLY_OK || status == REPLY_FAIL) {
+                break;
+            }
+        }
+    } else if (txn.IsolationMode() == EVENTUAL) {
+        ts = getTSS();
     }
     
     if (status == REPLY_OK) {
         // Send commits
         Debug("COMMIT Transaction at [%lu]", ts);
         for (auto &p : participants) {
-	    p.second.SetTimestamp(ts);
             Debug("Sending commit to shard [%d]", p.first);
-            cclient[p.first]->Commit(tid, p.second);
+            Transaction &txn2 = p.second;
+            txn2.SetTimestamp(ts);
+            cclient[p.first]->Commit(tid, txn2);
         }
         promise->Reply(REPLY_OK, ts);
-	return;
+        return;
     }
 
     // 4. If not, send abort to all shards.

@@ -25,7 +25,7 @@
 
 class Transaction {
 public:
-    Transaction() {};
+    Transaction() : mode(LINEARIZABLE) { };
     Transaction(int mode) : mode(mode) { };
     Transaction(int mode, const Timestamp timestamp) : mode(mode), timestamp(timestamp) {};
     Transaction(int mode, const Timestamp timestamp, uint64_t reactive_id) : mode(mode), timestamp(timestamp), reactive_id(reactive_id), reactive(true) {};
@@ -44,11 +44,12 @@ public:
     const std::set<std::string>& GetRegSet() const;
     
     void AddReadSet(const std::string &key, const Interval &readVersion);
+    void ClearReadSet();
     void AddWriteSet(const std::string &key, const std::string &value);
     void AddRegSet(const std::string &key);
     void Serialize(TransactionMessage *msg) const;
 private:
-    int mode = LINEARIZABLE;
+    int mode;
     Timestamp timestamp = MAX_TIMESTAMP;
     uint64_t reactive_id = 0;
     bool reactive = false;
