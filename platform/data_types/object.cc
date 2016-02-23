@@ -52,45 +52,45 @@ int
 DObject::Map(DObject &addr, const string &key)
 {
     addr._key = key;
-    
-    //return addr.Pull();
     return 0;
 }
 
 // XXX: Ensure return codes are correct
 int
-DObject::Pull(){
+DObject::Pull()
+{
     string value;
     Debug("Pull()"); 
-
-    int ret;
-    
-    ret = store->Get(_key, value);
+    int ret = store->Get(_key, value);
     if (ret != REPLY_NOT_FOUND && ret != REPLY_OK) {
        // Bad reply case
        Panic("Unable to pull");
        value = "";
        return ret;
     }
-
     if (ret == REPLY_NOT_FOUND) {
        value = "";
     }
-    
     Deserialize(value);
     return 0;
 }
 
 
 int
-DObject::Push(){
-    Debug("Push"); 
-
+DObject::Push()
+{
+    Debug("Push()"); 
     string value = Serialize();
-
     return store->Put(_key, value);
 }
 
+int
+DObject::Increment(int inc)
+{
+   Debug("Increment(%i)", inc);
+   return store->Increment(_key, inc);
+}
+   
 int
 DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
 
@@ -98,28 +98,16 @@ DObject::MultiMap(vector<DObject *> &objects, vector<string> &keys)  {
         Panic("Mismatch between number of keys and DObjects");
     }
 
+    for (size_t i = 0; i < keys.size(); i++) {
+        pthread_mutex_lock(&objects.at(i)->_objectMutex);
+
+        string currentKey = keys.at(i);
+        objects.at(i)->_key = currentKey;
+
+        pthread_mutex_unlock(&objects.at(i)->_objectMutex);
+    }
+
     return 0;
-    // vector<string> values;
-    // // int ret = cloudstore->MultiGet(keys, values);
-    // // if (ret != REPLY_OK) {
-    // //     return ret;
-    // // }
-
-    // if (keys.size() != values.size()) {
-    //     Panic("Mismatch between number of keys and values returned by MultiGet");
-    // }
-
-    // for (size_t i = 0; i < keys.size(); i++) {
-    //     pthread_mutex_lock(&objects.at(i)->_objectMutex);
-
-    //     string currentKey = keys.at(i);
-    //     objects.at(i)->_key = currentKey;
-    //     objects.at(i)->Deserialize(values.at(i));
-
-    //     pthread_mutex_unlock(&objects.at(i)->_objectMutex);
-    // }
-
-    // return 0;
 }
 
 } // namespace diamond
