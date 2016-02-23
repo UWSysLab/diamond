@@ -1,6 +1,7 @@
 package ariadnanorberg.notes1;
 
 import com.parse.Parse;
+import com.parse.ParseObject;
 
 import android.app.Activity;
 import android.content.Context;
@@ -22,6 +23,7 @@ public class MainActivity extends Activity {
 			.server("http://localhost:1337/parse")
 			.build()
 		);
+		//Parse.initialize(this);
 		final Button viewNotes = (Button) findViewById(R.id.viewNotes);
 	}
 
@@ -30,5 +32,4 @@ public class MainActivity extends Activity {
 		Intent viewNotes = new Intent(MainActivity.this, ShowNotes.class);
 		MainActivity.this.startActivity(viewNotes);
 	}
-
 }
