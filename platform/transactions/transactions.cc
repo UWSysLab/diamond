@@ -28,7 +28,7 @@ namespace diamond {
 
     void TxnManager::reactiveLoop() {
         while(true) {
-            uint64_t reactive_id = getNextReactiveTxn();
+            uint64_t reactive_id = DObject::GetNextNotification();
             txn_function_t func = funcMap[reactive_id];
             DObject::BeginReactive(reactive_id);
             func();

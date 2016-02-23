@@ -37,6 +37,7 @@ public:
     static void TransactionBegin(void);
     static int TransactionCommit(void);
     static void BeginReactive(uint64_t reactive_id);
+    static uint64_t GetNextNotification(void);
      
 protected:
     DObject() : _key("dummykey") {};

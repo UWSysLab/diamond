@@ -316,5 +316,10 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
     Debug("[shard %i] Received ABORT callback [%d]", shard, reply.status());
 }
 
+void
+ShardClient::GetNextNotification(Promise *promise) {
+    Panic("Do not call this method! (it should probably be refactored out)");
+}
+
 
 } // namespace strongstore

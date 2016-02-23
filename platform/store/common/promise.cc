@@ -96,6 +96,16 @@ Promise::Reply(int r, map<string, Version> &v)
     ReplyInternal(r);
 }
 
+void
+Promise::Reply(int r, Timestamp t, map<string, Version> &v, uint64_t rid)
+{
+    lock_guard<mutex> l(lock);
+    values = v;
+    timestamp = t;
+    reactive_id = rid;
+    ReplyInternal(r);
+}
+
 // Functions for getting a reply from the promise
 int
 Promise::GetReply()

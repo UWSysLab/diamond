@@ -378,4 +378,9 @@ Client::key_to_shard(const string &key, const uint64_t nshards)
     return (hash % nshards);
 }
 
+void
+Client::GetNextNotification(Promise *promise) {
+    Panic("Do not call this method! (it should probably be refactored out)");
+}
+
 } // namespace strongstore

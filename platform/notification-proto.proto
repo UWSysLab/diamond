@@ -1,0 +1,10 @@
+import "common-proto.proto";
+
+package diamond.frontend.proto;
+
+message Notification {
+    required uint64 clientid = 1;
+    required uint64 reactiveid = 2;
+    required uint64 timestamp = 3;
+    repeated ReadReply replies = 4;
+}

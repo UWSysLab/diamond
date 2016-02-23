@@ -84,6 +84,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
+    void GetNextNotification(Promise *promise = NULL);
+
 protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;

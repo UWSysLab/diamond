@@ -99,6 +99,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
+    void GetNextNotification(Promise *promise);
+
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.

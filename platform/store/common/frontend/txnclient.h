@@ -98,6 +98,8 @@ public:
     // Abort all Get(s) and Put(s) since Begin().
     virtual void Abort(const uint64_t tid,
                        Promise *promise = NULL) = 0;
+
+    virtual void GetNextNotification(Promise *promise = NULL) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */

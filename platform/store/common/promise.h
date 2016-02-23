@@ -49,6 +49,7 @@ private:
     int reply = 0;
     Timestamp timestamp = 0;
     std::map<std::string, Version> values;
+    uint64_t reactive_id;
     std::mutex lock;
     std::condition_variable cv;
 
@@ -63,6 +64,7 @@ public:
     void Reply(int r, Timestamp t);
     void Reply(int r, const std::string &k, const Version &v);
     void Reply(int r, std::map<std::string, Version> &v);
+    void Reply(int r, Timestamp t, std::map<std::string, Version> &v, uint64_t reactive_id);
     // Return configured timeout
     int GetTimeout();
 

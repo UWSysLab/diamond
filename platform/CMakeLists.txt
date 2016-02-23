@@ -52,7 +52,8 @@ PROTOBUF_GENERATE_CPP(SRC_DIAMOND_STORE_PROTO HDR_DIAMOND_STORE_PROTO
   ${DIAMOND_SOURCE_DIR}/common-proto.proto
   ${DIAMOND_SOURCE_DIR}/store-proto.proto
   ${DIAMOND_SOURCE_DIR}/diamond-proto.proto
-  ${DIAMOND_SOURCE_DIR}/latency-format.proto)
+  ${DIAMOND_SOURCE_DIR}/latency-format.proto
+  ${DIAMOND_SOURCE_DIR}/notification-proto.proto)
 endif()
 
 include_directories(${PROJECT_BINARY_DIR})

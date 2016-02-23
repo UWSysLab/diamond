@@ -111,6 +111,8 @@ public:
                Promise *promise = NULL);
     std::vector<int> Stats();
 
+    void GetNextNotification(Promise *promise);
+
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.

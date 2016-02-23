@@ -220,3 +220,11 @@ CacheClient::Abort(const uint64_t tid, Promise *promise)
         cache_lock.unlock();
     }
  }
+
+void
+CacheClient::GetNextNotification(Promise *promise) {
+    Debug("GET_NEXT_NOTIFICATION");
+    Promise p(COMMIT_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+    txnclient->GetNextNotification(pp);
+}

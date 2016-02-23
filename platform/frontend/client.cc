@@ -192,6 +192,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
     static GetReply getReply;
     static CommitReply commitReply;
     static AbortReply abortReply;
+    static Notification notification;
 
     if (type == getReply.GetTypeName()) {
         // Handle Get
@@ -228,6 +229,42 @@ Client::ReceiveMessage(const TransportAddress &remote,
             it->second->Reply(abortReply.status());
             waiting.erase(it);
         }
+    } else if (type == notification.GetTypeName()) {
+        notification.ParseFromString(data);
+        uint64_t reactive_id = notification.reactiveid();
+        Timestamp timestamp = notification.timestamp();
+        //TODO: parse cache entries and pass them back through the promise
+        std::map<std::string, Version> cache_entries;
+        notification_lock.lock();
+        if (reactive_promise != NULL) {
+            notification_lock.unlock();
+            reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
+            reactive_promise = NULL;
+        }
+        else {
+            pending_notifications.push(std::pair<uint64_t, Timestamp>(reactive_id, timestamp));
+            notification_lock.unlock();
+        }
+    }
+}
+
+void
+Client::GetNextNotification(Promise *promise) {
+    notification_lock.lock();
+    if (reactive_promise != NULL) {
+        Panic("Error: GetNextNotification called from multiple threads");
+    }
+    if (!pending_notifications.empty()) {
+        std::pair<uint64_t, Timestamp> notification = pending_notifications.front();
+        pending_notifications.pop();
+        notification_lock.unlock();
+        //TODO: store cache entries and pass them back through the promise
+        std::map<std::string, Version> cache_entries;
+        promise->Reply(REPLY_OK, notification.second, cache_entries, notification.first);
+    }
+    else {
+        reactive_promise = promise;
+        notification_lock.unlock();
     }
 }
 

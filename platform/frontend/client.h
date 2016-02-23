@@ -41,10 +41,12 @@
 #include "store/common/timestamp.h"
 #include "store/common/transaction.h"
 #include "diamond-proto.pb.h"
+#include "notification-proto.pb.h"
 
 #include <string>
 #include <mutex>
 #include <condition_variable>
+#include <queue>
 
 namespace diamond {
 namespace frontend {
@@ -93,6 +95,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
+    void GetNextNotification(Promise *promise = NULL);
+
 private:
     transport::Configuration *config;
     Transport *transport; // Transport layer.
@@ -104,6 +108,11 @@ private:
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type,
                         const std::string &data);
+
+    // Notification client state
+    std::queue<std::pair<uint64_t, Timestamp> > pending_notifications;
+    Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
+    std::mutex notification_lock; // the lock for both pieces of state above
 
 };
 
