@@ -68,6 +68,8 @@ public:
     // Abort the running transaction.
     void Abort(const uint64_t tid, Promise *promise = NULL);
 
+    void GetNextNotification(Promise *promise = NULL);
+
 private:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;

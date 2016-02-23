@@ -100,6 +100,11 @@ public:
                        Promise *promise = NULL) = 0;
 
     virtual void GetNextNotification(Promise *promise = NULL) = 0;
+
+    virtual void Register(const uint64_t reactive_id,
+                          const Timestamp timestamp,
+                          const std::set<std::string> keys,
+                          Promise *promise = NULL) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */

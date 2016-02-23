@@ -54,8 +54,7 @@ void DObject::BeginReactive(uint64_t reactive_id) {
 }
 
 uint64_t DObject::GetNextNotification(void) {
-    Panic("UNCOMMENT THE LINE BELOW");
-    //return store->GetNextReactive();
+    return store->GetNextNotification();
 }
 
 // XXX: Add an assert so that we don't map inside a transaction?

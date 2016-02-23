@@ -49,11 +49,21 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
         if (reply != REPLY_OK) {
             Panic("Reactive transaction failed to commit");
         }
-        std::string regsetstr("|");
+
         std::set<std::string> regset = txn.GetRegSet();
-        for (auto it = regset.begin(); it != regset.end(); it++) {
-            regsetstr = regsetstr + *it + "|";
+        uint64_t reactive_id = txn.GetReactiveId();
+        Timestamp timestamp = txn.GetTimestamp();
+        if (regMap.find(reactive_id) == regMap.end()) {
+            Promise rp(COMMIT_TIMEOUT);
+            txnclient->Register(reactive_id, timestamp, regset, &rp);
+            int reply = rp.GetReply();
+            if (reply == REPLY_OK) {
+                regMap[reactive_id] = regset;
+            }
+            else {
+                //TODO: implement registration retry
+                Panic("Registration retry not implemented");
+            }
         }
-        Panic("TODO: initiate registration for reactive_id %lu, registration set: %s", txn.GetReactiveId(), regsetstr.c_str());
     }
 }

@@ -37,6 +37,7 @@
 #include "lib/configuration.h"
 #include "lib/tcptransport.h"
 #include "diamond-proto.pb.h"
+#include "notification-proto.pb.h"
 #include "store/client.h"
 #include "store/common/backend/txnstore.h"
 namespace diamond {
@@ -58,6 +59,8 @@ protected:
                       const proto::CommitMessage &msg);
     void HandleAbort(const TransportAddress &remote,
                      const proto::AbortMessage &msg);
+    void HandleRegister(const TransportAddress &remote,
+                     const proto::RegisterMessage &msg);
     
 private:
     Transport *transport;

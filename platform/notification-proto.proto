@@ -8,3 +8,16 @@ message Notification {
     required uint64 timestamp = 3;
     repeated ReadReply replies = 4;
 }
+
+message RegisterMessage {
+    required uint64 clientid = 1;
+    required uint32 msgid = 2;
+    required uint64 reactiveid = 3;
+    required uint64 timestamp = 4;
+    repeated string keys = 5;
+}
+
+message RegisterReply {
+    required uint32 status = 1;
+    required uint32 msgid = 2;
+}

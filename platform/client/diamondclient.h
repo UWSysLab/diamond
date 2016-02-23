@@ -67,6 +67,7 @@ public:
     void Abort();
 
     void BeginReactive(uint64_t reactive_id);
+    uint64_t GetNextNotification(void);
 
 private:    
     /* Private helper functions. */

@@ -44,11 +44,12 @@ class ReactiveClient : public CacheClient {
 public:
     ReactiveClient(TxnClient *txnclient) : CacheClient(txnclient) {}
 
-    virtual void Commit(const uint64_t tid,
+    void Commit(const uint64_t tid,
                 const Transaction &txn = Transaction(),
                 Promise *promise = NULL);
 
 private:
+    std::unordered_map<uint64_t, std::set<std::string> > regMap; // reactive_id to registration set map
 
 };
 

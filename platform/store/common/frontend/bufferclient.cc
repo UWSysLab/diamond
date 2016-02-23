@@ -240,3 +240,8 @@ BufferClient::Abort(const uint64_t tid, Promise *promise)
     }
 }
 
+void
+BufferClient::GetNextNotification(Promise *promise) {
+    txnclient->GetNextNotification(promise);
+}
+

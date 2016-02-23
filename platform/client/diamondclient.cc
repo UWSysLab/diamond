@@ -215,4 +215,11 @@ DiamondClient::Abort()
     txnid = 0;
 }
 
+uint64_t DiamondClient::GetNextNotification()
+{
+    Promise p;
+    bclient->GetNextNotification(&p);
+    return p.GetReactiveId();
+}
+
 } // namespace diamond

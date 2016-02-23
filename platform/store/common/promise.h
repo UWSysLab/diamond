@@ -74,6 +74,7 @@ public:
     //Timestamp GetTimestamp();
     Version & GetValue(const std::string &key);
     std::map<std::string, Version> & GetValues();
+    uint64_t GetReactiveId();
 };
 
 #endif /* _PROMISE_H_ */

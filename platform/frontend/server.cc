@@ -57,6 +57,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
     static GetMessage get;
     static CommitMessage commit;
     static AbortMessage abort;
+    static RegisterMessage reg;
 
     if (type == get.GetTypeName()) {
         get.ParseFromString(data);
@@ -67,10 +68,28 @@ Server::ReceiveMessage(const TransportAddress &remote,
     } else if (type == abort.GetTypeName()) {
         abort.ParseFromString(data);
         HandleAbort(remote, abort);
+    } else if (type == reg.GetTypeName()) {
+        HandleRegister(remote, reg);
     } else {
         Panic("Received unexpected message type in OR proto: %s",
               type.c_str());
     }
+}
+
+void
+Server::HandleRegister(const TransportAddress &remote,
+                       const RegisterMessage &msg)
+{
+    //TODO: implement real registration handling on frontend server
+    RegisterReply reply;
+    reply.set_status(REPLY_OK);
+    reply.set_msgid(msg.msgid());
+    transport->SendMessage(this, remote, reply);
+
+    Notification notification;
+    notification.set_clientid(msg.clientid());
+    notification.set_reactiveid(msg.reactiveid());
+    notification.set_timestamp(msg.timestamp());
 }
 
 void

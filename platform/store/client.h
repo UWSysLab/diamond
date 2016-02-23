@@ -113,6 +113,11 @@ public:
 
     void GetNextNotification(Promise *promise);
 
+    void Register(const uint64_t reactive_id,
+                  const Timestamp timestamp,
+                  const std::set<std::string> keys,
+                  Promise *promise = NULL);
+
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.

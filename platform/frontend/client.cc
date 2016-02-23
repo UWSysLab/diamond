@@ -268,5 +268,31 @@ Client::GetNextNotification(Promise *promise) {
     }
 }
 
+void
+Client::Register(const uint64_t reactive_id,
+                 const Timestamp timestamp,
+                 const std::set<std::string> keys,
+                 Promise *promise) {
+
+    RegisterMessage msg;
+    msg.set_clientid(client_id);
+    for (auto key : keys) {
+        msg.add_keys(key);
+    }
+    msg.set_reactiveid(reactive_id);
+    msg.set_msgid(msgid++);
+    msg.set_timestamp(timestamp);
+
+    // Send message
+    transport->Timer(0, [=]() {
+            if (transport->SendMessageToReplica(this, 0, msg)) {
+                if (promise != NULL)
+                    waiting[msg.msgid()] = promise;
+            } else if (promise != NULL) {
+                promise->Reply(REPLY_NETWORK_FAILURE);
+            }
+        });
+}
+
 } // namespace frontend
 } // namespace diamond

@@ -146,3 +146,13 @@ Promise::GetValues()
     }
     return values;
 }
+
+uint64_t
+Promise::GetReactiveId()
+{
+    unique_lock<mutex> l(lock);
+    while(!done) {
+        cv.wait(l);
+    }
+    return reactive_id;
+}

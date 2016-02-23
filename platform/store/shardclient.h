@@ -101,6 +101,11 @@ public:
 
     void GetNextNotification(Promise *promise);
 
+    void Register(const uint64_t reactive_id,
+                  const Timestamp timestamp,
+                  const std::set<std::string> keys,
+                  Promise *promise = NULL);
+
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.

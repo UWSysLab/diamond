@@ -318,7 +318,15 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
 
 void
 ShardClient::GetNextNotification(Promise *promise) {
-    Panic("Do not call this method! (it should probably be refactored out)");
+    Panic("GetNextNotification not implemented for this client");
+}
+
+void
+ShardClient::Register(const uint64_t reactive_id,
+                      const Timestamp timestamp,
+                      const std::set<std::string> keys,
+                      Promise *promise) {
+    Panic("Register not implemented for this client");
 }
 
 

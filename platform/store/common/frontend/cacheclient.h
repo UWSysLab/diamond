@@ -86,6 +86,11 @@ public:
 
     void GetNextNotification(Promise *promise = NULL);
 
+    void Register(const uint64_t reactive_id,
+                  const Timestamp timestamp,
+                  const std::set<std::string> keys,
+                  Promise *promise = NULL);
+
 protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;
