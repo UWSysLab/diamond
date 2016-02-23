@@ -193,6 +193,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
     static CommitReply commitReply;
     static AbortReply abortReply;
     static Notification notification;
+    static RegisterReply regReply;
 
     if (type == getReply.GetTypeName()) {
         // Handle Get
@@ -233,6 +234,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
         notification.ParseFromString(data);
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
+        Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
         //TODO: parse cache entries and pass them back through the promise
         std::map<std::string, Version> cache_entries;
         notification_lock.lock();
@@ -244,6 +246,15 @@ Client::ReceiveMessage(const TransportAddress &remote,
         else {
             pending_notifications.push(std::pair<uint64_t, Timestamp>(reactive_id, timestamp));
             notification_lock.unlock();
+        }
+    } else if (type == regReply.GetTypeName()) {
+        regReply.ParseFromString(data);
+        auto it = waiting.find(regReply.msgid());
+
+        if (it != waiting.end() && it->second != NULL) {
+	    Debug("Received REGISTER response [%u] %i", regReply.msgid(), regReply.status());
+            it->second->Reply(regReply.status());
+            waiting.erase(it);
         }
     }
 }
