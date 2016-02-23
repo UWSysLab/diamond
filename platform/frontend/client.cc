@@ -118,7 +118,9 @@ Client::Commit(const uint64_t tid,
     // If SI with no writes or read-only, just locally check the read set
     // Commit all reads locally
     if ((txn.IsolationMode() == READ_ONLY) ||
-        ((txn.IsolationMode() == SNAPSHOT_ISOLATION) && txn.GetWriteSet().empty())) {
+        ((txn.IsolationMode() == SNAPSHOT_ISOLATION) &&
+         txn.GetWriteSet().empty() &&
+         txn.GetIncrementSet().empty())) {
         // Run local checks
         Interval i(0);
         for (auto &read : txn.GetReadSet()) {
@@ -137,7 +139,7 @@ Client::Commit(const uint64_t tid,
         if (promise != NULL) {
             promise->Reply(REPLY_OK);
         }
-	promise = NULL;
+        promise = NULL;
     }
     
     Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());

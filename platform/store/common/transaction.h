@@ -37,6 +37,7 @@ public:
     const bool HasTimestamp() const { return timestamp < MAX_TIMESTAMP; };
     const std::unordered_map<std::string, Interval>& GetReadSet() const;
     const std::unordered_map<std::string, std::string>& GetWriteSet() const;
+    const std::unordered_map<std::string, int>& GetIncrementSet() const;
     
     void AddReadSet(const std::string &key, const Interval &readVersion);
     void ClearReadSet();

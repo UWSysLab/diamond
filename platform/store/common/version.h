@@ -34,7 +34,8 @@ public:
     std::string GetValue() const { return value; };
     Timestamp GetTimestamp() const { return valid.Start(); };
     Interval GetInterval() const { return valid; };
-    void SetEnd(const Timestamp commit) { valid.SetEnd(commit); };
+    void SetEnd(const Timestamp &commit) { valid.SetEnd(commit); };
+    void SetValue(const std::string &val) { value = val; };
     
     friend bool operator> (const Version &v1, const Version &v2) {
         return v1.valid.Start() > v2.valid.Start();

@@ -48,7 +48,7 @@ class VersionedKVStore
 
 public:
     VersionedKVStore();
-    ~VersionedKVStore();
+    virtual ~VersionedKVStore();
 
     bool Get(const std::string &key, Version &value);
     bool Get(const std::string &key, const Timestamp &t, Version &value);
@@ -60,11 +60,10 @@ public:
     void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
     void Remove(const std::string &key);
     
-private:
+protected:
 
     /* Global store which keeps key -> (timestamp, value) list. */
     std::unordered_map< std::string, std::set<Version> > store;
-    std::unordered_map< std::string, std::map< Timestamp, Timestamp > > lastReads;
     bool inStore(const std::string &key);
     bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
 };

@@ -45,6 +45,12 @@ Transaction::GetWriteSet() const
     return writeSet;
 }
 
+const unordered_map<string, int>&
+Transaction::GetIncrementSet() const
+{
+    return incrementSet;
+}
+
 void
 Transaction::AddReadSet(const string &key,
                         const Interval &readVersion)
