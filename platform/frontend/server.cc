@@ -69,6 +69,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
         abort.ParseFromString(data);
         HandleAbort(remote, abort);
     } else if (type == reg.GetTypeName()) {
+        reg.ParseFromString(data);
         HandleRegister(remote, reg);
     } else {
         Panic("Received unexpected message type in OR proto: %s",
@@ -86,10 +87,12 @@ Server::HandleRegister(const TransportAddress &remote,
     reply.set_msgid(msg.msgid());
     transport->SendMessage(this, remote, reply);
 
+    //TODO: take out this fake notification
     Notification notification;
     notification.set_clientid(msg.clientid());
     notification.set_reactiveid(msg.reactiveid());
     notification.set_timestamp(msg.timestamp());
+    transport->SendMessage(this, remote, notification);
 }
 
 void
