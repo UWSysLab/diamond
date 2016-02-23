@@ -11,8 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentTop="true" 
-        android:background="#FFEFD5" >
+        android:layout_alignParentTop="true" >
     
 	</Toolbar>
 
