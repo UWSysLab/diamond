@@ -550,59 +550,61 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     TCPTransportTCPListener *info = (TCPTransportTCPListener *)arg;
     TCPTransport *transport = info->transport;
     struct evbuffer *evbuf = bufferevent_get_input(bev);
-
+    
     Debug("Readable on bufferevent %p", bev);
+
+    while (evbuffer_get_length(evbuf) > 0) {
+        uint32_t *magic;
+        magic = (uint32_t *)evbuffer_pullup(evbuf, sizeof(*magic));
+        ASSERT(*magic == MAGIC);
     
-    uint32_t *magic;
-    magic = (uint32_t *)evbuffer_pullup(evbuf, sizeof(*magic));
-    ASSERT(*magic == MAGIC);
+        size_t *sz;
+        unsigned char *x = evbuffer_pullup(evbuf, sizeof(*magic) + sizeof(*sz));
     
-    size_t *sz;
-    unsigned char *x = evbuffer_pullup(evbuf, sizeof(*magic) + sizeof(*sz));
+        sz = (size_t *) (x + sizeof(*magic));
+        if (x == NULL) {
+            return;
+        }
+        size_t totalSize = *sz;
+        ASSERT(totalSize < 1073741826);
     
-    sz = (size_t *) (x + sizeof(*magic));
-    if (x == NULL) {
-        return;
+        if (evbuffer_get_length(evbuf) < totalSize) {
+            Debug("Don't have %ld bytes for a message yet, only %ld",
+                  totalSize, evbuffer_get_length(evbuf));
+            return;
+        }
+        Debug("Receiving %ld byte message", totalSize);
+
+        char buf[totalSize];
+        size_t copied = evbuffer_remove(evbuf, buf, totalSize);
+        ASSERT(copied == totalSize);
+    
+        // Parse message
+        char *ptr = buf + sizeof(*sz) + sizeof(*magic);
+
+        size_t typeLen = *((size_t *)ptr);
+        ptr += sizeof(size_t);
+        ASSERT((size_t)(ptr-buf) < totalSize);
+        
+        ASSERT((size_t)(ptr+typeLen-buf) < totalSize);
+        string msgType(ptr, typeLen);
+        ptr += typeLen;
+    
+        size_t msgLen = *((size_t *)ptr);
+        ptr += sizeof(size_t);
+        ASSERT((size_t)(ptr-buf) < totalSize);
+    
+        ASSERT((size_t)(ptr+msgLen-buf) <= totalSize);
+        string msg(ptr, msgLen);
+        ptr += msgLen;
+
+        auto addr = transport->tcpAddresses.find(bev);
+        ASSERT(addr != transport->tcpAddresses.end());
+
+        // Dispatch
+        info->receiver->ReceiveMessage(addr->second, msgType, msg);
+        Debug("Done processing large %s message", msgType.c_str());
     }
-    size_t totalSize = *sz;
-    ASSERT(totalSize < 1073741826);
-    
-    if (evbuffer_get_length(evbuf) < totalSize) {
-        Debug("Don't have %ld bytes for a message yet, only %ld",
-               totalSize, evbuffer_get_length(evbuf));
-        return;
-    }
-    Debug("Receiving %ld byte message", totalSize);
-
-    char buf[totalSize];
-    size_t copied = evbuffer_remove(evbuf, buf, totalSize);
-    ASSERT(copied == totalSize);
-    
-    // Parse message
-    char *ptr = buf + sizeof(*sz) + sizeof(*magic);
-
-    size_t typeLen = *((size_t *)ptr);
-    ptr += sizeof(size_t);
-    ASSERT((size_t)(ptr-buf) < totalSize);
-    
-    ASSERT((size_t)(ptr+typeLen-buf) < totalSize);
-    string msgType(ptr, typeLen);
-    ptr += typeLen;
-    
-    size_t msgLen = *((size_t *)ptr);
-    ptr += sizeof(size_t);
-    ASSERT((size_t)(ptr-buf) < totalSize);
-    
-    ASSERT((size_t)(ptr+msgLen-buf) <= totalSize);
-    string msg(ptr, msgLen);
-    ptr += msgLen;
-
-    auto addr = transport->tcpAddresses.find(bev);
-    ASSERT(addr != transport->tcpAddresses.end());
-
-    // Dispatch
-    info->receiver->ReceiveMessage(addr->second, msgType, msg);
-    Debug("Done processing large %s message", msgType.c_str());
 }
 
 void
