@@ -325,6 +325,7 @@ ShardClient::Subscribe(const set<string> &keys,
     string request_str;
     Request request;
     request.set_op(Request::SUBSCRIBE);
+    request.set_txnid(0);
     for (auto &i : keys) {
         request.mutable_get()->add_keys(i);
     }
