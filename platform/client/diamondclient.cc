@@ -139,6 +139,9 @@ DiamondClient::Get(const string &key, string &value)
     
     Debug("GET [%lu] %s", txnid, key.c_str());
 
+    // Add key to the registration set
+    txn.AddRegSet(key);
+
     auto it = txn.GetWriteSet().find(key);
     // Read your own writes, check the write set first.
     if (it != txn.GetWriteSet().end()) {
@@ -173,6 +176,11 @@ DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
     }
 
     Debug("MULTIGET [%lu] %lu", txnid, keys.size());
+
+    // Add every requested key to the registration set
+    for (auto key : keys) {
+        txn.AddRegSet(key);
+    }
 
     // create a list of keys to get
     vector<string> keysToRead;
