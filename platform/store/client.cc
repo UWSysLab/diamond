@@ -298,6 +298,14 @@ Client::Commit(const uint64_t tid, const Transaction &txn, Promise *promise)
         participants[i].AddWriteSet(w.first, w.second);
     }
 
+    for (auto &inc : txn.GetIncrementSet()) {
+        int i = key_to_shard(inc.first, nshards);
+        if (participants.find(i) == participants.end()) {
+            participants[i] = Transaction(txn.IsolationMode(), txn.GetTimestamp());
+        }
+        participants[i].AddIncrementSet(inc.first, inc.second);
+    }
+
 
     // Do two phase commit for linearizable and SI
     if (txn.IsolationMode() == LINEARIZABLE ||

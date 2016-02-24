@@ -36,15 +36,14 @@
 #include "lib/assert.h"
 #include "lib/message.h"
 #include "includes/error.h"
-#include "store/common/backend/versionstore.h"
+#include "store/common/backend/commstore.h"
 #include "store/common/backend/txnstore.h"
 #include "store/common/transaction.h"
 #include "store/common/version.h"
 
 #include <vector>
 #include <unordered_map>
-#include <set>
-#include <map>
+#include <unordered_set>
 #include <list>
 
 namespace strongstore {
@@ -72,12 +71,11 @@ public:
 
 private:
     // Data store.
-    VersionedKVStore store;
+    CommutativeStore store;
 
-    std::map<uint64_t, Transaction> prepared;
+    std::unordered_map<uint64_t, Transaction> prepared;
 
-    std::set<std::string> getPreparedWrites();
-    std::set<std::string> getPreparedReadWrites();
+    void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
 };
 
 } // namespace strongstore

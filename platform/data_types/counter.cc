@@ -18,11 +18,9 @@ using namespace std;
 
 int
 DCounter::Value() {
-    pthread_mutex_lock(&_objectMutex); 
-
+    pthread_mutex_lock(&_objectMutex);
     Pull();
     int ret = _counter;
-
     pthread_mutex_unlock(&_objectMutex); 
     return ret;
 }
@@ -30,28 +28,28 @@ DCounter::Value() {
 void
 DCounter::Set(int val)
 {
-    pthread_mutex_lock(&_objectMutex); 
-
-    SetNotProtected(val);
-
+    pthread_mutex_lock(&_objectMutex);
+    _counter = val;
+    Push();
     pthread_mutex_unlock(&_objectMutex); 
 }
 
 void
-DCounter::SetNotProtected(int val)
+DCounter::IncrementNotProtected(int val)
 {
-    _counter = val;
-    Push();
+    // Get the latest value
+    Pull();
+    // Increment
+    _counter += val;
+    // Push the increment to the store
+    Increment(val);
 }
 
 
 DCounter & DCounter::operator++() 
 { 
     pthread_mutex_lock(&_objectMutex); 
-
-    Pull();
-    SetNotProtected(_counter + 1); 
-
+    IncrementNotProtected(1); 
     pthread_mutex_unlock(&_objectMutex); 
     return *this; 
 };
@@ -59,10 +57,7 @@ DCounter & DCounter::operator++()
 DCounter & DCounter::operator--() 
 { 
     pthread_mutex_lock(&_objectMutex); 
-
-    Pull();
-    SetNotProtected(_counter - 1); 
-
+    IncrementNotProtected(-1); 
     pthread_mutex_unlock(&_objectMutex); 
     return *this; 
 }
@@ -70,10 +65,7 @@ DCounter & DCounter::operator--()
 DCounter & DCounter::operator+=(const uint64_t i) 
 { 
     pthread_mutex_lock(&_objectMutex); 
-
-    Pull();
-    SetNotProtected(_counter + i); 
-
+    IncrementNotProtected(i); 
     pthread_mutex_unlock(&_objectMutex); 
     return *this; 
 }
@@ -81,22 +73,17 @@ DCounter & DCounter::operator+=(const uint64_t i)
 DCounter & DCounter::operator-=(const uint64_t i) 
 { 
     pthread_mutex_lock(&_objectMutex); 
-
-    Pull();
-    SetNotProtected(_counter - i); 
-
+    IncrementNotProtected(-i); 
     pthread_mutex_unlock(&_objectMutex); 
     return *this; 
 }; 
 
 std::string DCounter::Serialize() {
-    char buf[50];
-    sprintf(buf, "%i", _counter);
-    return string(buf);
+    return std::to_string(_counter);
 }
 
 void DCounter::Deserialize(const std::string &s) {
-    _counter = atoi(s.c_str());
+    _counter = stoi(s);
 }
 
 } // namespace diamond

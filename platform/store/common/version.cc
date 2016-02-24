@@ -13,6 +13,7 @@
 Version::Version(const ReadReply &msg) {
     value = msg.value();
     valid = Interval(msg.timestamp(), msg.end());
+    op = msg.op();
 }
 
 void
@@ -20,11 +21,13 @@ Version::Serialize(ReadReply *msg) {
     msg->set_value(value);
     msg->set_timestamp(valid.Start());
     msg->set_end(valid.End());
+    msg->set_op(op);
 }
 void
 Version::Deserialize(ReadReply *msg) {
     value = msg->value();
     valid = Interval(msg->timestamp(), msg->end());
+    op = msg->op();
 }
 
 #endif /* _VERSION_H_ */

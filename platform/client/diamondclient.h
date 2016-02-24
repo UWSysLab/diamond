@@ -39,7 +39,6 @@
 #include "frontend/client.h"
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
-#include "store/common/frontend/bufferclient.h"
 #include "store/common/frontend/reactiveclient.h"
 
 #include <condition_variable>
@@ -63,6 +62,7 @@ public:
     int Get(const std::string &key, std::string &value);
     int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
     int Put(const std::string &key, const std::string &value);
+    int Increment(const std::string &key, const int inc);
     bool Commit();
     void Abort();
 
@@ -91,7 +91,7 @@ private:
     std::thread *clientTransport;
 
     // Caching client for the store
-    BufferClient *bclient;
+    CacheClient *client;
 
     // Reactive ID <-> timestamp map
     std::map<uint64_t, Timestamp> timestamp_map;

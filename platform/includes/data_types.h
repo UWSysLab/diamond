@@ -50,6 +50,7 @@ protected:
     virtual void Deserialize(const std::string &s) = 0;
     int Push();
     int Pull();
+    int Increment(int inc);
 
 private:
     uint64_t _lockid = 0;
@@ -113,7 +114,7 @@ private:
 
     std::string Serialize();
     void Deserialize(const std::string &s);
-    void SetNotProtected(const int val);
+    void IncrementNotProtected(const int val);
 };
 
 

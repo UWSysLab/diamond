@@ -36,6 +36,7 @@ namespace diamond {
 using namespace std;
 
 thread_local uint64_t txnid = 0;
+thread_local Transaction txn;
 
 DiamondClient::DiamondClient(string configPath)
     : transport()
@@ -57,8 +58,7 @@ DiamondClient::DiamondClient(string configPath)
     frontend::Client *frontendclient = new frontend::Client(configPath + ".config",
                                                             &transport,
                                                             client_id);
-    ReactiveClient *rclient = new ReactiveClient(frontendclient);
-    bclient = new BufferClient(rclient);
+    client = new ReactiveClient(frontendclient);
 
     /* Run the transport in a new thread. */
     clientTransport = new thread(&DiamondClient::run_client, this);
@@ -90,7 +90,8 @@ DiamondClient::Begin()
         txnid_lock.lock();
         txnid = ++txnid_counter;
         txnid_lock.unlock();
-        bclient->Begin(txnid);
+        txn = Transaction(LINEARIZABLE);
+        client->Begin(txnid);
     }
 }
 
@@ -102,7 +103,8 @@ DiamondClient::BeginRO()
         txnid_lock.lock();
         txnid = ++txnid_counter;
         txnid_lock.unlock();
-        bclient->BeginRO(txnid);
+        txn = Transaction(READ_ONLY);
+        client->BeginRO(txnid);
     }
 }
 
@@ -122,7 +124,8 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         }
         timestamp_map_lock.unlock();
 
-        bclient->BeginReactive(txnid, timestamp, reactive_id);
+        txn = Transaction(READ_ONLY, timestamp, reactive_id);
+        client->BeginRO(txnid);
     }
 }
 
@@ -131,14 +134,32 @@ int
 DiamondClient::Get(const string &key, string &value)
 {
     if (txnid == 0) {
-	Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
     }
     
     Debug("GET [%lu] %s", txnid, key.c_str());
-    // Send the GET operation to appropriate shard.
-    Promise promise(GET_TIMEOUT);
 
-    bclient->Get(txnid, key, &promise);
+    auto it = txn.GetWriteSet().find(key);
+    // Read your own writes, check the write set first.
+    if (it != txn.GetWriteSet().end()) {
+        value = it->second;
+        return REPLY_OK;
+    }
+
+    Promise promise(GET_TIMEOUT);
+    // Otherwise, do the GET
+    client->Get(txnid, key, txn.GetTimestamp(), &promise);
+    
+    if (promise.GetReply() == REPLY_OK) {
+        Debug("Adding [%s] with ts %lu to the read set", key.c_str(), promise.GetValue(key).GetTimestamp());
+        txn.AddReadSet(key, promise.GetValue(key).GetInterval());
+        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
+            !txn.HasTimestamp()) {
+            txn.SetTimestamp(promise.GetValue(key).GetTimestamp());
+            Debug("Setting ts to %lu", txn.GetTimestamp());
+        }
+    }
+
     value = promise.GetValues()[key].GetValue();
 
     return promise.GetReply();
@@ -148,18 +169,45 @@ int
 DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
 {
     if (txnid == 0) {
-	Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
     }
 
     Debug("MULTIGET [%lu] %lu", txnid, keys.size());
-    // Send the GET operation to appropriate shard.
-    Promise promise(GET_TIMEOUT);
 
-    bclient->MultiGet(txnid, keys, &promise);
-    for (auto i : promise.GetValues()) {
-        values[i.first] = i.second.GetValue();
+    // create a list of keys to get
+    vector<string> keysToRead;
+    for (auto key : keys) {
+        auto it = txn.GetWriteSet().find(key); 
+        // Read your own writes, check the write set first.
+        if (it == txn.GetWriteSet().end()) {
+            keysToRead.push_back(key);
+        } else {
+            values[key] = it->second;
+        }
     }
 
+    if (keysToRead.size() == 0) {
+        return REPLY_OK;
+    }
+
+    Promise promise(GET_TIMEOUT);
+    client->MultiGet(txnid, keysToRead, txn.GetTimestamp(), &promise);
+        
+    if (promise.GetReply() == REPLY_OK){
+        std::map<string, Version> values = promise.GetValues();
+        for (auto &value : values) {
+            Debug("Adding [%s] with ts %lu to the read set", value.first.c_str(), value.second.GetTimestamp());
+            txn.AddReadSet(value.first, value.second.GetInterval());
+            values[value.first] = value.second.GetValue();
+        }
+
+        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
+            !txn.HasTimestamp()) {
+            txn.SetTimestamp((values.begin())->second.GetTimestamp());
+            Debug("Setting ts to %lu", txn.GetTimestamp());
+        }
+    }
+    
     return promise.GetReply();
 }
 
@@ -168,15 +216,36 @@ int
 DiamondClient::Put(const string &key, const string &value)
 {
     if (txnid == 0) {
-	Panic("Doing a PUT outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a PUT outside a transaction. YOU ARE A BAD PERSON!!");
+    }
+
+    if (txn.IsReadOnly()) {
+        Panic("Can't do a put in a read only transaction!");
     }
 
     Debug("PUT [%lu] %s %s", txnid, key.c_str(), value.c_str());
-    Promise promise(PUT_TIMEOUT);
+    
+    // Update the write set.
+    txn.AddWriteSet(key, value);
+    return REPLY_OK;
+}
 
-    // Buffering, so no need to wait.
-    bclient->Put(txnid, key, value, &promise);
-    return promise.GetReply();
+int
+DiamondClient::Increment(const string &key, const int inc)
+{
+    if (txnid == 0) {
+        Panic("Doing a PUT outside a transaction. YOU ARE A BAD PERSON!!");
+    }
+
+    if (txn.IsReadOnly()) {
+        Panic("Can't do a put in a read only transaction!");
+    }
+
+    Debug("INCREMENT [%lu] %s %i", txnid, key.c_str(), inc);
+    
+    // Update the write set.
+    txn.AddIncrementSet(key, inc);
+    return REPLY_OK;
 }
 
 /* Attempts to commit the ongoing transaction. */
@@ -184,17 +253,17 @@ bool
 DiamondClient::Commit()
 {
     if (txnid == 0) {
-	Panic("Doing a COMMIT outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a COMMIT outside a transaction. YOU ARE A BAD PERSON!!");
     }
 
     Debug("COMMIT [%lu]", txnid);
     
     Promise promise(COMMIT_TIMEOUT);
 
-    bclient->Commit(txnid, &promise);
+    client->Commit(txnid, txn, &promise);
     int status = promise.GetReply();
     txnid = 0;
-    
+    txn = Transaction();
     return status == REPLY_OK;
 }
 
@@ -203,22 +272,24 @@ void
 DiamondClient::Abort()
 {
     if (txnid == 0) {
-	Panic("Doing an ABORT outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing an ABORT outside a transaction. YOU ARE A BAD PERSON!!");
     }
 
     Debug("ABORT [%lu]",txnid);
 
     Promise promise(COMMIT_TIMEOUT);
     
-    bclient->Abort(txnid, &promise);
+    client->Abort(txnid, &promise);
+    // block until abort returns
     promise.GetReply();
     txnid = 0;
+    txn = Transaction();
 }
 
 uint64_t DiamondClient::GetNextNotification()
 {
     Promise p;
-    bclient->GetNextNotification(&p);
+    client->GetNextNotification(&p);
     return p.GetReactiveId();
 }
 

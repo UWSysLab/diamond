@@ -62,9 +62,9 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     }
 
     // Do OCC checks.
-    set<string> pWrites = getPreparedWrites();
-    set<string> pRW = getPreparedReadWrites();
-
+    unordered_set<string> pWrites, pReads, pIncrements;
+    getPreparedOps(pWrites, pReads, pIncrements);
+    
     // Check for conflicts with the read set.
     if (txn.IsolationMode() == LINEARIZABLE) {
         for (auto &read : txn.GetReadSet()) {
@@ -87,7 +87,14 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
             // If there is a pending write for this key, abort.
             if (pWrites.find(key) != pWrites.end()) {
-                Debug("[%lu] ABORT rw conflict w/ prepared key:%s",
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s",
+                      tid, read.first.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+
+            if (pIncrements.find(key) != pIncrements.end()) {
+                Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s",
                       tid, read.first.c_str());
                 Abort(tid);
                 return REPLY_FAIL;
@@ -99,32 +106,68 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         // Check for conflicts with the write set.
         for (auto &write : txn.GetWriteSet()) {
             const string &key = write.first;
+            
+            // if there is a pending write, always abort
+            if (pWrites.find(key) != pWrites.end()) {
+                Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+
+            // if there is a pending increment, always abort
+            if (pIncrements.find(key) != pIncrements.end()) {
+                Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+
             if (txn.IsolationMode() == LINEARIZABLE) {
-                // If there is a pending read or write for this key, abort.
-                if (pRW.find(key) != pRW.end()) {
-                    Debug("[%lu] ABORT LINEARIZABLE ww conflict w/ prepared key:%s", tid,
+                // If there is a pending read for this key, abort to stay linearizable.
+                if (pReads.find(key) != pReads.end()) {
+                    Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
                           key.c_str());
                     Abort(tid);
                     return REPLY_FAIL;
                 }
             } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-                // if there is a pending write, abort
-                if (pWrites.find(key) != pWrites.end()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION ww conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
-                // if there is write between the read snapshot and now
+                // If SI, check that the snapshot hasn't been written
                 Version cur;
-                bool ret = store.Get(key, cur);
-                if (ret && cur.GetTimestamp() > txn.GetTimestamp()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION ww conflict w/ prepared key:%s", tid,
+                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                    txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
+                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
                           key.c_str());
                     Abort(tid);
                     return REPLY_FAIL;
                 }
+            }
+        }
 
+        // Check for conflicts with the increment set
+        for (auto &inc : txn.GetIncrementSet()) {
+            const string &key = inc.first;
+
+            // don't need to check for pending increments, they commute
+            
+            if (txn.IsolationMode() == LINEARIZABLE) {
+                // Check for pending reads
+                if (pReads.find(key) != pReads.end()) {
+                    Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s", tid,
+                          key.c_str());
+                    Abort(tid);
+                    return REPLY_FAIL;
+                }
+            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+                // If SI, check that the snapshot hasn't been written
+                Version cur;
+                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                    txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
+                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
+                          key.c_str());
+                    Abort(tid);
+                    return REPLY_FAIL;
+                }
             }
         }
     }
@@ -152,6 +195,11 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
                   timestamp); // timestamp
     }
 
+    for (auto &inc : t.GetIncrementSet()) {
+        store.Increment(inc.first,
+                        inc.second,
+                        timestamp);
+    }
     prepared.erase(tid);
 }
 
@@ -168,33 +216,20 @@ OCCStore::Load(const string &key, const string &value, const Timestamp &timestam
     store.Put(key, value, timestamp);
 }
 
-set<string>
-OCCStore::getPreparedWrites()
+void
+OCCStore::getPreparedOps(unordered_set<string> &reads, unordered_set<string> &writes, unordered_set<string> &increments)
 {
-    // gather up the set of all writes that we are currently prepared for
-    set<string> writes;
     for (auto &t : prepared) {
         for (auto &write : t.second.GetWriteSet()) {
             writes.insert(write.first);
         }
-    }
-    return writes;
-}
-
-set<string>
-OCCStore::getPreparedReadWrites()
-{
-    // gather up the set of all writes that we are currently prepared for
-    set<string> readwrites;
-    for (auto &t : prepared) {
-        for (auto &write : t.second.GetWriteSet()) {
-            readwrites.insert(write.first);
-        }
         for (auto &read : t.second.GetReadSet()) {
-            readwrites.insert(read.first);
+            reads.insert(read.first);
+        }
+        for (auto &incr : t.second.GetIncrementSet()) {
+            increments.insert(incr.first);
         }
     }
-    return readwrites;
 }
-
+    
 } // namespace strongstore

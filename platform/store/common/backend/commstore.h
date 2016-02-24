@@ -2,8 +2,8 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * store/common/backend/versionstore.cc:
- *   Timestamped version store
+ * store/common/backend/comstore.cc:
+ *   A versioned store that supports commutative operations
  *
  * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *
@@ -29,43 +29,21 @@
  *
  **********************************************************************/
 
-#ifndef _VERSIONED_KV_STORE_H_
-#define _VERSIONED_KV_STORE_H_
+#ifndef _COMM_KV_STORE_H_
+#define _COMM_KV_STORE_H_
 
 #include "lib/assert.h"
 #include "lib/message.h"
-#include "store/common/timestamp.h"
-#include "store/common/version.h"
+#include "store/common/backend/versionstore.h"
 
-#include <set>
-#include <map>
-#include <unordered_map>
-#include <fstream>
-#include <iostream>
-
-class VersionedKVStore
+class CommutativeStore : public VersionedKVStore
 {
 
 public:
-    VersionedKVStore();
-    virtual ~VersionedKVStore();
+    CommutativeStore() { };
+    ~CommutativeStore() { };
 
-    bool Get(const std::string &key, Version &value);
-    bool Get(const std::string &key, const Timestamp &t, Version &value);
-    bool GetRange(const std::string &key, const Timestamp &t, Interval &range);
-    bool GetLastRead(const std::string &key, Timestamp &readTime);
-    bool GetLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
-    void Put(const std::string &key, const std::string &value, const Timestamp &t);
-    void Put(const std::string &key, const Version &v);
-    void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
-    void Remove(const std::string &key);
-    
-protected:
-
-    /* Global store which keeps key -> (timestamp, value) list. */
-    std::unordered_map< std::string, std::set<Version> > store;
-    bool inStore(const std::string &key);
-    bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
+    void Increment(const std::string &key, const int inc, const Timestamp &t);
 };
 
-#endif  /* _VERSIONED_KV_STORE_H_ */
+#endif  /* _ */

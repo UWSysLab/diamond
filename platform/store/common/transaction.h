@@ -42,11 +42,13 @@ public:
     const std::unordered_map<std::string, Interval>& GetReadSet() const;
     const std::unordered_map<std::string, std::string>& GetWriteSet() const;
     const std::set<std::string>& GetRegSet() const;
+    const std::unordered_map<std::string, int>& GetIncrementSet() const;
     
     void AddReadSet(const std::string &key, const Interval &readVersion);
     void ClearReadSet();
     void AddWriteSet(const std::string &key, const std::string &value);
     void AddRegSet(const std::string &key);
+    void AddIncrementSet(const std::string &key, const int inc);
     void Serialize(TransactionMessage *msg) const;
 private:
     int mode;
@@ -65,6 +67,8 @@ private:
     // set of keys to register for reactive transactions
     std::set<std::string> regSet;
 
+    // increment set
+    std::unordered_map<std::string, int> incrementSet;
 };
 
 #endif /* _TRANSACTION_H_ */
