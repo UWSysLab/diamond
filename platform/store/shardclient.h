@@ -103,8 +103,11 @@ public:
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
-                  const std::set<std::string> keys,
+                  const std::set<std::string> &keys,
                   Promise *promise = NULL);
+
+    void Subscribe(const std::set<std::string> &keys,
+                   Promise *promise = NULL);
 
 private:
     Transport *transport; // Transport layer.
@@ -124,6 +127,7 @@ private:
     void PrepareCallback(const std::string &, const std::string &);
     void CommitCallback(const std::string &, const std::string &);
     void AbortCallback(const std::string &, const std::string &);
+    void SubscribeCallback(const std::string &, const std::string &);
 
     /* Helper Functions for starting and finishing requests */
     void StartRequest();

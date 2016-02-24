@@ -81,9 +81,16 @@ void
 Server::HandleRegister(const TransportAddress &remote,
                        const RegisterMessage &msg)
 {
-    //TODO: implement real registration handling on frontend server
+    std::set<std::string> regSet;
+    for (int i = 0; i < msg.keys_size(); i++) {
+        Debug("REGISTER %s", msg.keys(i).c_str());
+        regSet.insert(msg.keys(i));
+    }
+    Timestamp timestamp;
+    int status = store->Subscribe(regSet, timestamp);
+
     RegisterReply reply;
-    reply.set_status(REPLY_OK);
+    reply.set_status(status);
     reply.set_msgid(msg.msgid());
     transport->SendMessage(this, remote, reply);
 

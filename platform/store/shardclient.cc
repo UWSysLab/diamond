@@ -317,6 +317,44 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
 }
 
 void
+ShardClient::Subscribe(const set<string> &keys,
+                       Promise *promise) {
+    Debug("[shard %i] Sending SUBSCRIBE", shard);
+
+    // create request
+    string request_str;
+    Request request;
+    request.set_op(Request::SUBSCRIBE);
+    for (auto &i : keys) {
+        request.mutable_get()->add_keys(i);
+    }
+    request.SerializeToString(&request_str);
+
+    transport->Timer(0, [=]() {
+	    waiting = promise;    
+            client->Invoke(request_str,
+                           bind(&ShardClient::SubscribeCallback,
+                                this,
+                                placeholders::_1,
+                                placeholders::_2));
+        });
+}
+
+void
+ShardClient::SubscribeCallback(const string &request_str, const string &reply_str) {
+    Reply reply;
+    reply.ParseFromString(reply_str);
+    ASSERT(reply.status() == REPLY_OK);
+
+    if (waiting != NULL) {
+        Promise *w = waiting;
+        waiting = NULL;
+        w->Reply(reply.status(), reply.timestamp());
+    }
+    Debug("[shard %i] Received SUBSCRIBE callback [%d] with timestamp %lu", shard, reply.status(), reply.timestamp());
+}
+
+void
 ShardClient::GetNextNotification(Promise *promise) {
     Panic("GetNextNotification not implemented for this client");
 }
@@ -324,7 +362,7 @@ ShardClient::GetNextNotification(Promise *promise) {
 void
 ShardClient::Register(const uint64_t reactive_id,
                       const Timestamp timestamp,
-                      const std::set<std::string> keys,
+                      const std::set<std::string> &keys,
                       Promise *promise) {
     Panic("Register not implemented for this client");
 }

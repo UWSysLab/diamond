@@ -232,7 +232,16 @@ CacheClient::GetNextNotification(Promise *promise) {
 void
 CacheClient::Register(const uint64_t reactive_id,
                       const Timestamp timestamp,
-                      const std::set<std::string> keys,
+                      const std::set<std::string> &keys,
                       Promise *promise) {
     Panic("Register not implemented for this client");
+}
+
+void
+CacheClient::Subscribe(const std::set<std::string> &keys,
+                       Promise *promise) {
+    Debug("SUBSCRIBE");
+    Promise p(COMMIT_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+    txnclient->Subscribe(keys, pp);
 }

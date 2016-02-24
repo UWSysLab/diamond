@@ -25,6 +25,7 @@ message Request {
           PREPARE = 2;
           COMMIT = 3;
           ABORT = 4;
+          SUBSCRIBE = 5;
      }	
      required Operation op = 1;
      required uint64 txnid = 2;

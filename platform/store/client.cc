@@ -378,6 +378,49 @@ Client::key_to_shard(const string &key, const uint64_t nshards)
     return (hash % nshards);
 }
 
+int
+Client::Subscribe(const set<string> &keys,
+                  Timestamp &timestamp) {
+    Promise p(COMMIT_TIMEOUT);
+    Subscribe(keys, &p);
+    timestamp = p.GetTimestamp();
+    return p.GetReply();
+}
+
+void
+Client::Subscribe(const set<string> &keys,
+                  Promise *promise) {
+    map<int, set<string> > participants;
+
+    for (auto &key : keys) {
+        int i = key_to_shard(key, nshards);
+        participants[i].insert(key);
+    }
+
+    vector<Promise *> promises;
+    for (auto &p : participants) {
+        promises.push_back(new Promise(COMMIT_TIMEOUT));
+        cclient[p.first]->Subscribe(p.second, promises.back());
+    }
+
+    if (promise != NULL) {
+        int r = REPLY_OK;
+        Timestamp latestTimestamp;
+        for (auto p : promises) {
+            if (p->GetReply() != REPLY_OK) {
+                r = p->GetReply();
+            }
+            Timestamp ts = p->GetTimestamp();
+            if (ts > latestTimestamp) {
+                latestTimestamp = ts;
+            }
+            delete p;
+        }
+        promise->Reply(r, latestTimestamp);
+    }
+}
+
+
 void
 Client::GetNextNotification(Promise *promise) {
     Panic("Do not call this method! (it should probably be refactored out)");
@@ -386,7 +429,7 @@ Client::GetNextNotification(Promise *promise) {
 void
 Client::Register(const uint64_t reactive_id,
                  const Timestamp timestamp,
-                 const std::set<std::string> keys,
+                 const std::set<std::string> &keys,
                  Promise *promise) {
     Panic("Register not implemented for this client");
 }

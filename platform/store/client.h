@@ -111,11 +111,18 @@ public:
                Promise *promise = NULL);
     std::vector<int> Stats();
 
+    void Subscribe(const std::set<std::string> &keys,
+                   Promise *promise = NULL);
+
+    // Blocking version
+    int Subscribe(const std::set<std::string> &keys,
+                  Timestamp &timestamp);
+
     void GetNextNotification(Promise *promise);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
-                  const std::set<std::string> keys,
+                  const std::set<std::string> &keys,
                   Promise *promise = NULL);
 
 private:

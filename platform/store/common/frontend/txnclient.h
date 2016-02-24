@@ -103,8 +103,11 @@ public:
 
     virtual void Register(const uint64_t reactive_id,
                           const Timestamp timestamp,
-                          const std::set<std::string> keys,
+                          const std::set<std::string> &keys,
                           Promise *promise = NULL) = 0;
+
+    virtual void Subscribe(const std::set<std::string> &keys,
+                           Promise *promise = NULL) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */
