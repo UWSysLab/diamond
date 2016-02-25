@@ -231,5 +231,11 @@ OCCStore::getPreparedOps(unordered_set<string> &reads, unordered_set<string> &wr
         }
     }
 }
+
+Timestamp
+OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &address) {
+    //TODO: implement me
+    return Timestamp();
+}
     
 } // namespace strongstore

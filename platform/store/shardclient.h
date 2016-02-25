@@ -107,6 +107,7 @@ public:
                   Promise *promise = NULL);
 
     void Subscribe(const std::set<std::string> &keys,
+                   const TransportAddress &myAddress,
                    Promise *promise = NULL);
 
 private:

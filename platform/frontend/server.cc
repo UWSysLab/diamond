@@ -87,7 +87,7 @@ Server::HandleRegister(const TransportAddress &remote,
         regSet.insert(msg.keys(i));
     }
     Timestamp timestamp;
-    int status = store->Subscribe(regSet, timestamp);
+    int status = store->Subscribe(regSet, GetAddress(), timestamp);
 
     RegisterReply reply;
     reply.set_status(status);

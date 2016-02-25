@@ -115,6 +115,10 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         replicate = true;
         str2 = str1;
         break;
+    case strongstore::proto::Request::SUBSCRIBE:
+        replicate = true;
+        str2 = str1;
+        break;
     default:
         Panic("Unrecognized operation.");
     }
@@ -155,6 +159,18 @@ Server::ReplicaUpcall(opnum_t opnum,
         break;
     case strongstore::proto::Request::ABORT:
         store->Abort(request.txnid());
+        break;
+    case strongstore::proto::Request::SUBSCRIBE:
+        {
+            //TODO: parse address from request.subscribe().address
+            string address = request.subscribe().address();
+            set<string> keys;
+            for (int i = 0; i < request.subscribe().keys_size(); i++) {
+                keys.insert(request.subscribe().keys(i));
+            }
+            Timestamp timestamp = store->Subscribe(keys, address);
+            reply.set_timestamp(timestamp);
+        }
         break;
     default:
         Panic("Unrecognized operation.");

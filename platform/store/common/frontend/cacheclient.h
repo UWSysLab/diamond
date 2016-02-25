@@ -92,6 +92,7 @@ public:
                   Promise *promise = NULL);
 
     void Subscribe(const std::set<std::string> &keys,
+                   const TransportAddress &address,
                    Promise *promise = NULL);
 
 protected:

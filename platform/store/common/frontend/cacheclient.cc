@@ -239,9 +239,10 @@ CacheClient::Register(const uint64_t reactive_id,
 
 void
 CacheClient::Subscribe(const std::set<std::string> &keys,
+                       const TransportAddress &address,
                        Promise *promise) {
     Debug("SUBSCRIBE");
     Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    txnclient->Subscribe(keys, pp);
+    txnclient->Subscribe(keys, address, pp);
 }

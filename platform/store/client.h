@@ -112,10 +112,12 @@ public:
     std::vector<int> Stats();
 
     void Subscribe(const std::set<std::string> &keys,
+                   const TransportAddress &address,
                    Promise *promise = NULL);
 
     // Blocking version
     int Subscribe(const std::set<std::string> &keys,
+                  const TransportAddress &address,
                   Timestamp &timestamp);
 
     void GetNextNotification(Promise *promise);

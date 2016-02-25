@@ -19,6 +19,11 @@ message CommitMessage {
 message AbortMessage {
 }
 
+message SubscribeMessage {
+    required string address = 1;
+    repeated string keys = 2;
+}
+
 message Request {
      enum Operation {
           GET = 1;
@@ -33,6 +38,7 @@ message Request {
      optional PrepareMessage prepare = 4;
      optional CommitMessage commit = 5;
      optional AbortMessage abort = 6;
+     optional SubscribeMessage subscribe = 7;
 }
 
 message Reply {

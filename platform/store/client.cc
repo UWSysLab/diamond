@@ -388,15 +388,17 @@ Client::key_to_shard(const string &key, const uint64_t nshards)
 
 int
 Client::Subscribe(const set<string> &keys,
+                  const TransportAddress &address,
                   Timestamp &timestamp) {
     Promise p(COMMIT_TIMEOUT);
-    Subscribe(keys, &p);
+    Subscribe(keys, address, &p);
     timestamp = p.GetTimestamp();
     return p.GetReply();
 }
 
 void
 Client::Subscribe(const set<string> &keys,
+                  const TransportAddress &address,
                   Promise *promise) {
     map<int, set<string> > participants;
 
@@ -408,7 +410,7 @@ Client::Subscribe(const set<string> &keys,
     vector<Promise *> promises;
     for (auto &p : participants) {
         promises.push_back(new Promise(COMMIT_TIMEOUT));
-        cclient[p.first]->Subscribe(p.second, promises.back());
+        cclient[p.first]->Subscribe(p.second, address, promises.back());
     }
 
     if (promise != NULL) {

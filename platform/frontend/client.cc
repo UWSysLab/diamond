@@ -309,6 +309,7 @@ Client::Register(const uint64_t reactive_id,
 
 void
 Client::Subscribe(const std::set<std::string> &keys,
+                  const TransportAddress &address,
                   Promise *promise) {
     Panic("Subscribe not implemented for this client");
 }

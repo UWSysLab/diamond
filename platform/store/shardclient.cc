@@ -318,6 +318,7 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
 
 void
 ShardClient::Subscribe(const set<string> &keys,
+                       const TransportAddress &myAddress,
                        Promise *promise) {
     Debug("[shard %i] Sending SUBSCRIBE", shard);
 
@@ -326,8 +327,9 @@ ShardClient::Subscribe(const set<string> &keys,
     Request request;
     request.set_op(Request::SUBSCRIBE);
     request.set_txnid(0);
+    request.mutable_subscribe()->set_address("I AM ERROR"); //TODO: serialize address
     for (auto &i : keys) {
-        request.mutable_get()->add_keys(i);
+        request.mutable_subscribe()->add_keys(i);
     }
     request.SerializeToString(&request_str);
 

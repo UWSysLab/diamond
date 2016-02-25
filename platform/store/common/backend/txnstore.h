@@ -62,6 +62,8 @@ public:
     virtual void Abort(const uint64_t tid) = 0;
 
     virtual void Load(const std::string &key, const std::string &value, const Timestamp &timestamp) = 0;
+
+    virtual Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address) = 0;
     
 };
 }

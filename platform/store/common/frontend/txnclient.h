@@ -107,6 +107,7 @@ public:
                           Promise *promise = NULL) = 0;
 
     virtual void Subscribe(const std::set<std::string> &keys,
+                           const TransportAddress &myAddress,
                            Promise *promise = NULL) = 0;
 };
 
