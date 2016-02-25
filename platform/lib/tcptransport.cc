@@ -652,3 +652,14 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         return;
     }
 }
+
+bool
+TCPTransport::SendMessage(TransportReceiver *src,
+                          const std::string &hostname,
+                          const std::string &port,
+                          const Message &m) {
+        // NOTE: this code will only work as long as ReplicaAddress stays a plain old data
+        // struct that just wraps a (hostname, port) pair
+        TCPTransportAddress out = LookupAddress(transport::ReplicaAddress(hostname, port));
+        return SendMessageInternal(src, out, m);
+}

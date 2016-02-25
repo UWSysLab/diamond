@@ -73,6 +73,10 @@ public:
     void Register(TransportReceiver *receiver,
                   const transport::Configuration &config,
                   int replicaIdx);
+    bool SendMessage(TransportReceiver *src,
+                     const std::string &hostname,
+                     const std::string &port,
+                     const Message &m);
     void Run();
     void Stop();
     int Timer(uint64_t ms, timer_callback_t cb);

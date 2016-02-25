@@ -791,3 +791,13 @@ UDPTransport::SignalCallback(evutil_socket_t fd, short what, void *arg)
     UDPTransport *transport = (UDPTransport *)arg;
     event_base_loopbreak(transport->libeventBase);
 }
+
+bool
+UDPTransport::SendMessage(TransportReceiver *src,
+                          const std::string &hostname,
+                          const std::string &port,
+                          const Message &m) {
+    Panic("Sending messages by hostname is not implemented for UDPTransport!");
+}
+
+
