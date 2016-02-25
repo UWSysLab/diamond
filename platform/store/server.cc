@@ -162,8 +162,7 @@ Server::ReplicaUpcall(opnum_t opnum,
         break;
     case strongstore::proto::Request::SUBSCRIBE:
         {
-            //TODO: parse address from request.subscribe().address
-            string address = request.subscribe().address();
+            string address = request.subscribe().address(); //TODO: make sure this is how we want to pass around addresses
             set<string> keys;
             for (int i = 0; i < request.subscribe().keys_size(); i++) {
                 keys.insert(request.subscribe().keys(i));

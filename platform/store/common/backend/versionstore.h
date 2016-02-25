@@ -59,6 +59,8 @@ public:
     void Put(const std::string &key, const Version &v);
     void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
     void Remove(const std::string &key);
+
+    Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
     
 protected:
 

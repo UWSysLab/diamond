@@ -189,3 +189,9 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
     }
     return false;	
 }
+
+Timestamp
+VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
+    //TODO: implement me
+    return Timestamp(0);
+}
