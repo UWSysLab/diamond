@@ -68,6 +68,9 @@ protected:
     std::unordered_map< std::string, std::set<Version> > store;
     bool inStore(const std::string &key);
     bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
+
+    std::unordered_map< std::string, std::set<std::string> > keyAddressMap; // indexed by key
+    std::unordered_map< std::string, std::set<std::string> > addressKeyMap; // indexed by address
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */
