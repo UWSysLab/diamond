@@ -50,6 +50,8 @@ public:
     {
         return !(*this == other);            
     }
+    std::string getHostname() const;
+    std::string getPort() const;
 private:
     SimulatedTransportAddress(int addr);
     

@@ -54,6 +54,18 @@ SimulatedTransportAddress::clone() const
     return c;
 }
 
+std::string
+SimulatedTransportAddress::getHostname() const {
+    Panic("Not implemented!");
+    return std::string();
+}
+
+std::string
+SimulatedTransportAddress::getPort() const {
+    Panic("Not implemented!");
+    return std::string();
+} 
+
 bool
 SimulatedTransportAddress::operator==(const SimulatedTransportAddress &other) const
 {

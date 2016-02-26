@@ -51,6 +51,8 @@ class TCPTransportAddress : public TransportAddress
 {
 public:
     TCPTransportAddress * clone() const;
+    std::string getHostname() const;
+    std::string getPort() const;
 private:
     TCPTransportAddress(const sockaddr_in &addr);
     

@@ -327,7 +327,9 @@ ShardClient::Subscribe(const set<string> &keys,
     Request request;
     request.set_op(Request::SUBSCRIBE);
     request.set_txnid(0);
-    request.mutable_subscribe()->set_address("I AM ERROR"); //TODO: serialize address
+    string address(myAddress.getHostname() + ":" + myAddress.getPort());
+    request.mutable_subscribe()->set_address(address);
+    
     for (auto &i : keys) {
         request.mutable_subscribe()->add_keys(i);
     }

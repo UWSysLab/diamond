@@ -67,6 +67,18 @@ UDPTransportAddress::clone() const
     return c;    
 }
 
+std::string
+UDPTransportAddress::getHostname() const {
+    Panic("Not implemented!");
+    return std::string();
+}
+
+std::string
+UDPTransportAddress::getPort() const {
+    Panic("Not implemented!");
+    return std::string();
+} 
+
 bool operator==(const UDPTransportAddress &a, const UDPTransportAddress &b)
 {
     return (memcmp(&a.addr, &b.addr, sizeof(a.addr)) == 0);

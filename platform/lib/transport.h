@@ -45,6 +45,8 @@ class TransportAddress
 public:
     virtual ~TransportAddress() { }
     virtual TransportAddress *clone() const = 0;
+    virtual std::string getHostname() const = 0;
+    virtual std::string getPort() const = 0;
 };
 
 class TransportReceiver

@@ -67,6 +67,18 @@ TCPTransportAddress::clone() const
     return c;    
 }
 
+std::string
+TCPTransportAddress::getHostname() const
+{
+    return std::string(inet_ntoa(addr.sin_addr));
+}
+
+std::string
+TCPTransportAddress::getPort() const
+{
+    return std::to_string(ntohs(addr.sin_port));
+}
+
 bool operator==(const TCPTransportAddress &a, const TCPTransportAddress &b)
 {
     return (memcmp(&a.addr, &b.addr, sizeof(a.addr)) == 0);
