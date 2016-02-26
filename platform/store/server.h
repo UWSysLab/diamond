@@ -56,6 +56,8 @@ private:
     TxnStore *store;
 
     void ExecuteGet(proto::Request, string &str2);
+
+    void sendNotifications();
 };
 
 } // namespace strongstore

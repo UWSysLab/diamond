@@ -236,5 +236,10 @@ Timestamp
 OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &address) {
     return store.Subscribe(keys, address);
 }
+
+std::vector<FrontendNotification>
+OCCStore::GetFrontendNotifications() {
+    return store.GetFrontendNotifications();
+}
     
 } // namespace strongstore

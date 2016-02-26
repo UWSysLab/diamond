@@ -39,6 +39,7 @@
 #include "store/common/transaction.h"
 #include "store/common/timestamp.h"
 #include "store/common/version.h"
+#include "store/common/notification.h"
 
 namespace strongstore {
     
@@ -64,6 +65,7 @@ public:
     virtual void Load(const std::string &key, const std::string &value, const Timestamp &timestamp) = 0;
 
     virtual Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address) = 0;
+    virtual std::vector<FrontendNotification> GetFrontendNotifications() = 0;
     
 };
 }

@@ -108,6 +108,7 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         }
         break;
     case strongstore::proto::Request::COMMIT:
+        sendNotifications(); //TODO: right place?
         replicate = true;
         str2 = str1;
         break;
@@ -121,6 +122,17 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         break;
     default:
         Panic("Unrecognized operation.");
+    }
+}
+
+void Server::sendNotifications() {
+    std::vector<FrontendNotification> notifications = store->GetFrontendNotifications();
+    for (auto it = notifications.begin(); it != notifications.end(); it++) {
+        FrontendNotification notification = *it;
+        Debug("Sending notifications to frontend %s:", it->address.c_str());
+        for (auto it2 = notification.timestamps.begin(); it2 != notification.timestamps.end(); it2++) {
+            Debug("%s, %lu", it2->first.c_str(), it2->second);
+        }
     }
 }
 
