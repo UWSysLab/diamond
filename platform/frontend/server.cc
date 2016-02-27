@@ -84,6 +84,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
 void
 Server::HandleNotifyFrontend(const TransportAddress &remote,
                              const NotifyFrontendMessage &msg) {
+    Debug("Handling NOTIFY-FRONTEND");
     // For every key, find all the reactive transactions listening to it,
     // and update the next timestamps to run them at
     for (int i = 0; i < msg.replies_size(); i++) {
@@ -97,6 +98,7 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
     // Send notifications for each reactive transaction that has one pending
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
+        Debug("Sending NOTIFICATION: reactive_id %lu, client %s:%s", rt.reactive_id, rt.client_hostname.c_str(), rt.client_port.c_str());
         if (rt.next_timestamp != rt.last_timestamp) {
             Notification notification;
             notification.set_clientid(rt.client_id);

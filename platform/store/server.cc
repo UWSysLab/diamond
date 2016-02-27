@@ -139,7 +139,7 @@ void Server::sendNotifications() {
     vector<FrontendNotification> notifications = store->GetFrontendNotifications();
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
-        Debug("Sending notifications to frontend %s:", it->address.c_str());
+        Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
         NotifyFrontendMessage msg;
         for (auto it2 = notification.timestamps.begin(); it2 != notification.timestamps.end(); it2++) {
             string key = it2->first;
@@ -201,9 +201,11 @@ Server::ReplicaUpcall(opnum_t opnum,
         break;
     case strongstore::proto::Request::SUBSCRIBE:
         {
+            Debug("Handling SUBSCRIBE");
             string address = request.subscribe().address(); //TODO: make sure this is how we want to pass around addresses
             set<string> keys;
             for (int i = 0; i < request.subscribe().keys_size(); i++) {
+                Debug("%s", request.subscribe().keys(i).c_str());
                 keys.insert(request.subscribe().keys(i));
             }
             Timestamp timestamp = store->Subscribe(keys, address);
