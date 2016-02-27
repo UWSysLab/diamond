@@ -84,7 +84,27 @@ Server::ReceiveMessage(const TransportAddress &remote,
 void
 Server::HandleNotifyFrontend(const TransportAddress &remote,
                              const NotifyFrontendMessage &msg) {
-    Panic("Still need to implement NOTIFY-FRONTEND handling!");
+    // For every key, find all the reactive transactions listening to it,
+    // and update the next timestamps to run them at
+    for (int i = 0; i < msg.replies_size(); i++) {
+        std::string key = msg.replies(i).key();
+        Timestamp timestamp = msg.replies(i).timestamp();
+        for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
+            transactions[*it].next_timestamp = timestamp;
+        }
+    }
+
+    // Send notifications for each reactive transaction that has one pending
+    for (auto it = transactions.begin(); it != transactions.end(); it++) {
+        ReactiveTransaction rt = it->second;
+        if (rt.next_timestamp != rt.last_timestamp) {
+            Notification notification;
+            notification.set_clientid(rt.client_id);
+            notification.set_reactiveid(rt.reactive_id);
+            notification.set_timestamp(rt.next_timestamp);
+            transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+        }
+    }
 }
 
 void
@@ -99,17 +119,25 @@ Server::HandleRegister(const TransportAddress &remote,
     Timestamp timestamp;
     int status = store->Subscribe(regSet, GetAddress(), timestamp);
 
+    ReactiveTransaction rt;
+    rt.reactive_id = msg.reactiveid();
+    rt.client_id = msg.clientid();
+    rt.last_timestamp = msg.timestamp();
+    rt.next_timestamp = timestamp;
+    rt.keys = regSet;
+    rt.client_hostname = remote.getHostname();
+    rt.client_port = remote.getPort();
+
+    transactions[rt.reactive_id] = rt;
+
+    for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
+        listeners[*it].insert(rt.reactive_id);
+    }
+
     RegisterReply reply;
     reply.set_status(status);
     reply.set_msgid(msg.msgid());
     transport->SendMessage(this, remote, reply);
-
-    //TODO: take out this fake notification
-    Notification notification;
-    notification.set_clientid(msg.clientid());
-    notification.set_reactiveid(msg.reactiveid());
-    notification.set_timestamp(msg.timestamp());
-    transport->SendMessage(this, remote, notification);
 }
 
 void
