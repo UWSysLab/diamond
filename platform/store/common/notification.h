@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include "timestamp.h"
+
 class FrontendNotification {
 public:
     std::string address;
