@@ -33,6 +33,8 @@
 #include "server.h"
 #include "store/common/version.h"
 
+#include <sstream>
+
 using namespace std;
 
 namespace strongstore {
@@ -40,13 +42,21 @@ namespace strongstore {
 using namespace proto;
 
 Server::Server()
+    : transport()
 {
     store = new strongstore::OCCStore();
+
+    transportThread = new thread(&Server::runTransport, this);
 }
 
 Server::~Server()
 {
     delete store;
+}
+
+void
+Server::runTransport() {
+    transport.Run();
 }
 
 void
@@ -126,13 +136,25 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 }
 
 void Server::sendNotifications() {
-    std::vector<FrontendNotification> notifications = store->GetFrontendNotifications();
+    vector<FrontendNotification> notifications = store->GetFrontendNotifications();
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
         Debug("Sending notifications to frontend %s:", it->address.c_str());
+        NotifyFrontendMessage msg;
         for (auto it2 = notification.timestamps.begin(); it2 != notification.timestamps.end(); it2++) {
-            Debug("%s, %lu", it2->first.c_str(), it2->second);
+            string key = it2->first;
+            Timestamp timestamp = it2->second;
+            Debug("%s, %lu", key.c_str(), timestamp);
+            ReadReply * reply = msg.add_replies();
+            reply->set_key(key);
+            reply->set_timestamp(timestamp);
         }
+        stringstream ss(it->address);
+        string hostname;
+        getline(ss, hostname, ':');
+        string port;
+        getline(ss, port, ':');
+        transport.SendMessage(NULL, hostname, port, msg);
     }
 }
 
@@ -305,7 +327,8 @@ main(int argc, char **argv)
 
     TCPTransport transport(0.0, 0.0, 0);
 
-    strongstore::Server server = strongstore::Server();
+    //strongstore::Server server = strongstore::Server();
+    strongstore::Server server;
     replication::VRReplica replica(config, index, &transport, 1, &server);
     
     if (keyPath) {

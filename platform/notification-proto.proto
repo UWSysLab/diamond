@@ -1,7 +1,5 @@
 import "common-proto.proto";
 
-package diamond.frontend.proto;
-
 message Notification {
     required uint64 clientid = 1;
     required uint64 reactiveid = 2;
@@ -20,4 +18,8 @@ message RegisterMessage {
 message RegisterReply {
     required uint32 status = 1;
     required uint32 msgid = 2;
+}
+
+message NotifyFrontendMessage {
+    repeated ReadReply replies = 1;
 }

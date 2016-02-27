@@ -38,6 +38,9 @@
 #include "store/occstore.h"
 #include "common-proto.pb.h"
 #include "store-proto.pb.h"
+#include "notification-proto.pb.h"
+
+#include <thread>
 
 namespace strongstore {
 
@@ -55,9 +58,13 @@ public:
 private:
     TxnStore *store;
 
+    TCPTransport transport;
+    std::thread *transportThread;
+
     void ExecuteGet(proto::Request, string &str2);
 
     void sendNotifications();
+    void runTransport();
 };
 
 } // namespace strongstore

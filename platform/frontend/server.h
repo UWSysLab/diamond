@@ -60,7 +60,7 @@ protected:
     void HandleAbort(const TransportAddress &remote,
                      const proto::AbortMessage &msg);
     void HandleRegister(const TransportAddress &remote,
-                     const proto::RegisterMessage &msg);
+                     const RegisterMessage &msg);
     
 private:
     Transport *transport;
