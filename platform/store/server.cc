@@ -148,6 +148,11 @@ void Server::sendNotifications() {
             ReadReply * reply = msg.add_replies();
             reply->set_key(key);
             reply->set_timestamp(timestamp);
+
+            //TODO: more legit values?
+            reply->set_value("");
+            reply->set_end(0);
+            reply->set_op(0);
         }
         stringstream ss(it->address);
         string hostname;

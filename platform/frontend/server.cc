@@ -58,6 +58,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
     static CommitMessage commit;
     static AbortMessage abort;
     static RegisterMessage reg;
+    static NotifyFrontendMessage notify;
 
     if (type == get.GetTypeName()) {
         get.ParseFromString(data);
@@ -71,10 +72,19 @@ Server::ReceiveMessage(const TransportAddress &remote,
     } else if (type == reg.GetTypeName()) {
         reg.ParseFromString(data);
         HandleRegister(remote, reg);
+    } else if (type == notify.GetTypeName()) {
+        notify.ParseFromString(data);
+        HandleNotifyFrontend(remote, notify);
     } else {
         Panic("Received unexpected message type in OR proto: %s",
               type.c_str());
     }
+}
+
+void
+Server::HandleNotifyFrontend(const TransportAddress &remote,
+                             const NotifyFrontendMessage &msg) {
+    Panic("Still need to implement NOTIFY-FRONTEND handling!");
 }
 
 void
