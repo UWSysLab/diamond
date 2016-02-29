@@ -83,7 +83,12 @@ std::string DCounter::Serialize() {
 }
 
 void DCounter::Deserialize(const std::string &s) {
-    _counter = stoi(s);
+    if (s == "") {
+        _counter = 0;
+    }
+    else {
+        _counter = stoi(s);
+    }
 }
 
 } // namespace diamond
