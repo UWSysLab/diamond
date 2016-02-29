@@ -192,6 +192,10 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
             cache.Remove(read.first);
         }        
     }
+    for (auto &inc : t.GetIncrementSet()) {
+        Debug("Removing [%s] from the cache", inc.first.c_str());
+        cache.Remove(inc.first);
+    }
     cache_lock.unlock();
 }
 
