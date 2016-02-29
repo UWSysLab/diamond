@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.parse.FindCallback;
+import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseUser;
 
 import android.app.ListActivity;
 import android.content.Intent;
@@ -60,9 +62,9 @@ public class ShowNotes extends ListActivity {
 	}
 	
 	private void refreshNotesList() {
+		final long startTime = System.currentTimeMillis();
 		// refreshes list of notes to current state
 		ParseQuery<ParseObject> query = ParseQuery.getQuery("Post");
-		
 		setProgressBarIndeterminateVisibility(true);
 		query.findInBackground(new FindCallback<ParseObject>() {
 			
@@ -79,22 +81,25 @@ public class ShowNotes extends ListActivity {
 					((ArrayAdapter<Note>) getListAdapter()).notifyDataSetChanged();
 				} else {
 					Log.d(getClass().getSimpleName(), "Error: " + e.getMessage());
+					System.err.println("An IO error was caught :" + e.getMessage());
+					System.err.println(e);
+					e.printStackTrace();
 				}
 			}
 		});
-		
+		final long endTime = System.currentTimeMillis();
+		// prints execution time to make parse query and display the notes
+		System.out.println("Total execution time: " + (endTime - startTime) + "ms");
 	}
 	
 	@Override
 	protected void onListItemClick(ListView l, View v, int position, long id) {
-
 	    Note note = posts.get(position);
 	    Intent intent = new Intent(this, EditNoteActivity.class);
 	    intent.putExtra("noteId", note.getId());
 	    intent.putExtra("noteTitle", note.getTitle());
 	    intent.putExtra("noteContent", note.getContent());
 	    startActivity(intent);
-
 	}
 	
 }
