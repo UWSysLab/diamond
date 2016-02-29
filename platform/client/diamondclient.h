@@ -95,7 +95,6 @@ private:
 
     // Reactive ID <-> timestamp map
     std::map<uint64_t, Timestamp> timestamp_map;
-    std::mutex timestamp_map_lock;
 
     // Timestamp of last reactive read
     Timestamp last_reactive;

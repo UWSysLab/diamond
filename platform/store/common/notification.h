@@ -2,6 +2,7 @@
 #define NOTIFICATION_H
 
 #include <map>
+#include <set>
 #include <string>
 
 #include "timestamp.h"

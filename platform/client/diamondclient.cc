@@ -118,11 +118,9 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid_lock.unlock();
        
         Timestamp timestamp = last_reactive;
-        timestamp_map_lock.lock();
         if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
             timestamp = timestamp_map[reactive_id];
         }
-        timestamp_map_lock.unlock();
 
         txn = Transaction(READ_ONLY, timestamp, reactive_id);
         client->BeginRO(txnid);
@@ -298,7 +296,10 @@ uint64_t DiamondClient::GetNextNotification()
 {
     Promise p;
     client->GetNextNotification(&p);
-    return p.GetReactiveId();
+    uint64_t reactive_id = p.GetReactiveId();
+    Timestamp timestamp = p.GetTimestamp();
+    timestamp_map[reactive_id] = timestamp;
+    return reactive_id;
 }
 
 } // namespace diamond
