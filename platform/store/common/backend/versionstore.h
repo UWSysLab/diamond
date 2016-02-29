@@ -62,7 +62,7 @@ public:
     void Remove(const std::string &key);
 
     Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
-    std::vector<FrontendNotification> GetFrontendNotifications();
+    std::vector<FrontendNotification> GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys);
     
     
 protected:
@@ -74,8 +74,6 @@ protected:
 
     std::unordered_map< std::string, std::set<std::string> > keyAddressMap; // indexed by key
     std::unordered_map< std::string, std::set<std::string> > addressKeyMap; // indexed by address
-    std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
-    void addNotification(const std::string &key, const Timestamp &t);
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */

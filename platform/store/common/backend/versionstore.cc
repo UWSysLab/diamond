@@ -129,8 +129,6 @@ VersionedKVStore::Put(const string &key, const Version &v)
         }
     }
     store[key].insert(v);
-
-    addNotification(key, v.GetTimestamp());
 }
 
 /*
@@ -208,20 +206,18 @@ VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
     return maxTimestamp;
 }
 
-std::vector<FrontendNotification>
-VersionedKVStore::GetFrontendNotifications() {
-    std::vector<FrontendNotification> notifications;
+vector<FrontendNotification>
+VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const set<string> &keys) {
+    std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
+    vector<FrontendNotification> notifications;
+    for (auto &key : keys) {
+        for (auto &address : keyAddressMap[key]) {
+            addressNotificationMap[address].address = address;
+            addressNotificationMap[address].timestamps[key] = timestamp;
+        }
+    }
     for (auto it = addressNotificationMap.begin(); it != addressNotificationMap.end(); it++) {
         notifications.push_back(it->second);
     }
-    addressNotificationMap.clear();
     return notifications;
-}
-
-void VersionedKVStore::addNotification(const std::string &key, const Timestamp &t) {
-    for (auto it = keyAddressMap[key].begin(); it != keyAddressMap[key].end(); it++) {
-        std::string address = *it;
-        addressNotificationMap[address].address = address;
-        addressNotificationMap[address].timestamps[key] = t;
-    }
 }

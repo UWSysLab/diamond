@@ -237,9 +237,27 @@ OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &addres
     return store.Subscribe(keys, address);
 }
 
-std::vector<FrontendNotification>
-OCCStore::GetFrontendNotifications() {
-    return store.GetFrontendNotifications();
+vector<FrontendNotification>
+OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid) {
+    Transaction t;
+    if (prepared.find(tid) != prepared.end()) {
+        t = prepared[tid];
+    } else {
+        Panic("No transaction with tid %lu is prepared", tid);
+    }
+    return GetFrontendNotifications(timestamp, t);
+}
+
+vector<FrontendNotification>
+OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn) {
+    set<string> keys;
+    for (auto &write : txn.GetWriteSet()) {
+        keys.insert(write.first);
+    }
+    for (auto &inc : txn.GetIncrementSet()) {
+        keys.insert(inc.first);
+    }
+    return store.GetFrontendNotifications(timestamp, keys);
 }
     
 } // namespace strongstore

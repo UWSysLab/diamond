@@ -118,7 +118,11 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         }
         break;
     case strongstore::proto::Request::COMMIT:
-        sendNotifications(); //TODO: right place?
+	if (request.commit().has_txn()) {
+            sendNotifications(store->GetFrontendNotifications(request.commit().timestamp(), Transaction(request.commit().txn())));
+	} else {
+            sendNotifications(store->GetFrontendNotifications(request.commit().timestamp(), request.txnid()));
+	}
         replicate = true;
         str2 = str1;
         break;
@@ -135,8 +139,7 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
     }
 }
 
-void Server::sendNotifications() {
-    vector<FrontendNotification> notifications = store->GetFrontendNotifications();
+void Server::sendNotifications(const vector<FrontendNotification> &notifications) {
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
         Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());

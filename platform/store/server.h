@@ -63,7 +63,7 @@ private:
 
     void ExecuteGet(proto::Request, string &str2);
 
-    void sendNotifications();
+    void sendNotifications(const std::vector<FrontendNotification> &notifications);
     void runTransport();
 };
 
