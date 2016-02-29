@@ -96,6 +96,7 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
     }
 
     // Send notifications for each reactive transaction that has one pending
+    // TODO: send notifications to client in a separate timer loop and listen for acks
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
         Debug("Sending NOTIFICATION: reactive_id %lu, client %s:%s", rt.reactive_id, rt.client_hostname.c_str(), rt.client_port.c_str());
@@ -140,6 +141,14 @@ Server::HandleRegister(const TransportAddress &remote,
     reply.set_status(status);
     reply.set_msgid(msg.msgid());
     transport->SendMessage(this, remote, reply);
+
+    // Send initial notification to client
+    // TODO: send notifications to client in a separate timer loop and listen for acks
+    Notification notification;
+    notification.set_clientid(rt.client_id);
+    notification.set_reactiveid(rt.reactive_id);
+    notification.set_timestamp(rt.next_timestamp);
+    transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
 }
 
 void
