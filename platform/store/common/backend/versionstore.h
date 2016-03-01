@@ -62,7 +62,7 @@ public:
     void Remove(const std::string &key);
 
     Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
-    std::vector<FrontendNotification> GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys);
+    void GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications);
     
     
 protected:

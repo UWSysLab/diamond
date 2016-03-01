@@ -5,13 +5,16 @@
 #include <set>
 #include <string>
 
+#include "version.h"
 #include "timestamp.h"
 #include "lib/tcptransport.h"
 
 class FrontendNotification {
 public:
     std::string address;
-    std::map<std::string, Timestamp> timestamps;
+    std::map<std::string, Version> values;
+    // Timestamps will be filled in VersionedKVStore::GetFrontendNotifications()
+    // The rest of the Version objects will be filled in OCCStore::fillCacheEntries()
 };
 
 class ReactiveTransaction {

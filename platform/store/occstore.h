@@ -70,8 +70,8 @@ public:
     void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
 
     Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
-    std::vector<FrontendNotification> GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid);
-    std::vector<FrontendNotification> GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn);
+    void GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, std::vector<FrontendNotification> &notifications);
+    void GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn, std::vector<FrontendNotification> &notifications);
 
 private:
     // Data store.
@@ -80,6 +80,8 @@ private:
     std::unordered_map<uint64_t, Transaction> prepared;
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
+
+    void fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications);
 };
 
 } // namespace strongstore

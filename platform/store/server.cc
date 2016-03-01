@@ -119,9 +119,13 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         break;
     case strongstore::proto::Request::COMMIT:
 	if (request.commit().has_txn()) {
-            sendNotifications(store->GetFrontendNotifications(request.commit().timestamp(), Transaction(request.commit().txn())));
+            vector<FrontendNotification> nvec;
+            store->GetFrontendNotifications(request.commit().timestamp(), Transaction(request.commit().txn()), nvec);
+            sendNotifications(nvec);
 	} else {
-            sendNotifications(store->GetFrontendNotifications(request.commit().timestamp(), request.txnid()));
+            vector<FrontendNotification> nvec;
+            store->GetFrontendNotifications(request.commit().timestamp(), request.txnid(), nvec);
+            sendNotifications(nvec);
 	}
         replicate = true;
         str2 = str1;
@@ -139,23 +143,20 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
     }
 }
 
-void Server::sendNotifications(const vector<FrontendNotification> &notifications) {
+void
+Server::sendNotifications(const vector<FrontendNotification> &notifications) {
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
         Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
         NotifyFrontendMessage msg;
-        for (auto it2 = notification.timestamps.begin(); it2 != notification.timestamps.end(); it2++) {
+        for (auto it2 = notification.values.begin(); it2 != notification.values.end(); it2++) {
             string key = it2->first;
-            Timestamp timestamp = it2->second;
+            Version value = it2->second;
+            Timestamp timestamp = value.GetTimestamp();
             Debug("%s, %lu", key.c_str(), timestamp);
             ReadReply * reply = msg.add_replies();
             reply->set_key(key);
-            reply->set_timestamp(timestamp);
-
-            //TODO: more legit values?
-            reply->set_value("");
-            reply->set_end(0);
-            reply->set_op(0);
+            value.Serialize(reply);
         }
         stringstream ss(it->address);
         string hostname;

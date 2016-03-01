@@ -237,19 +237,19 @@ OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &addres
     return store.Subscribe(keys, address);
 }
 
-vector<FrontendNotification>
-OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid) {
+void
+OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, vector<FrontendNotification> &notifications) {
     Transaction t;
     if (prepared.find(tid) != prepared.end()) {
         t = prepared[tid];
     } else {
         Panic("No transaction with tid %lu is prepared", tid);
     }
-    return GetFrontendNotifications(timestamp, t);
+    return GetFrontendNotifications(timestamp, t, notifications);
 }
 
-vector<FrontendNotification>
-OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn) {
+void
+OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn, vector<FrontendNotification> &notifications) {
     set<string> keys;
     for (auto &write : txn.GetWriteSet()) {
         keys.insert(write.first);
@@ -257,7 +257,22 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction
     for (auto &inc : txn.GetIncrementSet()) {
         keys.insert(inc.first);
     }
-    return store.GetFrontendNotifications(timestamp, keys);
+    store.GetFrontendNotifications(timestamp, keys, notifications);
+}
+
+void
+OCCStore::fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications) {
+    for (auto &n : notifications) {
+        for (auto it = n.values.begin(); it != n.values.end(); it++) {
+            string key = it->first;
+            Version value = it->second;
+            Timestamp timestamp = value.GetTimestamp();
+            int ret = Get(0, key, value, timestamp); //TODO: is txnid 0 fine, since Get ignores it?
+            if (ret != REPLY_OK) {
+                Panic("Cached value for %s at timestamp %lu not found", key.c_str(), value.GetTimestamp());
+            }
+        }
+    }
 }
     
 } // namespace strongstore

@@ -206,18 +206,16 @@ VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
     return maxTimestamp;
 }
 
-vector<FrontendNotification>
-VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const set<string> &keys) {
+void
+VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications) {
     std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
-    vector<FrontendNotification> notifications;
     for (auto &key : keys) {
         for (auto &address : keyAddressMap[key]) {
             addressNotificationMap[address].address = address;
-            addressNotificationMap[address].timestamps[key] = timestamp;
+            addressNotificationMap[address].values[key] = Version(timestamp);
         }
     }
     for (auto it = addressNotificationMap.begin(); it != addressNotificationMap.end(); it++) {
         notifications.push_back(it->second);
     }
-    return notifications;
 }
