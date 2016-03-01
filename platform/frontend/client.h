@@ -119,7 +119,7 @@ private:
                         const std::string &data);
 
     // Notification client state
-    std::queue<std::pair<uint64_t, Timestamp> > pending_notifications;
+    std::queue<Notification> pending_notifications;
     Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
     std::mutex notification_lock; // the lock for both pieces of state above
 

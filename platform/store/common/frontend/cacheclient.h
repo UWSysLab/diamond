@@ -84,7 +84,7 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
-    void GetNextNotification(Promise *promise = NULL);
+    virtual void GetNextNotification(Promise *promise = NULL);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,

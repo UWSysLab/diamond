@@ -67,3 +67,16 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
         }
     }
 }
+
+void
+ReactiveClient::GetNextNotification(Promise *promise) {
+    Debug("GET_NEXT_NOTIFICATION");
+    Promise p(COMMIT_TIMEOUT);
+    Promise *pp = (promise != NULL) ? promise : &p;
+    txnclient->GetNextNotification(pp);
+    map<string, Version> values = pp->GetValues();
+    for (auto &pair : values) {
+        Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
+        cache.Put(pair.first, pair.second);
+    }
+}

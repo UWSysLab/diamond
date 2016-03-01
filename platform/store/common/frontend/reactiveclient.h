@@ -48,6 +48,8 @@ public:
                 const Transaction &txn = Transaction(),
                 Promise *promise = NULL);
 
+    void GetNextNotification(Promise *promise = NULL);
+
 private:
     std::unordered_map<uint64_t, std::set<std::string> > regMap; // reactive_id to registration set map
 
