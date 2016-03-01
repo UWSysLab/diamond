@@ -248,20 +248,16 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t ti
     } else {
         Panic("No transaction with tid %lu is committed", tid);
     }
-    return GetFrontendNotifications(timestamp, t, notifications);
-}
 
-void
-OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn, vector<FrontendNotification> &notifications) {
     set<string> keys;
-    for (auto &write : txn.GetWriteSet()) {
+    for (auto &write : t.GetWriteSet()) {
         keys.insert(write.first);
     }
-    for (auto &inc : txn.GetIncrementSet()) {
+    for (auto &inc : t.GetIncrementSet()) {
         keys.insert(inc.first);
     }
     store.GetFrontendNotifications(timestamp, keys, notifications);
-    fillCacheEntries(txn, notifications);
+    fillCacheEntries(t, notifications);
 }
 
 void

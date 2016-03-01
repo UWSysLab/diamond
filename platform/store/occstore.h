@@ -71,7 +71,6 @@ public:
 
     Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
     void GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, std::vector<FrontendNotification> &notifications);
-    void GetFrontendNotifications(const Timestamp &timestamp, const Transaction &txn, std::vector<FrontendNotification> &notifications);
 
 private:
     // Data store.

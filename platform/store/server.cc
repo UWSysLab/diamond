@@ -120,15 +120,15 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
     case strongstore::proto::Request::COMMIT:
 	if (request.commit().has_txn()) {
 	    store->Commit(request.txnid(), request.commit().timestamp(), Transaction(request.commit().txn()));
-            vector<FrontendNotification> nvec;
-            store->GetFrontendNotifications(request.commit().timestamp(), Transaction(request.commit().txn()), nvec);
-            sendNotifications(nvec);
 	} else {
 	    store->Commit(request.txnid(), request.commit().timestamp());
+	}
+        // Send notifications
+        {
             vector<FrontendNotification> nvec;
             store->GetFrontendNotifications(request.commit().timestamp(), request.txnid(), nvec);
             sendNotifications(nvec);
-	}
+        }
         replicate = true;
         str2 = str1;
         break;
