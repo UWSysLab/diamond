@@ -89,9 +89,11 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
     // and update the next timestamps to run them at
     for (int i = 0; i < msg.replies_size(); i++) {
         std::string key = msg.replies(i).key();
-        Timestamp timestamp = msg.replies(i).timestamp();
+        Version value(msg.replies(i));
+        Timestamp timestamp = value.GetTimestamp();
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
             transactions[*it].next_timestamp = timestamp;
+            transactions[*it].values[key] = value;
         }
     }
 
@@ -105,6 +107,13 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
             notification.set_clientid(rt.client_id);
             notification.set_reactiveid(rt.reactive_id);
             notification.set_timestamp(rt.next_timestamp);
+            for (auto &pair : rt.values) {
+                string key = pair.first;
+                Version value = pair.second;
+                ReadReply * reply = notification.add_replies();
+                reply->set_key(key);
+                value.Serialize(reply);
+            }
             transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
         }
     }

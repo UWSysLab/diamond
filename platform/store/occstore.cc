@@ -263,14 +263,19 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t ti
 void
 OCCStore::fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications) {
     for (auto &n : notifications) {
+        vector<pair<string, Timestamp> > keys;
         for (auto it = n.values.begin(); it != n.values.end(); it++) {
+            keys.push_back(pair<string, Timestamp>(it->first, it->second.GetTimestamp()));
+        }
+        for (auto it = keys.begin(); it != keys.end(); it++) {
             string key = it->first;
-            Version value = it->second;
-            Timestamp timestamp = value.GetTimestamp();
+            Timestamp timestamp = it->second;
+            Version value;
             int ret = Get(0, key, value, timestamp); //TODO: is txnid 0 fine, since Get ignores it?
             if (ret != REPLY_OK) {
                 Panic("Cached value for %s at timestamp %lu not found", key.c_str(), value.GetTimestamp());
             }
+            n.values[key] = value;
         }
     }
 }
