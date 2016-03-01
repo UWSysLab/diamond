@@ -78,6 +78,7 @@ private:
     CommutativeStore store;
 
     std::unordered_map<uint64_t, Transaction> prepared;
+    std::unordered_map<uint64_t, Transaction> committed;
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
 

@@ -181,26 +181,29 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 void
 OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn)
 {
-    Transaction t;
-    Debug("[%lu] COMMIT", tid);
-    if (prepared.find(tid) != prepared.end()) {
-        t = prepared[tid];
-    } else {
-        t = txn;
-    }
+    if (committed.find(tid) == committed.end()) {
+        Transaction t;
+        Debug("[%lu] COMMIT", tid);
+        if (prepared.find(tid) != prepared.end()) {
+            t = prepared[tid];
+        } else {
+            t = txn;
+        }
 
-    for (auto &write : t.GetWriteSet()) {
-        store.Put(write.first, // key
-                  write.second, // value
-                  timestamp); // timestamp
-    }
+        for (auto &write : t.GetWriteSet()) {
+            store.Put(write.first, // key
+                      write.second, // value
+                      timestamp); // timestamp
+        }
 
-    for (auto &inc : t.GetIncrementSet()) {
-        store.Increment(inc.first,
-                        inc.second,
-                        timestamp);
+        for (auto &inc : t.GetIncrementSet()) {
+            store.Increment(inc.first,
+                            inc.second,
+                            timestamp);
+        }
+        prepared.erase(tid);
+        committed[tid] = t;
     }
-    prepared.erase(tid);
 }
 
 void
@@ -240,10 +243,10 @@ OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &addres
 void
 OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, vector<FrontendNotification> &notifications) {
     Transaction t;
-    if (prepared.find(tid) != prepared.end()) {
-        t = prepared[tid];
+    if (committed.find(tid) != committed.end()) {
+        t = committed[tid];
     } else {
-        Panic("No transaction with tid %lu is prepared", tid);
+        Panic("No transaction with tid %lu is committed", tid);
     }
     return GetFrontendNotifications(timestamp, t, notifications);
 }
@@ -258,6 +261,7 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const Transaction
         keys.insert(inc.first);
     }
     store.GetFrontendNotifications(timestamp, keys, notifications);
+    fillCacheEntries(txn, notifications);
 }
 
 void
