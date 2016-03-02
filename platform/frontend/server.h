@@ -68,8 +68,8 @@ private:
     Transport *transport;
     strongstore::Client *store;
 
-    std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map reactive ID to data structure
-    std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the reactive transactions listening to it
+    std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
+    std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
 };
 
 } // namespace frontend

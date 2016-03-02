@@ -19,6 +19,7 @@ public:
 
 class ReactiveTransaction {
 public:
+    uint64_t frontend_index; // ((client_id << 32) | reactive_id)
     uint64_t reactive_id;
     uint64_t client_id;
     Timestamp next_timestamp;

@@ -132,6 +132,7 @@ Server::HandleRegister(const TransportAddress &remote,
     int status = store->Subscribe(regSet, GetAddress(), timestamp);
 
     ReactiveTransaction rt;
+    rt.frontend_index = (msg.clientid() << 32) | msg.reactiveid();
     rt.reactive_id = msg.reactiveid();
     rt.client_id = msg.clientid();
     rt.last_timestamp = msg.timestamp();
@@ -140,10 +141,10 @@ Server::HandleRegister(const TransportAddress &remote,
     rt.client_hostname = remote.getHostname();
     rt.client_port = remote.getPort();
 
-    transactions[rt.reactive_id] = rt;
+    transactions[rt.frontend_index] = rt;
 
     for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
-        listeners[*it].insert(rt.reactive_id);
+        listeners[*it].insert(rt.frontend_index);
     }
 
     RegisterReply reply;
