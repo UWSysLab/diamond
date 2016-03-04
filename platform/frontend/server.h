@@ -72,8 +72,10 @@ private:
 
     std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
     std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
+    Timeout * sendNotificationTimeout;
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
+    void sendNotifications();
 };
 
 } // namespace frontend
