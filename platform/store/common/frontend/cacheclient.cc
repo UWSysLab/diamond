@@ -250,3 +250,9 @@ CacheClient::Subscribe(const std::set<std::string> &keys,
     Promise *pp = (promise != NULL) ? promise : &p;
     txnclient->Subscribe(keys, address, pp);
 }
+
+void
+CacheClient::ReplyToNotification(const uint64_t reactive_id,
+                                 const Timestamp timestamp) {
+    Panic("ReplyToNotification not implemented for this client");
+}

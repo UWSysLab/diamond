@@ -322,5 +322,18 @@ Client::Subscribe(const std::set<std::string> &keys,
     Panic("Subscribe not implemented for this client");
 }
 
+void
+Client::ReplyToNotification(const uint64_t reactive_id,
+                            const Timestamp timestamp) {
+    NotificationReply msg;
+    msg.set_clientid(client_id);
+    msg.set_reactiveid(reactive_id);
+    msg.set_msgid(msgid++);
+    msg.set_timestamp(timestamp);
+
+    // Send message
+    transport->SendMessageToReplica(this, 0, msg);
+}
+
 } // namespace frontend
 } // namespace diamond

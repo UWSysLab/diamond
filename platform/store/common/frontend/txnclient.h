@@ -109,6 +109,9 @@ public:
     virtual void Subscribe(const std::set<std::string> &keys,
                            const TransportAddress &myAddress,
                            Promise *promise = NULL) = 0;
+
+    virtual void ReplyToNotification(const uint64_t reactive_id,
+                                     const Timestamp timestamp) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */

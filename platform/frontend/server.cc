@@ -59,6 +59,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
     static AbortMessage abort;
     static RegisterMessage reg;
     static NotifyFrontendMessage notify;
+    static NotificationReply reply;
 
     if (type == get.GetTypeName()) {
         get.ParseFromString(data);
@@ -75,10 +76,26 @@ Server::ReceiveMessage(const TransportAddress &remote,
     } else if (type == notify.GetTypeName()) {
         notify.ParseFromString(data);
         HandleNotifyFrontend(remote, notify);
+    } else if (type == reply.GetTypeName()) {
+        reply.ParseFromString(data);
+        HandleNotificationReply(remote, reply);
     } else {
         Panic("Received unexpected message type in OR proto: %s",
               type.c_str());
     }
+}
+
+uint64_t
+Server::getFrontendIndex(uint64_t client_id, uint64_t reactive_id) {
+    return ((client_id << 32) | reactive_id);
+}
+
+void
+Server::HandleNotificationReply(const TransportAddress &remote,
+                                const NotificationReply &msg) {
+    Debug("Handling NOTIFICATION-REPLY");
+    uint64_t frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
+    transactions[frontend_index].last_timestamp = msg.timestamp();
 }
 
 void
@@ -132,7 +149,7 @@ Server::HandleRegister(const TransportAddress &remote,
     int status = store->Subscribe(regSet, GetAddress(), timestamp);
 
     ReactiveTransaction rt;
-    rt.frontend_index = (msg.clientid() << 32) | msg.reactiveid();
+    rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
     rt.reactive_id = msg.reactiveid();
     rt.client_id = msg.clientid();
     rt.last_timestamp = msg.timestamp();

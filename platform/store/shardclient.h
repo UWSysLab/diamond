@@ -110,6 +110,9 @@ public:
                    const TransportAddress &myAddress,
                    Promise *promise = NULL);
 
+    void ReplyToNotification(const uint64_t reactive_id,
+                             const Timestamp timestamp);
+
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.

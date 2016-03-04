@@ -53,6 +53,8 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
         std::set<std::string> regset = txn.GetRegSet();
         uint64_t reactive_id = txn.GetReactiveId();
         Timestamp timestamp = txn.GetTimestamp();
+
+        // Register new reactive transaction if necessary
         if (regMap.find(reactive_id) == regMap.end()) {
             Promise rp(COMMIT_TIMEOUT);
             txnclient->Register(reactive_id, timestamp, regset, &rp);
@@ -65,6 +67,10 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
                 Panic("Registration retry not implemented");
             }
         }
+        else { // Otherwise, ack notification
+            txnclient->ReplyToNotification(reactive_id, timestamp);
+        }
+        
     }
 }
 

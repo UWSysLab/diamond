@@ -372,5 +372,11 @@ ShardClient::Register(const uint64_t reactive_id,
     Panic("Register not implemented for this client");
 }
 
+void
+ShardClient::ReplyToNotification(const uint64_t reactive_id,
+                                 const Timestamp timestamp) {
+    Panic("ReplyToNotification not implemented for this client");
+}
+
 
 } // namespace strongstore

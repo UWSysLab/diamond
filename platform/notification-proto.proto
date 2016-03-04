@@ -7,6 +7,13 @@ message Notification {
     repeated ReadReply replies = 4;
 }
 
+message NotificationReply {
+    required uint64 clientid = 1;
+    required uint32 msgid = 2;
+    required uint64 reactiveid = 3;
+    required uint64 timestamp = 4;
+}
+
 message RegisterMessage {
     required uint64 clientid = 1;
     required uint32 msgid = 2;

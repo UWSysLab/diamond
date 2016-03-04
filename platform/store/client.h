@@ -127,6 +127,9 @@ public:
                   const std::set<std::string> &keys,
                   Promise *promise = NULL);
 
+    void ReplyToNotification(const uint64_t reactive_id,
+                             const Timestamp timestamp);
+
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.

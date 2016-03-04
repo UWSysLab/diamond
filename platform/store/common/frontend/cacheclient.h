@@ -95,6 +95,9 @@ public:
                    const TransportAddress &address,
                    Promise *promise = NULL);
 
+    void ReplyToNotification(const uint64_t reactive_id,
+                             const Timestamp timestamp);
+
 protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;

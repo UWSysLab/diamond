@@ -106,6 +106,9 @@ public:
                    const TransportAddress &address,
                    Promise *promise = NULL);
 
+    void ReplyToNotification(const uint64_t reactive_id,
+                             const Timestamp timestamp);
+
 private:
     transport::Configuration *config;
     Transport *transport; // Transport layer.
