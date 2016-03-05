@@ -11,6 +11,10 @@ namespace po = boost::program_options;
 
 DString str;
 
+void callback(uint64_t reactive_id) {
+    std::cout << "Callback fired for notification " << reactive_id << std::endl;
+}
+
 int main(int argc, char ** argv) {
     std::string configPrefix;
 
@@ -29,6 +33,7 @@ int main(int argc, char ** argv) {
 
     DiamondInit(configPrefix, 1, 0);
     StartTxnManager();
+    DObject::NotificationInit(&callback);
 
     DObject::Map(str, "cppreactivetest:str");
 
