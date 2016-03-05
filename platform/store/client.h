@@ -130,6 +130,8 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
+    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.

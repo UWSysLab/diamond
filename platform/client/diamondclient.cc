@@ -292,7 +292,8 @@ DiamondClient::Abort()
     txn = Transaction();
 }
 
-uint64_t DiamondClient::GetNextNotification()
+uint64_t
+DiamondClient::GetNextNotification()
 {
     Promise p;
     client->GetNextNotification(&p);
@@ -300,6 +301,18 @@ uint64_t DiamondClient::GetNextNotification()
     Timestamp timestamp = p.GetTimestamp();
     timestamp_map[reactive_id] = timestamp;
     return reactive_id;
+}
+
+void
+DiamondClient::NotificationInit(std::function<void (uint64_t)> callback) {
+    notification_callback = callback;
+    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&DiamondClient::handleNotification, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    client->NotificationInit(boundFunc);
+}
+
+void
+DiamondClient::handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
+    notification_callback(reactive_id);
 }
 
 } // namespace diamond

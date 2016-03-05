@@ -34,8 +34,6 @@ class TxnManager {
     std::thread * txnThread;
     std::thread * reactiveThread;
     std::vector<txn_function_t> reactiveList;
-
-    std::vector<txn_function_t> funcList;
     std::map<uint64_t, txn_function_t> funcMap;
     uint64_t nextId = 0;
 

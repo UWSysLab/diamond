@@ -243,6 +243,11 @@ Client::ReceiveMessage(const TransportAddress &remote,
             Version value(notification.replies(i));
             cache_entries[key] = value;
         }
+
+        // Handle non-blocking case
+        notification_callback(timestamp, cache_entries, reactive_id);
+
+        // Handle blocking case
         notification_lock.lock();
         if (reactive_promise != NULL) {
             notification_lock.unlock();
@@ -333,6 +338,11 @@ Client::ReplyToNotification(const uint64_t reactive_id,
 
     // Send message
     transport->SendMessageToReplica(this, 0, msg);
+}
+
+void
+Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+    notification_callback = callback;
 }
 
 } // namespace frontend

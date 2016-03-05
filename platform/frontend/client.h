@@ -109,6 +109,8 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
+    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+
 private:
     transport::Configuration *config;
     Transport *transport; // Transport layer.
@@ -125,6 +127,7 @@ private:
     std::queue<Notification> pending_notifications;
     Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
     std::mutex notification_lock; // the lock for both pieces of state above
+    std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> notification_callback; // a callback that will be called upon receiving a notification
 
 };
 

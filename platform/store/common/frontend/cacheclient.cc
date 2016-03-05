@@ -256,3 +256,9 @@ CacheClient::ReplyToNotification(const uint64_t reactive_id,
                                  const Timestamp timestamp) {
     Panic("ReplyToNotification not implemented for this client");
 }
+
+
+void
+CacheClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+    txnclient->NotificationInit(callback);
+}

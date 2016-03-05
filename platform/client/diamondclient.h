@@ -47,6 +47,7 @@
 #include <set>
 #include <thread>
 #include <vector>
+#include <functional>
 
 namespace diamond {
 
@@ -68,6 +69,7 @@ public:
 
     void BeginReactive(uint64_t reactive_id);
     uint64_t GetNextNotification(void);
+    void NotificationInit(std::function<void (uint64_t)> callback);
 
 private:    
     /* Private helper functions. */
@@ -93,11 +95,13 @@ private:
     // Caching client for the store
     CacheClient *client;
 
-    // Reactive ID <-> timestamp map
-    std::map<uint64_t, Timestamp> timestamp_map;
+    // Reactive helper methods
+    void handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id);
 
-    // Timestamp of last reactive read
-    Timestamp last_reactive;
+    // Reactive state 
+    std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
+    Timestamp last_reactive; // Timestamp of last reactive read
+    std::function<void (uint64_t)> notification_callback;
 };
 
 } // namespace diamond

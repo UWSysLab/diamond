@@ -57,6 +57,10 @@ uint64_t DObject::GetNextNotification(void) {
     return store->GetNextNotification();
 }
 
+void DObject::NotificationInit(std::function<void (uint64_t)> callback) {
+    store->NotificationInit(callback);
+}
+
 // XXX: Add an assert so that we don't map inside a transaction?
 int
 DObject::Map(DObject &addr, const string &key)

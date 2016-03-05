@@ -113,6 +113,8 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
+    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.

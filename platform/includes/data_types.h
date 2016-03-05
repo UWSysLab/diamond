@@ -16,6 +16,7 @@
 #include <set>
 #include <map>
 #include <pthread.h>
+#include <functional>
 
 #include "profile.h"
 
@@ -38,6 +39,7 @@ public:
     static int TransactionCommit(void);
     static void BeginReactive(uint64_t reactive_id);
     static uint64_t GetNextNotification(void);
+    static void NotificationInit(std::function<void (uint64_t)> callback);
      
 protected:
     DObject() : _key("dummykey") {};

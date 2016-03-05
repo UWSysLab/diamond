@@ -450,4 +450,9 @@ Client::ReplyToNotification(const uint64_t reactive_id,
     Panic("ReplyToNotification not implemented for this client");
 }
 
+void
+Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+    Panic("NotificationInit not implemented for this client");
+}
+
 } // namespace strongstore

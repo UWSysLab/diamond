@@ -86,3 +86,20 @@ ReactiveClient::GetNextNotification(Promise *promise) {
         cache.Put(pair.first, pair.second);
     }
 }
+
+void
+ReactiveClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+    notification_callback = callback;
+    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&ReactiveClient::handleNotification, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    txnclient->NotificationInit(boundFunc);
+    
+}
+
+void
+ReactiveClient::handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
+    for (auto &pair : values) {
+        Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
+        cache.Put(pair.first, pair.second);
+    }
+    notification_callback(timestamp, values, reactive_id);
+}

@@ -98,6 +98,8 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
+    virtual void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+
 protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;

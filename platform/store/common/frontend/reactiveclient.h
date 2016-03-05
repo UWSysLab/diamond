@@ -50,8 +50,12 @@ public:
 
     void GetNextNotification(Promise *promise = NULL);
 
+    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+
 private:
     std::unordered_map<uint64_t, std::set<std::string> > regMap; // reactive_id to registration set map
+    std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> notification_callback;
+    void handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id);
 
 };
 
