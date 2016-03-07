@@ -18,6 +18,21 @@ namespace diamond {
     
 using namespace boost::python;
 
+// Global variables and methods for notification callback
+PyObject * pythonCallback = NULL;
+void nativeCallback(uint64_t reactive_id) {
+    PyGILState_STATE gstate;
+    gstate = PyGILState_Ensure();
+    call<void>(pythonCallback, reactive_id);
+    PyGILState_Release(gstate);
+}
+void notificationInitWrapper(PyObject * callback) {
+    Py_XINCREF(callback);
+    Py_XDECREF(pythonCallback);
+    pythonCallback = callback;
+    DObject::NotificationInit(&nativeCallback);
+}
+
 BOOST_PYTHON_MODULE(libpydiamond)
 {
     void (*DiamondInitNoArgs)() = &DiamondInit;
@@ -26,6 +41,7 @@ BOOST_PYTHON_MODULE(libpydiamond)
     def("DiamondInit", DiamondInitWithArgs);
 
     def("GetThreadId", &GetThreadId);
+    def("NotificationInit", &notificationInitWrapper);
 
     void (*TransactionBegin)(void) = &DObject::TransactionBegin;
     class_<DObject, boost::noncopyable>("DObject", no_init)
@@ -33,6 +49,12 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .staticmethod("TransactionBegin")
         .def("TransactionCommit", &DObject::TransactionCommit)
         .staticmethod("TransactionCommit")
+        .def("GetNextNotification", &DObject::GetNextNotification)
+        .staticmethod("GetNextNotification")
+        .def("BeginReactive", &DObject::BeginReactive)
+        .staticmethod("BeginReactive")
+        .def("NotificationInit", &DObject::NotificationInit)
+        .staticmethod("NotificationInit")
         .def("Map", &DObject::Map)
     ;
 
