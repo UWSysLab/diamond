@@ -312,6 +312,7 @@ DiamondClient::NotificationInit(std::function<void (uint64_t)> callback) {
 
 void
 DiamondClient::handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
+    timestamp_map[reactive_id] = timestamp;
     notification_callback(reactive_id);
 }
 
