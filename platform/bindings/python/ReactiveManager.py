@@ -10,22 +10,32 @@ idFuncMap = dict() # reactive_id <-> function map
 funcIdMap = dict() # function <-> reactive_id map
 nextId = 0
 
+notificationList = []
+cv = threading.Condition()
+
 def runInBackground(target, *args, **kwargs):
     threading.Thread(target=target, args=args, kwargs=kwargs).start()
     #reactor.callInThread(target, *args, **kwargs)
 
 def start():
     NotificationInit(callback)
+    thread = threading.Thread(target=run, args=())
+    thread.daemon = True
+    thread.start()
 
 def callback(reactive_id):
-    func = idFuncMap[reactive_id]
-    DObject.BeginReactive(reactive_id)
-    func(*funcArgMap[func])
-    DObject.TransactionCommit()
+    cv.acquire()
+    notificationList.append(reactive_id)
+    cv.notify()
+    cv.release()
 
 def run():
     while True:
-        reactive_id = DObject.GetNextNotification()
+        cv.acquire()
+        while len(notificationList) == 0:
+            cv.wait()
+        reactive_id = notificationList.pop(0)
+        cv.release()
         func = idFuncMap[reactive_id]
         DObject.BeginReactive(reactive_id)
         func(*funcArgMap[func])
@@ -59,10 +69,3 @@ def generateId():
     ret = nextId
     nextId = nextId + 1
     return ret
-
-#class TestObj:
-#    def testFunc(self):
-#        print "Hello world 2!"
-#obj = TestObj()
-#add(obj.testFunc)
-#time.sleep(10)
