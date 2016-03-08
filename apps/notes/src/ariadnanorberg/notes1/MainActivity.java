@@ -20,10 +20,9 @@ public class MainActivity extends Activity {
 		Parse.initialize(new Parse.Configuration.Builder(this)
 			.applicationId("WsCxdr90gpqXO5rPQ6FvVJE46X8Tghr48sEUMaDN")
 			.clientKey("qessDyZkCChhXdKo6BZRhiFk8ZHaKPjJEQDMhVin")
-			.server("http://localhost:1337/parse")
+			.server("http://128.208.6.85:1337/parse/")
 			.build()
 		);
-		//Parse.initialize(this);
 		final Button viewNotes = (Button) findViewById(R.id.viewNotes);
 	}
 
