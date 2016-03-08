@@ -151,13 +151,19 @@ void
 Server::HandleRegister(const TransportAddress &remote,
                        const RegisterMessage &msg)
 {
-    std::set<std::string> regSet;
+    set<string> regSet;
+    set<string> subscribeSet; // set of keys from regSet that we aren't already subscribed to
     for (int i = 0; i < msg.keys_size(); i++) {
-        Debug("REGISTER %s", msg.keys(i).c_str());
-        regSet.insert(msg.keys(i));
+        string key = msg.keys(i);
+        Debug("REGISTER %s", key.c_str());
+        regSet.insert(key);
+        if (listeners.find(key) == listeners.end()) {
+            subscribeSet.insert(key);
+        }
     }
+
     Timestamp timestamp;
-    int status = store->Subscribe(regSet, GetAddress(), timestamp);
+    int status = store->Subscribe(subscribeSet, GetAddress(), timestamp);
 
     ReactiveTransaction rt;
     rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
