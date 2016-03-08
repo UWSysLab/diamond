@@ -316,11 +316,20 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
     Debug("[shard %i] Received ABORT callback [%d]", shard, reply.status());
 }
 
+/*
+ * Subscribe to the given keys in the backend partition. If the set
+ * of keys is empty, returns immediately with timestamp 0.
+ */
 void
 ShardClient::Subscribe(const set<string> &keys,
                        const TransportAddress &myAddress,
                        Promise *promise) {
     Debug("[shard %i] Sending SUBSCRIBE", shard);
+
+    if (keys.size() == 0) {
+        promise->Reply(REPLY_OK, 0);
+        return;
+    }
 
     // create request
     string request_str;

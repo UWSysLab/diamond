@@ -25,7 +25,6 @@ public:
     Timestamp next_timestamp;
     Timestamp last_timestamp;
     std::set<std::string> keys;
-    std::unordered_map<std::string, Version> values; // cached values
     std::string client_hostname;
     std::string client_port;
 };

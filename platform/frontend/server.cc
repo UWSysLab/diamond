@@ -100,19 +100,22 @@ Server::HandleNotificationReply(const TransportAddress &remote,
     transactions[frontend_index].last_timestamp = msg.timestamp();
 }
 
+/*
+ * For every key, find all the reactive transactions listening to it
+ * and update the next timestamps to run them at, and update the cached
+ * value for the key.
+ */
 void
 Server::HandleNotifyFrontend(const TransportAddress &remote,
                              const NotifyFrontendMessage &msg) {
     Debug("Handling NOTIFY-FRONTEND");
-    // For every key, find all the reactive transactions listening to it,
-    // and update the next timestamps to run them at
     for (int i = 0; i < msg.replies_size(); i++) {
         std::string key = msg.replies(i).key();
         Version value(msg.replies(i));
         Timestamp timestamp = value.GetTimestamp();
+        values[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
             transactions[*it].next_timestamp = timestamp;
-            transactions[*it].values[key] = value;
         }
     }
     sendNotifications();
@@ -132,9 +135,8 @@ Server::sendNotifications() {
             notification.set_clientid(rt.client_id);
             notification.set_reactiveid(rt.reactive_id);
             notification.set_timestamp(rt.next_timestamp);
-            for (auto &pair : rt.values) {
-                string key = pair.first;
-                Version value = pair.second;
+            for (auto key : rt.keys) {
+                Version value = values[key];
                 ReadReply * reply = notification.add_replies();
                 reply->set_key(key);
                 value.Serialize(reply);
@@ -164,6 +166,13 @@ Server::HandleRegister(const TransportAddress &remote,
 
     Timestamp timestamp;
     int status = store->Subscribe(subscribeSet, GetAddress(), timestamp);
+
+    for (auto it = regSet.begin(); it != regSet.end(); it++) {
+        Timestamp keyTimestamp = values[*it].GetTimestamp();
+        if (timestamp < keyTimestamp) {
+            timestamp = keyTimestamp;
+        }
+    }
 
     ReactiveTransaction rt;
     rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
