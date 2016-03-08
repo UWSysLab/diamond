@@ -245,7 +245,9 @@ Client::ReceiveMessage(const TransportAddress &remote,
         }
 
         // Handle non-blocking case
-        notification_callback(timestamp, cache_entries, reactive_id);
+        if (callback_registered) {
+            notification_callback(timestamp, cache_entries, reactive_id);
+        }
 
         // Handle blocking case
         notification_lock.lock();
@@ -343,6 +345,7 @@ Client::ReplyToNotification(const uint64_t reactive_id,
 void
 Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
     notification_callback = callback;
+    callback_registered = true;
 }
 
 } // namespace frontend

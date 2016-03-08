@@ -128,6 +128,7 @@ private:
     Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
     std::mutex notification_lock; // the lock for both pieces of state above
     std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> notification_callback; // a callback that will be called upon receiving a notification
+    bool callback_registered = false;
 
 };
 
