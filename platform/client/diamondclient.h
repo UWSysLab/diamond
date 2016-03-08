@@ -100,7 +100,7 @@ private:
 
     // Reactive state 
     std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
-    Timestamp last_reactive; // Timestamp of last reactive read
+    Timestamp last_notification_ts; // Timestamp at which the last notification was received
     std::function<void (uint64_t)> notification_callback;
 };
 

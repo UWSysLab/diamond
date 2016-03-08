@@ -50,7 +50,7 @@ DiamondClient::DiamondClient(string configPath)
         client_id = dis(gen);
     }
     txnid_counter = (client_id/10000)*10000;
-    last_reactive = Timestamp(0);
+    last_notification_ts = Timestamp(0);
 
     Debug("Initializing Diamond Store client with id [%lu]", client_id);
 
@@ -117,7 +117,7 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid = ++txnid_counter;
         txnid_lock.unlock();
        
-        Timestamp timestamp = last_reactive;
+        Timestamp timestamp = last_notification_ts;
         if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
             timestamp = timestamp_map[reactive_id];
         }
@@ -300,6 +300,7 @@ DiamondClient::GetNextNotification()
     uint64_t reactive_id = p.GetReactiveId();
     Timestamp timestamp = p.GetTimestamp();
     timestamp_map[reactive_id] = timestamp;
+    last_notification_ts = timestamp;
     return reactive_id;
 }
 
@@ -313,6 +314,7 @@ DiamondClient::NotificationInit(std::function<void (uint64_t)> callback) {
 void
 DiamondClient::handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
     timestamp_map[reactive_id] = timestamp;
+    last_notification_ts = timestamp;
     notification_callback(reactive_id);
 }
 
