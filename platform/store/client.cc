@@ -415,7 +415,7 @@ Client::Subscribe(const set<string> &keys,
 
     if (promise != NULL) {
         int r = REPLY_OK;
-        Timestamp latestTimestamp;
+        Timestamp latestTimestamp = 0;
         for (auto p : promises) {
             if (p->GetReply() != REPLY_OK) {
                 r = p->GetReply();

@@ -164,7 +164,7 @@ Server::HandleRegister(const TransportAddress &remote,
         }
     }
 
-    Timestamp timestamp;
+    Timestamp timestamp = 0;
     int status = store->Subscribe(subscribeSet, GetAddress(), timestamp);
 
     for (auto it = regSet.begin(); it != regSet.end(); it++) {
@@ -194,6 +194,8 @@ Server::HandleRegister(const TransportAddress &remote,
     reply.set_status(status);
     reply.set_msgid(msg.msgid());
     transport->SendMessage(this, remote, reply);
+
+    sendNotificationTimeout->Reset();
 }
 
 void
