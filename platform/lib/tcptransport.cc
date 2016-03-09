@@ -76,7 +76,9 @@ TCPTransportAddress::getHostname() const
 std::string
 TCPTransportAddress::getPort() const
 {
-    return std::to_string(ntohs(addr.sin_port));
+    char str[100];
+    sprintf(str, "%d", ntohs(addr.sin_port));
+    return std::string(str);
 }
 
 bool operator==(const TCPTransportAddress &a, const TCPTransportAddress &b)

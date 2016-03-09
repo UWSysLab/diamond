@@ -38,16 +38,25 @@ CommutativeStore::Increment(const string &key, const int inc, const Timestamp &t
 {
     set<Version>::iterator it;
     if (getValue(key, t, it)) {
-        int total = stoi(it->GetValue()) + inc;
-        store[key].insert(it, Version(t, to_string(total), INCREMENT));
+        int total = atoi(it->GetValue().c_str()) + inc;
+        char totalBuf[100];
+        sprintf(totalBuf, "%d", total);
+        string totalStr(totalBuf);
+        store[key].insert(it, Version(t, totalStr, INCREMENT));
         while (++it != store[key].end()) {
-            int total = stoi(it->GetValue()) + inc;
+            int total = atoi(it->GetValue().c_str()) + inc;
+            char totalBuf[100];
+            sprintf(totalBuf, "%d", total);
+            string totalStr(totalBuf);
             Version v = *it;
             store[key].erase(it);
-            v.SetValue(to_string(total));
+            v.SetValue(totalStr);
             store[key].insert(v);
         }
     } else {
-        store[key].insert(Version(t, to_string(inc), INCREMENT));
+        char incBuf[100];
+        sprintf(incBuf, "%d", inc);
+        string incStr(incBuf);
+        store[key].insert(Version(t, incStr, INCREMENT));
     }
 }

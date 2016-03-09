@@ -79,7 +79,9 @@ DCounter & DCounter::operator-=(const uint64_t i)
 }; 
 
 std::string DCounter::Serialize() {
-    return std::to_string(_counter);
+    char str[100];
+    sprintf(str, "%d", _counter);
+    return std::string(str);
 }
 
 void DCounter::Deserialize(const std::string &s) {
@@ -87,7 +89,7 @@ void DCounter::Deserialize(const std::string &s) {
         _counter = 0;
     }
     else {
-        _counter = stoi(s);
+        _counter = atoi(s.c_str());
     }
 }
 
