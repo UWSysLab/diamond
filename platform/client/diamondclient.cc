@@ -299,23 +299,27 @@ DiamondClient::GetNextNotification()
     client->GetNextNotification(&p);
     uint64_t reactive_id = p.GetReactiveId();
     Timestamp timestamp = p.GetTimestamp();
-    timestamp_map[reactive_id] = timestamp;
-    last_notification_ts = timestamp;
+    processNotification(timestamp, reactive_id);
     return reactive_id;
 }
 
 void
+DiamondClient::processNotification(Timestamp timestamp, uint64_t reactive_id) {
+    timestamp_map[reactive_id] = timestamp;
+    last_notification_ts = timestamp;
+}
+
+void
 DiamondClient::NotificationInit(std::function<void (uint64_t)> callback) {
-    notification_callback = callback;
-    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&DiamondClient::handleNotification, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+    notification_upcall = callback;
+    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&DiamondClient::notificationCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     client->NotificationInit(boundFunc);
 }
 
 void
-DiamondClient::handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
-    timestamp_map[reactive_id] = timestamp;
-    last_notification_ts = timestamp;
-    notification_callback(reactive_id);
+DiamondClient::notificationCallback(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
+    processNotification(timestamp, reactive_id);
+    notification_upcall(reactive_id);
 }
 
 } // namespace diamond

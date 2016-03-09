@@ -96,12 +96,13 @@ private:
     CacheClient *client;
 
     // Reactive helper methods
-    void handleNotification(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id);
+    void notificationCallback(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id);
+    void processNotification(Timestamp timestamp, uint64_t reactive_id);
 
     // Reactive state 
     std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
     Timestamp last_notification_ts; // Timestamp at which the last notification was received
-    std::function<void (uint64_t)> notification_callback;
+    std::function<void (uint64_t)> notification_upcall; // Passed-in upcall to execute on receiving a notification callback
 };
 
 } // namespace diamond
