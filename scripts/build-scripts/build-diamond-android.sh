@@ -1,10 +1,9 @@
 DIAMOND_SRC_DIR=$1
 DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/platform"
 PROJECT_DIR=$2
-CONFIG_FILE=$3
 
-if [ $# -ne 3 ]
-    then echo "usage: ./build-diamond-android.sh <diamond-src-dir> <android-project-dir> <config-file>"
+if [ $# -ne 2 ]
+    then echo "usage: ./build-diamond-android.sh <diamond-src-dir> <android-project-dir>"
     exit
 fi
 
@@ -18,5 +17,3 @@ cp $DIAMOND_BACKEND_DIR/bindings/java/target/classes/arm-lib/libjniDiamond.so $P
 cp $DIAMOND_BACKEND_DIR/bindings/java/target/classes/arm-lib/libjniDiamondUtil.so $PROJECT_DIR/libs/armeabi
 cp $DIAMOND_BACKEND_DIR/bindings/java/libs/javacpp.jar $PROJECT_DIR/libs
 cp $DIAMOND_BACKEND_DIR/bindings/java/target/diamond-1.0-SNAPSHOT.jar $PROJECT_DIR/libs
-
-cp $CONFIG_FILE $PROJECT_DIR
