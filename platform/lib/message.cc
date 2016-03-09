@@ -41,6 +41,10 @@
 #include <sys/time.h>
 
 #define BACKTRACE_ON_PANIC 1
+#ifdef __ANDROID__
+#undef BACKTRACE_ON_PANIC
+#define BACKTRACE_ON_PANIC 0
+#endif
 #if BACKTRACE_ON_PANIC
 #include <execinfo.h>
 #endif
