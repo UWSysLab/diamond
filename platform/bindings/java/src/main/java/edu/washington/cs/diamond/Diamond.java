@@ -19,6 +19,7 @@ public class Diamond {
     static { Loader.load(); }
     public static native void DiamondInit();
     public static native void DiamondInit(@ByRef @StdString String server, int nshards, int closestReplica);
+    public static native void DiamondInit(@ByRef @StdString String hostname, @ByRef @StdString String port);
 
     public static class Callback extends FunctionPointer {
         static { Loader.load(); }

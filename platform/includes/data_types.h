@@ -28,6 +28,7 @@ using namespace std;
 
 void DiamondInit();
 void DiamondInit(const std::string &server, int nshards, int closestReplica);
+void DiamondInit(const std::string &hostname, const std::string &port);
 std::string GetThreadId();
 
 class DObject

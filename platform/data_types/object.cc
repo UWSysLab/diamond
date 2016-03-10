@@ -25,6 +25,10 @@ void DiamondInit() {
    DiamondInit("../../test/local", 1, 0);
 }
 
+void DiamondInit(const string &hostname, const string &port) {
+    store = new diamond::DiamondClient(hostname, port);
+}
+
 string GetThreadId() {
     stringstream ss;
     ss << this_thread::get_id();

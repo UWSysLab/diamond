@@ -58,6 +58,10 @@ public:
     Client(const std::string &configPath, 
 	   Transport *transport,
 	   uint64_t client_id);
+    Client(const std::string &hostname,
+           const std::string &port, 
+	   Transport *transport,
+	   uint64_t client_id);
     ~Client();
 
     void Begin(const uint64_t tid);

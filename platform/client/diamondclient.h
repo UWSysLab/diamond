@@ -55,6 +55,7 @@ class DiamondClient : public Client
 {
 public:
     DiamondClient(std::string configPath);
+    DiamondClient(const std::string &hostname, const std::string &port);
     ~DiamondClient();
 
     // Overriding functions from ::Client

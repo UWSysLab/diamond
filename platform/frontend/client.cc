@@ -32,6 +32,20 @@ Client::Client(const string &configPath, Transport *transport,
     msgid = 0;
 }
 
+//TODO: refactor the two constructors into one
+Client::Client(const string &hostname, const string &port, Transport *transport,
+	       uint64_t client_id) :
+    transport(transport), client_id(client_id)
+{ 
+    transport::ReplicaAddress frontendAddress(hostname, port);
+    vector<transport::ReplicaAddress> addresses;
+    addresses.push_back(frontendAddress);
+    config = new transport::Configuration(1, 0, addresses);
+    transport->Register(this, *config, -1);
+    
+    msgid = 0;
+}
+
 Client::~Client() 
 { 
     delete config;
