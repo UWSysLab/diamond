@@ -27,6 +27,11 @@
 #include "event2/event-config.h"
 #include "evconfig-private.h"
 
+// Android linker bug fix
+// TODO: remove this if Android fixes the linker bug
+void __exidx_start() {}
+void __exidx_end() {}
+
 #ifdef _WIN32
 #include <winsock2.h>
 #define WIN32_LEAN_AND_MEAN

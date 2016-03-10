@@ -213,13 +213,8 @@ EXTRAS_SRC =					\
 	evrpc.c					\
 	http.c
 
-if BUILD_WITH_NO_UNDEFINED
 NO_UNDEFINED = -no-undefined
 MAYBE_CORE = libevent_core.la
-else
-NO_UNDEFINED =
-MAYBE_CORE =
-endif
 
 GENERIC_LDFLAGS = -avoid-version $(NO_UNDEFINED)
 #GENERIC_LDFLAGS = -version-info $(VERSION_INFO) $(RELEASE) $(NO_UNDEFINED)
