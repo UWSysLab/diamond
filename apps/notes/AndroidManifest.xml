@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- code based on tutorial from http://www.sitepoint.com/creating-cloud-backend-android-app-using-parse/ -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ariadnanorberg.notes1"
     android:versionCode="1"
@@ -45,8 +46,16 @@
             android:name=".EditNoteActivity"
             android:label="@string/title_activity_edit_note" >
             <meta-data
-        		android:name="android.support.PARENT_ACTIVITY"
-        		android:value="com.echessa.noteapp.ShowNotes" />
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.echessa.noteapp.ShowNotes" />
+        </activity>
+        <activity
+            android:name=".LoginActivity"
+            android:label="@string/title_activity_login" >
+        </activity>
+        <activity
+            android:name=".SignUpActivity"
+            android:label="@string/title_activity_sign_up" >
         </activity>
     </application>
 

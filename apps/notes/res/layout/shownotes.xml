@@ -34,7 +34,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_below="@+id/toolbar1"
-        android:background="#e5f7ff"
         android:divider="@null" >
 
     </ListView>

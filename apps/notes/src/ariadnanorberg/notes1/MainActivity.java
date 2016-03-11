@@ -1,7 +1,9 @@
 package ariadnanorberg.notes1;
+// code based on tutorial from http://www.sitepoint.com/creating-cloud-backend-android-app-using-parse/
 
 import com.parse.Parse;
 import com.parse.ParseObject;
+import com.parse.ParseUser;
 
 import android.app.Activity;
 import android.content.Context;
@@ -23,6 +25,10 @@ public class MainActivity extends Activity {
 			.server("http://128.208.6.85:1337/parse/")
 			.build()
 		);
+		ParseUser currentUser = ParseUser.getCurrentUser();
+		if (currentUser == null) {
+			loadLoginView();
+		}
 		final Button viewNotes = (Button) findViewById(R.id.viewNotes);
 	}
 
@@ -30,5 +36,12 @@ public class MainActivity extends Activity {
 		// Goes to new view
 		Intent viewNotes = new Intent(MainActivity.this, ShowNotes.class);
 		MainActivity.this.startActivity(viewNotes);
+	}
+	
+	private void loadLoginView() {
+		Intent intent = new Intent(this, LoginActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // clears stack history and brings loginactivity to front
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		startActivity(intent);
 	}
 }
