@@ -38,12 +38,12 @@ bindings:
 
 To run tests for the C++ and Python bindings type in the `build` directory:
 
-    $ make diamondtest
+    $ make test
 
 After you have compiled the C++ shared library, you can compile the
 Java bindings for those libraries: 
 
-	$ cd platform/src/bindings/java
+	$ cd platform/bindings/java
     $ mvn package
 
 To test the Java bindings, cd to the Java directory and type:
@@ -66,34 +66,38 @@ that you downloaded there.
 
 2. Download the Android NDK from [here](http://developer.android.com/ndk/downloads/index.html).
 
-3. The NDK unpacks itself so run:
+3. Unpack the NDK:
 
-        $ chmod u+x android-ndk-r10e-linux-x86_64.bin
-        $ ./android-ndk-r10e-linux-x86_64.bin
-		$ mv android-ndk-r10e-linux-x86_64 platform/toolchains/android/ndk
+        $ unzip android-ndk-r11-linux-x86_64.zip
+		$ mv android-ndk-r11-linux-x86_64.tar.bz2 platform/toolchains/android/ndk
 
-    Be sure to use the appropriate '.bin' filename for OSX.
+    Be sure to use the appropriate '.zip' filename for OSX.
 
 4. Create a stand-alone toolchain for working with. On Linux:
 
 		$ cd platform/toolchains/android
 		$ ./ndk/build/tools/make-standalone-toolchain.sh --toolchain=arm-linux-androideabi-4.9 --arch=arm --platform=android-21 --install-dir=toolchain
 
-5. Compile libevent for Android:
+5. Add the toolchain binaries to your path. If $DIAMOND_SRC is the path to the base Diamond source directory,
+add the following line to your bashrc file:
+
+        $ export PATH=$PATH:$DIAMOND_SRC/platform/toolchains/android/toolchain/bin
+
+6. Compile libevent for Android:
 
 		$ cd external/libevent
 		$ ./autogen.sh
 		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi --disable-openssl
 		$ make
 
-6. Compile libprotobuf for Android:
+7. Compile libprotobuf for Android:
 
 		$ cd external/protobuf-2.5.0
 		$ ./autogen.sh
 		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi
 		$ make
 
-7. Compile the C++ Diamond library:
+8. Compile the C++ Diamond library:
 		
 		$ cd platform
 		$ mkdir build-arm
@@ -101,9 +105,9 @@ that you downloaded there.
 		$ cmake .. -DCMAKE_TOOLCHAIN_FILE=../Android.cmake
 		$ make
 
-8. Compile Java bindings for Diamond:
+9. Compile Java bindings for Diamond:
 
-		$ cd platform/src/bindings/java
+		$ cd platform/bindings/java
 		$ mvn package
 
 ### Running a test Android app
@@ -114,7 +118,7 @@ using an Android SDK with Android 5.1.1 (API level 22) installed.
 
 1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
 
-        $ cd scripts
+        $ cd scripts/build-scripts
         $ ./build-diamond-android.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
 
 2. In Eclipse, import the DiamondAndroidTest project:
