@@ -60,9 +60,6 @@ that you downloaded there.
 
 ### Android
 1. Install either Android Studio or the stand-alone SDK.
-2. Create a directory for the Android NDK tools:
-
-        $ mkdir platform/toolchains/android
 
 2. Download the Android NDK from [here](http://developer.android.com/ndk/downloads/index.html).
 
@@ -81,7 +78,7 @@ that you downloaded there.
 5. Add the toolchain binaries to your path. If $DIAMOND_SRC is the path to the base Diamond source directory,
 add the following line to your bashrc file:
 
-        $ export PATH=$PATH:$DIAMOND_SRC/platform/toolchains/android/toolchain/bin
+		$ export PATH=$DIAMOND_SRC/platform/toolchains/android/symlinks:$PATH
 
 6. Compile libevent for Android:
 
