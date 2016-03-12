@@ -40,7 +40,8 @@
 #include "util-internal.h"
 #include "evthread-internal.h"
 
-#ifdef EVENT__HAVE_ARC4RANDOM
+//#ifdef EVENT__HAVE_ARC4RANDOM
+#ifdef EVENT__HAVE_ARC4RANDOM_HACK_NEVER_DEFINED // force libevent to use local version of arc4random
 #include <stdlib.h>
 #include <string.h>
 int
@@ -181,7 +182,7 @@ evutil_secure_rng_init(void)
 static void
 ev_arc4random_buf(void *buf, size_t n)
 {
-	arc4random_buf(buf, n);
+	local_arc4random_buf(buf, n);
 }
 
 #endif /* } !EVENT__HAVE_ARC4RANDOM */

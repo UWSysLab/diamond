@@ -482,7 +482,7 @@ arc4random_addrandom(const unsigned char *dat, int datlen)
 
 #ifndef ARC4RANDOM_NORANDOM
 ARC4RANDOM_EXPORT ARC4RANDOM_UINT32
-arc4random(void)
+local_arc4random(void)
 {
 	ARC4RANDOM_UINT32 val;
 	ARC4_LOCK_();
@@ -495,7 +495,7 @@ arc4random(void)
 #endif
 
 ARC4RANDOM_EXPORT void
-arc4random_buf(void *buf_, size_t n)
+local_arc4random_buf(void *buf_, size_t n)
 {
 	unsigned char *buf = buf_;
 	ARC4_LOCK_();
@@ -520,7 +520,7 @@ arc4random_buf(void *buf_, size_t n)
  * after reduction modulo upper_bound.
  */
 ARC4RANDOM_EXPORT unsigned int
-arc4random_uniform(unsigned int upper_bound)
+local_arc4random_uniform(unsigned int upper_bound)
 {
 	ARC4RANDOM_UINT32 r, min;
 
@@ -546,7 +546,7 @@ arc4random_uniform(unsigned int upper_bound)
 	 * to re-roll.
 	 */
 	for (;;) {
-		r = arc4random();
+		r = local_arc4random();
 		if (r >= min)
 			break;
 	}
