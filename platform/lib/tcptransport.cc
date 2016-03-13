@@ -101,6 +101,7 @@ TCPTransport::LookupAddress(const transport::ReplicaAddress &addr)
 {
         int res;
         struct addrinfo hints;
+        memset(&hints, 0, sizeof(hints));
         hints.ai_family   = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_protocol = 0;
