@@ -42,9 +42,10 @@
 
 #define BACKTRACE_ON_PANIC 1
 #ifdef __ANDROID__
+#include <android/log.h>
 #undef BACKTRACE_ON_PANIC
 #define BACKTRACE_ON_PANIC 0
-#endif
+#endif //__ANDROID
 #if BACKTRACE_ON_PANIC
 #include <execinfo.h>
 #endif
@@ -154,6 +155,18 @@ _Message_VA(enum Message_Type type, FILE *fp,
         fputs("\033[0m", fp);
     fprintf(fp, "\n");
     fflush(fp);
+
+#ifdef __ANDROID__
+    android_LogPriority prio = ANDROID_LOG_UNKNOWN;
+    switch(type) {
+        case MSG_PANIC: prio = ANDROID_LOG_ERROR; break;
+        case MSG_WARNING: prio = ANDROID_LOG_WARN; break;
+        case MSG_NOTICE: prio = ANDROID_LOG_INFO; break;
+        case MSG_DEBUG: prio = ANDROID_LOG_DEBUG; break;
+        default: prio = ANDROID_LOG_ERROR; break;
+    }
+    __android_log_vprint(prio, "Diamond", fmt, args);
+#endif //__ANDROID__
 }
 
 void _Panic(void)
