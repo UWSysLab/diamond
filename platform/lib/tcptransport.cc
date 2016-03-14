@@ -343,12 +343,15 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
     // Serialize message
     string data = m.SerializeAsString();
     string type = m.GetTypeName();
-    size_t typeLen = type.length();
-    size_t dataLen = data.length();
-    size_t totalLen = (typeLen + sizeof(typeLen) +
+    uint32_t typeLen = type.length();
+    uint32_t dataLen = data.length();
+    uint32_t totalLen = (typeLen + sizeof(typeLen) +
                        dataLen + sizeof(dataLen) +
                        sizeof(totalLen) +
                        sizeof(uint32_t));
+
+    Warning("Sending %ld byte %s message to server over TCP",
+            totalLen, type.c_str());
 
     Debug("Sending %ld byte %s message to server over TCP",
           totalLen, type.c_str());
@@ -360,19 +363,19 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
     ptr += sizeof(uint32_t);
     ASSERT((size_t)(ptr-buf) < totalLen);
     
-    *((size_t *) ptr) = totalLen;
-    ptr += sizeof(size_t);
+    *((uint32_t *) ptr) = totalLen;
+    ptr += sizeof(uint32_t);
     ASSERT((size_t)(ptr-buf) < totalLen);
 
-    *((size_t *) ptr) = typeLen;
-    ptr += sizeof(size_t);
+    *((uint32_t *) ptr) = typeLen;
+    ptr += sizeof(uint32_t);
     ASSERT((size_t)(ptr-buf) < totalLen);
 
     ASSERT((size_t)(ptr+typeLen-buf) < totalLen);
     memcpy(ptr, type.c_str(), typeLen);
     ptr += typeLen;
-    *((size_t *) ptr) = dataLen;
-    ptr += sizeof(size_t);
+    *((uint32_t *) ptr) = dataLen;
+    ptr += sizeof(uint32_t);
 
     ASSERT((size_t)(ptr-buf) < totalLen);
     ASSERT((size_t)(ptr+dataLen-buf) == totalLen);
@@ -573,14 +576,14 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
         magic = (uint32_t *)evbuffer_pullup(evbuf, sizeof(*magic));
         ASSERT(*magic == MAGIC);
     
-        size_t *sz;
+        uint32_t *sz;
         unsigned char *x = evbuffer_pullup(evbuf, sizeof(*magic) + sizeof(*sz));
     
-        sz = (size_t *) (x + sizeof(*magic));
+        sz = (uint32_t *) (x + sizeof(*magic));
         if (x == NULL) {
             return;
         }
-        size_t totalSize = *sz;
+        uint32_t totalSize = *sz;
         ASSERT(totalSize < 1073741826);
     
         if (evbuffer_get_length(evbuf) < totalSize) {
@@ -597,16 +600,16 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
         // Parse message
         char *ptr = buf + sizeof(*sz) + sizeof(*magic);
 
-        size_t typeLen = *((size_t *)ptr);
-        ptr += sizeof(size_t);
+        uint32_t typeLen = *((uint32_t *)ptr);
+        ptr += sizeof(uint32_t);
         ASSERT((size_t)(ptr-buf) < totalSize);
         
         ASSERT((size_t)(ptr+typeLen-buf) < totalSize);
         string msgType(ptr, typeLen);
         ptr += typeLen;
     
-        size_t msgLen = *((size_t *)ptr);
-        ptr += sizeof(size_t);
+        uint32_t msgLen = *((uint32_t *)ptr);
+        ptr += sizeof(uint32_t);
         ASSERT((size_t)(ptr-buf) < totalSize);
     
         ASSERT((size_t)(ptr+msgLen-buf) <= totalSize);
