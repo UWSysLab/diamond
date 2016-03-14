@@ -79,6 +79,18 @@ _Message_VA(enum Message_Type type, FILE *fp,
             const char *fname, int line, const char *func,
             const char *fmt, va_list args)
 {
+#ifdef __ANDROID__
+    android_LogPriority prio = ANDROID_LOG_UNKNOWN;
+    switch(type) {
+        case MSG_PANIC: prio = ANDROID_LOG_ERROR; break;
+        case MSG_WARNING: prio = ANDROID_LOG_WARN; break;
+        case MSG_NOTICE: prio = ANDROID_LOG_INFO; break;
+        case MSG_DEBUG: prio = ANDROID_LOG_DEBUG; break;
+        default: prio = ANDROID_LOG_ERROR; break;
+    }
+    __android_log_vprint(prio, "Diamond", fmt, args);
+
+#else // __ANDROID__
     static int haveColor = -1;
     struct msg_desc {
         const char *prefix;
@@ -155,17 +167,6 @@ _Message_VA(enum Message_Type type, FILE *fp,
         fputs("\033[0m", fp);
     fprintf(fp, "\n");
     fflush(fp);
-
-#ifdef __ANDROID__
-    android_LogPriority prio = ANDROID_LOG_UNKNOWN;
-    switch(type) {
-        case MSG_PANIC: prio = ANDROID_LOG_ERROR; break;
-        case MSG_WARNING: prio = ANDROID_LOG_WARN; break;
-        case MSG_NOTICE: prio = ANDROID_LOG_INFO; break;
-        case MSG_DEBUG: prio = ANDROID_LOG_DEBUG; break;
-        default: prio = ANDROID_LOG_ERROR; break;
-    }
-    __android_log_vprint(prio, "Diamond", fmt, args);
 #endif //__ANDROID__
 }
 
