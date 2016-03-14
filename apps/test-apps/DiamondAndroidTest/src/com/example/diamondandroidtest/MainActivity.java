@@ -8,6 +8,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.TextView;
 import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.Diamond.DObject;
 
 public class MainActivity extends ActionBarActivity {
 
@@ -15,15 +16,19 @@ public class MainActivity extends ActionBarActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
-		Diamond.DiamondInit("coldwater.cs.washington.edu");
+		Diamond.DiamondInit("128.208.6.132", "12444");
 		
 		Diamond.DString testString1 = new Diamond.DString("String 1: if this string shows up, Diamond syncing is not working", "a");
 		Diamond.DString testString2 = new Diamond.DString("String 2: if this string shows up, Diamond syncing is not working", "a");
 
+		DObject.TransactionBegin();
 		testString2.Set(new String("Testing Diamond on Android: syncing appears to work"));
+		DObject.TransactionCommit();
 		
 		TextView testTextBox = new TextView(getBaseContext());
+		DObject.TransactionBegin();
 		testTextBox.setText(testString1.Value());
+		DObject.TransactionCommit();
 		testTextBox.setTextColor(Color.BLACK);
 		setContentView(testTextBox);
 		
