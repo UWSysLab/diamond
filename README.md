@@ -84,14 +84,14 @@ add the following line to your bashrc file:
 
 		$ cd external/libevent
 		$ ./autogen.sh
-		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi --disable-openssl
+		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi --disable-openssl LDFLAGS=-lgnustl_shared
 		$ make
 
 7. Compile libprotobuf for Android:
 
 		$ cd external/protobuf-2.5.0
 		$ ./autogen.sh
-		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi
+		$ ./configure --target=arm-linux-androideabi --host=arm-linux-androideabi LDFLAGS=-lgnustl_shared
 		$ make
 
 8. Compile the C++ Diamond library:

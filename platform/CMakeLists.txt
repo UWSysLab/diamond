@@ -103,7 +103,7 @@ add_library(diamond SHARED
         ${DIAMOND_SOURCE_DIR}/build/diamond-proto.pb.cc
         ${DIAMOND_SOURCE_DIR}/build/latency-format.pb.cc
         ${DIAMOND_SOURCE_DIR}/build/notification-proto.pb.cc)
-  target_link_libraries(diamond -lprotobuf -levent_core -levent_pthreads)
+  target_link_libraries(diamond -lprotobuf -levent_core -levent_pthreads -lgnustl_shared)
 else()
 add_library(diamond SHARED
             ${SRC_DIAMOND_LIB}
