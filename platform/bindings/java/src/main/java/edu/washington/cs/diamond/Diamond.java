@@ -220,6 +220,8 @@ public class Diamond {
 
         public static native void TransactionBegin();
         public static native int TransactionCommit();
+        public static native void BeginReactive(long reactiveId);
+        public static native long GetNextNotification();
         //public static native void TransactionRollback();
         //public static native void TransactionRetry();
 
