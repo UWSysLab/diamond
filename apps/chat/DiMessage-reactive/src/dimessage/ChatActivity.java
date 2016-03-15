@@ -29,7 +29,7 @@ public class ChatActivity extends ActionBarActivity {
 		setContentView(R.layout.activity_chat);
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.getBaseContext());
 		
-		Diamond.DiamondInit("coldwater.cs.washington.edu");
+		Diamond.DiamondInit("128.208.6.132", "12444");
 		
 		chatBox = (TextView)findViewById(R.id.chatTextBox);
 		messageList = new Diamond.DStringList("dimessage:messagelist");
@@ -100,8 +100,13 @@ public class ChatActivity extends ActionBarActivity {
 	public void onResume() {
 		super.onResume();
 		Diamond.DString lastUserString = new Diamond.DString();
-		Diamond.DObject.Map(lastUserString, "dimessage:lastuser");
-		lastUserString.Set(userName);
+		int committed = 0;
+		while (committed == 0) {
+			Diamond.DObject.TransactionBegin();
+			Diamond.DObject.Map(lastUserString, "dimessage:lastuser");
+			lastUserString.Set(userName);
+			committed = Diamond.DObject.TransactionCommit();
+		}
 	}
 	
 	@Override

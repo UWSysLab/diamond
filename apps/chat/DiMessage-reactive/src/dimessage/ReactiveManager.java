@@ -3,6 +3,8 @@ package dimessage;
 import java.util.HashSet;
 import java.util.Set;
 
+import edu.washington.cs.diamond.Diamond;
+
 public class ReactiveManager {
 	private static ReactiveManager singleton = null;
 	
@@ -34,7 +36,9 @@ public class ReactiveManager {
 						e.printStackTrace();
 					}
 					for (ReactiveTransaction tx : txSet) {
+						Diamond.DObject.TransactionBegin();
 						tx.react();
+						Diamond.DObject.TransactionCommit();
 					}
 				}
 			}

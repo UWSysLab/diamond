@@ -17,9 +17,10 @@ public class DiamondTextView extends TextView {
 		}
 		@Override
 		public void react() {
+			final String value = dstr.Value();
 			textView.post(new Runnable() {
 				public void run() {
-					textView.setText(dstr.Value());
+					textView.setText(value);
 				}
 			});
 		}
