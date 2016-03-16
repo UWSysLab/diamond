@@ -76,9 +76,11 @@ private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
-    //helper methods for the constructors (to avoid duplicated code)
+    // helper methods for the constructors (to avoid duplicated code)
     void initState();
     void startTransport(frontend::Client *frontendclient);
+
+    static void * startHelper(void * arg); // method to be called by pthread_create()
 
     // Unique ID for this client.
     uint64_t client_id;
@@ -95,7 +97,7 @@ private:
     TCPTransport transport;
     
     // Thread running the transport event loop.
-    std::thread *clientTransport;
+    pthread_t clientTransport;
 
     // Caching client for the store
     CacheClient *client;

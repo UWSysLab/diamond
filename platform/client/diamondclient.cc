@@ -87,15 +87,24 @@ DiamondClient::startTransport(frontend::Client *frontendclient) {
     client = new ReactiveClient(frontendclient);
 
     /* Run the transport in a new thread. */
-    clientTransport = new thread(&DiamondClient::run_client, this);
+    pthread_create(&clientTransport, NULL, &DiamondClient::startHelper, (void *)this);
 
     Debug("Diamond Store client [%lu] created!", client_id);
+
+}
+
+void *
+DiamondClient::startHelper(void * arg) {
+    DiamondClient * client = (DiamondClient *)arg;
+    client->run_client();
+    return NULL;
 }
 
 DiamondClient::~DiamondClient()
 {
     transport.Stop();
-    clientTransport->join();
+    void * status;
+    pthread_join(clientTransport, &status);
 }
 
 /* Runs the transport event loop. */
