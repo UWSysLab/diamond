@@ -15,11 +15,40 @@ public class ReactiveManager {
 		public void callback(int committed);
 	}
 	
+	public static ReactiveManager singleton = null;
+	
 	Map<Long, TxnFunction> idFuncMap;
 	Map<TxnFunction, Long> funcIdMap;
 	Map<TxnFunction, Object[]> funcArgMap;
 
 	long nextId;
+	
+	private static ReactiveManager getManager() {
+		if (singleton == null) {
+			singleton = new ReactiveManager();
+		}
+		return singleton;
+	}
+	
+	public static void StartManager() {
+		getManager().Start();
+	}
+	
+	public static long reactive_txn(TxnFunction func, Object...args) {
+		return getManager().ReactiveTxn(func, args);
+	}
+	
+	public static void reactive_stop(long reactiveId) {
+		getManager().ReactiveStop(reactiveId);
+	}
+
+	public static void execute_txn(TxnFunction func, Object...args) {
+		getManager().ExecuteTxn(func, args);
+	}
+	
+	public static void execute_txn(TxnFunction func, TxnCallback callback, Object...args) {
+		getManager().ExecuteTxn(func, callback, args);
+	}
 	
 	public ReactiveManager() {
 		idFuncMap = new HashMap<Long, TxnFunction>();
@@ -43,7 +72,7 @@ public class ReactiveManager {
 		}).start();
 	}
 	
-	public void ReactiveTxn(final TxnFunction func, final Object... args) {
+	public long ReactiveTxn(final TxnFunction func, final Object... args) {
 		final long reactiveId = generateId();
 		idFuncMap.put(reactiveId, func);
 		funcIdMap.put(func, reactiveId);
@@ -55,6 +84,7 @@ public class ReactiveManager {
 				DObject.TransactionCommit();
 			}
 		}).start();
+		return reactiveId;
 	}
 	
 	public void ReactiveLoop() {
@@ -74,13 +104,19 @@ public class ReactiveManager {
 		funcArgMap.remove(func);
 	}
 	
+	public void ExecuteTxn(final TxnFunction func, final Object...args) {
+		ExecuteTxn(func, null, args);
+	}
+	
 	public void ExecuteTxn(final TxnFunction func, final TxnCallback callback, final Object... args) {
 		new Thread(new Runnable() {
 			public void run() {
 				DObject.TransactionBegin();
 				func.func(args);
 				int committed = DObject.TransactionCommit();
-				callback.callback(committed);
+				if (callback != null) {
+					callback.callback(committed);
+				}
 			}
 		}).start();
 	}
