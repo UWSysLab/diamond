@@ -71,10 +71,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             Version cur;
             const string &key = read.first;
             const Interval &valid = read.second;
-            bool ret = store.Get(key, cur);
+            store.Get(key, cur);
 
-            ASSERT(ret);
-            
             // If this key has been written since we read it, abort.
             if (cur.GetTimestamp() > valid.Start()) {
                 Debug("[%lu] ABORT LINEARIZABLE rw conflict key:%s %lu %lu",
