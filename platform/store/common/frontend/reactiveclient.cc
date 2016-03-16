@@ -54,8 +54,8 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
         uint64_t reactive_id = txn.GetReactiveId();
         Timestamp timestamp = txn.GetTimestamp();
 
-        // Register new reactive transaction if necessary
-        if (regMap.find(reactive_id) == regMap.end()) {
+        // Register reactive transaction if it is new or if its registration set has changed
+        if (regMap.find(reactive_id) == regMap.end() || regMap[reactive_id] != regset) {
             Promise rp(COMMIT_TIMEOUT);
             txnclient->Register(reactive_id, timestamp, regset, &rp);
             int reply = rp.GetReply();
