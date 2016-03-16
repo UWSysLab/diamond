@@ -41,53 +41,49 @@ thread_local Transaction txn;
 DiamondClient::DiamondClient(string configPath)
     : transport()
 {
-    // Initialize all state here;
-    client_id = 0;
-    while (client_id == 0) {
-        random_device rd;
-        mt19937_64 gen(rd());
-        uniform_int_distribution<uint64_t> dis;
-        client_id = dis(gen);
-    }
-    txnid_counter = (client_id/10000)*10000;
-    last_notification_ts = Timestamp(0);
-
-    Debug("Initializing Diamond Store client with id [%lu]", client_id);
+    initState();
 
     /* Start a client for the front-end. */
     frontend::Client *frontendclient = new frontend::Client(configPath + ".config",
                                                             &transport,
                                                             client_id);
-    client = new ReactiveClient(frontendclient);
 
-    /* Run the transport in a new thread. */
-    clientTransport = new thread(&DiamondClient::run_client, this);
-
-    Debug("Diamond Store client [%lu] created!", client_id);
+    startTransport(frontendclient);
 }
 
-//TODO: refactor these two constructors into one
 DiamondClient::DiamondClient(const string &hostname, const string &port)
     : transport()
 {
-    // Initialize all state here;
-    client_id = 0;
-    while (client_id == 0) {
-        random_device rd;
-        mt19937_64 gen(rd());
-        uniform_int_distribution<uint64_t> dis;
-        client_id = dis(gen);
-    }
-    txnid_counter = (client_id/10000)*10000;
-    last_notification_ts = Timestamp(0);
-
-    Debug("Initializing Diamond Store client with id [%lu]", client_id);
+    initState();
 
     /* Start a client for the front-end. */
     frontend::Client *frontendclient = new frontend::Client(hostname,
                                                             port,
                                                             &transport,
                                                             client_id);
+    startTransport(frontendclient);
+}
+
+/* Constructor helper method that does everything up to creating the frontend::Client */
+void
+DiamondClient::initState() {
+    // Initialize all state here;
+    client_id = 0;
+    while (client_id == 0) {
+        random_device rd;
+        mt19937_64 gen(rd());
+        uniform_int_distribution<uint64_t> dis;
+        client_id = dis(gen);
+    }
+    txnid_counter = (client_id/10000)*10000;
+    last_notification_ts = Timestamp(0);
+
+    Debug("Initializing Diamond Store client with id [%lu]", client_id);
+}
+
+/* Constructor helper method that does everything after creating the frontend::Client */
+void
+DiamondClient::startTransport(frontend::Client *frontendclient) {
     client = new ReactiveClient(frontendclient);
 
     /* Run the transport in a new thread. */

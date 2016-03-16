@@ -127,6 +127,8 @@ private:
                         const std::string &type,
                         const std::string &data);
 
+    void init(transport::Configuration *transportConfig); // constructor helper to cut down on duplicated code
+
     // Notification client state
     std::queue<Notification> pending_notifications;
     Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time

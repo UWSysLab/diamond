@@ -26,13 +26,9 @@ Client::Client(const string &configPath, Transport *transport,
         fprintf(stderr, "unable to read configuration file: %s\n",
                 configPath.c_str());
     }
-    config = new transport::Configuration(configStream);
-    transport->Register(this, *config, -1);
-    
-    msgid = 0;
+    init(new transport::Configuration(configStream));
 }
 
-//TODO: refactor the two constructors into one
 Client::Client(const string &hostname, const string &port, Transport *transport,
 	       uint64_t client_id) :
     transport(transport), client_id(client_id)
@@ -40,7 +36,12 @@ Client::Client(const string &hostname, const string &port, Transport *transport,
     transport::ReplicaAddress frontendAddress(hostname, port);
     vector<transport::ReplicaAddress> addresses;
     addresses.push_back(frontendAddress);
-    config = new transport::Configuration(1, 0, addresses);
+    init(new transport::Configuration(1, 0, addresses));
+}
+
+void
+Client::init(transport::Configuration *transportConfig) {
+    config = transportConfig;
     transport->Register(this, *config, -1);
     
     msgid = 0;

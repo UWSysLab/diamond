@@ -76,6 +76,10 @@ private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
+    //helper methods for the constructors (to avoid duplicated code)
+    void initState();
+    void startTransport(frontend::Client *frontendclient);
+
     // Unique ID for this client.
     uint64_t client_id;
 
