@@ -315,10 +315,14 @@ Client::Register(const uint64_t reactive_id,
                  const Timestamp timestamp,
                  const std::set<std::string> &keys,
                  Promise *promise) {
+    Debug("Sending REGISTER for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+    for (auto &key : keys) {
+        Debug("Registering key: %s", key.c_str());
+    }
 
     RegisterMessage msg;
     msg.set_clientid(client_id);
-    for (auto key : keys) {
+    for (auto &key : keys) {
         msg.add_keys(key);
     }
     msg.set_reactiveid(reactive_id);
