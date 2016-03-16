@@ -69,7 +69,7 @@ public:
 
     void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
 
-    Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address);
+    void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values);
     void GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, std::vector<FrontendNotification> &notifications);
 
 private:

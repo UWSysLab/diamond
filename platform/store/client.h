@@ -118,7 +118,7 @@ public:
     // Blocking version
     int Subscribe(const std::set<std::string> &keys,
                   const TransportAddress &address,
-                  Timestamp &timestamp);
+                  std::map<std::string, Version> &values);
 
     void GetNextNotification(Promise *promise);
 
