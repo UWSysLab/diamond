@@ -190,20 +190,15 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
     return false;	
 }
 
-Timestamp
-VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
-    Timestamp maxTimestamp;
+void
+VersionedKVStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values) {
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
         addressKeyMap[address].insert(*it);
         Version value;
         Get(*it, value);
-        Timestamp timestamp = value.GetTimestamp();
-        if (timestamp > maxTimestamp) {
-            maxTimestamp = timestamp;
-        }
+        values[*it] = value;
     }
-    return maxTimestamp;
 }
 
 void

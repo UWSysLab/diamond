@@ -130,7 +130,7 @@ Server::sendNotifications() {
         ReactiveTransaction rt = it->second;
         if (rt.next_timestamp != rt.last_timestamp) {
             anyOutstanding = true;
-            Debug("Sending NOTIFICATION: reactive_id %lu, client %s:%s", rt.reactive_id, rt.client_hostname.c_str(), rt.client_port.c_str());
+            Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
             Notification notification;
             notification.set_clientid(rt.client_id);
             notification.set_reactiveid(rt.reactive_id);
@@ -153,20 +153,28 @@ void
 Server::HandleRegister(const TransportAddress &remote,
                        const RegisterMessage &msg)
 {
+    Debug("Handling REGISTER");
+    for (int i = 0; i < msg.keys_size(); i++) {
+        Debug("Registering %s", msg.keys(i).c_str());
+    }
+
     set<string> regSet;
     set<string> subscribeSet; // set of keys from regSet that we aren't already subscribed to
     for (int i = 0; i < msg.keys_size(); i++) {
         string key = msg.keys(i);
-        Debug("REGISTER %s", key.c_str());
         regSet.insert(key);
         if (listeners.find(key) == listeners.end()) {
             subscribeSet.insert(key);
         }
     }
 
-    Timestamp timestamp = 0;
-    int status = store->Subscribe(subscribeSet, GetAddress(), timestamp);
+    map<string, Version> subscribeValues;
+    int status = store->Subscribe(subscribeSet, GetAddress(), subscribeValues);
+    for (auto &pair : subscribeValues) {
+        values[pair.first] = pair.second;
+    }
 
+    Timestamp timestamp = 0;
     for (auto it = regSet.begin(); it != regSet.end(); it++) {
         Timestamp keyTimestamp = values[*it].GetTimestamp();
         if (timestamp < keyTimestamp) {

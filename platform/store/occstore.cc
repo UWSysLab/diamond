@@ -235,9 +235,9 @@ OCCStore::getPreparedOps(unordered_set<string> &reads, unordered_set<string> &wr
     }
 }
 
-Timestamp
-OCCStore::Subscribe(const std::set<std::string> &keys, const std::string &address) {
-    return store.Subscribe(keys, address);
+void
+OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values) {
+    return store.Subscribe(keys, address, values);
 }
 
 void

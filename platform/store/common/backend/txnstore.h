@@ -64,7 +64,7 @@ public:
 
     virtual void Load(const std::string &key, const std::string &value, const Timestamp &timestamp) = 0;
 
-    virtual Timestamp Subscribe(const std::set<std::string> &keys, const std::string &address) = 0;
+    virtual void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values) = 0;
     virtual void GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, std::vector<FrontendNotification> &notifications) = 0;
     
 };

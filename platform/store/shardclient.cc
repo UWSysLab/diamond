@@ -324,12 +324,13 @@ void
 ShardClient::Subscribe(const set<string> &keys,
                        const TransportAddress &myAddress,
                        Promise *promise) {
-    Debug("[shard %i] Sending SUBSCRIBE", shard);
-
     if (keys.size() == 0) {
+        Debug("[shared %i] SUBSCRIBE set is empty", shard);
         promise->Reply(REPLY_OK, 0);
         return;
     }
+
+    Debug("[shard %i] Sending SUBSCRIBE", shard);
 
     // create request
     string request_str;
@@ -360,12 +361,18 @@ ShardClient::SubscribeCallback(const string &request_str, const string &reply_st
     reply.ParseFromString(reply_str);
     ASSERT(reply.status() == REPLY_OK);
 
+    map<string, Version> values;
+    for (int i = 0; i < reply.replies_size(); i++) {
+        ReadReply rep = reply.replies(i);
+        values[rep.key()] = Version(rep);
+    }
+
     if (waiting != NULL) {
         Promise *w = waiting;
         waiting = NULL;
-        w->Reply(reply.status(), reply.timestamp());
+        w->Reply(reply.status(), values);
     }
-    Debug("[shard %i] Received SUBSCRIBE callback [%d] with timestamp %lu", shard, reply.status(), reply.timestamp());
+    Debug("[shard %i] Received SUBSCRIBE callback [%d]", shard, reply.status());
 }
 
 void

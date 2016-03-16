@@ -214,8 +214,15 @@ Server::ReplicaUpcall(opnum_t opnum,
                 Debug("%s", request.subscribe().keys(i).c_str());
                 keys.insert(request.subscribe().keys(i));
             }
-            Timestamp timestamp = store->Subscribe(keys, address);
-            reply.set_timestamp(timestamp);
+            map<string, Version> values;
+            store->Subscribe(keys, address, values);
+            for (auto &pair : values) {
+                string key = pair.first;
+                Version val = pair.second;
+                ReadReply *rep = reply.add_replies();
+                rep->set_key(key);
+                val.Serialize(rep);
+            }
         }
         break;
     default:
