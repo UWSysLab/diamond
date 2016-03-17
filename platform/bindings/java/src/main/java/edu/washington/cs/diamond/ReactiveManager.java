@@ -1,4 +1,4 @@
-package main.java.edu.washington.cs.diamond;
+package edu.washington.cs.diamond;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +63,6 @@ public class ReactiveManager {
 		return id;
 	}
 
-	
 	public void Start() {
 		new Thread(new Runnable() {
 			public void run() {
