@@ -252,28 +252,34 @@ Client::ReceiveMessage(const TransportAddress &remote,
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
-        map<string, Version> cache_entries;
-        for (int i = 0; i < notification.replies_size(); i++) {
-            string key = notification.replies(i).key();
-            Version value(notification.replies(i));
-            cache_entries[key] = value;
-        }
+        if (timestamp > last_timestamp) {
+            last_timestamp = timestamp;
+            map<string, Version> cache_entries;
+            for (int i = 0; i < notification.replies_size(); i++) {
+                string key = notification.replies(i).key();
+                Version value(notification.replies(i));
+                cache_entries[key] = value;
+            }
 
-        // Handle non-blocking case
-        if (callback_registered) {
-            notification_callback(timestamp, cache_entries, reactive_id);
-        }
+            // Handle non-blocking case
+            if (callback_registered) {
+                notification_callback(timestamp, cache_entries, reactive_id);
+            }
 
-        // Handle blocking case
-        notification_lock.lock();
-        if (reactive_promise != NULL) {
-            notification_lock.unlock();
-            reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
-            reactive_promise = NULL;
+            // Handle blocking case
+            notification_lock.lock();
+            if (reactive_promise != NULL) {
+                notification_lock.unlock();
+                reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
+                reactive_promise = NULL;
+            }
+            else {
+                pending_notifications.push(notification);
+                notification_lock.unlock();
+            }
         }
         else {
-            pending_notifications.push(notification);
-            notification_lock.unlock();
+            Debug("Notification is stale (timestamp %lu, last_timestamp %lu)", timestamp, last_timestamp);
         }
     } else if (type == regReply.GetTypeName()) {
         regReply.ParseFromString(data);
