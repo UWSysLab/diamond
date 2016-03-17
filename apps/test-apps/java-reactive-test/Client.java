@@ -11,6 +11,7 @@ public class Client {
         String configFile = args[0];
 
         Diamond.DiamondInit(configFile, 1, 0);
+        ReactiveManager.StartManager();
 
         final Diamond.DString str = new Diamond.DString();
         Diamond.DObject.Map(str, "javareactivetest:str");

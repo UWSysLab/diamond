@@ -11,7 +11,7 @@ my $nativePath="$JAVA_BINDINGS_DIR/target/classes/x86-lib:$DIAMOND_SRC/platform/
 
 $ENV{LD_LIBRARY_PATH}=$nativePath;
 
-die "usage: ./run-client.pl config_file [message]" unless @ARGV==1;
+die "usage: ./run-client.pl config_file [message]" unless @ARGV>=1;
 my $configFile = $ARGV[0];
 my $message = "";
 if (@ARGV==2) {
