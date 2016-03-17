@@ -13,6 +13,7 @@ import android.view.KeyEvent;
 import android.widget.EditText;
 import android.widget.TextView;
 import edu.washington.cs.diamond.Diamond;
+import edu.washington.cs.diamond.ReactiveManager;
 
 public class ChatActivity extends ActionBarActivity {
 	
@@ -30,6 +31,12 @@ public class ChatActivity extends ActionBarActivity {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this.getBaseContext());
 		
 		Diamond.DiamondInit("128.208.6.132", "12444");
+		ReactiveManager.StartManager();
+		ReactiveManager.RegisterLogger(new ReactiveManager.Logger() {
+			public void onLog(String message) {
+				Log.i("DiMessage", message);
+			}
+		});
 		
 		chatBox = (TextView)findViewById(R.id.chatTextBox);
 		messageList = new Diamond.DStringList("dimessage:messagelist");
@@ -51,8 +58,8 @@ public class ChatActivity extends ActionBarActivity {
 		DiamondTextView timestampBox = (DiamondTextView)findViewById(R.id.timestampTextBox);
 		timestampBox.bindDString("dimessage:lasttimestamp");
 		
-		ReactiveManager.addTransaction(new ReactiveTransaction() {
-			public void react() {
+		ReactiveManager.reactive_txn(new ReactiveManager.TxnFunction() {
+			public void func(Object...objects) {
 				//Perform Diamond accesses
 				StringBuilder sb = new StringBuilder();
 				int minLine = messageList.Size() - NUM_LINES;
