@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-my $DIAMOND_SRC="/home/nl35/research/diamond-src";
+my $DIAMOND_SRC="../../..";
 my $JAVA_BINDINGS_DIR="$DIAMOND_SRC/platform/bindings/java";
 
 my $classpath=".:$JAVA_BINDINGS_DIR/libs/javacpp.jar:$JAVA_BINDINGS_DIR/target/diamond-1.0-SNAPSHOT.jar";
