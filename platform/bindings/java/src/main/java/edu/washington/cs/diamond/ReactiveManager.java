@@ -28,6 +28,7 @@ public class ReactiveManager {
 	long nextId;
 	
 	private Logger logger = null;
+	private Thread reactiveThread = null;
 	
 	private static ReactiveManager getManager() {
 		if (singleton == null) {
@@ -84,11 +85,14 @@ public class ReactiveManager {
 	}
 
 	public void Start() {
-		new Thread(new Runnable() {
-			public void run() {
-				ReactiveLoop();
-			}
-		}).start();
+		if (reactiveThread == null) {
+			reactiveThread = new Thread(new Runnable() {
+				public void run() {
+					ReactiveLoop();
+				}
+			});
+			reactiveThread.start();
+		}
 	}
 	
 	public long ReactiveTxn(final TxnFunction func, final Object... args) {
