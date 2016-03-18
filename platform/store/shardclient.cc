@@ -249,7 +249,7 @@ ShardClient::GetCallback(const string &request_str, const string &reply_str)
         if (reply.status() == REPLY_OK) {
             for (int i = 0; i < reply.replies_size(); i++) {
                 ReadReply rep = reply.replies(i);
-		ret[rep.key()] = Version(rep.timestamp(), rep.value());
+		ret[rep.key()] = Version(rep);
             }
         }
         w->Reply(reply.status(), ret);

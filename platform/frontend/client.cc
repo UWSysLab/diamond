@@ -223,7 +223,10 @@ Client::ReceiveMessage(const TransportAddress &remote,
             int status = getReply.status(); 
             if (status == REPLY_OK) {
                 for (int i = 0; i < getReply.replies_size(); i++) {
-		    ret[getReply.replies(i).key()] = Version(getReply.replies(i));
+		    string key = getReply.replies(i).key();
+		    Version v = Version(getReply.replies(i));
+		    ret[key] = v;
+		    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);
@@ -364,7 +367,9 @@ Client::ReplyToNotification(const uint64_t reactive_id,
     msg.set_timestamp(timestamp);
 
     // Send message
-    transport->SendMessageToReplica(this, 0, msg);
+    transport->Timer(0, [=]() {
+	    transport->SendMessageToReplica(this, 0, msg);
+	});
 }
 
 void

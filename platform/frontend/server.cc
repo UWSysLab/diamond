@@ -235,6 +235,7 @@ Server::HandleGet(const TransportAddress &remote,
     if (status == REPLY_OK) {
 	for (auto value : values) {
 	    ReadReply *rep = reply.add_replies();
+	    Debug("GET %s %lu", value.first.c_str(), value.second.GetInterval().End());
 	    rep->set_key(value.first);
 	    value.second.Serialize(rep);
         }
