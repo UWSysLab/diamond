@@ -147,7 +147,6 @@ void
 DiamondClient::BeginReactive(uint64_t reactive_id)
 {
     if (txnid == 0) {
-        Debug("Diamondclient::BEGIN_REACTIVE Transaction");
         txnid_lock.lock();
         txnid = ++txnid_counter;
         txnid_lock.unlock();
@@ -156,6 +155,8 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
             timestamp = timestamp_map[reactive_id];
         }
+
+        Debug("Diamondclient::BEGIN_REACTIVE transaction for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
 
         txn = Transaction(READ_ONLY, timestamp, reactive_id);
         client->BeginRO(txnid);

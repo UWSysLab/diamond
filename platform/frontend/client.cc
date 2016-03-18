@@ -255,8 +255,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
-        if (timestamp > last_timestamp) {
-            last_timestamp = timestamp;
+        if (timestamp > last_timestamp[reactive_id]) {
+            last_timestamp[reactive_id] = timestamp;
             map<string, Version> cache_entries;
             for (int i = 0; i < notification.replies_size(); i++) {
                 string key = notification.replies(i).key();
@@ -282,7 +282,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
             }
         }
         else {
-            Debug("Notification is stale (timestamp %lu, last_timestamp %lu)", timestamp, last_timestamp);
+            Debug("Notification is stale (timestamp %lu, last_timestamp %lu)", timestamp, last_timestamp[reactive_id]);
         }
     } else if (type == regReply.GetTypeName()) {
         regReply.ParseFromString(data);
@@ -360,6 +360,8 @@ Client::Subscribe(const std::set<std::string> &keys,
 void
 Client::ReplyToNotification(const uint64_t reactive_id,
                             const Timestamp timestamp) {
+    Debug("Sending NOTIFICATION_REPLY for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+
     NotificationReply msg;
     msg.set_clientid(client_id);
     msg.set_reactiveid(reactive_id);
