@@ -77,10 +77,12 @@ private:
     CommutativeStore store;
 
     std::unordered_map<uint64_t, Transaction> prepared;
+    std::unordered_map<uint64_t, Timestamp> prepared_last_commit;
     std::unordered_map<uint64_t, Transaction> committed;
+    Timestamp last_committed = 0;
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
-
+    Timestamp getPreparedUpdate(const std::string &key);
     void fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications);
 };
 

@@ -65,7 +65,7 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 
     Version value;
     // look for it in the cache
-    if (cache.Get(key, timestamp, value)) {
+    if (timestamp != MAX_TIMESTAMP && cache.Get(key, timestamp, value)) {
         // Make some decision about the timestamp?
         cache_lock.unlock();
         
@@ -84,6 +84,8 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
     if (pp->GetReply() == REPLY_OK) {
         Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
         cache_lock.lock();
+	// Make sure that we've capped the validity range
+	ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
         cache.Put(key, pp->GetValue(key));
         cache_lock.unlock();
     }
@@ -129,6 +131,7 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
         cache_lock.lock();
         for (auto &value : values) {
             Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+	    ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
             cache.Put(value.first, value.second);
             keysRead[value.first] = value.second;
         }
@@ -175,27 +178,27 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     txnclient->Commit(tid, txn, pp);
 
     // update the cache
-    int reply = pp->GetReply();
+     pp->GetReply();
     cache_lock.lock();
     const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
     prepared.erase(tid);
         
-    // update the cache
-    if (reply == REPLY_OK) {
-        for (auto &write : t.GetWriteSet()) {
-	    Debug("Adding [%s] with ts %lu to the cache", write.first.c_str(), pp->GetTimestamp());
-            cache.Put(write.first, write.second, pp->GetTimestamp());
-        }
-    } else if (reply == REPLY_FAIL) {
-        for (auto &read : t.GetReadSet()) {
-            Debug("Removing [%s] from the cache", read.first.c_str());
-            cache.Remove(read.first);
-        }        
-    }
-    for (auto &inc : t.GetIncrementSet()) {
-        Debug("Removing [%s] from the cache", inc.first.c_str());
-        cache.Remove(inc.first);
-    }
+    // // update the cache
+    // if (reply == REPLY_OK) {
+    //     for (auto &write : t.GetWriteSet()) {
+    // 	    Debug("Adding [%s] with ts %lu to the cache", write.first.c_str(), pp->GetTimestamp());
+    //         cache.Put(write.first, write.second, pp->GetTimestamp());
+    //     }
+    // } else if (reply == REPLY_FAIL) {
+    //     for (auto &read : t.GetReadSet()) {
+    //         Debug("Removing [%s] from the cache", read.first.c_str());
+    //         cache.Remove(read.first);
+    //     }        
+    // }
+    // for (auto &inc : t.GetIncrementSet()) {
+    //     Debug("Removing [%s] from the cache", inc.first.c_str());
+    //     cache.Remove(inc.first);
+    // }
     cache_lock.unlock();
 }
 
@@ -209,20 +212,20 @@ CacheClient::Abort(const uint64_t tid, Promise *promise)
     Promise *pp = (promise != NULL) ? promise : &p;
 
     txnclient->Abort(tid, pp);
-    int reply = pp->GetReply();
+    pp->GetReply();
 
-    if (reply == REPLY_OK) {
-        cache_lock.lock();
-        if (prepared.find(tid) != prepared.end()) {
-            // clear out the write set
-            for (auto &read : prepared[tid].GetReadSet()) {
-                Debug("Removing [%s] from the cache", read.first.c_str());
-                cache.Remove(read.first);
-            }
-            prepared.erase(tid);
-        }
-        cache_lock.unlock();
-    }
+//    if (reply == REPLY_OK) {
+        // cache_lock.lock();
+        // if (prepared.find(tid) != prepared.end()) {
+        //     // clear out the write set
+        //     for (auto &read : prepared[tid].GetReadSet()) {
+        //         Debug("Removing [%s] from the cache", read.first.c_str());
+        //         cache.Remove(read.first);
+        //     }
+        //     prepared.erase(tid);
+        // }
+        // cache_lock.unlock();
+    //  }
  }
 
 void

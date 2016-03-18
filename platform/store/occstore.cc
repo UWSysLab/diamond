@@ -31,6 +31,7 @@
  **********************************************************************/
 
 #include "occstore.h"
+#include <algorithm>
 
 using namespace std;
 
@@ -40,12 +41,46 @@ OCCStore::OCCStore() : store() { }
 OCCStore::~OCCStore() { }
 
 int
-OCCStore::Get(const uint64_t tid, const string &key, Version &value, const Timestamp &timestamp)
+OCCStore::Get(const uint64_t tid,
+	      const string &key,
+	      Version &value,
+	      const Timestamp &timestamp)
 {
-    Debug("[%lu] GET %s at %lu", tid, key.c_str(), timestamp);
+    Debug("[%lu] GET %s at %lu", tid,
+	  key.c_str(), timestamp);
     
     if (store.Get(key, timestamp, value)) {
-        return REPLY_OK;
+	// if the timestamp that we asked for is outside
+	// of the currently known bounds
+	Timestamp update = getPreparedUpdate(key);
+	if (timestamp > value.GetInterval().End()) {
+	    if (timestamp > last_committed &&
+		timestamp < update) {
+		ASSERT(update == MAX_TIMESTAMP);
+		// if there are no ongoing writes
+		// but we haven't committed any transactions
+		// past this timestamp, then we need to
+		// make sure that we don't commit a write later
+		store.CommitGet(key, timestamp, timestamp);
+		    value.SetEnd(timestamp);
+	    } else if (timestamp <= last_committed &&
+		       timestamp <= update) {
+		// safe to return
+		// because we'll never commit any versions
+		// past this timestamp
+		value.SetEnd(min(update, last_committed));
+	    } else if (timestamp > update) {
+		// there's an ongoing transaction at this timestamp
+		// but try again and it'll be done
+		return REPLY_RETRY;
+	    }
+	} else if (value.GetInterval().End() == MAX_TIMESTAMP) {
+	    // just cap it at the last transaction that we've seen
+	    value.SetEnd(min(update, last_committed));
+	}
+	Debug("[%lu] Returning %s=%s ending at %lu", tid,
+	      key.c_str(), value.GetValue().c_str(), value.GetInterval().End());
+	return REPLY_OK;
     } else {
         return REPLY_NOT_FOUND;
     }
@@ -71,7 +106,11 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             Version cur;
             const string &key = read.first;
             const Interval &valid = read.second;
-            store.Get(key, cur);
+
+	    // ignore if this version doesn't exist
+	    if (!store.Get(key, cur)) {
+		continue;
+	    }
 
             // If this key has been written since we read it, abort.
             if (cur.GetTimestamp() > valid.Start()) {
@@ -120,7 +159,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
                 Abort(tid);
                 return REPLY_FAIL;
             }
-
+	    
             if (txn.IsolationMode() == LINEARIZABLE) {
                 // If there is a pending read for this key, abort to stay linearizable.
                 if (pReads.find(key) != pReads.end()) {
@@ -129,6 +168,15 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
                     Abort(tid);
                     return REPLY_FAIL;
                 }
+		// if there is a read at a later timestamp
+		Timestamp ts;
+		if (store.GetLastRead(key, ts)) {
+		    if (ts > last_committed) {
+			Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
+			      key.c_str());
+		    }
+		    return REPLY_FAIL;
+		}                    	
             } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
                 // If SI, check that the snapshot hasn't been written
                 Version cur;
@@ -156,6 +204,16 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
                     Abort(tid);
                     return REPLY_FAIL;
                 }
+
+		// Check for timestamp reads
+		Timestamp ts;
+		if (store.GetLastRead(key, ts)) {
+		    if (ts > last_committed) {
+			Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
+			      key.c_str());
+		    }
+		    return REPLY_FAIL;
+		}
             } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
                 // If SI, check that the snapshot hasn't been written
                 Version cur;
@@ -172,6 +230,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
     // Otherwise, prepare this transaction for commit
     prepared[tid] = txn;
+    prepared_last_commit[tid] = last_committed;
     Debug("[%lu] PREPARED TO COMMIT", tid);
     return REPLY_OK;
 }
@@ -201,6 +260,9 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
         }
         prepared.erase(tid);
         committed[tid] = t;
+	if (timestamp > last_committed) {
+	    last_committed = timestamp;
+	}
     }
 }
 
@@ -233,13 +295,36 @@ OCCStore::getPreparedOps(unordered_set<string> &reads, unordered_set<string> &wr
     }
 }
 
+Timestamp
+OCCStore::getPreparedUpdate(const string &key)
+{
+    Timestamp ts = MAX_TIMESTAMP;
+    for (auto &t : prepared) {
+        for (auto &write : t.second.GetWriteSet()) {
+	    if (write.first == key) {
+		if (prepared_last_commit[t.first] < ts)
+		    ts = prepared_last_commit[t.first];
+	    }		
+        }
+        for (auto &incr : t.second.GetIncrementSet()) {
+	    if (incr.first == key) {
+		if (prepared_last_commit[t.first] < ts)
+		    ts = prepared_last_commit[t.first];
+	    }
+        }
+    }
+    return ts;
+}
+
 void
-OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values) {
+OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values)
+{
     return store.Subscribe(keys, address, values);
 }
 
 void
-OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, vector<FrontendNotification> &notifications) {
+OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, vector<FrontendNotification> &notifications)
+{
     Transaction t;
     if (committed.find(tid) != committed.end()) {
         t = committed[tid];
@@ -259,7 +344,8 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t ti
 }
 
 void
-OCCStore::fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications) {
+OCCStore::fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications)
+{
     for (auto &n : notifications) {
         vector<pair<string, Timestamp> > keys;
         for (auto it = n.values.begin(); it != n.values.end(); it++) {
