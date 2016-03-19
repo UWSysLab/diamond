@@ -33,7 +33,7 @@ servers = []
 
 frontendConfig = open(frontendConfigPath, 'r')
 for line in frontendConfig:
-    match = re.match("replica\s+([\w\.]+):(\d)", line)
+    match = re.match("replica\s+([\w\.-]+):(\d)", line)
     if match:
         hostname = match.group(1)
         servers.append(hostname)
@@ -44,7 +44,7 @@ for shardNum in range(0, numShards):
     backendConfig = open(backendConfigPath, 'r')
     replicaNum = 0
     for line in backendConfig:
-        match = re.match("replica\s+([\w\.]+):(\d)", line)
+        match = re.match("replica\s+([\w\.-]+):(\d)", line)
         if match:
             hostname = match.group(1)
             servers.append(hostname)
@@ -52,7 +52,7 @@ for shardNum in range(0, numShards):
 
 tssConfig = open(tssConfigPath, 'r')
 for line in tssConfig:
-    match = re.match("replica\s+([\w\.]+):(\d)", line)
+    match = re.match("replica\s+([\w\.-]+):(\d)", line)
     if match:
         hostname = match.group(1)
         servers.append(hostname)
