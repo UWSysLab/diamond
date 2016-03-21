@@ -57,7 +57,7 @@ for line in frontendConfig:
             remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
             os.system("ssh -f " + hostname + " '" + setVarsCmd + " " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " > " + remoteFrontendOutputPath + " 2>&1'");
         elif args.action == 'kill':
-            os.system("ssh " + hostname + " 'pkill -f " + remoteFrontendConfigPath + "'");
+            os.system("ssh " + hostname + " 'pkill -9 -f " + remoteFrontendConfigPath + "'");
 
 
 
@@ -77,7 +77,7 @@ for shardNum in range(0, numShards):
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
                 os.system("ssh -f " + hostname + " '" + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
-                os.system("ssh " + hostname + " 'pkill -f " + remoteBackendConfigPath + "'");
+                os.system("ssh " + hostname + " 'pkill -9 -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
     backendConfig.close()
 
@@ -94,6 +94,6 @@ for line in tssConfig:
             os.system("rsync " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
             os.system("ssh -f " + hostname + " '" + setVarsCmd + " " + remoteTssExecutablePath + " -c " + remoteTssConfigPath + " -i " + repr(replicaNum) + " > " + remoteTssOutputPath + " 2>&1'");
         elif args.action == 'kill':
-            os.system("ssh " + hostname + " 'pkill -f " + remoteTssConfigPath + "'");
+            os.system("ssh " + hostname + " 'pkill -9 -f " + remoteTssConfigPath + "'");
         replicaNum = replicaNum + 1
 tssConfig.close()
