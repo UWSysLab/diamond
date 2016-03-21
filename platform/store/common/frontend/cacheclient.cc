@@ -160,13 +160,13 @@ CacheClient::Prepare(const uint64_t tid, const Transaction &txn, Promise *promis
     txnclient->Prepare(tid, txn, promise);
 
     // save the transactions for later
-    if (pp->GetReply() == REPLY_OK) {
-        cache_lock.lock();
-        if (prepared.find(tid) == prepared.end()) {
-            prepared[tid] = txn;
-        }
-        cache_lock.unlock();
-    }
+    // if (pp->GetReply() == REPLY_OK) {
+    //     cache_lock.lock();
+    //     if (prepared.find(tid) == prepared.end()) {
+    //         prepared[tid] = txn;
+    //     }
+    //     cache_lock.unlock();
+    // }
 }
 
 void
@@ -179,9 +179,9 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
 
     // update the cache
      pp->GetReply();
-    cache_lock.lock();
-    const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
-    prepared.erase(tid);
+    // cache_lock.lock();
+    // const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
+    // prepared.erase(tid);
         
     // // update the cache
     // if (reply == REPLY_OK) {
@@ -199,7 +199,7 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
     //     cache.Remove(inc.first);
     // }
-    cache_lock.unlock();
+    // cache_lock.unlock();
 }
 
 /* Aborts the ongoing transaction. */
