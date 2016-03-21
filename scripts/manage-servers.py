@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import glob
 import os
 import re
 import time
@@ -30,15 +31,21 @@ remoteTssExecutablePath = WORKING_DIR + "/tss"
 setVarsCmd = "LD_LIBRARY_PATH=" + repr(WORKING_DIR)
 
 # find number of shards
-configPath = args.config_prefix + "0.config"
-config = open(configPath, 'r')
-line = config.readline()
-match = re.match("f\s+(\d+)", line)
-if match:
-    numShards = int(match.group(1))
-else:
-    print "Error: could not get number of shards"
-    sys.exit
+files = glob.glob(args.config_prefix + "*.config")
+maxShardNum = -1
+for filename in files:
+    match = re.match(args.config_prefix + "(\d+)\.config", filename)
+    if match:
+        shardNum = int(match.group(1))
+        if maxShardNum < shardNum:
+            maxShardNum = shardNum
+numShards = maxShardNum + 1
+
+print("Detected " + repr(numShards) + " shards")
+if args.action == 'start':
+    print("Starting servers...")
+elif args.action == 'kill':
+    print("Killing servers...")
 
 # launch frontend server
 frontendConfig = open(frontendConfigPath, 'r')
@@ -55,7 +62,7 @@ for line in frontendConfig:
                 remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
             remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
-            os.system("ssh -f " + hostname + " '" + setVarsCmd + " " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " > " + remoteFrontendOutputPath + " 2>&1'");
+            os.system("ssh -f " + hostname + " '" + setVarsCmd + " " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " -N " + repr(numShards) +  " > " + remoteFrontendOutputPath + " 2>&1'");
         elif args.action == 'kill':
             os.system("ssh " + hostname + " 'pkill -9 -f " + remoteFrontendConfigPath + "'");
 
