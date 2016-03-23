@@ -20,17 +20,45 @@ using namespace boost::python;
 
 // Global variables and methods for notification callback
 PyObject * pythonCallback = NULL;
-void nativeCallback(uint64_t reactive_id) {
-    PyGILState_STATE gstate;
-    gstate = PyGILState_Ensure();
-    call<void>(pythonCallback, reactive_id);
-    PyGILState_Release(gstate);
+bool pythonInNative = false;
+
+void nativeCallback() {
+    if (!pythonInNative) {
+        PyGILState_STATE gstate;
+        gstate = PyGILState_Ensure();
+        call<void>(pythonCallback);
+        PyGILState_Release(gstate);
+    }
 }
+
 void notificationInitWrapper(PyObject * callback) {
     Py_XINCREF(callback);
     Py_XDECREF(pythonCallback);
     pythonCallback = callback;
     DObject::NotificationInit(&nativeCallback);
+}
+
+void TransactionBeginWrapper() {
+    pythonInNative = true;
+    DObject::TransactionBegin();
+}
+
+int TransactionCommitWrapper() {
+    int result = DObject::TransactionCommit();
+    pythonInNative = false;
+    return result;
+}
+
+void BeginReactiveWrapper(uint64_t reactive_id) {
+    pythonInNative = true;
+    DObject::BeginReactive(reactive_id);
+}
+
+uint64_t GetNextNotificationWrapper(bool blocking) {
+    pythonInNative = true;
+    uint64_t ret = DObject::GetNextNotification(blocking);
+    pythonInNative = false;
+    return ret;
 }
 
 BOOST_PYTHON_MODULE(libpydiamond)
@@ -43,15 +71,14 @@ BOOST_PYTHON_MODULE(libpydiamond)
     def("GetThreadId", &GetThreadId);
     def("NotificationInit", &notificationInitWrapper);
 
-    void (*TransactionBegin)(void) = &DObject::TransactionBegin;
     class_<DObject, boost::noncopyable>("DObject", no_init)
-        .def("TransactionBegin", TransactionBegin)
+        .def("TransactionBegin", &TransactionBeginWrapper)
         .staticmethod("TransactionBegin")
-        .def("TransactionCommit", &DObject::TransactionCommit)
+        .def("TransactionCommit", &TransactionCommitWrapper)
         .staticmethod("TransactionCommit")
-        .def("GetNextNotification", &DObject::GetNextNotification)
+        .def("GetNextNotification", &GetNextNotificationWrapper)
         .staticmethod("GetNextNotification")
-        .def("BeginReactive", &DObject::BeginReactive)
+        .def("BeginReactive", &BeginReactiveWrapper)
         .staticmethod("BeginReactive")
         .def("NotificationInit", &DObject::NotificationInit)
         .staticmethod("NotificationInit")
