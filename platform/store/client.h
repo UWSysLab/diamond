@@ -120,7 +120,7 @@ public:
                   const TransportAddress &address,
                   std::map<std::string, Version> &values);
 
-    void GetNextNotification(Promise *promise);
+    void GetNextNotification(bool blocking, Promise *promise);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
@@ -130,7 +130,7 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
-    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+    void NotificationInit(std::function<void (void)> callback);
 
 private:
     /* Private helper functions. */

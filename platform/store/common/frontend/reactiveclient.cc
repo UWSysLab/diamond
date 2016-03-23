@@ -75,20 +75,21 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
 }
 
 void
-ReactiveClient::GetNextNotification(Promise *promise) {
+ReactiveClient::GetNextNotification(bool blocking,
+                                    Promise *promise) {
     Debug("GET_NEXT_NOTIFICATION");
     Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    txnclient->GetNextNotification(pp);
-    map<string, Version> values = pp->GetValues();
-    processNotification(values);
+    txnclient->GetNextNotification(blocking, pp);
+    if (pp->GetReactiveId() != NO_NOTIFICATION) {
+        map<string, Version> values = pp->GetValues();
+        processNotification(values);
+    }
 }
 
 void
-ReactiveClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
-    notification_upcall = callback;
-    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&ReactiveClient::notificationCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    txnclient->NotificationInit(boundFunc);
+ReactiveClient::NotificationInit(std::function<void (void)> callback) {
+    txnclient->NotificationInit(callback);
     
 }
 
@@ -98,10 +99,4 @@ ReactiveClient::processNotification(const map<string, Version> &values) {
         Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
         cache.Put(pair.first, pair.second);
     }
-}
-
-void
-ReactiveClient::notificationCallback(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
-    processNotification(values);
-    notification_upcall(timestamp, values, reactive_id);
 }

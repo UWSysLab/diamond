@@ -84,7 +84,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
-    virtual void GetNextNotification(Promise *promise = NULL);
+    virtual void GetNextNotification(bool blocking,
+                                     Promise *promise = NULL);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
@@ -98,7 +99,7 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
-    virtual void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+    virtual void NotificationInit(std::function<void (void)> callback);
 
 protected:
     // Underlying single shard transaction client implementation.

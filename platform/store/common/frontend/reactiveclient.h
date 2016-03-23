@@ -39,6 +39,8 @@
 #include <string>
 #include <vector>
 
+#include "store/common/notification.h"
+
 class ReactiveClient : public CacheClient {
 
 public:
@@ -48,14 +50,13 @@ public:
                 const Transaction &txn = Transaction(),
                 Promise *promise = NULL);
 
-    void GetNextNotification(Promise *promise = NULL);
+    void GetNextNotification(bool blocking,
+                             Promise *promise = NULL);
 
-    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+    void NotificationInit(std::function<void (void)> callback);
 
 private:
     std::unordered_map<uint64_t, std::set<std::string> > regMap; // reactive_id to registration set map
-    std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> notification_upcall;
-    void notificationCallback(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id);
     void processNotification(const std::map<std::string, Version> &values);
 
 };

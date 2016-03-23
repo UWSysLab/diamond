@@ -5,12 +5,13 @@ sys.path.append("../../build/bindings/python")
 from libpydiamond import *
 from twisted.internet import reactor
 
+NO_NOTIFICATION = 18446744073709551615L
+
 funcArgMap = dict() # function <-> arguments map
 idFuncMap = dict() # reactive_id <-> function map
 funcIdMap = dict() # function <-> reactive_id map
 nextId = 0
 
-notificationList = []
 cv = threading.Condition()
 
 def runInBackground(target, *args, **kwargs):
@@ -23,23 +24,23 @@ def start():
     thread.daemon = True
     thread.start()
 
-def callback(reactive_id):
+def callback():
     cv.acquire()
-    notificationList.append(reactive_id)
     cv.notify()
     cv.release()
 
 def run():
     while True:
         cv.acquire()
-        while len(notificationList) == 0:
-            cv.wait()
-        reactive_id = notificationList.pop(0)
+        cv.wait()
         cv.release()
-        func = idFuncMap[reactive_id]
-        DObject.BeginReactive(reactive_id)
-        func(*funcArgMap[func])
-        DObject.TransactionCommit()
+        reactive_id = DObject.GetNextNotification(False)
+        while reactive_id != NO_NOTIFICATION:
+            func = idFuncMap[reactive_id]
+            DObject.BeginReactive(reactive_id)
+            func(*funcArgMap[func])
+            DObject.TransactionCommit()
+            reactive_id = DObject.GetNextNotification(False)
 
 def add(func, *args):
     reactive_id = generateId()
@@ -63,6 +64,9 @@ def txn_execute_helper(func, *args):
     DObject.TransactionBegin()
     func(*args)
     DObject.TransactionCommit()
+    cv.acquire()
+    cv.notify()
+    cv.release()
 
 def generateId():
     global nextId

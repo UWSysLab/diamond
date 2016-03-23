@@ -11,8 +11,8 @@ namespace po = boost::program_options;
 
 DString str;
 
-void callback(uint64_t reactive_id) {
-    std::cout << "Callback fired for notification " << reactive_id << std::endl;
+void callback() {
+    std::cout << "Callback fired" << std::endl;
 }
 
 int main(int argc, char ** argv) {
