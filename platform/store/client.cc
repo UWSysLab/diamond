@@ -430,7 +430,7 @@ Client::Subscribe(const set<string> &keys,
 
 
 void
-Client::GetNextNotification(Promise *promise) {
+Client::GetNextNotification(bool blocking, Promise *promise) {
     Panic("Do not call this method! (it should probably be refactored out)");
 }
 
@@ -449,7 +449,7 @@ Client::ReplyToNotification(const uint64_t reactive_id,
 }
 
 void
-Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+Client::NotificationInit(std::function<void (void)> callback) {
     Panic("NotificationInit not implemented for this client");
 }
 

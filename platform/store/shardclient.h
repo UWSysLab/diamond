@@ -99,7 +99,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
-    void GetNextNotification(Promise *promise);
+    void GetNextNotification(bool blocking,
+                             Promise *promise);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
@@ -113,7 +114,7 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
-    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+    void NotificationInit(std::function<void (void)> callback);
 
 private:
     Transport *transport; // Transport layer.

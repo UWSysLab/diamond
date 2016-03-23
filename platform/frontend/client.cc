@@ -264,12 +264,11 @@ Client::ReceiveMessage(const TransportAddress &remote,
                 cache_entries[key] = value;
             }
 
-            // Handle non-blocking case
+            // Let client know that a notification has arrived (for clients who call GetNextNotification in non-blocking mode)
             if (callback_registered) {
-                notification_callback(timestamp, cache_entries, reactive_id);
+                notification_callback();
             }
 
-            // Handle blocking case
             notification_lock.lock();
             if (reactive_promise != NULL) {
                 notification_lock.unlock();
@@ -297,7 +296,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
 }
 
 void
-Client::GetNextNotification(Promise *promise) {
+Client::GetNextNotification(bool blocking, Promise *promise) {
     notification_lock.lock();
     if (reactive_promise != NULL) {
         Panic("Error: GetNextNotification called from multiple threads");
@@ -313,6 +312,11 @@ Client::GetNextNotification(Promise *promise) {
             cache_entries[key] = value;
         }
         promise->Reply(REPLY_OK, notification.timestamp(), cache_entries, notification.reactiveid());
+    }
+    else if (!blocking) {
+        notification_lock.unlock();
+        map<string, Version> dummyMap;
+        promise->Reply(REPLY_OK, 0, dummyMap, NO_NOTIFICATION);
     }
     else {
         reactive_promise = promise;
@@ -375,7 +379,7 @@ Client::ReplyToNotification(const uint64_t reactive_id,
 }
 
 void
-Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+Client::NotificationInit(std::function<void (void)> callback) {
     notification_callback = callback;
     callback_registered = true;
 }

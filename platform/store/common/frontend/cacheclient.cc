@@ -229,11 +229,12 @@ CacheClient::Abort(const uint64_t tid, Promise *promise)
  }
 
 void
-CacheClient::GetNextNotification(Promise *promise) {
+CacheClient::GetNextNotification(bool blocking,
+                                 Promise *promise) {
     Debug("GET_NEXT_NOTIFICATION");
     Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    txnclient->GetNextNotification(pp);
+    txnclient->GetNextNotification(blocking, pp);
 }
 
 void
@@ -262,6 +263,6 @@ CacheClient::ReplyToNotification(const uint64_t reactive_id,
 
 
 void
-CacheClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+CacheClient::NotificationInit(std::function<void (void)> callback) {
     txnclient->NotificationInit(callback);
 }

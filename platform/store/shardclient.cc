@@ -376,7 +376,7 @@ ShardClient::SubscribeCallback(const string &request_str, const string &reply_st
 }
 
 void
-ShardClient::GetNextNotification(Promise *promise) {
+ShardClient::GetNextNotification(bool blocking, Promise *promise) {
     Panic("GetNextNotification not implemented for this client");
 }
 
@@ -395,7 +395,7 @@ ShardClient::ReplyToNotification(const uint64_t reactive_id,
 }
 
 void
-ShardClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+ShardClient::NotificationInit(std::function<void (void)> callback) {
     Panic("NotificationInit not implemented for this client");
 }
 
