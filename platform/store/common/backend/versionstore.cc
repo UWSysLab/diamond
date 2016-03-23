@@ -187,7 +187,8 @@ VersionedKVStore::Subscribe(const set<string> &keys, const string &address, map<
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
         addressKeyMap[address].insert(*it);
-        Version value;
+        Version value(0, "");
+        value.SetEnd(0);
         Get(*it, value);
         values[*it] = value;
     }
