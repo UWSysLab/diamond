@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import argparse
+import os
+
 SRC_HOST = "diamond-client-a1o6"
 WORKING_DIR = "~/"
 
@@ -22,9 +25,8 @@ args = parser.parse_args()
 os.system(COPY_CMD + BINARY_DIR + BINARY_FILE + " " + WORKING_DIR)
 
 # Copy dependencies
-for hostname in servers:
-    for dep in dependencies:
-        os.system("rsync --copy-links "+ hostname + ":" + dependencies[dep] + " " + WORKING_DIR + "/" + dep)
+for dep in dependencies:
+    os.system("rsync --copy-links "+ hostname + ":" + dependencies[dep] + " " + WORKING_DIR + "/" + dep)
 
 # Copy config files
 os.system(COPY_CMD + CONFIG_DIR + CONFIG_FILE + ".config" + " " + WORKING_DIR)
