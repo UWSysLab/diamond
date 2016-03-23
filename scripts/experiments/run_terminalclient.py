@@ -26,7 +26,7 @@ os.system(COPY_CMD + BINARY_DIR + BINARY_FILE + " " + WORKING_DIR)
 
 # Copy dependencies
 for dep in dependencies:
-    os.system("rsync --copy-links "+ hostname + ":" + dependencies[dep] + " " + WORKING_DIR + "/" + dep)
+    os.system("rsync --copy-links "+ SRC_HOST + ":" + dependencies[dep] + " " + WORKING_DIR + "/" + dep)
 
 # Copy config files
 os.system(COPY_CMD + CONFIG_DIR + CONFIG_FILE + ".config" + " " + WORKING_DIR)
