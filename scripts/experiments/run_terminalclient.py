@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import argparse
+#import argparse
 import os
 
 SRC_HOST = "diamond-client-a1o6"
@@ -17,9 +17,9 @@ dependencies["libprotobuf.so.9"] = "/usr/lib/x86_64-linux-gnu/libprotobuf.so.9"
 dependencies["libevent_pthreads-2.0.so.5"] = "/usr/lib/x86_64-linux-gnu/libevent_pthreads-2.0.so.5"
 dependencies["libevent_core-2.0.so.5"] = "/usr/lib/x86_64-linux-gnu/libevent_core-2.0.so.5"
 
-parser = argparse.ArgumentParser(description='Copy dependencies to GCE machines.')
-parser.add_argument('shards', metavar='n', type=int, help='the number of shards')
-args = parser.parse_args()
+#parser = argparse.ArgumentParser(description='Copy dependencies to GCE machines.')
+#parser.add_argument('shards', metavar='n', type=int, help='the number of shards')
+#args = parser.parse_args()
 
 # Copy binary over
 os.system(COPY_CMD + BINARY_DIR + BINARY_FILE + " " + WORKING_DIR)
