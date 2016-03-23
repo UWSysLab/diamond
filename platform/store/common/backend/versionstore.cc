@@ -78,7 +78,7 @@ VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
-        if (getValue(key, t, it)) {
+        if (getValue(key, t, it) && it->GetInterval().End() >= t) {
             value = *it;
             return true;
         }
