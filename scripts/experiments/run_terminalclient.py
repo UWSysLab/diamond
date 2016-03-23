@@ -30,6 +30,9 @@ for dep in dependencies:
 
 # Copy config files
 os.system(COPY_CMD + CONFIG_DIR + CONFIG_FILE + ".config" + " " + WORKING_DIR)
-        
+
+# set library path
+os.environ["LD_LIBRARY_PATH"] = WORKING_DIR
+
 # run binary
-os.system(WORKING_DIR + BINARY_FILE + " -c " + WORKING_DIR + CONFIG_FILE)
+#os.system(WORKING_DIR + BINARY_FILE + " -c " + WORKING_DIR + CONFIG_FILE)
