@@ -319,7 +319,13 @@ OCCStore::getPreparedUpdate(const string &key)
 void
 OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values)
 {
-    return store.Subscribe(keys, address, values);
+    store.Subscribe(keys, address);
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        Version value(0, "");
+        value.SetEnd(0);
+        Get(0, *it, value, MAX_TIMESTAMP);
+        values[*it] = value;
+    }
 }
 
 void

@@ -61,7 +61,7 @@ public:
     void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
     void Remove(const std::string &key);
 
-    void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values);
+    void Subscribe(const std::set<std::string> &keys, const std::string &address);
     void GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications);
     
     

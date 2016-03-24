@@ -183,14 +183,10 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 }
 
 void
-VersionedKVStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values) {
+VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
         addressKeyMap[address].insert(*it);
-        Version value(0, "");
-        value.SetEnd(0);
-        Get(*it, value);
-        values[*it] = value;
     }
 }
 
