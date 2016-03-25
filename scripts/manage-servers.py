@@ -15,13 +15,21 @@ debug = True
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
 parser.add_argument('config_prefix', help='the config file prefix')
+parser.add_argument('--keys', help='a file containing keys to load')
+parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
 args = parser.parse_args()
+
+if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
+    parser.error('--keys and --numkeys must be given together')
+    sys.exit()
 
 frontendConfigPath = args.config_prefix + ".frontend.config"
 frontendExecutablePath = BUILD_DIR + "/frontserver"
 backendExecutablePath = BUILD_DIR + "/storeserver"
 tssConfigPath = args.config_prefix + ".tss.config"
 tssExecutablePath = BUILD_DIR + "/tss"
+keyPath = args.keys
+numKeys = args.numkeys
 
 remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend.config"
 remoteFrontendExecutablePath = WORKING_DIR + "/frontserver"
@@ -29,6 +37,9 @@ remoteFrontendOutputPath = WORKING_DIR + "/output.frontend.txt"
 remoteBackendExecutablePath = WORKING_DIR + "/storeserver"
 remoteTssConfigPath = WORKING_DIR + "/diamond.tss.config"
 remoteTssExecutablePath = WORKING_DIR + "/tss"
+remoteKeyPath = None
+if keyPath != None:
+    remoteKeyPath = WORKING_DIR + "/keys.txt"
 
 setVarsCmd = "LD_LIBRARY_PATH=" + repr(WORKING_DIR)
 debugCmd = ""
@@ -89,7 +100,11 @@ for shardNum in range(0, numShards):
             if args.action == 'start':
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
-                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " > " + remoteBackendOutputPath + " 2>&1'");
+                os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
+                keyArgs = ""
+                if keyPath != None:
+                    keyArgs = " -k " + repr(numKeys) + " -f " + remoteKeyPath
+                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
