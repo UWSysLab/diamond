@@ -40,3 +40,14 @@ kubectl run us-diamond -i --tty --image=us.gcr.io/diamond-1239/gcetest --restart
 kubectl delete job us-diamond
 ```
 
+# Alternate workflow
+
+* Build, tag, and push image
+```
+$ ./build-kubernetes.pl gcetest iyzhang
+```
+
+* Run 10 instances of the scalability client
+```
+$ ./run-kubernetes-job.pl us-diamond gcetest run_scalability.py iyzhang 10
+```

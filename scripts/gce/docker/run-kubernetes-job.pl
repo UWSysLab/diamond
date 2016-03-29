@@ -25,7 +25,7 @@ print(JOB "            name: $jobName\n");
 print(JOB "        spec:\n");
 print(JOB "            containers:\n");
 print(JOB "                - name: $jobName\n");
-print(JOB "                  image: $image\n");
+print(JOB "                  image: us.gcr.io/diamond-1239/$image\n");
 print(JOB "                  args: [\"/home/$user/$script\"]\n");
 print(JOB "            restartPolicy: Never\n");
 print(JOB "    completions: $numInstances\n");
