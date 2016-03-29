@@ -14,7 +14,7 @@ CONFIG_FILE = "gce.frontend"
 KEY_DIR = "scripts/experiments/"
 KEY_FILE = "keys.txt"
 NUM_KEYS = "1000"
-NUM_SECONDS = "60"
+NUM_SECONDS = "120"
 OUTPUT_DEST = "scripts/experiments/scalability/"
 
 os.system(COPY_CMD + "apps/benchmarks/build/scalability" + " " + WORKING_DIR)

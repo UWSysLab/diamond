@@ -3,18 +3,20 @@
 use warnings;
 use strict;
 
-my $log = "scalability-log.txt";
+my $log = "log-scalability.txt";
 
-system("ssh 104.154.73.35 'cd diamond-src/apps/benchmarks/build; git pull origin master; make -j8' > $log 2>&1");
-system("./build-kubernetes.pl nielgce nl35 > $log 2>&1");
+system("rm -f $log; touch $log");
+
+system("ssh 104.154.73.35 'cd diamond-src/apps/benchmarks/build; git pull origin master; make -j8' >> $log 2>&1");
+system("./build-kubernetes.pl nielgce nl35 >> $log 2>&1");
 
 print("instances\tthroughput\tlatency\tabortrate\tseconds\n");
 
 my @instanceNums = (1, 5, 10, 20, 50, 100);
 
 for my $instances (@instanceNums) {
-    system("ssh 104.154.73.35 'rm diamond-src/scripts/experiments/scalability/*' > $log 2>&1");
-    system("./run-kubernetes-job.pl scaling nielgce run_scalability.py nl35 $instances > $log 2>&1");
+    system("ssh 104.154.73.35 'rm diamond-src/scripts/experiments/scalability/*' >> $log 2>&1");
+    system("./run-kubernetes-job.pl scaling nielgce run_scalability.py nl35 $instances >> $log 2>&1");
     my @result = `ssh 104.154.73.35 'cd diamond-src/scripts/experiments; ./parse-scalability.py scalability'`;
 
     my $throughput = "ERROR";
