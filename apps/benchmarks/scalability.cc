@@ -32,6 +32,28 @@ uint64_t getMilliseconds(const struct timeval &time) {
     return (time.tv_sec * 1000 + time.tv_usec / 1000);
 }
 
+std::string getRandomKey() {
+    int range = 10 + 26 + 26; // digits + uppercase + lowercase
+    char keyChars[65];
+    for (int i = 0; i < 64; i++) {
+        int index = rand() % range;
+        int finalVal = -1;
+        if (index < 10) {
+            finalVal = index + 48;
+        }
+        else if (index >= 10 && index < 36) {
+            finalVal = index - 10 + 65;
+        }
+        else { // index >= 36
+            finalVal = index - 36 + 97;
+        }
+
+        keyChars[i] = finalVal;
+    }
+    keyChars[64] = '\0';
+    return std::string(keyChars);
+}
+
 int main(int argc, char ** argv) {
     std::string configPrefix;
     std::string keyFile;
@@ -67,6 +89,10 @@ int main(int argc, char ** argv) {
         dstrings.push_back(dstring);
     }
 
+    std::string uniqueKey = getRandomKey();
+    DString uniqueString;
+    DObject::Map(uniqueString, uniqueKey);
+
     bool done = false;
     struct timeval globalStartTime;
     gettimeofday(&globalStartTime, NULL);
@@ -74,15 +100,16 @@ int main(int argc, char ** argv) {
     std::cout << "start-time\tend-time\tcommitted" << std::endl;
 
     while (!done) {
-        std::string val("random value: " + std::to_string(rand()));
+        std::string val(std::to_string(rand()));
         int varIndex = rand() % dstrings.size();
 
         struct timeval startTime;
         gettimeofday(&startTime, NULL);
 
+        // Read from a (randomly chosen) known key and write to the client's unique key
         DObject::TransactionBegin();
         std::string temp = dstrings[varIndex].Value();
-        dstrings[varIndex].Set(val);
+        uniqueString.Set(val);
         int committed = DObject::TransactionCommit();
 
         struct timeval endTime;
