@@ -8,7 +8,7 @@ my $log = "scalability-log.txt";
 system("ssh 104.154.73.35 'cd diamond-src/apps/benchmarks/build; git pull origin master; make -j8' > $log 2>&1");
 system("./build-kubernetes.pl nielgce nl35 > $log 2>&1");
 
-print("instances\tthroughput\tlatency\n");
+print("instances\tthroughput\tlatency\tabortrate\tseconds\n");
 
 my @instanceNums = (1, 5, 10, 20, 50, 100);
 
@@ -19,6 +19,8 @@ for my $instances (@instanceNums) {
 
     my $throughput = "ERROR";
     my $latency = "ERROR";
+    my $abortrate = "ERROR";
+    my $seconds = "ERROR";
     for my $line (@result) {
         if ($line =~ /^Avg\. throughput \(txn\/s\): ([\d\.]+)$/) {
             $throughput = $1;
@@ -26,6 +28,12 @@ for my $instances (@instanceNums) {
         elsif ($line =~ /^Avg\. latency \(s\): ([\d\.]+)$/) {
             $latency = $1;
         }
+        elsif ($line =~ /^Abort rate: ([\d\.]+)$/) {
+            $abortrate = $1;
+        }
+        elsif ($line =~ /over ([\d\.]+) seconds/) {
+            $seconds = $1;
+        }
     }
-    print("$instances\t$throughput\t$latency\n");
+    print("$instances\t$throughput\t$latency\t$abortrate\t$seconds\n");
 }
