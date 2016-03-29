@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-my $log = "log-scalability.txt";
+my $log = "scalability-log.txt";
 
 system("rm -f $log; touch $log");
 
