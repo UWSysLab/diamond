@@ -32,4 +32,4 @@ print(SCRIPT "plot \"$data\" using 2:3 with lines\n");
 close(SCRIPT);
 
 system("gnuplot $script");
-#system("rm $script");
+system("rm $script");
