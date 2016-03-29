@@ -39,7 +39,7 @@ my $done = 0;
 while (!$done) {
     sleep(1);
     my $pods = `kubectl get pods | wc | awk '{ print \$1 }'` - 1;
-    if ($pods == 0) {
+    if ($pods <= 0) {
         $done = 1;
     }
 }
