@@ -33,10 +33,12 @@ if len(files) == 0:
     print("No files to parse!")
     sys.exit()
 
-print("Results span " + repr((max(allEndTimes) - min(allStartTimes)) / 1000) + " seconds");
+print("Results span " + repr((max(allEndTimes) - min(allStartTimes)) / 1000.0) + " seconds");
 
 timeLowerBound = min(allStartTimes) + (max(allEndTimes) - min(allStartTimes)) * (25.0 / 100.0)
 timeUpperBound = min(allStartTimes) + (max(allEndTimes) - min(allStartTimes)) * (75.0 / 100.0)
+
+timeRangeSeconds = (timeUpperBound - timeLowerBound) / 1000.0
 
 startTimes = []
 endTimes = []
@@ -48,7 +50,7 @@ for i in range(0, len(allStartTimes)):
         endTimes.append(allEndTimes[i])
         results.append(allResults[i])
 
-print("Selected " + repr(len(results)) + " of " + repr(len(allResults)) + " transactions")
+print("Selected " + repr(len(results)) + " of " + repr(len(allResults)) + " transactions over " + repr(timeRangeSeconds) + " seconds")
 
 numTxns = 0
 numAborts = 0
@@ -60,10 +62,13 @@ for i in range(0, len(startTimes)):
     else:
         numAborts += 1
 
+sumTimesSeconds = sumTimes / 1000.0
 numSuccessful = numTxns - numAborts
-meanTime = float(sumTimes) / numSuccessful / 1000
+meanTime = float(sumTimesSeconds) / numSuccessful
+meanThroughput = float(numTxns) / timeRangeSeconds
 abortRate = float(numAborts) / numTxns
 
 print("Num transactions: " + repr(numTxns) + ", num aborts: " + repr(numAborts));
-print("Avg. time (s): " + repr(meanTime))
+print("Avg. latency (s): " + repr(meanTime))
+print("Avg. throughput (txn/s): " + repr(meanThroughput))
 print("Abort rate: " + repr(abortRate))
