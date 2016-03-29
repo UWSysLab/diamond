@@ -14,6 +14,7 @@ CONFIG_FILE = "gce.frontend"
 KEY_DIR = "scripts/experiments/"
 KEY_FILE = "keys.txt"
 NUM_KEYS = "1000"
+NUM_SECONDS = "10"
 OUTPUT_DEST = "scripts/experiments/scalability/"
 
 os.system(COPY_CMD + "apps/benchmarks/build/scalability" + " " + WORKING_DIR)
@@ -25,7 +26,7 @@ os.system(COPY_CMD + KEY_DIR + KEY_FILE + " " + WORKING_DIR)
 
 # Run binary
 OUTPUT_FILE = "scalability-out-" + repr(random.randint(0, sys.maxint))
-os.system(WORKING_DIR + "scalability --config " + WORKING_DIR + CONFIG_FILE + " --keys " + WORKING_DIR + KEY_FILE + " --numkeys " + NUM_KEYS + " > " + WORKING_DIR + OUTPUT_FILE)
+os.system(WORKING_DIR + "scalability --config " + WORKING_DIR + CONFIG_FILE + " --keys " + WORKING_DIR + KEY_FILE + " --numkeys " + NUM_KEYS + " --time " + NUM_SECONDS + " > " + WORKING_DIR + OUTPUT_FILE)
 
 # Copy output back to client
 os.system("rsync " + WORKING_DIR + OUTPUT_FILE + " " + SRC_HOST + ":diamond-src/" + OUTPUT_DEST)
