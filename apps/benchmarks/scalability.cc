@@ -55,6 +55,7 @@ int main(int argc, char ** argv) {
     po::notify(vm);
 
     DiamondInit(configPrefix, 1, 0);
+    srand(time(NULL));
 
     std::set<std::string> keys;
     parseKeys(keyFile, nKeys, keys);
