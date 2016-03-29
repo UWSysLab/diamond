@@ -15,12 +15,17 @@ debug = True
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
 parser.add_argument('config_prefix', help='the config file prefix')
+parser.add_argument('--shards', type=int, help='number of backend shards')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
 args = parser.parse_args()
 
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
     parser.error('--keys and --numkeys must be given together')
+    sys.exit()
+
+if args.action == 'kill' and args.shards != None:
+    parser.error('--shards option not allowed with action \'kill\'')
     sys.exit()
 
 frontendConfigPath = args.config_prefix + ".frontend.config"
@@ -30,6 +35,7 @@ tssConfigPath = args.config_prefix + ".tss.config"
 tssExecutablePath = BUILD_DIR + "/tss"
 keyPath = args.keys
 numKeys = args.numkeys
+numShards = args.shards
 
 remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend.config"
 remoteFrontendExecutablePath = WORKING_DIR + "/frontserver"
@@ -55,9 +61,16 @@ for filename in files:
         shardNum = int(match.group(1))
         if maxShardNum < shardNum:
             maxShardNum = shardNum
-numShards = maxShardNum + 1
+totalNumShards = maxShardNum + 1
 
-print("Detected " + repr(numShards) + " shards")
+if numShards == None:
+    numShards = totalNumShards
+
+if numShards > totalNumShards:
+    print("Error: missing config files for one or more shards")
+    sys.exit()
+
+print("Detected config files for " + repr(totalNumShards) + " shards, running command for " + repr(numShards) + " shards")
 if args.action == 'start':
     if debug:
         print("Enabling debug output")
