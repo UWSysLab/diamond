@@ -30,7 +30,10 @@ public class ShowNotes extends ListActivity {
 		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.shownotes);
-
+		ParseUser currentUser = ParseUser.getCurrentUser();
+		if (currentUser == null) {
+			loadLoginView();
+		}
 		posts = new ArrayList<Note>();
 		ArrayAdapter<Note> adapter = new ArrayAdapter<Note>(this, R.layout.list_item_layout, posts);
 		setListAdapter(adapter);
@@ -55,6 +58,11 @@ public class ShowNotes extends ListActivity {
 	                    startActivity(intent);
 	                    break;
 	                }
+	                
+	                case R.id.action_logout:
+	                	ParseUser.logOut();
+	                	loadLoginView();
+	                	break;
                 }
                 return false;        
             }
@@ -65,6 +73,7 @@ public class ShowNotes extends ListActivity {
 		final long startTime = System.currentTimeMillis();
 		// refreshes list of notes to current state
 		ParseQuery<ParseObject> query = ParseQuery.getQuery("Post");
+		query.whereEqualTo("author", ParseUser.getCurrentUser());
 		setProgressBarIndeterminateVisibility(true);
 		query.findInBackground(new FindCallback<ParseObject>() {
 			
@@ -102,4 +111,10 @@ public class ShowNotes extends ListActivity {
 	    startActivity(intent);
 	}
 	
+	private void loadLoginView() {
+		Intent intent = new Intent(this, LoginActivity.class);
+		intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); // clears stack history and brings loginactivity to front
+		intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
+		startActivity(intent);
+	}
 }

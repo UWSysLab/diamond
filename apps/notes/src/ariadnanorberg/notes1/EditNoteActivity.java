@@ -4,6 +4,7 @@ import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
+import com.parse.ParseUser;
 import com.parse.SaveCallback;
 
 import android.app.Activity;
@@ -105,6 +106,7 @@ public class EditNoteActivity extends Activity {
             	final ParseObject post = new ParseObject("Post");
                 post.put("title", postTitle);
                 post.put("content", postContent);
+                post.put("author", ParseUser.getCurrentUser());
                 setProgressBarIndeterminateVisibility(true);
                 post.saveInBackground(new SaveCallback() {
                     public void done(ParseException e) {
