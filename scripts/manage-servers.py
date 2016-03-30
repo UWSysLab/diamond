@@ -16,6 +16,7 @@ parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
 parser.add_argument('config_prefix', help='the config file prefix')
 parser.add_argument('--shards', type=int, help='number of backend shards')
+parser.add_argument('--frontends', type=int, help='number of frontend servers')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
 args = parser.parse_args()
@@ -28,7 +29,6 @@ if args.action == 'kill' and args.shards != None:
     parser.error('--shards option not allowed with action \'kill\'')
     sys.exit()
 
-frontendConfigPath = args.config_prefix + ".frontend.config"
 frontendExecutablePath = BUILD_DIR + "/frontserver"
 backendExecutablePath = BUILD_DIR + "/storeserver"
 tssConfigPath = args.config_prefix + ".tss.config"
@@ -36,10 +36,9 @@ tssExecutablePath = BUILD_DIR + "/tss"
 keyPath = args.keys
 numKeys = args.numkeys
 numShards = args.shards
+numFrontends = args.frontends
 
-remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend.config"
 remoteFrontendExecutablePath = WORKING_DIR + "/frontserver"
-remoteFrontendOutputPath = WORKING_DIR + "/output.frontend.txt"
 remoteBackendExecutablePath = WORKING_DIR + "/storeserver"
 remoteTssConfigPath = WORKING_DIR + "/diamond.tss.config"
 remoteTssExecutablePath = WORKING_DIR + "/tss"
@@ -65,12 +64,29 @@ totalNumShards = maxShardNum + 1
 
 if numShards == None:
     numShards = totalNumShards
-
 if numShards > totalNumShards:
     print("Error: missing config files for one or more shards")
     sys.exit()
 
-print("Detected config files for " + repr(totalNumShards) + " shards, running command for " + repr(numShards) + " shards")
+# find number of frontends
+files = glob.glob(args.config_prefix + ".frontend*.config")
+maxFrontendNum = -1
+for filename in files:
+    match = re.match(args.config_prefix + ".frontend(\d+)\.config", filename)
+    if match:
+        frontendNum = int(match.group(1))
+        if maxFrontendNum < frontendNum:
+            maxFrontendNum = frontendNum
+totalNumFrontends = maxFrontendNum + 1
+
+if numFrontends == None:
+    numFrontends = totalNumFrontends
+if numFrontends > totalNumFrontends:
+    print("Error: missing config files for one or more frontends")
+    sys.exit()
+
+print("Running command for %d shards (%d config files detected)" % (numShards, totalNumShards));
+print("Running command for %d frontends (%d config files detected)" % (numFrontends, totalNumFrontends));
 if args.action == 'start':
     if debug:
         print("Enabling debug output")
@@ -78,24 +94,28 @@ if args.action == 'start':
 elif args.action == 'kill':
     print("Killing servers...")
 
-# launch frontend server
-frontendConfig = open(frontendConfigPath, 'r')
-for line in frontendConfig:
-    match = re.match("replica\s+([\w\.-]+):(\d)", line)
-    if match:
-        hostname = match.group(1)
-        if args.action == 'start':
-            os.system("rsync " + frontendConfigPath + " " + hostname + ":" + remoteFrontendConfigPath)
-            os.system("rsync " + frontendExecutablePath + " " + hostname + ":" + remoteFrontendExecutablePath)
-            os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
-            for shardNum in range(0, numShards):
-                backendConfigPath = args.config_prefix + repr(shardNum) + ".config"
-                remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
-                os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
-            remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
-            os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " -N " + repr(numShards) +  " > " + remoteFrontendOutputPath + " 2>&1'");
-        elif args.action == 'kill':
-            os.system("ssh " + hostname + " 'pkill -9 -f " + remoteFrontendConfigPath + "'");
+# launch frontend servers
+for frontendNum in range(0, numFrontends):
+    frontendConfigPath = args.config_prefix + ".frontend" + repr(frontendNum) + ".config"
+    remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend" + repr(frontendNum) + ".config"
+    frontendConfig = open(frontendConfigPath, 'r')
+    for line in frontendConfig:
+        match = re.match("replica\s+([\w\.-]+):(\d)", line)
+        if match:
+            hostname = match.group(1)
+            remoteFrontendOutputPath = WORKING_DIR + "/output.frontend." + repr(frontendNum) + ".txt"
+            if args.action == 'start':
+                os.system("rsync " + frontendConfigPath + " " + hostname + ":" + remoteFrontendConfigPath)
+                os.system("rsync " + frontendExecutablePath + " " + hostname + ":" + remoteFrontendExecutablePath)
+                os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
+                for shardNum in range(0, numShards):
+                    backendConfigPath = args.config_prefix + repr(shardNum) + ".config"
+                    remoteBackendConfigPath = WORKING_DIR + "/diamond" + repr(shardNum) + ".config"
+                    os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
+                remoteBackendConfigPrefix = WORKING_DIR + "/diamond"
+                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteFrontendExecutablePath + " -c " + remoteFrontendConfigPath + " -b " + remoteBackendConfigPrefix + " -N " + repr(numShards) +  " > " + remoteFrontendOutputPath + " 2>&1'");
+            elif args.action == 'kill':
+                os.system("ssh " + hostname + " 'pkill -9 -f " + remoteFrontendConfigPath + "'");
 
 
 
