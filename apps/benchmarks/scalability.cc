@@ -3,6 +3,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <random>
 #include <string>
 #include <set>
 #include <sys/time.h>
@@ -11,6 +12,17 @@
 
 namespace po = boost::program_options;
 using namespace diamond;
+
+std::mt19937 rng;
+
+void initRand() {
+    rng.seed(std::random_device()());
+}
+
+int randInt(int lowerBound, int upperBound) {
+    std::uniform_int_distribution<std::mt19937::result_type> dist(lowerBound, upperBound);
+    return dist(rng);
+}
 
 void parseKeys(const std::string &keyFile, int nKeys, std::vector<std::string> &keys) {
     std::string key;
@@ -36,7 +48,7 @@ std::string getRandomKey() {
     int range = 10 + 26 + 26; // digits + uppercase + lowercase
     char keyChars[65];
     for (int i = 0; i < 64; i++) {
-        int index = rand() % range;
+        int index = randInt(0, range - 1);
         int finalVal = -1;
         if (index < 10) {
             finalVal = index + 48;
@@ -79,7 +91,7 @@ int main(int argc, char ** argv) {
     po::notify(vm);
 
     DiamondInit(configPrefix, 1, 0);
-    srand(time(NULL));
+    initRand();
 
     std::vector<std::string> keys;
     parseKeys(keyFile, nKeys, keys);
@@ -106,8 +118,8 @@ int main(int argc, char ** argv) {
     std::cout << std::endl;
 
     while (!done) {
-        std::string val(std::to_string(rand()));
-        int varIndex = rand() % dstrings.size();
+        std::string val(std::to_string(randInt(0, 1000000)));
+        int varIndex = randInt(0, dstrings.size() - 1);
 
         struct timeval startTime;
         gettimeofday(&startTime, NULL);
