@@ -19,7 +19,7 @@ allResults = []
 for filename in files:
     f = open(resultDir + "/" + filename, 'r')
     for line in f:
-        match = re.match("^(\d+)\s+(\d+)\s+(\d)$", line)
+        match = re.match("^(\d+)\s+(\d+)\s+(\d)", line)
         if match:
             startTime = int(match.group(1))
             endTime = int(match.group(2))
