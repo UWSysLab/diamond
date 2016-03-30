@@ -47,15 +47,20 @@
             android:label="@string/title_activity_edit_note" >
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.echessa.noteapp.ShowNotes" />
+                android:value="ariadnanorberg.notes1.ShowNotes" />
         </activity>
+        
         <activity
             android:name=".LoginActivity"
             android:label="@string/title_activity_login" >
         </activity>
+        
         <activity
             android:name=".SignUpActivity"
             android:label="@string/title_activity_sign_up" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="ariadnanorberg.notes1.LoginActivity" />
         </activity>
     </application>
 
