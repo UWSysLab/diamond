@@ -99,7 +99,11 @@ int main(int argc, char ** argv) {
     struct timeval globalStartTime;
     gettimeofday(&globalStartTime, NULL);
 
-    std::cout << "start-time\tend-time\tcommitted\tread-key\twrite-key" << std::endl;
+    std::cout << "start-time\tend-time\tcommitted\t";
+    if (printKeys) {
+        std::cout << "read-key\twrite-key\t";
+    }
+    std::cout << std::endl;
 
     while (!done) {
         std::string val(std::to_string(rand()));
@@ -120,12 +124,10 @@ int main(int argc, char ** argv) {
         std::cout << getMilliseconds(startTime) << "\t"
                   << getMilliseconds(endTime) << "\t"
                   << committed << "\t";
-
         if (printKeys) {
             std::cout << keys[varIndex] << "\t"
                       << uniqueKey << "\t";
         }
-
         std::cout << std::endl;
 
         double runtimeSeconds = difftime(endTime.tv_sec, globalStartTime.tv_sec);
