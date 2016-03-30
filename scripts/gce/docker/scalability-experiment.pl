@@ -23,6 +23,12 @@ if (!$outputDirExists) {
     print(STDERR "Error: scripts/experiments/scalability does not exist on GCE client\n");
     exit(1);
 }
+my $frontendConfigsExist = `ssh 104.154.73.35 'ls diamond-src/platform/test/gce.frontend*.config 2>/dev/null | wc' | awk '{ print \$1 }'`;
+chomp($frontendConfigsExist);
+if (!$frontendConfigsExist) {
+    print(STDERR "Error: no frontend config files detected on GCE client\n");
+    exit(1);
+}
 
 # build Docker image
 system("./build-kubernetes.pl $image $user >> $log 2>&1");

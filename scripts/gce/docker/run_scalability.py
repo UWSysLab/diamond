@@ -18,7 +18,7 @@ NUM_KEYS = "1000"
 NUM_SECONDS = "120"
 OUTPUT_DEST = "scripts/experiments/scalability/"
 NUM_CLIENTS = 10
-NUM_FRONTENDS = 5
+NUM_FRONTENDS = 15
 
 os.system(COPY_CMD + "apps/benchmarks/build/scalability" + " " + WORKING_DIR)
 os.system(COPY_CMD + "platform/build/libdiamond.so" + " " + WORKING_DIR)
