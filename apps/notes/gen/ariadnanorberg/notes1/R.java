@@ -2016,6 +2016,7 @@ containing a value of this type.
         public static final int action_bar_title=0x7f090021;
         public static final int action_context_bar=0x7f090042;
         public static final int action_divider=0x7f090060;
+        public static final int action_logout=0x7f09006e;
         public static final int action_menu_divider=0x7f090005;
         public static final int action_menu_presenter=0x7f090006;
         public static final int action_mode_bar=0x7f09003e;
