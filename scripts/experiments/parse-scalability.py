@@ -65,7 +65,7 @@ for i in range(0, len(startTimes)):
 sumTimesSeconds = sumTimes / 1000.0
 numSuccessful = numTxns - numAborts
 meanTime = float(sumTimesSeconds) / numSuccessful
-meanThroughput = float(numTxns) / timeRangeSeconds
+meanThroughput = float(numSuccessful) / timeRangeSeconds
 abortRate = float(numAborts) / numTxns
 
 print("Num transactions: " + repr(numTxns) + ", num aborts: " + repr(numAborts));
