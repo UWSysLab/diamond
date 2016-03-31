@@ -216,10 +216,12 @@ Server::SubscribeCallback(const TransportAddress *remote,
     RegisterReply reply;
     reply.set_status(REPLY_OK);
     reply.set_msgid(msg.msgid());
-    transport->SendMessage(this, *remote, reply);
-    delete remote;
+    transport->Timer(0, [=]() { 
+	    transport->SendMessage(this, *remote, reply);
+	    sendNotificationTimeout->Reset();
+	    delete remote;
+	    });
     delete promise;
-    sendNotificationTimeout->Reset();
 }
 
 void
@@ -270,8 +272,12 @@ Server::GetCallback(const TransportAddress *remote,
 	    value.second.Serialize(rep);
         }
     }
-    transport->SendMessage(this, *remote, reply);
-    delete remote;
+
+    transport->Timer(0, [=]() {
+	    transport->SendMessage(this, *remote, reply);
+	    delete remote;
+	});
+
 }
 
 void
@@ -299,8 +305,10 @@ Server::CommitCallback(const TransportAddress *remote,
     reply.set_txnid(msg.txnid());
     reply.set_msgid(msg.msgid());
     reply.set_timestamp(promise->GetTimestamp());
-    transport->SendMessage(this, *remote, reply);
-    delete remote;
+    transport->Timer(0, [=]() {
+	    transport->SendMessage(this, *remote, reply);
+	    delete remote;
+	});
     delete promise;
 }
 

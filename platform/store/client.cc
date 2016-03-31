@@ -120,7 +120,7 @@ Client::MultiGet(const uint64_t tid,
         participants[i].push_back(key);
     }
 
-    vector<Promise *> *promises = new vector<Promise *>(participants.size());
+    vector<Promise *> *promises = new vector<Promise *>();
     callback_t cb = bind(&Client::MultiGetCallback,
 			 this, callback,
 			 participants.size(),
@@ -140,7 +140,7 @@ Client::MultiGetCallback(callback_t callback,
 			 Promise *promise)
 {
     promises->push_back(promise);
-
+    Debug("MultiGetCall back"); 
     if (promises->size() == total) {
 	map<string, Version> values;
 	int r;
@@ -167,8 +167,9 @@ Client::PrepareInternal(const uint64_t tid,
 {
     // 1. Send commit-prepare to all shards.
     Debug("PREPARE Transaction");
-    vector<Promise *> *promises = new vector<Promise *>(participants.size());
-    uint64_t *ts = new uint64_t(0);
+    vector<Promise *> *promises = new vector<Promise *>();
+    uint64_t *ts = new uint64_t();
+    *ts = 0;
     callback_t cb =
 	bind(&Client::PrepareCallback,
 	     this, callback,
@@ -203,6 +204,8 @@ Client::tssCallback(callback_t callback,
 		    const string &request,
 		    const string &reply)
 {
+    Debug("tsscallback back"); 
+
     *ts = stol(reply, NULL, 10);
     PrepareCallback(callback,
 		    total,
@@ -268,7 +271,7 @@ Client::Commit(const uint64_t tid,
         transport.Timer(0, [=]() { 
 		Debug("Sending request to TimeStampServer");
 		uint64_t *ts = new uint64_t(0);
-		vector<Promise *> *promises = new vector<Promise *>(1);
+		vector<Promise *> *promises = new vector<Promise *>();
 		function<void (const string &, const string &)>  cb =
 		    bind(&Client::tssCallback,
 			 this, callback,
@@ -287,10 +290,11 @@ Client::PrepareCallback(callback_t callback,
 			uint64_t *ts,
 			Promise *promise)
 {
+    Debug("Prepare callback"); 
     if (promise != NULL) {
 	promises->push_back(promise);
     }
-
+    Debug("Prepare callback size %lu", promises->size()); 
     // check whether we're done
     if (promises->size() == total && *ts > 0) {
 	int r = REPLY_OK;
@@ -384,7 +388,7 @@ Client::Subscribe(const set<string> &keys,
         participants[i].insert(key);
     }
 
-    vector<Promise *> *promises = new vector<Promise *>(participants.size());
+    vector<Promise *> *promises = new vector<Promise *>();
     callback_t cb = bind(&Client::MultiGetCallback,
 			 this, callback,
 			 participants.size(),

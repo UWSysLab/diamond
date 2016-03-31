@@ -230,12 +230,8 @@ ShardClient::CommitCallback(callback_t callback, const string &request_str, cons
     Reply reply;
     reply.ParseFromString(reply_str);
     ASSERT(reply.status() == REPLY_OK);
-
-    Promise *w = new Promise();
-    w->Reply(reply.status(), reply.timestamp());
-    Debug("[shard %i] Received COMMIT callback [%d]",
+    Debug("[shard %i] Received COMMIT2 callback [%d]",
 	  shard, reply.status());
-    callback(w);
 }
 
 /* Callback from a shard replica on abort operation completion. */
