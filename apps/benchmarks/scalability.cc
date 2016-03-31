@@ -1,70 +1,13 @@
 #include <boost/program_options.hpp>
-#include <cstdlib>
-#include <ctime>
-#include <fstream>
 #include <iostream>
-#include <random>
 #include <string>
-#include <set>
-#include <sys/time.h>
+#include <vector>
 
 #include <includes/data_types.h>
+#include "benchmark_common.h"
 
 namespace po = boost::program_options;
 using namespace diamond;
-
-std::mt19937 rng;
-
-void initRand() {
-    rng.seed(std::random_device()());
-}
-
-int randInt(int lowerBound, int upperBound) {
-    std::uniform_int_distribution<std::mt19937::result_type> dist(lowerBound, upperBound);
-    return dist(rng);
-}
-
-void parseKeys(const std::string &keyFile, int nKeys, std::vector<std::string> &keys) {
-    std::string key;
-    std::ifstream in;
-    in.open(keyFile.c_str());
-    if (!in) {
-        fprintf(stderr, "Could not read keys from: %s\n", keyFile.c_str());
-        exit(0);
-    }
-
-    for (unsigned int i = 0; i < nKeys; i++) {
-        std::getline(in, key);
-        keys.push_back(key);
-    }
-    in.close();
-}
-
-uint64_t getMilliseconds(const struct timeval &time) {
-    return (time.tv_sec * 1000 + time.tv_usec / 1000);
-}
-
-std::string getRandomKey() {
-    int range = 10 + 26 + 26; // digits + uppercase + lowercase
-    char keyChars[65];
-    for (int i = 0; i < 64; i++) {
-        int index = randInt(0, range - 1);
-        int finalVal = -1;
-        if (index < 10) {
-            finalVal = index + 48;
-        }
-        else if (index >= 10 && index < 36) {
-            finalVal = index - 10 + 65;
-        }
-        else { // index >= 36
-            finalVal = index - 36 + 97;
-        }
-
-        keyChars[i] = finalVal;
-    }
-    keyChars[64] = '\0';
-    return std::string(keyChars);
-}
 
 int main(int argc, char ** argv) {
     std::string configPrefix;
@@ -108,8 +51,7 @@ int main(int argc, char ** argv) {
     DObject::Map(uniqueString, uniqueKey);
 
     bool done = false;
-    struct timeval globalStartTime;
-    gettimeofday(&globalStartTime, NULL);
+    uint64_t globalStartTime = currentTimeMillis();
 
     std::cout << "start-time\tend-time\tcommitted\t";
     if (printKeys) {
@@ -121,8 +63,7 @@ int main(int argc, char ** argv) {
         std::string val(std::to_string(randInt(0, 1000000)));
         int varIndex = randInt(0, dstrings.size() - 1);
 
-        struct timeval startTime;
-        gettimeofday(&startTime, NULL);
+        uint64_t startTime = currentTimeMillis();
 
         // Read from a (randomly chosen) known key and write to the client's unique key
         DObject::TransactionBegin();
@@ -130,11 +71,10 @@ int main(int argc, char ** argv) {
         uniqueString.Set(val);
         int committed = DObject::TransactionCommit();
 
-        struct timeval endTime;
-        gettimeofday(&endTime, NULL);
+        uint64_t endTime = currentTimeMillis();
 
-        std::cout << getMilliseconds(startTime) << "\t"
-                  << getMilliseconds(endTime) << "\t"
+        std::cout << startTime << "\t"
+                  << endTime << "\t"
                   << committed << "\t";
         if (printKeys) {
             std::cout << keys[varIndex] << "\t"
@@ -142,7 +82,7 @@ int main(int argc, char ** argv) {
         }
         std::cout << std::endl;
 
-        double runtimeSeconds = difftime(endTime.tv_sec, globalStartTime.tv_sec);
+        double runtimeSeconds = (endTime - globalStartTime) / 1000.0;
         done = (runtimeSeconds >= numSeconds);
     }
 }
