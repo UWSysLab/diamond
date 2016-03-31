@@ -571,6 +571,9 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
     while (evbuffer_get_length(evbuf) > 0) {
         uint32_t *magic;
         magic = (uint32_t *)evbuffer_pullup(evbuf, sizeof(*magic));
+        if (magic == NULL) {
+            return;
+        }
         ASSERT(*magic == MAGIC);
     
         uint32_t *sz;
