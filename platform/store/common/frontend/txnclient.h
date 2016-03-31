@@ -99,7 +99,8 @@ public:
     virtual void Abort(const uint64_t tid,
                        Promise *promise = NULL) = 0;
 
-    virtual void GetNextNotification(Promise *promise = NULL) = 0;
+    virtual void GetNextNotification(bool blocking,
+                                     Promise *promise = NULL) = 0;
 
     virtual void Register(const uint64_t reactive_id,
                           const Timestamp timestamp,
@@ -113,7 +114,7 @@ public:
     virtual void ReplyToNotification(const uint64_t reactive_id,
                                      const Timestamp timestamp) = 0;
 
-    virtual void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) = 0;
+    virtual void NotificationInit(std::function<void (void)> callback) = 0;
 };
 
 #endif /* _TXN_CLIENT_H_ */

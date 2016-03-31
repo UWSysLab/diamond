@@ -255,28 +255,33 @@ Client::ReceiveMessage(const TransportAddress &remote,
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
-        map<string, Version> cache_entries;
-        for (int i = 0; i < notification.replies_size(); i++) {
-            string key = notification.replies(i).key();
-            Version value(notification.replies(i));
-            cache_entries[key] = value;
-        }
+        if (timestamp > last_timestamp[reactive_id]) {
+            last_timestamp[reactive_id] = timestamp;
+            map<string, Version> cache_entries;
+            for (int i = 0; i < notification.replies_size(); i++) {
+                string key = notification.replies(i).key();
+                Version value(notification.replies(i));
+                cache_entries[key] = value;
+            }
 
-        // Handle non-blocking case
-        if (callback_registered) {
-            notification_callback(timestamp, cache_entries, reactive_id);
-        }
+            // Let client know that a notification has arrived (for clients who call GetNextNotification in non-blocking mode)
+            if (callback_registered) {
+                notification_callback();
+            }
 
-        // Handle blocking case
-        notification_lock.lock();
-        if (reactive_promise != NULL) {
-            notification_lock.unlock();
-            reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
-            reactive_promise = NULL;
+            notification_lock.lock();
+            if (reactive_promise != NULL) {
+                notification_lock.unlock();
+                reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
+                reactive_promise = NULL;
+            }
+            else {
+                pending_notifications.push(notification);
+                notification_lock.unlock();
+            }
         }
         else {
-            pending_notifications.push(notification);
-            notification_lock.unlock();
+            Debug("Notification is stale (timestamp %lu, last_timestamp %lu)", timestamp, last_timestamp[reactive_id]);
         }
     } else if (type == regReply.GetTypeName()) {
         regReply.ParseFromString(data);
@@ -291,7 +296,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
 }
 
 void
-Client::GetNextNotification(Promise *promise) {
+Client::GetNextNotification(bool blocking, Promise *promise) {
     notification_lock.lock();
     if (reactive_promise != NULL) {
         Panic("Error: GetNextNotification called from multiple threads");
@@ -307,6 +312,11 @@ Client::GetNextNotification(Promise *promise) {
             cache_entries[key] = value;
         }
         promise->Reply(REPLY_OK, notification.timestamp(), cache_entries, notification.reactiveid());
+    }
+    else if (!blocking) {
+        notification_lock.unlock();
+        map<string, Version> dummyMap;
+        promise->Reply(REPLY_OK, 0, dummyMap, NO_NOTIFICATION);
     }
     else {
         reactive_promise = promise;
@@ -354,6 +364,8 @@ Client::Subscribe(const std::set<std::string> &keys,
 void
 Client::ReplyToNotification(const uint64_t reactive_id,
                             const Timestamp timestamp) {
+    Debug("Sending NOTIFICATION_REPLY for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+
     NotificationReply msg;
     msg.set_clientid(client_id);
     msg.set_reactiveid(reactive_id);
@@ -367,7 +379,7 @@ Client::ReplyToNotification(const uint64_t reactive_id,
 }
 
 void
-Client::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+Client::NotificationInit(std::function<void (void)> callback) {
     notification_callback = callback;
     callback_registered = true;
 }

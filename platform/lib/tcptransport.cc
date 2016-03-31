@@ -350,9 +350,6 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
                        sizeof(totalLen) +
                        sizeof(uint32_t));
 
-    Warning("Sending %ld byte %s message to server over TCP",
-            totalLen, type.c_str());
-
     Debug("Sending %ld byte %s message to server over TCP",
           totalLen, type.c_str());
     

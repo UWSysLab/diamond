@@ -160,13 +160,13 @@ CacheClient::Prepare(const uint64_t tid, const Transaction &txn, Promise *promis
     txnclient->Prepare(tid, txn, promise);
 
     // save the transactions for later
-    if (pp->GetReply() == REPLY_OK) {
-        cache_lock.lock();
-        if (prepared.find(tid) == prepared.end()) {
-            prepared[tid] = txn;
-        }
-        cache_lock.unlock();
-    }
+    // if (pp->GetReply() == REPLY_OK) {
+    //     cache_lock.lock();
+    //     if (prepared.find(tid) == prepared.end()) {
+    //         prepared[tid] = txn;
+    //     }
+    //     cache_lock.unlock();
+    // }
 }
 
 void
@@ -179,9 +179,9 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
 
     // update the cache
      pp->GetReply();
-    cache_lock.lock();
-    const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
-    prepared.erase(tid);
+    // cache_lock.lock();
+    // const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
+    // prepared.erase(tid);
         
     // // update the cache
     // if (reply == REPLY_OK) {
@@ -199,7 +199,7 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
     //     cache.Remove(inc.first);
     // }
-    cache_lock.unlock();
+    // cache_lock.unlock();
 }
 
 /* Aborts the ongoing transaction. */
@@ -229,11 +229,12 @@ CacheClient::Abort(const uint64_t tid, Promise *promise)
  }
 
 void
-CacheClient::GetNextNotification(Promise *promise) {
+CacheClient::GetNextNotification(bool blocking,
+                                 Promise *promise) {
     Debug("GET_NEXT_NOTIFICATION");
     Promise p(COMMIT_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    txnclient->GetNextNotification(pp);
+    txnclient->GetNextNotification(blocking, pp);
 }
 
 void
@@ -262,6 +263,6 @@ CacheClient::ReplyToNotification(const uint64_t reactive_id,
 
 
 void
-CacheClient::NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback) {
+CacheClient::NotificationInit(std::function<void (void)> callback) {
     txnclient->NotificationInit(callback);
 }

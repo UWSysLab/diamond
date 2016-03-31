@@ -147,7 +147,6 @@ void
 DiamondClient::BeginReactive(uint64_t reactive_id)
 {
     if (txnid == 0) {
-        Debug("Diamondclient::BEGIN_REACTIVE Transaction");
         txnid_lock.lock();
         txnid = ++txnid_counter;
         txnid_lock.unlock();
@@ -156,6 +155,8 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
             timestamp = timestamp_map[reactive_id];
         }
+
+        Debug("Diamondclient::BEGIN_REACTIVE transaction for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
 
         txn = Transaction(READ_ONLY, timestamp, reactive_id);
         client->BeginRO(txnid);
@@ -328,13 +329,15 @@ DiamondClient::Abort()
 }
 
 uint64_t
-DiamondClient::GetNextNotification()
+DiamondClient::GetNextNotification(bool blocking)
 {
     Promise p;
-    client->GetNextNotification(&p);
+    client->GetNextNotification(blocking, &p);
     uint64_t reactive_id = p.GetReactiveId();
-    Timestamp timestamp = p.GetTimestamp();
-    processNotification(timestamp, reactive_id);
+    if (reactive_id != NO_NOTIFICATION) {
+        Timestamp timestamp = p.GetTimestamp();
+        processNotification(timestamp, reactive_id);
+    }
     return reactive_id;
 }
 
@@ -345,16 +348,8 @@ DiamondClient::processNotification(Timestamp timestamp, uint64_t reactive_id) {
 }
 
 void
-DiamondClient::NotificationInit(std::function<void (uint64_t)> callback) {
-    notification_upcall = callback;
-    std::function<void (Timestamp, map<string, Version>, uint64_t)> boundFunc = std::bind(&DiamondClient::notificationCallback, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
-    client->NotificationInit(boundFunc);
-}
-
-void
-DiamondClient::notificationCallback(Timestamp timestamp, std::map<std::string, Version> values, uint64_t reactive_id) {
-    processNotification(timestamp, reactive_id);
-    notification_upcall(reactive_id);
+DiamondClient::NotificationInit(std::function<void (void)> callback) {
+    client->NotificationInit(callback);
 }
 
 } // namespace diamond

@@ -5,10 +5,11 @@ import android.util.AttributeSet;
 import android.widget.TextView;
 import edu.washington.cs.diamond.Diamond;
 import edu.washington.cs.diamond.Diamond.DString;
+import edu.washington.cs.diamond.ReactiveManager;
 
 public class DiamondTextView extends TextView {
 
-	private class DiamondTextViewTransaction implements ReactiveTransaction {
+	private class DiamondTextViewTransaction implements ReactiveManager.TxnFunction {
 		DiamondTextView textView;
 		DString dstr;
 		public DiamondTextViewTransaction(DiamondTextView tv, DString ds) {
@@ -16,7 +17,7 @@ public class DiamondTextView extends TextView {
 			dstr = ds;
 		}
 		@Override
-		public void react() {
+		public void func(Object...objects) {
 			final String value = dstr.Value();
 			textView.post(new Runnable() {
 				public void run() {
@@ -34,6 +35,6 @@ public class DiamondTextView extends TextView {
 	public void bindDString(String key) {
 		DString dstr = new DString();
 		Diamond.DObject.Map(dstr, key);
-		ReactiveManager.addTransaction(new DiamondTextViewTransaction(this, dstr));
+		ReactiveManager.reactive_txn(new DiamondTextViewTransaction(this, dstr));
 	}
 }

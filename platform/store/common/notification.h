@@ -1,6 +1,7 @@
 #ifndef NOTIFICATION_H
 #define NOTIFICATION_H
 
+#include <limits.h>
 #include <unordered_map>
 #include <set>
 #include <string>
@@ -8,6 +9,8 @@
 #include "version.h"
 #include "timestamp.h"
 #include "lib/tcptransport.h"
+
+#define NO_NOTIFICATION ULLONG_MAX
 
 class FrontendNotification {
 public:

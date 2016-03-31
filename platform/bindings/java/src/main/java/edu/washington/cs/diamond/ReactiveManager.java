@@ -15,6 +15,10 @@ public class ReactiveManager {
 		public void callback(int committed);
 	}
 	
+	public interface Logger {
+		public void onLog(String message);
+	}
+	
 	public static ReactiveManager singleton = null;
 	
 	Map<Long, TxnFunction> idFuncMap;
@@ -22,6 +26,9 @@ public class ReactiveManager {
 	Map<TxnFunction, Object[]> funcArgMap;
 
 	long nextId;
+	
+	private Logger logger = null;
+	private Thread reactiveThread = null;
 	
 	private static ReactiveManager getManager() {
 		if (singleton == null) {
@@ -32,6 +39,10 @@ public class ReactiveManager {
 	
 	public static void StartManager() {
 		getManager().Start();
+	}
+	
+	public static void RegisterLogger(Logger l) {
+		getManager().SetLogger(l);
 	}
 	
 	public static long reactive_txn(TxnFunction func, Object...args) {
@@ -57,6 +68,16 @@ public class ReactiveManager {
 		nextId = 0;
 	}
 	
+	public void SetLogger(Logger l) {
+		logger = l;
+	}
+	
+	public void Log(String message) {
+		if (logger != null) {
+			logger.onLog(message);
+		}
+	}
+	
 	public long generateId() {
 		long id = nextId;
 		nextId++;
@@ -64,11 +85,14 @@ public class ReactiveManager {
 	}
 
 	public void Start() {
-		new Thread(new Runnable() {
-			public void run() {
-				ReactiveLoop();
-			}
-		}).start();
+		if (reactiveThread == null) {
+			reactiveThread = new Thread(new Runnable() {
+				public void run() {
+					ReactiveLoop();
+				}
+			});
+			reactiveThread.start();
+		}
 	}
 	
 	public long ReactiveTxn(final TxnFunction func, final Object... args) {

@@ -57,11 +57,11 @@ void DObject::BeginReactive(uint64_t reactive_id) {
     store->BeginReactive(reactive_id);
 }
 
-uint64_t DObject::GetNextNotification(void) {
-    return store->GetNextNotification();
+uint64_t DObject::GetNextNotification(bool blocking) {
+    return store->GetNextNotification(blocking);
 }
 
-void DObject::NotificationInit(std::function<void (uint64_t)> callback) {
+void DObject::NotificationInit(std::function<void (void)> callback) {
     store->NotificationInit(callback);
 }
 

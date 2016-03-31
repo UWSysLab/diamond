@@ -40,6 +40,7 @@
 #include "store/common/frontend/txnclient.h"
 #include "store/common/timestamp.h"
 #include "store/common/transaction.h"
+#include "store/common/notification.h"
 #include "diamond-proto.pb.h"
 #include "notification-proto.pb.h"
 
@@ -99,7 +100,8 @@ public:
     void Abort(const uint64_t tid,
                Promise *promise = NULL);
 
-    void GetNextNotification(Promise *promise = NULL);
+    void GetNextNotification(bool blocking,
+                             Promise *promise = NULL);
 
     void Register(const uint64_t reactive_id,
                   const Timestamp timestamp,
@@ -113,7 +115,7 @@ public:
     void ReplyToNotification(const uint64_t reactive_id,
                              const Timestamp timestamp);
 
-    void NotificationInit(std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> callback);
+    void NotificationInit(std::function<void (void)> callback);
 
 private:
     transport::Configuration *config;
@@ -131,9 +133,10 @@ private:
 
     // Notification client state
     std::queue<Notification> pending_notifications;
+    std::map<uint64_t, Timestamp> last_timestamp; // map reactive_id to timestamp of last notification received
     Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
     std::mutex notification_lock; // the lock for both pieces of state above
-    std::function<void (Timestamp, std::map<std::string, Version>, uint64_t)> notification_callback; // a callback that will be called upon receiving a notification
+    std::function<void (void)> notification_callback; // a callback that will be called upon receiving a notification
     bool callback_registered = false;
 
 };

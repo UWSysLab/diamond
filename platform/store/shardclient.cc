@@ -312,5 +312,4 @@ ShardClient::SubscribeCallback(callback_t callback,
     callback(w);
 }
 
-
 } // namespace strongstore
