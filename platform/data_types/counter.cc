@@ -37,11 +37,7 @@ DCounter::Set(int val)
 void
 DCounter::IncrementNotProtected(int val)
 {
-    // Get the latest value
-    Pull();
     // Increment
-    _counter += val;
-    // Push the increment to the store
     Increment(val);
 }
 
