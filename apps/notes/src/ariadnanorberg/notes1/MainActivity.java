@@ -16,8 +16,6 @@ public class MainActivity extends Activity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
 		Parse.enableLocalDatastore(this);
 		Parse.initialize(new Parse.Configuration.Builder(this)
 			.applicationId("WsCxdr90gpqXO5rPQ6FvVJE46X8Tghr48sEUMaDN")
@@ -25,7 +23,8 @@ public class MainActivity extends Activity {
 			.server("http://128.208.6.85:1337/parse/")
 			.build()
 		);
-		
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 		final Button viewNotes = (Button) findViewById(R.id.viewNotes);
 	}
 
