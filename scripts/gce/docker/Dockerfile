@@ -22,8 +22,8 @@ COPY ./id_rsa.pub /home/$user/.ssh/
 COPY ./run_terminalclient.py /home/$user/
 COPY ./run_benchclient.py /home/$user/
 COPY ./run_scalability.py /home/$user/
-COPY ./run_contention_increment.py /home/$user/
-COPY ./run_contention_noincrement.py /home/$user/
+COPY ./run_contention-increment.py /home/$user/
+COPY ./run_contention-noincrement.py /home/$user/
 
 RUN chown -R $user /home/$user
 

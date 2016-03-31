@@ -3,10 +3,12 @@
 use warnings;
 use strict;
 
-my $user = "nl35";
-my $image = "nielgce";
-my $log = "scalability-log.txt";
+my $usage = "usage: ./run-experiment.pl user image experiment";
+die $usage unless @ARGV == 3;
 
+my ($user, $image, $experiment) = @ARGV;
+
+my $log = "$experiment-log.txt";
 system("rm -f $log; touch $log");
 
 # make sure GCE client is up-to-date and has all required files
@@ -17,10 +19,10 @@ if (!$keyFileExists) {
     print(STDERR "Error: keys.txt file missing from scripts/experiments on GCE client\n");
     exit(1);
 }
-my $outputDirExists = `ssh 104.154.73.35 'ls -d diamond-src/scripts/experiments/scalability 2>/dev/null | wc' | awk '{ print \$1 }'`;
+my $outputDirExists = `ssh 104.154.73.35 'ls -d diamond-src/scripts/experiments/$experiment 2>/dev/null | wc' | awk '{ print \$1 }'`;
 chomp($outputDirExists);
 if (!$outputDirExists) {
-    print(STDERR "Error: scripts/experiments/scalability does not exist on GCE client\n");
+    print(STDERR "Error: scripts/experiments/$experiment does not exist on GCE client\n");
     exit(1);
 }
 my $frontendConfigsExist = `ssh 104.154.73.35 'ls diamond-src/platform/test/gce.frontend*.config 2>/dev/null | wc' | awk '{ print \$1 }'`;
@@ -39,11 +41,11 @@ my @instanceNums = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 print("clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
 
 for my $instances (@instanceNums) {
-    system("ssh 104.154.73.35 'rm diamond-src/scripts/experiments/scalability/*' >> $log 2>&1");
-    system("./run-kubernetes-job.pl scaling $image run_scalability.py $user $instances >> $log 2>&1");
-    my $clients = `ssh 104.154.73.35 'ls diamond-src/scripts/experiments/scalability | wc' | awk '{ print \$1 }'`;
+    system("ssh 104.154.73.35 'rm diamond-src/scripts/experiments/$experiment/*' >> $log 2>&1");
+    system("./run-kubernetes-job.pl $experiment $image run_$experiment.py $user $instances >> $log 2>&1");
+    my $clients = `ssh 104.154.73.35 'ls diamond-src/scripts/experiments/$experiment | wc' | awk '{ print \$1 }'`;
     chomp($clients);
-    my @result = `ssh 104.154.73.35 'cd diamond-src/scripts/experiments; ./parse-scalability.py scalability'`;
+    my @result = `ssh 104.154.73.35 'cd diamond-src/scripts/experiments; ./parse-scalability.py $experiment'`;
 
     my $throughput = "ERROR";
     my $latency = "ERROR";
