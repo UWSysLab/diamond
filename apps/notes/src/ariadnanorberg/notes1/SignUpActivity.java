@@ -26,7 +26,6 @@ public class SignUpActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		requestWindowFeature(Window.FEATURE_INDETERMINATE_PROGRESS);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
 		setContentView(R.layout.activity_sign_up);
 		
 		usernameEditText = (EditText)findViewById(R.id.usernameField);
@@ -67,7 +66,7 @@ public class SignUpActivity extends Activity {
 
                             if (e == null) {
                                 // Success!
-                                Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+                                Intent intent = new Intent(SignUpActivity.this, ShowNotes.class);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                 startActivity(intent);
