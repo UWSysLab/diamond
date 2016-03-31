@@ -35,6 +35,7 @@
 #include "replication/common/client.h"
 #include "lib/configuration.h"
 #include "vr-proto.pb.h"
+#include <unordered_map>
 
 namespace replication {
 
@@ -49,42 +50,27 @@ public:
                         continuation_t continuation);
     virtual void InvokeUnlogged(int replicaIdx,
                                 const string &request,
-                                continuation_t continuation,
-                                timeout_continuation_t timeoutContinuation = nullptr,
-                                uint32_t timeout = DEFAULT_UNLOGGED_OP_TIMEOUT);
+                                continuation_t continuation);
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
 
 protected:
-    int view;
-    int opnumber;
     uint64_t lastReqId;
 
     struct PendingRequest
     {
         string request;
-        uint64_t clientReqId;
         continuation_t continuation;
-        timeout_continuation_t timeoutContinuation;
-        inline PendingRequest(string request, uint64_t clientReqId,
-                              continuation_t continuation)
-            : request(request), clientReqId(clientReqId),
-              continuation(continuation) { }
+	inline PendingRequest() { };
+        inline PendingRequest(string request, continuation_t continuation)
+            : request(request), continuation(continuation) { };
     };
-    PendingRequest *pendingRequest;
-    PendingRequest *pendingUnloggedRequest;
-    Timeout *requestTimeout;
-    Timeout *unloggedRequestTimeout;
 
-    void SendRequest();
-    void ResendRequest();
+    std::unordered_map<uint64_t, PendingRequest> pendingRequests;
+
     void HandleReply(const TransportAddress &remote,
                      const proto::ReplyMessage &msg);
-    void HandleUnloggedReply(const TransportAddress &remote,
-                             const proto::UnloggedReplyMessage &msg);
-    void UnloggedRequestTimeoutCallback();
 };
-
 } // namespace replication
 
 #endif  /* _VR_CLIENT_H_ */

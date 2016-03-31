@@ -77,6 +77,18 @@ private:
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
     void sendNotifications();
+
+    // callbacks
+    void GetCallback(const TransportAddress *remote,
+		     const proto::GetMessage msg,
+		     Promise *promise);
+    void CommitCallback(const TransportAddress *remote,
+		       const proto::CommitMessage msg,
+		       Promise *promise);
+    void SubscribeCallback(const TransportAddress *remote,
+			   const RegisterMessage msg,
+			   Promise *promise);
+		     
 };
 
 } // namespace frontend

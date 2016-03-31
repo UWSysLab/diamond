@@ -40,6 +40,7 @@
 #include "version.h"
 #include <condition_variable>
 #include <mutex>
+#include <functional>
 
 class Promise
 {
@@ -69,6 +70,7 @@ public:
     int GetTimeout();
 
     // block on this until response comes back
+    bool GetDone();
     int GetReply();
     Timestamp GetTimestamp();
     //Timestamp GetTimestamp();
@@ -76,5 +78,7 @@ public:
     std::map<std::string, Version> & GetValues();
     uint64_t GetReactiveId();
 };
+
+typedef std::function<void (Promise *)> callback_t;
 
 #endif /* _PROMISE_H_ */

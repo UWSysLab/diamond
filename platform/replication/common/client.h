@@ -57,9 +57,7 @@ public:
                         continuation_t continuation) = 0;
     virtual void InvokeUnlogged(int replicaIdx,
                                 const string &request,
-                                continuation_t continuation,
-                                timeout_continuation_t timeoutContinuation = nullptr,
-                                uint32_t timeout = DEFAULT_UNLOGGED_OP_TIMEOUT) = 0;
+                                continuation_t continuation) = 0;
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type,
                                 const string &data);
