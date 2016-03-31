@@ -7,6 +7,8 @@ add_executable(benchmarkclient benchmarkclient.cc)
 add_executable(settest settest.cc)
 add_executable(scalability scalability.cc benchmark_common.cc)
 add_executable(contention contention.cc benchmark_common.cc)
+add_executable(notification_publisher notification_publisher.cc benchmark_common.cc)
+add_executable(notification_subscriber notification_subscriber.cc benchmark_common.cc)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 
@@ -23,3 +25,9 @@ target_link_libraries(scalability ${Boost_LIBRARIES})
 
 target_link_libraries(contention "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(contention ${Boost_LIBRARIES})
+
+target_link_libraries(notification_publisher "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
+target_link_libraries(notification_publisher ${Boost_LIBRARIES})
+
+target_link_libraries(notification_subscriber "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
+target_link_libraries(notification_subscriber ${Boost_LIBRARIES})
