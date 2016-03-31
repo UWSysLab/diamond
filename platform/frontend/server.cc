@@ -158,20 +158,35 @@ Server::HandleRegister(const TransportAddress &remote,
         Debug("Registering %s", msg.keys(i).c_str());
     }
 
-    set<string> regSet;
     set<string> subscribeSet; // set of keys from regSet that we aren't already subscribed to
     for (int i = 0; i < msg.keys_size(); i++) {
         string key = msg.keys(i);
-        regSet.insert(key);
         if (listeners.find(key) == listeners.end()) {
             subscribeSet.insert(key);
         }
     }
 
     map<string, Version> subscribeValues;
-    int status = store->Subscribe(subscribeSet, GetAddress(), subscribeValues);
-    for (auto &pair : subscribeValues) {
-        values[pair.first] = pair.second;
+    callback_t cb =
+	std::bind(&Server::SubscribeCallback,
+		  this,
+		  remote.clone(),
+		  msg,
+		  placeholders::_1);
+
+    store->Subscribe(subscribeSet, GetAddress(), cb);
+}
+
+void
+Server::SubscribeCallback(const TransportAddress *remote,
+			  const RegisterMessage msg,
+			  Promise *promise)
+{
+    map<string, Version> values = promise->GetValues();
+    set<string> regSet;
+    for (int i = 0; i < msg.keys_size(); i++) {
+        string key = msg.keys(i);
+        regSet.insert(key);
     }
 
     Timestamp timestamp = 0;
@@ -189,8 +204,8 @@ Server::HandleRegister(const TransportAddress &remote,
     rt.last_timestamp = msg.timestamp();
     rt.next_timestamp = timestamp;
     rt.keys = regSet;
-    rt.client_hostname = remote.getHostname();
-    rt.client_port = remote.getPort();
+    rt.client_hostname = remote->getHostname();
+    rt.client_port = remote->getPort();
 
     transactions[rt.frontend_index] = rt;
 
@@ -199,10 +214,11 @@ Server::HandleRegister(const TransportAddress &remote,
     }
 
     RegisterReply reply;
-    reply.set_status(status);
+    reply.set_status(REPLY_OK);
     reply.set_msgid(msg.msgid());
-    transport->SendMessage(this, remote, reply);
-
+    transport->SendMessage(this, *remote, reply);
+    delete remote;
+    delete promise;
     sendNotificationTimeout->Reset();
 }
 
@@ -211,55 +227,81 @@ Server::HandleGet(const TransportAddress &remote,
                   const GetMessage &msg)
 {
     pair<Timestamp,string> value;
-    int status;
 
     vector<string> keys;
-    map<string, Version> values;
 
     for (int i = 0; i < msg.keys_size(); i++) {
 	Debug("GET %s", msg.keys(i).c_str());
         keys.push_back(msg.keys(i));
     }
 
-    if (keys.size() > 1) {
-        status = store->MultiGet(msg.txnid(), keys, values, msg.timestamp());
-    } else {
-        Version v;
-        status = store->Get(msg.txnid(), keys[0], v, msg.timestamp());
-        values[keys[0]] = v;
-    }
+    callback_t cb =
+	std::bind(&Server::GetCallback,
+	     this,
+	     remote.clone(),
+	     msg,
+	     placeholders::_1);
 
+    if (keys.size() > 1) {
+        store->MultiGet(msg.txnid(), keys, cb,
+			msg.timestamp());
+    } else {
+        store->Get(msg.txnid(), keys[0], cb,
+		   msg.timestamp());
+    }
+}
+    
+void
+Server::GetCallback(const TransportAddress *remote,
+		    const GetMessage msg,
+		    Promise *promise)
+{
+    map<string, Version> values = promise->GetValues();
     GetReply reply;
-    reply.set_status(status);
+    reply.set_status(promise->GetReply());
     reply.set_msgid(msg.msgid());
-    if (status == REPLY_OK) {
+    if (promise->GetReply() == REPLY_OK) {
 	for (auto value : values) {
 	    ReadReply *rep = reply.add_replies();
-	    Debug("GET %s %lu", value.first.c_str(), value.second.GetInterval().End());
+	    Debug("GET %s %lu",
+		  value.first.c_str(),
+		  value.second.GetInterval().End());
 	    rep->set_key(value.first);
 	    value.second.Serialize(rep);
         }
     }
-
-    transport->SendMessage(this, remote, reply);
+    transport->SendMessage(this, *remote, reply);
+    delete remote;
 }
 
 void
 Server::HandleCommit(const TransportAddress &remote,
                      const CommitMessage &msg)
 {
-    Timestamp ts;
-    CommitReply reply;
     Transaction txn(msg.txn());
-    if (store->Commit(msg.txnid(), txn, ts)) {
-        reply.set_status(REPLY_OK);
-    } else {
-        reply.set_status(REPLY_FAIL);
-    }
+    callback_t cb =
+	std::bind(&Server::CommitCallback,
+	     this,
+	     remote.clone(),
+	     msg,
+	     placeholders::_1);
+
+    store->Commit(msg.txnid(), cb, txn);
+}
+
+void
+Server::CommitCallback(const TransportAddress *remote,
+		       const CommitMessage msg,
+		       Promise *promise)
+{
+    CommitReply reply;
+    reply.set_status(promise->GetReply());
     reply.set_txnid(msg.txnid());
     reply.set_msgid(msg.msgid());
-    reply.set_timestamp(ts);
-    transport->SendMessage(this, remote, reply);
+    reply.set_timestamp(promise->GetTimestamp());
+    transport->SendMessage(this, *remote, reply);
+    delete remote;
+    delete promise;
 }
 
 void

@@ -106,6 +106,15 @@ Promise::Reply(int r, Timestamp t, map<string, Version> &v, uint64_t rid)
     ReplyInternal(r);
 }
 
+// Function for checking status
+bool
+Promise::GetDone()
+{
+    lock_guard<mutex> l(lock);
+    return done;
+}
+
+
 // Functions for getting a reply from the promise
 int
 Promise::GetReply()
