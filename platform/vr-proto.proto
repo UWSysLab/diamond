@@ -7,18 +7,14 @@ message RequestMessage {
 }
 
 message ReplyMessage {
-    required uint64 view = 1;
-    required uint64 opnum = 2;
+    optional uint64 view = 1;
+    optional uint64 opnum = 2;
     required uint64 clientreqid = 3;
     required bytes reply = 4;
 }
 
 message UnloggedRequestMessage {
     required replication.UnloggedRequest req = 1;
-}
-
-message UnloggedReplyMessage {
-    required bytes reply = 1;
 }
 
 message PrepareMessage {

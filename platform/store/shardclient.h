@@ -39,7 +39,7 @@
 #include "includes/error.h"
 #include "store/common/frontend/client.h"
 #include "replication/client.h"
-#include "store/common/frontend/txnclient.h"
+#include "store/common/frontend/asyncclient.h"
 #include "store/common/timestamp.h"
 #include "store/common/transaction.h"
 #include "store-proto.pb.h"
@@ -50,7 +50,7 @@
 
 namespace strongstore {
 
-class ShardClient : public TxnClient
+class ShardClient : public AsyncClient
 {
 public:
     /* Constructor needs path to shard config. */
@@ -61,61 +61,34 @@ public:
         int shard,
         int closestReplica);
     ~ShardClient();
-
-    // Overriding functions from TxnClient
-    // Begin a transaction.
-    void Begin(uint64_t tid);
-    void BeginRO(uint64_t tid,
-                         const Timestamp &timestamp = MAX_TIMESTAMP);
     
     // Get the value corresponding to key (valid at given timestamp).
     void Get(const uint64_t tid,
              const std::string &key,
-             const Timestamp &timestamp = MAX_TIMESTAMP,
-             Promise *promise = NULL);
+	     callback_t callback,
+             const Timestamp &timestamp = MAX_TIMESTAMP);
 
     void MultiGet(const uint64_t tid,
                   const std::vector<std::string> &key,
-                  const Timestamp &timestamp = MAX_TIMESTAMP,
-                  Promise *promise = NULL);
-
-    // Set the value for the given key.
-    void Put(const uint64_t tid,
-             const std::string &key,
-             const std::string &value,
-             Promise *promise = NULL);
+                  callback_t callback,
+                  const Timestamp &timestamp = MAX_TIMESTAMP);
 
     // Prepare the transaction.
     void Prepare(const uint64_t tid,
-                 const Transaction &txn,
-                 Promise *promise = NULL);
+                 callback_t callback,
+                 const Transaction &txn = Transaction());
 
     // Commit all Get(s) and Put(s) since Begin().
     void Commit(const uint64_t tid,
-                const Transaction &txn = Transaction(),
-                Promise *promise = NULL);
+		callback_t callback,
+                const Transaction &txn = Transaction());
     
     // Abort all Get(s) and Put(s) since Begin().
-    void Abort(const uint64_t tid,
-               Promise *promise = NULL);
-
-    void GetNextNotification(bool blocking,
-                             Promise *promise);
-
-    void Register(const uint64_t reactive_id,
-                  const Timestamp timestamp,
-                  const std::set<std::string> &keys,
-                  Promise *promise = NULL);
+    void Abort(const uint64_t tid);
 
     void Subscribe(const std::set<std::string> &keys,
                    const TransportAddress &myAddress,
-                   Promise *promise = NULL);
-
-    void ReplyToNotification(const uint64_t reactive_id,
-                             const Timestamp timestamp);
-
-    void NotificationInit(std::function<void (void)> callback);
-
+                   callback_t callback);
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.
@@ -130,11 +103,11 @@ private:
     void GetTimeout();
 
     /* Callbacks for hearing back from a shard for an operation. */
-    void GetCallback(const std::string &, const std::string &);
-    void PrepareCallback(const std::string &, const std::string &);
-    void CommitCallback(const std::string &, const std::string &);
+    void GetCallback(callback_t callback, const std::string &, const std::string &);
+    void PrepareCallback(callback_t callback, const std::string &, const std::string &);
+    void CommitCallback(callback_t callback, const std::string &, const std::string &);
     void AbortCallback(const std::string &, const std::string &);
-    void SubscribeCallback(const std::string &, const std::string &);
+    void SubscribeCallback(callback_t callback, const std::string &, const std::string &);
 
     /* Helper Functions for starting and finishing requests */
     void StartRequest();

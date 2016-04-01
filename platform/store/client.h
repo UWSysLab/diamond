@@ -43,109 +43,73 @@
 #include "store-proto.pb.h"
 #include "store/shardclient.h"
 
-#include <condition_variable>
-#include <mutex>
 #include <string>
 #include <set>
 #include <thread>
+#include <vector>
 
 namespace strongstore {
 
-class Client : public TxnClient
+class Client : public AsyncClient
 {
 public:
     Client(string configPath, int nshards, int closestReplica);
     ~Client();
 
-    // Overriding functions from TxnClient
-    // Begin a transaction.
-    void Begin(const uint64_t tid);
-    void BeginRO(const uint64_t tid,
-                 const Timestamp &timestamp = MAX_TIMESTAMP);
-    
     // Get the value corresponding to key (valid at given timestamp).
     void Get(const uint64_t tid,
              const std::string &key,
-             const Timestamp &timestamp = MAX_TIMESTAMP,
-             Promise *promise = NULL);
+             callback_t callback,
+             const Timestamp &timestamp = MAX_TIMESTAMP);
 
     void MultiGet(const uint64_t tid,
                   const std::vector<std::string> &key,
-                  const Timestamp &timestamp = MAX_TIMESTAMP,
-                  Promise *promise = NULL);
-
-    // Blocking versions
-    int Get(const uint64_t tid,
-            const std::string &key,
-            Version &value,
-            const Timestamp &timestamp = MAX_TIMESTAMP);
-
-    int MultiGet(const uint64_t tid,
-                 const std::vector<std::string> &key,
-                 std::map<string, Version> &values,
-                 const Timestamp &timestamp = MAX_TIMESTAMP);
-
-    // Set the value for the given key.
-    void Put(const uint64_t tid,
-             const std::string &key,
-             const std::string &value,
-             Promise *promise = NULL);
-
+    		  callback_t callback,
+                  const Timestamp &timestamp = MAX_TIMESTAMP);
+    
     // Prepare the transaction.
     void Prepare(const uint64_t tid,
-                 const Transaction &txn = Transaction(),
-                 Promise *promise = NULL);
+                 callback_t callback,
+                 const Transaction &txn = Transaction()) { };
 
-    // Commit all Get(s) and Put(s) since Begin().
+    // Callback based async call
     void Commit(const uint64_t tid,
-                const Transaction &txn = Transaction(),
-                Promise *promise = NULL);
+		callback_t callback,
+                const Transaction &txn);
 
-    // Blocking commit
-    bool Commit(const uint64_t tid,
-                const Transaction &txn,
-                Timestamp &timestamp);
+    void Abort(const uint64_t tid);
     
-    // Abort all Get(s) and Put(s) since Begin().
-    void Abort(const uint64_t tid,
-               Promise *promise = NULL);
     std::vector<int> Stats();
 
     void Subscribe(const std::set<std::string> &keys,
                    const TransportAddress &address,
-                   Promise *promise = NULL);
-
-    // Blocking version
-    int Subscribe(const std::set<std::string> &keys,
-                  const TransportAddress &address,
-                  std::map<std::string, Version> &values);
-
-    void GetNextNotification(bool blocking, Promise *promise);
-
-    void Register(const uint64_t reactive_id,
-                  const Timestamp timestamp,
-                  const std::set<std::string> &keys,
-                  Promise *promise = NULL);
-
-    void ReplyToNotification(const uint64_t reactive_id,
-                             const Timestamp timestamp);
-
-    void NotificationInit(std::function<void (void)> callback);
+                   callback_t callback);
 
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
-    // get a timestamp from the timeserver
-    uint64_t getTSS();
-    
-    // timestamp server call back
-    void tssCallback(const string &request, const string &reply);
-
+    // Callback functions
+    void MultiGetCallback(callback_t callback, size_t total,
+			  std::vector<Promise *> *promises, Promise *promise);
+    void PrepareCallback(callback_t callback, size_t total,
+			 std::vector<Promise *> *promises, uint64_t *ts,
+			 Promise *promise);
+    void tssCallback(callback_t callback, size_t total,
+		     std::vector<Promise *> *promises, uint64_t *ts,
+		     const string &request, const string &reply);
+    void CommitCallback(uint64_t tid,
+			callback_t callback,
+			std::map<int, Transaction> participants,
+			Promise *promise);
     // local Abort function
-    void Abort(const uint64_t tid, const std::map<int, Transaction> &participants);
+    void AbortInternal(const uint64_t tid,
+		       const std::map<int, Transaction> &participants);
+
     // local Prepare function
-    int Prepare(const uint64_t tid, const std::map<int, Transaction> &participants, Timestamp &ts);
+    void PrepareInternal(const uint64_t tid,
+			 const std::map<int, Transaction> &participants,
+			 callback_t callback);
 
     // Sharding logic: Given key, generates a number b/w 0 to nshards-1
     uint64_t key_to_shard(const std::string &key, const uint64_t nshards);
@@ -166,7 +130,7 @@ private:
     std::thread *clientTransport;
 
     // Caching client for each shard.
-    std::vector<CacheClient *> cclient;
+    std::vector<ShardClient *> cclient;
 
     // Timestamp server shard.
     replication::VRClient *tss; 
@@ -175,9 +139,6 @@ private:
     std::condition_variable cv;
     std::mutex cv_m;
     string replica_reply;
-
-    // Time spend sleeping for commit.
-    int commit_sleep;
 };
 
 } // namespace strongstore
