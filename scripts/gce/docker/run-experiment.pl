@@ -8,6 +8,15 @@ die $usage unless @ARGV == 3;
 
 my ($user, $image, $experiment) = @ARGV;
 
+# make sure experiment script exists
+my $experimentExists = `cat Dockerfile | grep $experiment | wc | awk '{ print \$1 }'`;
+chomp($experimentExists);
+if (!$experimentExists) {
+    print(STDERR "Error: experiment is not included in Dockerfile\n");
+    exit(1);
+}
+
+# set up log
 my $log = "$experiment-log.txt";
 system("rm -f $log; touch $log");
 
