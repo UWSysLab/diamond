@@ -48,7 +48,7 @@ Java bindings for those libraries:
 
 To test the Java bindings, cd to the Java directory and type:
 
-    $ mvn test
+    $ mvn package -DskipTests
 
 
 ## Cross-compiling Diamond for Android
@@ -105,7 +105,7 @@ add the following line to your bashrc file:
 9. Compile Java bindings for Diamond:
 
 		$ cd platform/bindings/java
-		$ mvn package
+		$ mvn package -DskipTests
 
 ### Running a test Android app
 The project DiamondAndroidTest in `apps/test-apps` is an Eclipse project containing a simple Diamond test app for Android.
