@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+import glob
 import os
 import re
 
@@ -15,29 +16,43 @@ parser = argparse.ArgumentParser(description='Copy dependencies to GCE machines.
 parser.add_argument('config_prefix', help='the config file prefix')
 args = parser.parse_args()
 
-frontendConfigPath = args.config_prefix + ".frontend.config"
 tssConfigPath = args.config_prefix + ".tss.config"
 
 # find number of shards
-configPath = args.config_prefix + "0.config"
-config = open(configPath, 'r')
-line = config.readline()
-match = re.match("f\s+(\d+)", line)
-if match:
-    numShards = int(match.group(1))
-else:
-    print "Error: could not get number of shards"
-    sys.exit
+files = glob.glob(args.config_prefix + "*.config")
+maxShardNum = -1
+for filename in files:
+    match = re.match(args.config_prefix + "(\d+)\.config", filename)
+    if match:
+        shardNum = int(match.group(1))
+        if maxShardNum < shardNum:
+            maxShardNum = shardNum
+numShards = maxShardNum + 1
+
+# find number of frontends
+files = glob.glob(args.config_prefix + ".frontend*.config")
+maxFrontendNum = -1
+for filename in files:
+    match = re.match(args.config_prefix + ".frontend(\d+)\.config", filename)
+    if match:
+        frontendNum = int(match.group(1))
+        if maxFrontendNum < frontendNum:
+            maxFrontendNum = frontendNum
+numFrontends = maxFrontendNum + 1
+
+print("Setting up dependencies for %d shards, %d frontends" % (numShards, numFrontends))
 
 servers = []
 
-frontendConfig = open(frontendConfigPath, 'r')
-for line in frontendConfig:
-    match = re.match("replica\s+([\w\.-]+):(\d)", line)
-    if match:
-        hostname = match.group(1)
-        servers.append(hostname)
-frontendConfig.close()
+for frontendNum in range(0, numFrontends):
+    frontendConfigPath = args.config_prefix + ".frontend" + repr(frontendNum) + ".config"
+    frontendConfig = open(frontendConfigPath, 'r')
+    for line in frontendConfig:
+        match = re.match("replica\s+([\w\.-]+):(\d)", line)
+        if match:
+            hostname = match.group(1)
+            servers.append(hostname)
+    frontendConfig.close()
 
 for shardNum in range(0, numShards):
     backendConfigPath = args.config_prefix + repr(shardNum) + ".config"

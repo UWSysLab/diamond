@@ -7,7 +7,7 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/scratch/nl35"
+WORKING_DIR = "/home/nl35"
 BUILD_DIR = "../platform/build"
 
 debug = True
@@ -133,9 +133,9 @@ for shardNum in range(0, numShards):
             if args.action == 'start':
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
-                os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                 keyArgs = ""
                 if keyPath != None:
+                    os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                     keyArgs = " -k " + repr(numKeys) + " -f " + remoteKeyPath
                 os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
