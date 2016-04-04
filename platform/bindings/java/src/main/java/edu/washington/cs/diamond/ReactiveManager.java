@@ -112,7 +112,7 @@ public class ReactiveManager {
 	
 	public void ReactiveLoop() {
 		while(true) {
-			long reactiveId = DObject.GetNextNotification();
+			long reactiveId = DObject.GetNextNotification(true);
 			TxnFunction func = idFuncMap.get(reactiveId);
 			DObject.BeginReactive(reactiveId);
 			func.func(funcArgMap.get(func));
