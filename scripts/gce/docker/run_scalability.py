@@ -6,6 +6,8 @@ import random
 import subprocess
 import sys
 
+import experiment_common
+
 SRC_HOST = "diamond-client-a1o6"
 WORKING_DIR = "~/"
 
@@ -54,27 +56,10 @@ sys.stderr.write("Finished running clients\n")
 
 # Copy output back to client
 if USE_REDIS:
-    sys.stderr.write("Putting transaction data in redis\n")
-    import re
-    import redis
-    r = redis.StrictRedis(host=SRC_HOST, port=6379)
     for outputFileName in outputFiles:
-        outputFile = open(os.path.expanduser(WORKING_DIR) + outputFileName, 'r')
-        for line in outputFile:
-            match = re.match("^(\d+)\s+(\d+)\s+(\d+)", line)
-            if match:
-                startTime = match.group(1)
-                endTime = match.group(2)
-                committed = match.group(3)
-                txnNum = random.randint(0, sys.maxint)
-                txnKey = "txn-" + repr(txnNum)
-                mapping = dict()
-                mapping['start-time'] = startTime
-                mapping['end-time'] = endTime
-                mapping['committed'] = committed
-                r.hmset(txnKey, mapping)
-                r.lpush("txns", txnKey)
-                r.incr("clients")
+        fullPath = os.path.expanduser(WORKING_DIR) + outputFileName
+        experiment_common.putDataInRedis(fullPath, redisHost=SRC_HOST)
+        sys.stderr.write("Finished adding data from file %s to redis\n" % outputFileName)
 else:
     for outputFileName in outputFiles:
         os.system("rsync " + WORKING_DIR + outputFileName + " " + SRC_HOST + ":diamond-src/" + OUTPUT_DEST)

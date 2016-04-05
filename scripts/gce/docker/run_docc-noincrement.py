@@ -6,6 +6,8 @@ import random
 import subprocess
 import sys
 
+import experiment_common
+
 SRC_HOST = "diamond-client-a1o6"
 WORKING_DIR = "~/"
 
@@ -19,6 +21,7 @@ NUM_SECONDS = "120"
 OUTPUT_DEST = "scripts/experiments/docc-noincrement/"
 NUM_CLIENTS = 10
 NUM_FRONTENDS = 10
+USE_REDIS = True
 
 os.system(COPY_CMD + "apps/benchmarks/build/docc" + " " + WORKING_DIR)
 os.system(COPY_CMD + "platform/build/libdiamond.so" + " " + WORKING_DIR)
@@ -43,5 +46,10 @@ for process in processes:
     process.wait()
 
 # Copy output back to client
-for outputFile in outputFiles:
-    os.system("rsync " + WORKING_DIR + outputFile + " " + SRC_HOST + ":diamond-src/" + OUTPUT_DEST)
+if USE_REDIS:
+    for outputFile in outputFiles:
+        fullPath = os.path.expanduser(WORKING_DIR) + outputFile
+        experiment_common.putDataInRedis(fullPath, redisHost=SRC_HOST)
+else:
+    for outputFile in outputFiles:
+        os.system("rsync " + WORKING_DIR + outputFile + " " + SRC_HOST + ":diamond-src/" + OUTPUT_DEST)
