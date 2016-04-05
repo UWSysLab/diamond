@@ -6,7 +6,9 @@ ARG user=iyzhang
 
 RUN apt-get update
 
-RUN apt-get install -y python2.7 rsync ssh libevent-dev libprotobuf-dev libboost-program-options-dev
+RUN apt-get install -y python2.7 rsync ssh libevent-dev libprotobuf-dev libboost-program-options-dev python-pip
+
+RUN pip install redis
 
 RUN echo "StrictHostKeyChecking=no" >> /etc/ssh/ssh_config
 
