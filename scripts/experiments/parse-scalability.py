@@ -7,8 +7,8 @@ import redis
 import sys
 
 parser = argparse.ArgumentParser(description='Parse scalability client results.')
-parser.add_argument('--directory', '-d', help='the directory containing the output files')
-parser.add_argument('--redis', action='store_true', help='parse transaction data from redis')
+parser.add_argument('--directory', '-d', help='parse data from output files in the given directory')
+parser.add_argument('--redis', '-r', action='store_true', help='parse transaction data from redis')
 args = parser.parse_args()
 
 allStartTimes = []
