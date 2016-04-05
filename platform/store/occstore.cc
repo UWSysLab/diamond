@@ -97,8 +97,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     }
 
     // Do OCC checks.
-    unordered_set<string> pWrites, pReads, pIncrements;
-    getPreparedOps(pWrites, pReads, pIncrements);
+    unordered_set<string> pReads, pWrites, pIncrements;
+    getPreparedOps(pReads, pWrites, pIncrements);
     
     // Check for conflicts with the read set.
     if (txn.IsolationMode() == LINEARIZABLE) {
