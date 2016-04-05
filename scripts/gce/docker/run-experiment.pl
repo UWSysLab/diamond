@@ -54,7 +54,7 @@ for my $instances (@instanceNums) {
     system("./run-kubernetes-job.pl $experiment $image run_$experiment.py $user $instances >> $log 2>&1");
     my $clients = `ssh 104.154.73.35 'ls diamond-src/scripts/experiments/$experiment | wc' | awk '{ print \$1 }'`;
     chomp($clients);
-    my @result = `ssh 104.154.73.35 'cd diamond-src/scripts/experiments; ./parse-scalability.py $experiment'`;
+    my @result = `ssh 104.154.73.35 'cd diamond-src/scripts/experiments; ./parse-scalability.py -d $experiment'`;
 
     my $throughput = "ERROR";
     my $latency = "ERROR";

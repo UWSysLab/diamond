@@ -3,35 +3,47 @@
 import argparse
 import os
 import re
+import redis
 import sys
 
 parser = argparse.ArgumentParser(description='Parse scalability client results.')
-parser.add_argument('directory', help='the directory containing the output files')
+parser.add_argument('--directory', '-d', help='the directory containing the output files')
+parser.add_argument('--redis', action='store_true', help='parse transaction data from redis')
 args = parser.parse_args()
-
-resultDir = args.directory
-files = os.listdir(resultDir)
 
 allStartTimes = []
 allEndTimes = []
 allResults = []
 
-for filename in files:
-    f = open(resultDir + "/" + filename, 'r')
-    for line in f:
-        match = re.match("^(\d+)\s+(\d+)\s+(\d)", line)
-        if match:
-            startTime = int(match.group(1))
-            endTime = int(match.group(2))
-            committed = int(match.group(3))
+if args.redis:
+    r = redis.StrictRedis(host='localhost', port=6379)
+    txns = r.lrange('txns', 0, -1)
+    for txn in txns:
+        txnDict = r.hgetall(txn)
+        allStartTimes.append(int(txnDict['start-time']))
+        allEndTimes.append(int(txnDict['end-time']))
+        allResults.append(int(txnDict['committed']))
 
-            allStartTimes.append(startTime)
-            allEndTimes.append(endTime)
-            allResults.append(committed)
+elif args.directory != None:
+    resultDir = args.directory
+    files = os.listdir(resultDir)
 
-if len(files) == 0:
-    print("No files to parse!")
-    sys.exit()
+    for filename in files:
+        f = open(resultDir + "/" + filename, 'r')
+        for line in f:
+            match = re.match("^(\d+)\s+(\d+)\s+(\d)", line)
+            if match:
+                startTime = int(match.group(1))
+                endTime = int(match.group(2))
+                committed = int(match.group(3))
+
+                allStartTimes.append(startTime)
+                allEndTimes.append(endTime)
+                allResults.append(committed)
+
+    if len(files) == 0:
+        print("No files to parse!")
+        sys.exit()
 
 print("Results span " + repr((max(allEndTimes) - min(allStartTimes)) / 1000.0) + " seconds");
 
