@@ -7,6 +7,7 @@ import sys
 
 def putDataInRedis(outputFileName, redisHost, redisPort=6379):
     r = redis.StrictRedis(host=redisHost, port=redisPort)
+    r.incr("clients")
     outputFile = open(outputFileName, 'r')
     for line in outputFile:
         match = re.match("^(\d+)\s+(\d+)\s+(\d+)", line)
@@ -22,4 +23,3 @@ def putDataInRedis(outputFileName, redisHost, redisPort=6379):
             mapping['committed'] = committed
             r.hmset(txnKey, mapping)
             r.lpush("txns", txnKey)
-            r.incr("clients")
