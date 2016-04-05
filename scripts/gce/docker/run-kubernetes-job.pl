@@ -67,9 +67,13 @@ for (my $i = 0; $i < @clusters; $i++) {
 }
 
 # Wait for job to finish
+print("Waiting for jobs to finish...\n");
 my $done = 0;
+my $totalSleepSeconds = 0;
 while (!$done) {
-    sleep(1);
+    my $sleepSeconds = 5;
+    sleep($sleepSeconds);
+    $totalSleepSeconds += $sleepSeconds;
     $done = 1;
     for (my $i = 0; $i < @clusters; $i++) {
         system("gcloud config set container/cluster $clusters[$i] 2> /dev/null");
@@ -79,9 +83,13 @@ while (!$done) {
             $done = 0;
         }
     }
+    if ($totalSleepSeconds % 60 == 0) {
+        print("Still waiting ($totalSleepSeconds seconds have passed)\n");
+    }
 }
 
 # Delete job
+print("Deleting jobs...\n");
 for (my $i = 0; $i < @clusters; $i++) {
     system("gcloud config set container/cluster $clusters[$i] 2> /dev/null");
     system("gcloud container clusters get-credentials $clusters[$i] --zone $zones[$i] 2> /dev/null");
