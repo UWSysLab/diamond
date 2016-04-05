@@ -1,0 +1,2 @@
+cluster-1 us-central1-c
+cluster-2 us-central1-c

@@ -11,41 +11,82 @@ if (@ARGV != 5) {
 
 my ($jobName, $image, $script, $user, $numInstances) = @ARGV;
 
+my @clusters;
+my @zones;
+my $clusterFileInfo = `ls clusters.txt 2>&1`;
+if ($clusterFileInfo =~ /cannot access/) {
+    print(STDERR "Error: no clusters.txt file in current directory\n");
+    exit(1);
+}
+open(CLUSTERS, "clusters.txt");
+while(<CLUSTERS>) {
+    if ($_ =~ /^(\S+)\s+(\S+)$/) {
+        push(@clusters, $1);
+        push(@zones, $2);
+    }
+}
+close(CLUSTERS);
+
+my @instancesPerCluster;
+for (my $i = 0; $i < $numInstances; $i++) {
+    my $clusterIndex = $i % @clusters;
+    $instancesPerCluster[$clusterIndex]++;
+}
+
+print("Spreading instances across clusters as follows:\n");
+print("cluster\tinstances\n");
+for (my $i = 0; $i < @clusters; $i++) {
+    print("$clusters[$i]\t$instancesPerCluster[$i]\n");
+}
+
 my $tempJobFile = "temp-job.yaml";
+for (my $i = 0; $i < @clusters; $i++) {
 
-open(JOB, "> $tempJobFile");
-print(JOB "apiVersion: batch/v1\n");
-print(JOB "kind: Job\n");
-print(JOB "metadata:\n");
-print(JOB "    name: $jobName\n");
-print(JOB "spec:\n");
-print(JOB "    template:\n");
-print(JOB "        metadata:\n");
-print(JOB "            name: $jobName\n");
-print(JOB "        spec:\n");
-print(JOB "            containers:\n");
-print(JOB "                - name: $jobName\n");
-print(JOB "                  image: us.gcr.io/diamond-1239/$image\n");
-print(JOB "                  args: [\"/home/$user/$script\"]\n");
-print(JOB "            restartPolicy: Never\n");
-print(JOB "    completions: $numInstances\n");
-print(JOB "    parallelism: $numInstances\n");
-close(JOB);
+    open(JOB, "> $tempJobFile");
+    print(JOB "apiVersion: batch/v1\n");
+    print(JOB "kind: Job\n");
+    print(JOB "metadata:\n");
+    print(JOB "    name: $jobName\n");
+    print(JOB "spec:\n");
+    print(JOB "    template:\n");
+    print(JOB "        metadata:\n");
+    print(JOB "            name: $jobName\n");
+    print(JOB "        spec:\n");
+    print(JOB "            containers:\n");
+    print(JOB "                - name: $jobName\n");
+    print(JOB "                  image: us.gcr.io/diamond-1239/$image\n");
+    print(JOB "                  args: [\"/home/$user/$script\"]\n");
+    print(JOB "            restartPolicy: Never\n");
+    print(JOB "    completions: $instancesPerCluster[$i]\n");
+    print(JOB "    parallelism: $instancesPerCluster[$i]\n");
+    close(JOB);
 
-system("kubectl create -f $tempJobFile");
+    system("gcloud config set container/cluster $clusters[$i] 2> /dev/null");
+    system("gcloud container clusters get-credentials $clusters[$i] --zone $zones[$i] 2> /dev/null");
+    system("kubectl create -f $tempJobFile");
+}
 
 # Wait for job to finish
 my $done = 0;
 while (!$done) {
     sleep(1);
-    my $pods = `kubectl get pods | wc | awk '{ print \$1 }'` - 1;
-    if ($pods <= 0) {
-        $done = 1;
+    $done = 1;
+    for (my $i = 0; $i < @clusters; $i++) {
+        system("gcloud config set container/cluster $clusters[$i] 2> /dev/null");
+        system("gcloud container clusters get-credentials $clusters[$i] --zone $zones[$i] 2> /dev/null");
+        my $pods = `kubectl get pods | wc | awk '{ print \$1 }'` - 1;
+        if ($pods > 0) {
+            $done = 0;
+        }
     }
 }
 
 # Delete job
-system("kubectl delete job $jobName");
+for (my $i = 0; $i < @clusters; $i++) {
+    system("gcloud config set container/cluster $clusters[$i] 2> /dev/null");
+    system("gcloud container clusters get-credentials $clusters[$i] --zone $zones[$i] 2> /dev/null");
+    system("kubectl delete job $jobName");
+}
 
 # Cleanup
 system("rm $tempJobFile");
