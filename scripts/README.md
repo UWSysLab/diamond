@@ -15,7 +15,7 @@ Each config file has the following layout:
     $replica <hostname>:<port>
     $...
 
-where `num-failures` is a number representing the maximum number of failures
+where `<num-failures>` is a number representing the maximum number of failures
 tolerated, and each `replica` line lists a replica's hostname and port.
 
 The TSS config file has the name `prefix.tss.config`. It has the same format
@@ -34,7 +34,7 @@ argument. If our config files from above were all located in `platform/test`,
 the command would be
 
     $ cd scripts
-    $ ./manage-servers.py start ../platform/test/prefix`
+    $ ./manage-servers.py start ../platform/test/prefix
 
 This command will detect all of the config files with the given prefix and
 start all of the frontend servers and backend shards. If you only want to start
@@ -46,4 +46,4 @@ a smaller number of frontend servers, use the `--frontends` command (or the
 To kill the servers, run `manage-servers.py` with `kill` as the second argument.
 
     $ cd scripts
-    $ ./manage-servers.py kill ../platform/test/prefix`
+    $ ./manage-servers.py kill ../platform/test/prefix
