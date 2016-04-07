@@ -19,5 +19,5 @@ def processOutputFunc(outputFile):
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
         
 experiment_common.copyFiles("scalability", "apps/benchmarks/build")
-experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS)
+experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, "scalability-out")
 experiment_common.processOutput(processOutputFunc)
