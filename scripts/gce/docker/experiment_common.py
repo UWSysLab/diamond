@@ -35,13 +35,13 @@ def copyFiles(binary, binaryDir):
 
 # getCommandFunc should be a function with arguments (workingDir, configFile, keyFile) that
 # returns the the shell command to execute the binary
-def runProcesses(getCommandFunc, numClients):
+def runProcesses(getCommandFunc, numClients, outputPrefix):
     sys.stderr.write("Running clients...\n")
 
     for i in range(0, numClients):
-        outputFile = "scalability-out-" + repr(random.randint(0, sys.maxint))
+        outputFile = outputPrefix + "-" + repr(random.randint(0, sys.maxint))
         configFile = CONFIG_PREFIX + repr(i % NUM_FRONTENDS)
-        cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + outputFile
+        cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + outputFile + " 2>&1"
         processes.append(subprocess.Popen(cmd, shell=True))
         outputFiles.append(outputFile)
 
