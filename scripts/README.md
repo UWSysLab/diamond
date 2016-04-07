@@ -1,6 +1,6 @@
-## Running Diamond servers
+# Running Diamond servers
 
-### Prerequisites
+## Prerequisites
 
 You'll need several config files: one for the timestamp server, one for each
 backend shard, and one for each frontend server. These config files all have
@@ -26,7 +26,7 @@ The frontend config files have names `prefix.frontend0.config`,
 config file, but they only have one `replica` entry, and `num-failures` should
 be set to 1.
 
-### Launching servers
+## Launching servers
 
 To start up servers, run `manage-servers.py` with `start` as the first argument
 and the config file prefix (including the path to the files) as the second
@@ -41,7 +41,14 @@ start all of the frontend servers and backend shards. If you only want to start
 a smaller number of frontend servers, use the `--frontends` command (or the
 `--shards` command to start a smaller number of shards).
 
-### Killing servers
+### NOTE
+There's a variable called `WORKING_DIR` at the top of the manage-servers script.
+Change it to point to a directory (that exists on every machine running
+a server) where the script can copy binary and config files. In the future,
+the working directory will be specified by an environment variable or
+command-line argument.
+
+## Killing servers
 
 To kill the servers, run `manage-servers.py` with `kill` as the second argument.
 
