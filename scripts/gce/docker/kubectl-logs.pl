@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-# View the result of 'kubectl logs' for the specified pod on the specified cluster
+# View the result of 'kubectl logs' for the specified pod on the specified cluster.
+# Pulls cluster information from a 'clusters.txt' file located in the working directory.
 
 use warnings;
 use strict;

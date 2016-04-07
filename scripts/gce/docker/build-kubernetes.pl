@@ -1,5 +1,7 @@
 #!/usr/bin/perl
 
+# Build and tag a Docker image and push it to the gcloud repository for Diamond
+
 use warnings;
 use strict;
 

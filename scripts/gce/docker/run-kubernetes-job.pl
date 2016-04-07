@@ -1,5 +1,17 @@
 #!/usr/bin/perl
 
+# Start multiple Kubernetes jobs running the given script, spread across multiple clusters.
+# Pulls cluster information from a 'clusters.txt' file located in the working directory.
+#
+# This script:
+# 1) Generates a temporary job YAML file for each cluster that runs the
+#    cluster's instances in parallel, where the single argument supplied to each
+#    instance's container is the full path to the given script.
+# 2) Runs 'kubectl create' for each cluster to start the job.
+# 3) Repeatedly polls all clusters using 'kubectl get pods' to see if the jobs are done.
+# 4) Deletes the jobs using 'kubectl delete job' once all pods in the job are finished
+#    running.
+
 use warnings;
 use strict;
 

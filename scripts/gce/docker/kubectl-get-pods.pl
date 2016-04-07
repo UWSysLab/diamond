@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-# View the result of 'kubectl get pods' on all of the Kubernetes clusters
+# View the result of 'kubectl get pods' on all of the Kubernetes clusters.
+# Pulls cluster information from a 'clusters.txt' file located in the working directory.
 
 use warnings;
 use strict;

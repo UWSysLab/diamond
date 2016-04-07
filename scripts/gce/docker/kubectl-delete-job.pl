@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-# Delete jobs with the given job name on all of the Kubernetes clusters
+# Delete jobs with the given job name on all of the Kubernetes clusters.
+# Pulls cluster information from a 'clusters.txt' file located in the working directory.
 
 use warnings;
 use strict;
