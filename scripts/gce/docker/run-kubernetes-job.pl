@@ -40,6 +40,9 @@ while(<CLUSTERS>) {
 close(CLUSTERS);
 
 my @instancesPerCluster;
+for (my $c = 0; $c < @clusters; $c++) {
+    $instancesPerCluster[$c] = 0;
+}
 for (my $i = 0; $i < $numInstances; $i++) {
     my $clusterIndex = $i % @clusters;
     $instancesPerCluster[$clusterIndex]++;
