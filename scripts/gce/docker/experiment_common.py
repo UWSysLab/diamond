@@ -74,3 +74,6 @@ def putDataInRedis(outputFileName, redisHost=SRC_HOST, redisPort=6379):
             mapping['committed'] = committed
             r.hmset(txnKey, mapping)
             r.lpush("txns", txnKey)
+
+def copyToSrcHost(fileName, dest):
+    os.system("rsync " + fileName + " " + SRC_HOST + ":diamond-src/" + dest)

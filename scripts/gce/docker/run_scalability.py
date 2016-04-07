@@ -16,9 +16,8 @@ def processOutputFunc(outputFile):
     if USE_REDIS:
         experiment_common.putDataInRedis(outputFile)
     else:
-        os.system("rsync " + outputFile + " " + experiment_common.SRC_HOST + ":diamond-src/" + OUTPUT_DEST)
+        experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
         
-
 experiment_common.copyFiles("scalability", "apps/benchmarks/build")
 experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS)
 experiment_common.processOutput(processOutputFunc)
