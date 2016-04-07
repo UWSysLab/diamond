@@ -67,19 +67,19 @@ Also, note that `build-kubernetes.pl` and `run-kubernetes-job.pl` have Google Cl
 for the Diamond project hardcoded. Make sure you change those values if you ever use these scripts for
 a different project.
 
-* build-kubernetes.pl
+## build-kubernetes.pl
 Builds a Docker image using the Dockerfile in the working directory, tags it, and pushes it to the Google Cloud
 repository.
 
-* run-kubernetes-job.pl
+## run-kubernetes-job.pl
 Starts multiple instances of a Docker image running a Python script from the Dockerfile, spread over multiple Kubernetes
 clusters.
 
-* kubectl-get-pods.pl
+## kubectl-get-pods.pl
 A wrapper around the `kubectl get pods` command that executes it for every cluster.
 
-* kubectl-logs.pl
+## kubectl-logs.pl
 A wrapper around the `kubectl logs` command that takes care of switching to the right cluster.
 
-* kubectl-delete-job.pl
+## kubectl-delete-job.pl
 A wrapper around the `kubectl delete job` command that deletes the job on every cluster.
