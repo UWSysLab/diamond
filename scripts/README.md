@@ -10,10 +10,10 @@ they should all be located in the same directory.
 Backend shard config files have names `prefix0.config`, `prefix1.config`, etc.
 Each config file has the following layout:
 
-    $f <num-failures>
-    $replica <hostname>:<port>
-    $replica <hostname>:<port>
-    $...
+    f <num-failures>
+    replica <hostname>:<port>
+    replica <hostname>:<port>
+    ...
 
 where `<num-failures>` is a number representing the maximum number of failures
 tolerated, and each `replica` line lists a replica's hostname and port.
