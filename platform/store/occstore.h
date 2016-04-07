@@ -79,6 +79,7 @@ private:
     std::unordered_map<uint64_t, Transaction> prepared;
     std::unordered_map<uint64_t, Timestamp> prepared_last_commit;
     std::unordered_map<uint64_t, Transaction> committed;
+    std::unordered_map<string, int> pReads, pWrites, pIncrements;
     Timestamp last_committed = 0;
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
