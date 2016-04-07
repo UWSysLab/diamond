@@ -6,11 +6,7 @@
  *
  **********************************************************************/
 
-#include "store/common/truetime.h"
-#include "store/common/frontend/client.h"
-#include "store/strongstore/client.h"
-#include "store/weakstore/client.h"
-#include "store/tapirstore/client.h"
+#include "client/diamondclient.h"
 
 using namespace std;
 
@@ -40,14 +36,9 @@ main(int argc, char **argv)
     Client *client;
     enum {
         MODE_UNKNOWN,
-        MODE_TAPIR,
-        MODE_WEAK,
-        MODE_STRONG
+        MODE_DIAMOND
     } mode = MODE_UNKNOWN;
     
-    // Mode for strongstore.
-    strongstore::Mode strongmode;
-
     int opt;
     while ((opt = getopt(argc, argv, "c:d:N:l:w:k:f:m:e:s:z:r:")) != -1) {
         switch (opt) {
@@ -168,24 +159,8 @@ main(int argc, char **argv)
 
         case 'm': // Mode to run in [occ/lock/...]
         {
-            if (strcasecmp(optarg, "txn-l") == 0) {
-                mode = MODE_TAPIR;
-            } else if (strcasecmp(optarg, "txn-s") == 0) {
-                mode = MODE_TAPIR;
-            } else if (strcasecmp(optarg, "qw") == 0) {
-                mode = MODE_WEAK;
-            } else if (strcasecmp(optarg, "occ") == 0) {
-                mode = MODE_STRONG;
-                strongmode = strongstore::MODE_OCC;
-            } else if (strcasecmp(optarg, "lock") == 0) {
-                mode = MODE_STRONG;
-                strongmode = strongstore::MODE_LOCK;
-            } else if (strcasecmp(optarg, "span-occ") == 0) {
-                mode = MODE_STRONG;
-                strongmode = strongstore::MODE_SPAN_OCC;
-            } else if (strcasecmp(optarg, "span-lock") == 0) {
-                mode = MODE_STRONG;
-                strongmode = strongstore::MODE_SPAN_LOCK;
+            if (strcasecmp(optarg, "diamond") == 0) {
+                mode = MODE_DIAMOND;
             } else {
                 fprintf(stderr, "unknown mode '%s'\n", optarg);
                 exit(0);
@@ -199,15 +174,8 @@ main(int argc, char **argv)
         }
     }
 
-    if (mode == MODE_TAPIR) {
-        client = new tapirstore::Client(configPath, nShards,
-                    closestReplica, TrueTime(skew, error));
-    } else if (mode == MODE_WEAK) {
-        client = new weakstore::Client(configPath, nShards,
-                    closestReplica);
-    } else if (mode == MODE_STRONG) {
-        client = new strongstore::Client(strongmode, configPath,
-                    nShards, closestReplica, TrueTime(skew, error));
+    if (mode == MODE_DIAMOND) {
+        client = new diamond::DiamondClient(configPath);
     } else {
         fprintf(stderr, "option -m is required\n");
         exit(0);
