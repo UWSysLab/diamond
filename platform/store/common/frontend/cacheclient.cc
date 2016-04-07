@@ -155,7 +155,7 @@ CacheClient::Prepare(const uint64_t tid, const Transaction &txn, Promise *promis
 {
     Debug("PREPARE [%lu]", tid);
     Promise p(COMMIT_TIMEOUT);
-    Promise *pp = (promise != NULL) ? promise : &p;
+    //Promise *pp = (promise != NULL) ? promise : &p;
     
     txnclient->Prepare(tid, txn, promise);
 
