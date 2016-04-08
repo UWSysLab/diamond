@@ -115,8 +115,28 @@ public class Client {
 		return keys;
 	}
 	
-	public void start(String url, String keyFile, int seconds, boolean printKeys) {
-		server = url;
+	String parseConfigFile(String configFile) {
+		String server = null;
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(configFile));
+			String line = reader.readLine();
+			while (line != null) {
+				String[] lineSplit = line.split("\\s+");
+				if (lineSplit[0].equals("replica")) {
+					server = lineSplit[1];
+				}
+				line = reader.readLine();
+			}
+			reader.close();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		return server;
+	}
+	
+	public void start(String configFile, String keyFile, int seconds, boolean printKeys) {
+		server = parseConfigFile(configFile);
 		random = new Random();
 		
 		List<String> keys = parseKeys(keyFile);
@@ -148,7 +168,7 @@ public class Client {
 	
 	public static void main(String[] args) {
 		if (args.length < 2) {
-			System.err.println("usage: java Client hostname:port keyFile numSeconds");
+			System.err.println("usage: java Client configFile keyFile numSeconds");
 		}
 		new Client().start(args[0], args[1], Integer.parseInt(args[2]), false);
 	}
