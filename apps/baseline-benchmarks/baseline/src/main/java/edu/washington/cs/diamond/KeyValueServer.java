@@ -51,40 +51,72 @@ public class KeyValueServer
 
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            Map<String, String> bodyParams = Utils.getBodyParams(exchange.getRequestBody());
-            String key = bodyParams.get("key");
-            String value = bodyParams.get("key");
-            jedis.set(key, value);
+            try {
+                Map<String, String> bodyParams = Utils.getBodyParams(exchange.getRequestBody());
+                String key = bodyParams.get("key");
+                String value = bodyParams.get("value");
 
-            JsonObject responseJson = new JsonObject();
-            responseJson.add("key", new JsonPrimitive(key));
-            responseJson.add("value", new JsonPrimitive(value));
+                JsonObject responseJson = new JsonObject();
+                int responseCode = -1;
+                if (key == null || value == null) {
+                    responseJson.add("key", new JsonPrimitive("(nil)"));
+                    responseJson.add("value", new JsonPrimitive("(nil)"));
+                    responseCode = 400;
+                }
+                else {
+                    jedis.set(key, value);
+                    responseJson.add("key", new JsonPrimitive(key));
+                    responseJson.add("value", new JsonPrimitive(value));
+                    responseCode = 200;
+                }
 
-            exchange.getResponseHeaders().add("Connection", "close");
-            exchange.sendResponseHeaders(200, 0);
-            OutputStream os = exchange.getResponseBody();
-            os.write(responseJson.toString().getBytes());
-            os.close();
+                exchange.getResponseHeaders().add("Connection", "close");
+                exchange.sendResponseHeaders(responseCode, 0);
+                OutputStream os = exchange.getResponseBody();
+                os.write(responseJson.toString().getBytes());
+                os.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
     class GetHandler implements HttpHandler {
 
         @Override
-        public void handle(HttpExchange exchange) throws IOException {
-            Map<String, String> queryParams = Utils.getQueryParams(exchange.getRequestURI());
-            String key = queryParams.get("key");
-            String value = jedis.get(key);
+        public void handle(HttpExchange exchange) {
+            try {
+                Map<String, String> queryParams = Utils.getQueryParams(exchange.getRequestURI());
+                String key = queryParams.get("key");
+                String value = null;
 
-            JsonObject responseJson = new JsonObject();
-            responseJson.add("key", new JsonPrimitive(key));
-            responseJson.add("value", new JsonPrimitive(value));
+                JsonObject responseJson = new JsonObject();
+                int responseCode = -1;
+                if (key == null) {
+                    responseJson.add("key", new JsonPrimitive("(nil)"));
+                    responseJson.add("value", new JsonPrimitive("(nil)"));
+                    responseCode = 400;
+                }
+                else {
+                    value = jedis.get(key);
+                    if (value == null) {
+                        value = "(nil)";
+                    }
+                    responseJson.add("key", new JsonPrimitive(key));
+                    responseJson.add("value", new JsonPrimitive(value));
+                    responseCode = 200;
+                }
 
-            exchange.getResponseHeaders().add("Connection", "close");
-            exchange.sendResponseHeaders(200, 0);
-            OutputStream os = exchange.getResponseBody();
-            os.write(responseJson.toString().getBytes());
-            os.close();
+                exchange.getResponseHeaders().add("Connection", "close");
+                exchange.sendResponseHeaders(responseCode, 0);
+                OutputStream os = exchange.getResponseBody();
+                os.write(responseJson.toString().getBytes());
+                os.close();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -106,7 +138,9 @@ public class KeyValueServer
             System.out.println(e);
         }
         finally {
-            jedis.close();
+            if (jedis != null) {
+                jedis.close();
+            }
         }
         pool.destroy();
     }
