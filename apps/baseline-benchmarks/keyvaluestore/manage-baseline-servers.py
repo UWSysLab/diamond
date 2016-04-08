@@ -104,6 +104,5 @@ for frontendNum in range(0, numFrontends):
                 os.system("rsync " + serverJarPath + " " + hostname + ":" + remoteServerJarPath)
                 serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.Server " + port + " " + leaderHostname + " " + leaderPort
                 os.system("ssh -f " + hostname + " '" + serverCmd + " > " + remoteFrontendOutputPath + " 2>&1'");
-                print(serverCmd)
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteServerJarPath + "'");
