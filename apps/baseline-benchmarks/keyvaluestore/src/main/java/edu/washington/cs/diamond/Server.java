@@ -120,14 +120,14 @@ public class Server
         }
     }
 
-    public void start() {
-        JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost", 6380);
+    public void start(int port, String redisHostname, int redisPort) {
+        JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
         jedis = null;
         HttpServer server = null;
 
         try {
             jedis = pool.getResource();
-            server = HttpServer.create(new InetSocketAddress(8000), 0);
+            server = HttpServer.create(new InetSocketAddress(port), 0);
             server.createContext("/put", new PutHandler());
             server.createContext("/get", new GetHandler());
             server.setExecutor(null);
@@ -146,6 +146,10 @@ public class Server
 
     public static void main( String[] args )
     {
-        new Server().start();
+    	if (args.length < 3) {
+    		System.err.println("usage: java Server port redis-hostname redis-port");
+    		System.exit(1);
+    	}
+        new Server().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]));
     }
 }
