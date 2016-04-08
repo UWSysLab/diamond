@@ -1,5 +1,9 @@
 package edu.washington.cs.diamond;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.sun.net.httpserver.*;
 import java.io.*;
 import java.net.*;
@@ -39,26 +43,54 @@ class Utils {
     }
 }
 
-class PutHandler implements HttpHandler {
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-    }
-}
-
-class GetHandler implements HttpHandler {
-
-    @Override
-    public void handle(HttpExchange exchange) throws IOException {
-    }
-}
-
 public class KeyValueServer
 {
-    public static void main( String[] args )
-    {
+    Jedis jedis;
+
+    class PutHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            Map<String, String> bodyParams = Utils.getBodyParams(exchange.getRequestBody());
+            String key = bodyParams.get("key");
+            String value = bodyParams.get("key");
+            jedis.set(key, value);
+
+            JsonObject responseJson = new JsonObject();
+            responseJson.add("key", new JsonPrimitive(key));
+            responseJson.add("value", new JsonPrimitive(value));
+
+            exchange.getResponseHeaders().add("Connection", "close");
+            exchange.sendResponseHeaders(200, 0);
+            OutputStream os = exchange.getResponseBody();
+            os.write(responseJson.toString().getBytes());
+            os.close();
+        }
+    }
+
+    class GetHandler implements HttpHandler {
+
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            Map<String, String> queryParams = Utils.getQueryParams(exchange.getRequestURI());
+            String key = queryParams.get("key");
+            String value = jedis.get(key);
+
+            JsonObject responseJson = new JsonObject();
+            responseJson.add("key", new JsonPrimitive(key));
+            responseJson.add("value", new JsonPrimitive(value));
+
+            exchange.getResponseHeaders().add("Connection", "close");
+            exchange.sendResponseHeaders(200, 0);
+            OutputStream os = exchange.getResponseBody();
+            os.write(responseJson.toString().getBytes());
+            os.close();
+        }
+    }
+
+    public void start() {
         JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
-        Jedis jedis = null;
+        jedis = null;
         HttpServer server = null;
 
         try {
@@ -75,5 +107,10 @@ public class KeyValueServer
             jedis.close();
         }
         pool.destroy();
+    }
+
+    public static void main( String[] args )
+    {
+        new KeyValueServer().start();
     }
 }
