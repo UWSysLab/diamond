@@ -2,10 +2,10 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>edu.washington.cs.diamond</groupId>
-  <artifactId>baseline</artifactId>
+  <artifactId>keyvaluestore</artifactId>
   <packaging>jar</packaging>
   <version>1.0-SNAPSHOT</version>
-  <name>baseline</name>
+  <name>keyvaluestore</name>
   <url>http://maven.apache.org</url>
   <dependencies>
     <dependency>
@@ -57,7 +57,7 @@
         </descriptorRefs>
         <archive>
           <manifest>
-            <mainClass>edu.washington.cs.diamond.KeyValueServer</mainClass>
+            <mainClass>edu.washington.cs.diamond.Server</mainClass>
           </manifest>
         </archive>
       </configuration>

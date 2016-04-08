@@ -43,7 +43,7 @@ class Utils {
     }
 }
 
-public class KeyValueServer
+public class Server
 {
     Jedis jedis;
 
@@ -127,7 +127,6 @@ public class KeyValueServer
 
         try {
             jedis = pool.getResource();
-            jedis.flushDB();
             server = HttpServer.create(new InetSocketAddress(8000), 0);
             server.createContext("/put", new PutHandler());
             server.createContext("/get", new GetHandler());
@@ -147,6 +146,6 @@ public class KeyValueServer
 
     public static void main( String[] args )
     {
-        new KeyValueServer().start();
+        new Server().start();
     }
 }
