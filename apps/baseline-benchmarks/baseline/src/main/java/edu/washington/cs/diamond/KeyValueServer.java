@@ -99,6 +99,8 @@ public class KeyValueServer
             server = HttpServer.create(new InetSocketAddress(8000), 0);
             server.createContext("/put", new PutHandler());
             server.createContext("/get", new GetHandler());
+            server.setExecutor(null);
+            server.start();
         }
         catch(IOException e) {
             System.out.println(e);
