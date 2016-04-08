@@ -9,6 +9,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -18,6 +19,7 @@ import com.google.gson.JsonParser;
 public class Client {
 	
 	private String server;
+	private Random random;
 	
 	public void put(String key, String value) {
 		int responseCode = -1;
@@ -70,18 +72,60 @@ public class Client {
 		return value;
 	}
 	
-	public void start(String url) {
+	public String getRandomKey() {
+		int range = 10 + 26 + 26;
+		char[] keyChars = new char[65];
+		for (int i = 0; i < 64; i++) {
+			int index = random.nextInt(range - 1);
+			int finalVal = -1;
+			if (index < 10) {
+				finalVal = index + 48;
+			}
+			else if (index >= 10 && index < 36) {
+				finalVal = index - 10 + 65;
+			}
+			else { // index >= 36
+				finalVal = index - 36 + 97;
+			}
+			keyChars[i] = (char)finalVal;
+		}
+		keyChars[64] = '\0';
+		return new String(keyChars);
+	}
+	
+	public void start(String url, int seconds) {
 		server = url;
+		random = new Random();
 		
-		System.out.println(get("test"));
-		put("test", "client time: " + System.currentTimeMillis());
-		System.out.println(get("test"));
+		List<String> keys = new ArrayList<String>();
+		keys.add("test");
+		
+		long globalStartTime = System.currentTimeMillis();
+		boolean done = false;
+
+		String writeKey = getRandomKey();
+		
+		while (!done) {
+			long startTime = System.currentTimeMillis();
+			String readKey = keys.get(random.nextInt(keys.size()));
+			get(readKey);
+			String val = Long.toString(random.nextLong());
+			put(writeKey, val);
+			long endTime = System.currentTimeMillis();
+			
+			System.out.println(startTime + "\t" + endTime + "\t" + 1 + "\t" + readKey + "\t" + writeKey);
+			try { Thread.sleep(10); } catch(Exception e) {}
+			
+			if ((endTime - globalStartTime) / 1000 >= seconds) {
+				done = true;
+			}
+		}
 	}
 	
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			System.err.println("usage: java Client hostname:port");
+		if (args.length < 2) {
+			System.err.println("usage: java Client hostname:port numSeconds");
 		}
-		new Client().start(args[0]);
+		new Client().start(args[0], Integer.parseInt(args[1]));
 	}
 }
