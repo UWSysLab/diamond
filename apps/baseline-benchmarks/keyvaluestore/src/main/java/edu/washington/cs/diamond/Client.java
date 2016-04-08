@@ -1,7 +1,12 @@
 package edu.washington.cs.diamond;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -93,12 +98,28 @@ public class Client {
 		return new String(keyChars);
 	}
 	
-	public void start(String url, int seconds) {
+	List<String> parseKeys(String keyFile) {
+		List<String> keys = new ArrayList<String>();
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(keyFile));
+			String line = reader.readLine();
+			while (line != null) {
+				keys.add(line);
+				line = reader.readLine();
+			}
+			reader.close();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		return keys;
+	}
+	
+	public void start(String url, String keyFile, int seconds, boolean printKeys) {
 		server = url;
 		random = new Random();
 		
-		List<String> keys = new ArrayList<String>();
-		keys.add("test");
+		List<String> keys = parseKeys(keyFile);
 		
 		long globalStartTime = System.currentTimeMillis();
 		boolean done = false;
@@ -113,8 +134,11 @@ public class Client {
 			put(writeKey, val);
 			long endTime = System.currentTimeMillis();
 			
-			System.out.println(startTime + "\t" + endTime + "\t" + 1 + "\t" + readKey + "\t" + writeKey);
-			try { Thread.sleep(10); } catch(Exception e) {}
+			System.out.print(startTime + "\t" + endTime + "\t" + 1);
+			if (printKeys) {
+			System.out.print("\t" + readKey + "\t" + writeKey);
+			}
+			System.out.print("\n");
 			
 			if ((endTime - globalStartTime) / 1000 >= seconds) {
 				done = true;
@@ -124,8 +148,8 @@ public class Client {
 	
 	public static void main(String[] args) {
 		if (args.length < 2) {
-			System.err.println("usage: java Client hostname:port numSeconds");
+			System.err.println("usage: java Client hostname:port keyFile numSeconds");
 		}
-		new Client().start(args[0], Integer.parseInt(args[1]));
+		new Client().start(args[0], args[1], Integer.parseInt(args[2]), false);
 	}
 }
