@@ -48,6 +48,20 @@
         <target>1.6</target>
       </configuration>
     </plugin>
+    <plugin>
+      <artifactId>maven-assembly-plugin</artifactId>
+      <version>2.6</version>
+      <configuration>
+        <descriptorRefs>
+          <descriptorRef>jar-with-dependencies</descriptorRef>
+        </descriptorRefs>
+        <archive>
+          <manifest>
+            <mainClass>edu.washington.cs.diamond.KeyValueServer</mainClass>
+          </manifest>
+        </archive>
+      </configuration>
+    </plugin>
   </plugins>
   </build>
 </project>

@@ -89,7 +89,7 @@ public class KeyValueServer
     }
 
     public void start() {
-        JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost");
+        JedisPool pool = new JedisPool(new JedisPoolConfig(), "localhost", 6380);
         jedis = null;
         HttpServer server = null;
 
