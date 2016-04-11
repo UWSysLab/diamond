@@ -24,8 +24,7 @@ COPY ./id_rsa.pub /home/$user/.ssh/
 COPY ./run_terminalclient.py /home/$user/
 COPY ./run_benchclient.py /home/$user/
 COPY ./run_scalability.py /home/$user/
-COPY ./run_docc-increment.py /home/$user/
-COPY ./run_docc-noincrement.py /home/$user/
+COPY ./run_docc.py /home/$user/
 COPY ./run_retwis.py /home/$user/
 COPY ./experiment_common.py /home/$user/
 
