@@ -3,10 +3,10 @@
 use warnings;
 use strict;
 
-my $usage = "usage: ./sanity-checks.pl image user script output-dir gce-ip use-redis";
-die $usage unless @ARGV==6;
+my $usage = "usage: ./sanity-checks.pl image user script local-output-dir gce-output-dir gce-ip use-redis";
+die $usage unless @ARGV==7;
 
-my ($image, $user, $script, $outputDir, $GCE_IP, $USE_REDIS) = @ARGV;
+my ($image, $user, $script, $outputDir, $gceOutputDir, $GCE_IP, $USE_REDIS) = @ARGV;
 
 # make sure experiment script exists
 my $scriptExists = `cat Dockerfile | grep $script | wc | awk '{ print \$1 }'`;
@@ -40,12 +40,20 @@ if ($USE_REDIS) {
     }
 }
 else {
-    my $outputDirExists = `ssh $GCE_IP 'ls -d diamond-src/scripts/experiments/$outputDir 2>/dev/null | wc' | awk '{ print \$1 }'`;
-    chomp($outputDirExists);
-    if (!$outputDirExists) {
-        print(STDERR "Error: scripts/experiments/$outputDir does not exist on GCE client\n");
+    my $gceOutputDirExists = `ssh $GCE_IP 'ls -d diamond-src/scripts/experiments/$gceOutputDir 2>/dev/null | wc' | awk '{ print \$1 }'`;
+    chomp($gceOutputDirExists);
+    if (!$gceOutputDirExists) {
+        print(STDERR "Error: scripts/experiments/$gceOutputDir does not exist on GCE client\n");
         exit(1);
     }
+}
+
+# make sure local output directory exists
+my $outputDirExists = `ls -d $outputDir 2>/dev/null | wc | awk '{ print \$1 }'`;
+chomp($outputDirExists);
+if (!$outputDirExists) {
+    print(STDERR "Error: $outputDir does not exist on local machine\n");
+    exit(1);
 }
 
 # build Docker image
