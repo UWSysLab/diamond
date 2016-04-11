@@ -11,52 +11,11 @@ my ($user, $image, $experiment) = @ARGV;
 my $GCE_IP = "8.35.196.178";
 my $USE_REDIS = 1;
 
-# make sure experiment script exists
-my $experimentExists = `cat Dockerfile | grep $experiment | wc | awk '{ print \$1 }'`;
-chomp($experimentExists);
-if (!$experimentExists) {
-    print(STDERR "Error: experiment is not included in Dockerfile\n");
-    exit(1);
-}
-
 # set up log
 my $log = "$experiment-log.txt";
 system("rm -f $log; touch $log");
 
-# make sure GCE client is up-to-date and has all required files
-system("ssh $GCE_IP 'cd diamond-src/apps/benchmarks/build; git pull origin master; make -j8' >> $log 2>&1");
-my $keyFileExists = `ssh $GCE_IP 'ls diamond-src/scripts/experiments/keys.txt 2>/dev/null | wc' | awk '{ print \$1 }'`;
-chomp($keyFileExists);
-if (!$keyFileExists) {
-    print(STDERR "Error: keys.txt file missing from scripts/experiments on GCE client\n");
-    exit(1);
-}
-my $frontendConfigsExist = `ssh $GCE_IP 'ls diamond-src/platform/test/gce.frontend*.config 2>/dev/null | wc' | awk '{ print \$1 }'`;
-chomp($frontendConfigsExist);
-if (!$frontendConfigsExist) {
-    print(STDERR "Error: no frontend config files detected on GCE client\n");
-    exit(1);
-}
-
-# make sure our chosen output method is set up properly
-if ($USE_REDIS) {
-    my $redisRunning = `ssh $GCE_IP './redis-3.0.7/src/redis-cli get test 2>&1'`;
-    if ($redisRunning =~ /^Could not connect to Redis/) {
-        print(STDERR "Error: redis not running on GCE client\n");
-        exit(1);
-    }
-}
-else {
-    my $outputDirExists = `ssh $GCE_IP 'ls -d diamond-src/scripts/experiments/$experiment 2>/dev/null | wc' | awk '{ print \$1 }'`;
-    chomp($outputDirExists);
-    if (!$outputDirExists) {
-        print(STDERR "Error: scripts/experiments/$experiment does not exist on GCE client\n");
-        exit(1);
-    }
-}
-
-# build Docker image
-system("./build-kubernetes.pl $image $user >> $log 2>&1");
+system("./sanity-checks.pl $image $user run_$experiment.py $experiment $GCE_IP $USE_REDIS >> $log");
 
 # run experiment
 my @instanceNums = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
