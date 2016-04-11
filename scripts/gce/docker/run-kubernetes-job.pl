@@ -15,13 +15,14 @@
 use warnings;
 use strict;
 
-my $usage = "usage: ./run-kubernetes-job.pl job-name image script user instances";
-if (@ARGV != 5) {
+my $usage = "usage: ./run-kubernetes-job.pl job-name image user instances script [args...]";
+if (@ARGV < 5) {
     print("$usage\n");
     exit(1);
 }
 
-my ($jobName, $image, $script, $user, $numInstances) = @ARGV;
+my ($jobName, $image, $user, $numInstances, $script) = @ARGV[0..4];
+my @args = @ARGV[5..(@ARGV-1)];
 
 my @clusters;
 my @zones;
@@ -54,6 +55,11 @@ for (my $i = 0; $i < @clusters; $i++) {
     print("$clusters[$i]\t$instancesPerCluster[$i]\n");
 }
 
+my $argString = "";
+for my $arg(@args) {
+    $argString = "$argString,\"$arg\"";
+}
+
 my $tempJobFile = "temp-job.yaml";
 for (my $i = 0; $i < @clusters; $i++) {
 
@@ -70,7 +76,7 @@ for (my $i = 0; $i < @clusters; $i++) {
     print(JOB "            containers:\n");
     print(JOB "                - name: $jobName\n");
     print(JOB "                  image: us.gcr.io/diamond-1239/$image\n");
-    print(JOB "                  args: [\"/home/$user/$script\"]\n");
+    print(JOB "                  args: [\"/home/$user/$script\"$argString]\n");
     print(JOB "            restartPolicy: Never\n");
     print(JOB "    completions: $instancesPerCluster[$i]\n");
     print(JOB "    parallelism: $instancesPerCluster[$i]\n");
