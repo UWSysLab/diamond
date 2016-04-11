@@ -11,6 +11,11 @@ int randInt(int lowerBound, int upperBound) {
     return dist(rng);
 }
 
+double randDouble(double lowerBound, double upperBound) {
+    std::uniform_real_distribution<double> dist(lowerBound, upperBound);
+    return dist(rng);
+}
+
 void parseKeys(const std::string &keyFile, int nKeys, std::vector<std::string> &keys) {
     std::string key;
     std::ifstream in;
