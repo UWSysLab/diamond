@@ -65,6 +65,21 @@ void DObject::NotificationInit(std::function<void (void)> callback) {
     store->NotificationInit(callback);
 }
 
+void
+DObject::SetLinearizable() {
+    store->SetIsolationLevel(LINEARIZABLE);
+}
+
+void
+DObject::SetSnapshotIsolation() {
+    store->SetIsolationLevel(SNAPSHOT_ISOLATION);
+}
+
+void
+DObject::SetEventual() {
+    store->SetIsolationLevel(EVENTUAL);
+}
+
 // XXX: Add an assert so that we don't map inside a transaction?
 int
 DObject::Map(DObject &addr, const string &key)
