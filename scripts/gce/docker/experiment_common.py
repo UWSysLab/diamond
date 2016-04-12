@@ -41,7 +41,7 @@ def runProcesses(getCommandFunc, numClients, outputPrefix):
     for i in range(0, numClients):
         outputFile = outputPrefix + "-" + repr(random.randint(0, sys.maxint))
         configFile = CONFIG_PREFIX + repr(i % NUM_FRONTENDS)
-        cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + outputFile + " 2>&1"
+        cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + outputFile
         processes.append(subprocess.Popen(cmd, shell=True))
         outputFiles.append(outputFile)
 
