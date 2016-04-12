@@ -1,16 +1,21 @@
 #!/usr/bin/python
 
+import argparse
 import experiment_common
 import os
 
 NUM_KEYS = "1000"
-NUM_SECONDS = "120"
+NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/scalability/"
-NUM_CLIENTS = 10
+NUM_CLIENTS = 350
 USE_REDIS = True
 
+parser = argparse.ArgumentParser(description='Run scalability client.')
+parser.add_argument('isolation', choices=['linearizable', 'snapshot', 'eventual'], help='isolation level')
+args = parser.parse_args()
+
 def getCommandFunc(workingDir, configFile, keyFile):
-    return workingDir + "/scalability --config " + workingDir + configFile + " --keys " + workingDir + keyFile + " --numkeys " + NUM_KEYS + " --time " + NUM_SECONDS
+    return workingDir + "/scalability --config " + workingDir + configFile + " --keys " + workingDir + keyFile + " --numkeys " + NUM_KEYS + " --time " + NUM_SECONDS + " --isolation " + args.isolation
 
 def processOutputFunc(outputFile):
     if USE_REDIS:
