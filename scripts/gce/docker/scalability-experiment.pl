@@ -24,13 +24,12 @@ my @instanceNums = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 my @shardNums = (1, 2, 3, 4, 5);
 my @isolations = ("linearizable", "snapshot", "eventual");
 
-my $resetClientCmd = "gcloud compute instances reset diamond-client-a1o6 --zone us-central1-c >> $log 2>&1; sleep 10";
 my $killServersCmd = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gce' >> $log 2>&1";
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
 
 # reset client VM and make sure no Diamond servers are running
-system("$resetClientCmd");
+resetClient();
 system("$killServersCmd");
 
 # do sanity checks
@@ -43,10 +42,10 @@ system("$killRedisCmd");
 
 for my $isolation (@isolations) {
     for my $shards (@shardNums) {
-        logPrint($log, "Running with isolation level $isolation and $shards shards\n");
+        logPrint("Running with isolation level $isolation and $shards shards\n");
 
         # reset client VM, start redis, and start Diamond servers
-        system("$resetClientCmd");
+        resetClient();
         system("$startRedisCmd");
         system("ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gce --keys experiments/keys.txt --numkeys 100000 --shards $shards' >> $log 2>&1");
 
@@ -54,7 +53,7 @@ for my $isolation (@isolations) {
         open(OUTFILE, "> $outFile");
         print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\tisolation\tshards\n");
         for my $instances (@instanceNums) {
-            logPrint($log, "Running $instances instances...\n");
+            logPrint("Running $instances instances...\n");
 
             # clear output location
             if ($USE_REDIS) {
@@ -109,8 +108,27 @@ for my $isolation (@isolations) {
 }
 
 sub logPrint {
-    my ($log, $str) = @_;
+    my ($str) = @_;
     chomp($str);
     system("echo $str | tee -a $log");
     return;
+}
+
+sub resetClient {
+    system("gcloud compute instances reset diamond-client-a1o6 --zone us-central1-c >> $log 2>&1");
+    my $done = 0;
+    while (!$done) {
+        sleep(5);
+        my $test = `ssh $GCE_IP 'echo test' 2>&1`;
+        if ($test =~ /test/) {
+            $done = 1;
+        }
+        elsif ($test =~ /Connection refused/) {
+            logPrint("Waiting for GCE client VM to restart...");
+        }
+        else {
+            logPrint("Error: unknown response to GCE client VM check: $test");
+            exit(1);
+        }
+    }
 }
