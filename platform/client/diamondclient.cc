@@ -113,6 +113,17 @@ DiamondClient::run_client()
 {
     transport.Run();
 }
+
+void
+DiamondClient::SetIsolationLevel(int level) {
+    if (level != LINEARIZABLE
+        && level != SNAPSHOT_ISOLATION
+        && level != EVENTUAL
+        && level != READ_ONLY) {
+        Panic("Unknown isolation level: %d", level);
+    }
+    isolationLevel = level;
+}
     
 /* Begins a transaction. All subsequent operations before a commit() or
  * abort() are part of this transaction.
@@ -125,7 +136,7 @@ DiamondClient::Begin()
         txnid_lock.lock();
         txnid = ++txnid_counter;
         txnid_lock.unlock();
-        txn = Transaction(LINEARIZABLE);
+        txn = Transaction(isolationLevel);
         client->Begin(txnid);
     }
 }

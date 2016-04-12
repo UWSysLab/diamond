@@ -14,6 +14,7 @@ int main(int argc, char ** argv) {
     std::string keyFile;
     int nKeys = 0;
     int numSeconds = 10;
+    std::string isolation("linearizable");
     bool printKeys = false;
 
     po::options_description desc("Allowed options");
@@ -22,8 +23,9 @@ int main(int argc, char ** argv) {
         ("config", po::value<std::string>(&configPrefix)->required(), "frontend config file prefix (required)")
         ("keys", po::value<std::string>(&keyFile)->required(), "file from which to read keys (required)")
         ("numkeys", po::value<int>(&nKeys)->required(), "number of keys to read (required)")
+        ("isolation", po::value<std::string>(&isolation), "isolation level (default 'linearizable')")
         ("time", po::value<int>(&numSeconds), "number of seconds to run (default 10)")
-        ("printkeys", po::bool_switch(&printKeys), "number of seconds to run (default 10)")
+        ("printkeys", po::bool_switch(&printKeys), "print keys for each transaction (default false)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -33,8 +35,24 @@ int main(int argc, char ** argv) {
     }
     po::notify(vm);
 
+    if (isolation != "linearizable" && isolation != "snapshot" && isolation != "eventual") {
+        std::cout << "Error: isolation must be 'linearizable,' 'snapshot,' or 'eventual'" << std::endl;
+        std::cout << "(Isolation is " << isolation << ")" << std::endl;
+        return 1;
+    }
+
     DiamondInit(configPrefix, 1, 0);
     initRand();
+
+    if (isolation == "linearizable") {
+        DObject::SetLinearizable();
+    }
+    else if (isolation == "snapshot") {
+        DObject::SetSnapshotIsolation();
+    }
+    else if (isolation == "eventual") {
+        DObject::SetEventual();
+    }
 
     std::vector<std::string> keys;
     parseKeys(keyFile, nKeys, keys);
@@ -53,7 +71,7 @@ int main(int argc, char ** argv) {
     bool done = false;
     uint64_t globalStartTime = currentTimeMillis();
 
-    std::cout << "start-time\tend-time\tcommitted\t";
+    std::cout << "start-time\tend-time\tcommitted\tisolation\t";
     if (printKeys) {
         std::cout << "read-key\twrite-key\t";
     }
@@ -75,7 +93,8 @@ int main(int argc, char ** argv) {
 
         std::cout << startTime << "\t"
                   << endTime << "\t"
-                  << committed << "\t";
+                  << committed << "\t"
+                  << isolation << "\t";
         if (printKeys) {
             std::cout << keys[varIndex] << "\t"
                       << uniqueKey << "\t";

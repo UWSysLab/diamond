@@ -41,6 +41,10 @@ public:
     static void BeginReactive(uint64_t reactive_id);
     static uint64_t GetNextNotification(bool blocking);
     static void NotificationInit(std::function<void (void)> callback);
+
+    static void SetLinearizable();
+    static void SetSnapshotIsolation();
+    static void SetEventual();
      
 protected:
     DObject() : _key("dummykey") {};
