@@ -22,6 +22,9 @@ args = parser.parse_args()
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
     parser.error('--keys and --numkeys must be given together')
     sys.exit()
+if args.action == 'start' and args.keys == None:
+    parser.error('--keys is required for action \'start\'')
+    sys.exit()
 
 serverJarPath = SERVER_DIR + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar"
 redisPath = REDIS_DIR + "/redis-server"
@@ -102,7 +105,10 @@ for frontendNum in range(0, numFrontends):
             remoteFrontendOutputPath = WORKING_DIR + "/output.keyvalueserver." + repr(frontendNum) + ".txt"
             if args.action == 'start':
                 os.system("rsync " + serverJarPath + " " + hostname + ":" + remoteServerJarPath)
-                serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.Server " + port + " " + leaderHostname + " " + leaderPort
+                serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.KeyValueServer " + port + " " + leaderHostname + " " + leaderPort
+                if keyPath != None:
+                    os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
+                    serverCmd = serverCmd + " " + remoteKeyPath
                 os.system("ssh -f " + hostname + " '" + serverCmd + " > " + remoteFrontendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteServerJarPath + "'");
