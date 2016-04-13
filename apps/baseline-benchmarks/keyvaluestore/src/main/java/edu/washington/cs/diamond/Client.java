@@ -1,12 +1,8 @@
 package edu.washington.cs.diamond;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -16,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
@@ -152,7 +146,7 @@ public class Client {
 			
 			System.out.print(startTime + "\t" + endTime + "\t" + 1);
 			if (printKeys) {
-			System.out.print("\t" + readKey + "\t" + writeKey);
+				System.out.print("\t" + readKey + "\t" + writeKey);
 			}
 			System.out.print("\n");
 			
