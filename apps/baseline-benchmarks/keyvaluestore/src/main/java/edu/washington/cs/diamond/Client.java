@@ -25,6 +25,7 @@ public class Client {
 	
 	private String server;
 	private Random random;
+	private List<String> keys;
 	
 	public void put(String key, String value) {
 		int responseCode = -1;
@@ -135,12 +136,7 @@ public class Client {
 		return server;
 	}
 	
-	public void start(String configFile, String keyFile, int seconds, boolean printKeys) {
-		server = parseConfigFile(configFile);
-		random = new Random();
-		
-		List<String> keys = parseKeys(keyFile);
-		
+	public void start(int seconds, boolean printKeys) {
 		long globalStartTime = System.currentTimeMillis();
 		boolean done = false;
 
@@ -166,10 +162,18 @@ public class Client {
 		}
 	}
 	
+	public Client(String configFile, String keyFile) {
+		server = parseConfigFile(configFile);
+		random = new Random();
+		
+		keys = parseKeys(keyFile);
+	}
+	
 	public static void main(String[] args) {
-		if (args.length < 2) {
+		if (args.length < 3) {
 			System.err.println("usage: java Client configFile keyFile numSeconds");
+			System.exit(1);
 		}
-		new Client().start(args[0], args[1], Integer.parseInt(args[2]), false);
+		new Client(args[0], args[1]).start(Integer.parseInt(args[2]), false);
 	}
 }
