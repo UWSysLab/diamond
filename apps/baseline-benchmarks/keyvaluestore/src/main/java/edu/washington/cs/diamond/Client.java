@@ -93,13 +93,15 @@ public class Client {
 		return new String(keyChars);
 	}
 	
-	List<String> parseKeys(String keyFile) {
+	List<String> parseKeys(String keyFile, int numKeys) {
 		List<String> keys = new ArrayList<String>();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(keyFile));
 			String line = reader.readLine();
-			while (line != null) {
+			int keyNum = 0;
+			while (line != null && keyNum < numKeys) {
 				keys.add(line);
+				keyNum++;
 				line = reader.readLine();
 			}
 			reader.close();
@@ -156,18 +158,18 @@ public class Client {
 		}
 	}
 	
-	public Client(String configFile, String keyFile) {
+	public Client(String configFile, String keyFile, int numKeys) {
 		server = parseConfigFile(configFile);
 		random = new Random();
 		
-		keys = parseKeys(keyFile);
+		keys = parseKeys(keyFile, numKeys);
 	}
 	
 	public static void main(String[] args) {
-		if (args.length < 3) {
-			System.err.println("usage: java Client configFile keyFile numSeconds");
+		if (args.length < 4) {
+			System.err.println("usage: java Client configFile keyFile numKeys numSeconds");
 			System.exit(1);
 		}
-		new Client(args[0], args[1]).start(Integer.parseInt(args[2]), false);
+		new Client(args[0], args[1], Integer.parseInt(args[2])).start(Integer.parseInt(args[3]), false);
 	}
 }
