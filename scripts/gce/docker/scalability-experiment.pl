@@ -30,11 +30,12 @@ my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
 
 # reset client VM and make sure no Diamond servers are running
 resetClient();
-system("$killServersCmd");
+system("./build-everything.pl $image $user $GCE_IP >> $log 2>&1");
+system("./cleanup.pl $GCE_IP >> $log 2>&1");
 
 # do sanity checks
 system("$startRedisCmd");
-my $checkResult = system("./sanity-checks.pl $image $user $script $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
+my $checkResult = system("./sanity-checks.pl $script $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
 if ($checkResult != 0) {
     die("Error in sanity checks: see log file for details");
 }

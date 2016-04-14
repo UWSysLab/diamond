@@ -17,10 +17,22 @@ my $outputDir = "../../experiments/results/docc";
 my $log = "docc-log.txt";
 system("rm -f $log; touch $log");
 
-my $checkResult = system("./sanity-checks.pl $image $user run_docc.py $outputDir docc $GCE_IP $USE_REDIS >> $log 2>&1");
+my $startServersCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gce --keys experiments/keys.txt --numkeys 100000' >> $log 2>&1";
+my $killServersCmd = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gce' >> $log 2>&1";
+my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
+my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
+
+system("./build-everything.pl $image $user $GCE_IP >> $log 2>&1");
+system("./cleanup.pl $GCE_IP >> $log 2>&1");
+
+system("$startRedisCmd");
+
+my $checkResult = system("./sanity-checks.pl run_docc.py $outputDir docc $GCE_IP $USE_REDIS >> $log 2>&1");
 if ($checkResult != 0) {
     die("Error in sanity checks: see log file for details");
 }
+
+system("$startServersCmd");
 
 # run experiment
 my @instanceNums = (2, 4, 6, 8, 10);
@@ -33,7 +45,7 @@ for my $optype (@optypes) {
         open(OUTFILE, "> $outFile");
         print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\toptype\treadfrac\n");
         for my $instances (@instanceNums) {
-            print("Running $instances instances with optype $optype, read fraction $readfrac...\n");
+            logPrint("Running $instances instances with optype $optype, read fraction $readfrac...\n");
             if ($USE_REDIS) {
                 system("ssh $GCE_IP 'redis-3.0.7/src/redis-cli flushdb' >> $log 2>&1");
             }
@@ -75,4 +87,14 @@ for my $optype (@optypes) {
         my $time = time();
         system("cp $outFile $outFile.$time");
     }
+}
+
+system("$killServersCmd");
+system("$killRedisCmd");
+
+sub logPrint {
+    my ($str) = @_;
+    chomp($str);
+    system("echo $str | tee -a $log");
+    return;
 }

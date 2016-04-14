@@ -41,15 +41,13 @@ $killBaselineCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmark
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
 
-# reset client VM and make sure no servers are running
-system("$killDiamondCmd{georeplicated}");
-system("$killDiamondCmd{local}");
-system("$killBaselineCmd{georeplicated}");
-system("$killBaselineCmd{local}");
+# Make sure no servers are running
+system("./build-everything.pl $image $user $GCE_IP >> $log 2>&1");
+system("./cleanup.pl $GCE_IP >> $log 2>&1");
 
 # do sanity checks
 system("$startRedisCmd");
-my $checkResult = system("./sanity-checks.pl $image $user run_baseline.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
+my $checkResult = system("./sanity-checks.pl run_baseline.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
 if ($checkResult != 0) {
     die("Error in sanity checks: see log file for details");
 }

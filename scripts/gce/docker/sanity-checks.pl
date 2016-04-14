@@ -3,10 +3,10 @@
 use warnings;
 use strict;
 
-my $usage = "usage: ./sanity-checks.pl image user script local-output-dir gce-output-dir gce-ip use-redis";
-die $usage unless @ARGV==7;
+my $usage = "usage: ./sanity-checks.pl script local-output-dir gce-output-dir gce-ip use-redis";
+die $usage unless @ARGV==5;
 
-my ($image, $user, $script, $outputDir, $gceOutputDir, $GCE_IP, $USE_REDIS) = @ARGV;
+my ($script, $outputDir, $gceOutputDir, $GCE_IP, $USE_REDIS) = @ARGV;
 
 # make sure experiment script exists
 my $scriptExists = `cat Dockerfile | grep $script | wc | awk '{ print \$1 }'`;
@@ -16,8 +16,7 @@ if (!$scriptExists) {
     exit(1);
 }
 
-# make sure GCE client is up-to-date and has all required files
-system("ssh $GCE_IP 'cd diamond-src/apps/benchmarks/build; git pull origin master; make -j8' 2>&1");
+# make sure GCE client has all required files
 my $keyFileExists = `ssh $GCE_IP 'ls diamond-src/scripts/experiments/keys.txt 2>/dev/null | wc' | awk '{ print \$1 }'`;
 chomp($keyFileExists);
 if (!$keyFileExists) {
@@ -55,6 +54,3 @@ if (!$outputDirExists) {
     print(STDERR "Error: $outputDir does not exist on local machine\n");
     exit(1);
 }
-
-# build Docker image
-system("./build-kubernetes.pl $image $user 2>&1");
