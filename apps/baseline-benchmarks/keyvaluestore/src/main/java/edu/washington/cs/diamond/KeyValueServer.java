@@ -154,7 +154,7 @@ public class KeyValueServer {
 	}
 
 	public static void main(String[] args) {
-		if (args.length < 5) {
+		if (args.length < 7) {
 			System.err.println("usage: java Server port redis-hostname redis-port num-slaves num-failures key-file num-keys");
 			System.exit(1);
 		}
