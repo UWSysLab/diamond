@@ -7,9 +7,9 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/scratch/nl35"
+WORKING_DIR = "/home/nl35"
 SERVER_DIR = "target"
-REDIS_DIR = "../../../../redis-3.0.7/src"
+REDIS_DIR = "/home/nl35/redis-3.0.7/src"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
@@ -28,12 +28,16 @@ if args.action == 'start' and args.keys == None:
 
 serverJarPath = SERVER_DIR + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar"
 redisPath = REDIS_DIR + "/redis-server"
+redisClientPath = REDIS_DIR + "/redis-cli"
+protocolScriptPath = "./generate-fill-protocol.pl"
 keyPath = args.keys
 numKeys = args.numkeys
 numFrontends = args.frontends
 
 remoteServerJarPath = WORKING_DIR + "/keyvaluestore.jar"
 remoteRedisPath = WORKING_DIR + "/redis-server"
+remoteRedisClientPath = WORKING_DIR + "/redis-cli"
+remoteProtocolScriptPath = WORKING_DIR + "/generate-fill-protocol.pl"
 remoteKeyPath = None
 if keyPath != None:
     remoteKeyPath = WORKING_DIR + "/keys.txt"
@@ -88,6 +92,11 @@ for line in backendConfig:
             else:
                 redisCmd = remoteRedisPath + " --port " + port + " --slaveof " + leaderHostname + " " + leaderPort
             os.system("ssh -f " + hostname + " '" + redisCmd + " > " + remoteBackendOutputPath + " 2>&1'");
+            if isLeader and keyPath != None:
+                os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
+                os.system("rsync " + redisClientPath + " " + hostname + ":" + remoteRedisClientPath)
+                os.system("rsync " + protocolScriptPath + " " + hostname + ":" + remoteProtocolScriptPath)
+                os.system("ssh " + hostname + " 'cat " + remoteKeyPath + " | head -n " + repr(numKeys) + " | " + remoteProtocolScriptPath +  " | " + remoteRedisClientPath + " -p " + repr(port) + " --pipe'")
         elif args.action == 'kill':
             os.system("ssh " + hostname + " 'pkill -9 -f " + port + "'");
         replicaNum = replicaNum + 1
@@ -113,9 +122,6 @@ for frontendNum in range(0, numFrontends):
             if args.action == 'start':
                 os.system("rsync " + serverJarPath + " " + hostname + ":" + remoteServerJarPath)
                 serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.KeyValueServer " + port + " " + leaderHostname + " " + leaderPort + " " + repr(numSlaves) + " " + repr(numFailures)
-                if keyPath != None:
-                    os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
-                    serverCmd = serverCmd + " " + remoteKeyPath + " " + repr(numKeys)
                 os.system("ssh -f " + hostname + " '" + serverCmd + " > " + remoteFrontendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteServerJarPath + "'");
