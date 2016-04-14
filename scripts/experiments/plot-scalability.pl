@@ -3,7 +3,7 @@
 use warnings;
 use strict;
 
-my $usage = "usage: ./plot-docc.pl directory";
+my $usage = "usage: ./plot-scalability.pl directory";
 die $usage unless @ARGV == 1;
 
 my $dir = shift;
@@ -51,3 +51,7 @@ print(SCRIPT "plot \"$linearizable\" using 1:2 with lines title 'linearizable',\
 close(SCRIPT);
 
 system("gnuplot $script");
+
+for my $file (@tempFiles) {
+    system("rm $file");
+}
