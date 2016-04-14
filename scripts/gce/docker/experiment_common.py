@@ -22,16 +22,24 @@ processes = []
 outputFiles = []
 
 def copyFiles(binary, binaryDir):
+    copyBinary(binary, binaryDir)
+    copyConfigFiles()
+
+def copyBinary(binary, binaryDir):
     os.system(COPY_CMD + binaryDir + "/" + binary + " " + WORKING_DIR)
     os.system(COPY_CMD + "platform/build/libdiamond.so" + " " + WORKING_DIR)
     sys.stderr.write("Finished copying binaries\n")
 
+def copyConfigFiles():
     for i in range(0, NUM_FRONTENDS):
         configFile = CONFIG_PREFIX + repr(i)
         os.system(COPY_CMD + CONFIG_DIR + configFile + ".config" + " " + WORKING_DIR)
         sys.stderr.write("Finished syncing config file %d\n" % i)
     os.system(COPY_CMD + KEY_DIR + KEY_FILE + " " + WORKING_DIR)
     sys.stderr.write("Finished syncing key file\n")
+
+def copyIntoWorkingDir(filename):
+    os.system(COPY_CMD + filename + " " + WORKING_DIR)
 
 # getCommandFunc should be a function with arguments (workingDir, configFile, keyFile) that
 # returns the the shell command to execute the binary

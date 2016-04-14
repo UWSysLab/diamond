@@ -7,6 +7,7 @@ ARG user=iyzhang
 RUN apt-get update
 
 RUN apt-get install -y python2.7 rsync ssh libevent-dev libprotobuf-dev libboost-program-options-dev python-pip
+RUN apt-get install -y openjdk-8-jre-headless
 
 RUN pip install redis
 
@@ -26,6 +27,7 @@ COPY ./run_benchclient.py /home/$user/
 COPY ./run_scalability.py /home/$user/
 COPY ./run_docc.py /home/$user/
 COPY ./run_retwis.py /home/$user/
+COPY ./run_baseline.py /home/$user/
 COPY ./experiment_common.py /home/$user/
 
 RUN chown -R $user /home/$user
