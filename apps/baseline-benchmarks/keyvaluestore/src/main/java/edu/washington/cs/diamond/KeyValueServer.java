@@ -106,24 +106,7 @@ public class KeyValueServer {
 		}
 	}
 
-	private void loadKeys(String keyFile, int numKeys) {
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(keyFile));
-			String line = reader.readLine();
-			int keyNum = 0;
-			while (line != null && keyNum < numKeys) {
-				jedis.set(line, "temp");
-				keyNum++;
-				line = reader.readLine();
-			}
-			reader.close();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures, String keyFile, int numKeys) {
+	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures) {
 		this.numSlaves = numSlaves;
 		this.numFailures = numFailures;
 		
@@ -133,8 +116,6 @@ public class KeyValueServer {
 
 		try {
 			jedis = pool.getResource();
-
-			loadKeys(keyFile, numKeys);
 
 			server = new Server(port);
 			server.setHandler(new PutGetHandler());
@@ -154,10 +135,10 @@ public class KeyValueServer {
 	}
 
 	public static void main(String[] args) {
-		if (args.length < 7) {
-			System.err.println("usage: java Server port redis-hostname redis-port num-slaves num-failures key-file num-keys");
+		if (args.length < 5) {
+			System.err.println("usage: java Server port redis-hostname redis-port num-slaves num-failures");
 			System.exit(1);
 		}
-		new KeyValueServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]));
+		new KeyValueServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
 	}
 }
