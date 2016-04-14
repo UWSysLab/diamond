@@ -52,7 +52,7 @@ class Utils {
 }
 
 public class KeyValueServer {
-	Jedis jedis;
+	JedisPool pool;
 	int numSlaves;
 	int numFailures;
 
@@ -71,8 +71,10 @@ public class KeyValueServer {
 				String value = bodyParams.get("value");
 
 				if (key != null && value != null) {
-					jedis.set(key, value);
-					jedis.waitReplicas(numSlaves - numFailures, 10000);
+					try(Jedis jedis = pool.getResource()) {
+						jedis.set(key, value);
+						jedis.waitReplicas(numSlaves - numFailures, 10000);
+					}
 					responseJson.add("key", new JsonPrimitive(key));
 					responseJson.add("value", new JsonPrimitive(value));
 					responseCode = HttpServletResponse.SC_OK;
@@ -88,7 +90,9 @@ public class KeyValueServer {
 				String value = null;
 
 				if (key != null) {
-					value = jedis.get(key);
+					try(Jedis jedis = pool.getResource()) {
+						value = jedis.get(key);
+					}
 					if (value == null) {
 						value = "";
 					}
@@ -110,13 +114,10 @@ public class KeyValueServer {
 		this.numSlaves = numSlaves;
 		this.numFailures = numFailures;
 		
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
-		jedis = null;
+		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
 		Server server = null;
 
 		try {
-			jedis = pool.getResource();
-
 			server = new Server(port);
 			server.setHandler(new PutGetHandler());
 			server.start();
@@ -125,11 +126,6 @@ public class KeyValueServer {
 		catch (Exception e) {
 			e.printStackTrace();
 			System.exit(1);
-		}
-		finally {
-			if (jedis != null) {
-				jedis.close();
-			}
 		}
 		pool.destroy();
 	}
