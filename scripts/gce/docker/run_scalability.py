@@ -7,11 +7,11 @@ import os
 NUM_KEYS = "1000"
 NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/scalability/"
-NUM_CLIENTS = 350
 USE_REDIS = True
 
 parser = argparse.ArgumentParser(description='Run scalability client.')
 parser.add_argument('isolation', choices=['linearizable', 'snapshot', 'eventual'], help='isolation level')
+parser.add_argument('--numclients', type=int, default=350, help='number of clients')
 args = parser.parse_args()
 
 def getCommandFunc(workingDir, configFile, keyFile):
@@ -24,5 +24,5 @@ def processOutputFunc(outputFile):
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
         
 experiment_common.copyFiles("scalability", "apps/benchmarks/build")
-experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, "scalability-out")
+experiment_common.runProcesses(getCommandFunc, args.numclients, "scalability-out")
 experiment_common.processOutput(processOutputFunc)
