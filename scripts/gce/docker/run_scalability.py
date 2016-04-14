@@ -12,6 +12,7 @@ USE_REDIS = True
 parser = argparse.ArgumentParser(description='Run scalability client.')
 parser.add_argument('isolation', choices=['linearizable', 'snapshot', 'eventual'], help='isolation level')
 parser.add_argument('--numclients', type=int, default=350, help='number of clients')
+parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
 def getCommandFunc(workingDir, configFile, keyFile):
@@ -23,6 +24,6 @@ def processOutputFunc(outputFile):
     else:
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
         
-experiment_common.copyFiles("scalability", "apps/benchmarks/build")
-experiment_common.runProcesses(getCommandFunc, args.numclients, "scalability-out")
+experiment_common.copyFiles("scalability", "apps/benchmarks/build", args.config)
+experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "scalability-out")
 experiment_common.processOutput(processOutputFunc)

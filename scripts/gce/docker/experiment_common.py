@@ -12,7 +12,6 @@ WORKING_DIR = "~/"
 
 COPY_CMD = "rsync " + SRC_HOST + ":diamond-src/"
 CONFIG_DIR = "platform/test/"
-CONFIG_PREFIX = "gce.frontend"
 KEY_DIR = "scripts/experiments/"
 KEY_FILE = "keys.txt"
 NUM_FRONTENDS = 10
@@ -21,18 +20,18 @@ USE_REDIS = True
 processes = []
 outputFiles = []
 
-def copyFiles(binary, binaryDir):
+def copyFiles(binary, binaryDir, configPrefix):
     copyBinary(binary, binaryDir)
-    copyConfigFiles()
+    copyConfigFiles(configPrefix)
 
 def copyBinary(binary, binaryDir):
     os.system(COPY_CMD + binaryDir + "/" + binary + " " + WORKING_DIR)
     os.system(COPY_CMD + "platform/build/libdiamond.so" + " " + WORKING_DIR)
     sys.stderr.write("Finished copying binaries\n")
 
-def copyConfigFiles():
+def copyConfigFiles(configPrefix):
     for i in range(0, NUM_FRONTENDS):
-        configFile = CONFIG_PREFIX + repr(i)
+        configFile = configPrefix + ".frontend" + repr(i)
         os.system(COPY_CMD + CONFIG_DIR + configFile + ".config" + " " + WORKING_DIR)
         sys.stderr.write("Finished syncing config file %d\n" % i)
     os.system(COPY_CMD + KEY_DIR + KEY_FILE + " " + WORKING_DIR)
@@ -43,12 +42,12 @@ def copyIntoWorkingDir(filename):
 
 # getCommandFunc should be a function with arguments (workingDir, configFile, keyFile) that
 # returns the the shell command to execute the binary
-def runProcesses(getCommandFunc, numClients, outputPrefix):
+def runProcesses(getCommandFunc, numClients, configPrefix, outputPrefix):
     sys.stderr.write("Running clients...\n")
 
     for i in range(0, numClients):
         outputFile = outputPrefix + "-" + repr(random.randint(0, sys.maxint))
-        configFile = CONFIG_PREFIX + repr(i % NUM_FRONTENDS)
+        configFile = configPrefix + ".frontend" + repr(i % NUM_FRONTENDS)
         cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + outputFile
         processes.append(subprocess.Popen(cmd, shell=True))
         outputFiles.append(outputFile)

@@ -14,6 +14,7 @@ USE_REDIS = True
 parser = argparse.ArgumentParser(description='Run DOCC client.')
 parser.add_argument('optype', choices=['docc', 'baseline'], help='choose between DOCC increment or read/write')
 parser.add_argument('readfrac', type=float, help='choose between DOCC increment or read/write')
+parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
 def getCommandFunc(workingDir, configFile, keyFile):
@@ -29,6 +30,6 @@ def processOutputFunc(outputFile):
     else:
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
 
-experiment_common.copyFiles("docc", "apps/benchmarks/build")
-experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, "docc-out")
+experiment_common.copyFiles("docc", "apps/benchmarks/build", args.config)
+experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, args.config, "docc-out")
 experiment_common.processOutput(processOutputFunc)
