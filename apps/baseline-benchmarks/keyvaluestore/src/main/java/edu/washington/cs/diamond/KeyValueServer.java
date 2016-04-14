@@ -53,6 +53,8 @@ class Utils {
 
 public class KeyValueServer {
 	Jedis jedis;
+	int numSlaves;
+	int numFailures;
 
 	class PutGetHandler extends AbstractHandler {
 
@@ -70,6 +72,7 @@ public class KeyValueServer {
 
 				if (key != null && value != null) {
 					jedis.set(key, value);
+					jedis.waitReplicas(numSlaves - numFailures, 10000);
 					responseJson.add("key", new JsonPrimitive(key));
 					responseJson.add("value", new JsonPrimitive(value));
 					responseCode = HttpServletResponse.SC_OK;
@@ -120,7 +123,10 @@ public class KeyValueServer {
 		}
 	}
 
-	public void start(int port, String redisHostname, int redisPort, String keyFile, int numKeys) {
+	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures, String keyFile, int numKeys) {
+		this.numSlaves = numSlaves;
+		this.numFailures = numFailures;
+		
 		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
 		jedis = null;
 		Server server = null;
@@ -149,9 +155,9 @@ public class KeyValueServer {
 
 	public static void main(String[] args) {
 		if (args.length < 5) {
-			System.err.println("usage: java Server port redis-hostname redis-port key-file num-keys");
+			System.err.println("usage: java Server port redis-hostname redis-port num-slaves num-failures key-file num-keys");
 			System.exit(1);
 		}
-		new KeyValueServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), args[3], Integer.parseInt(args[4]));
+		new KeyValueServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]));
 	}
 }
