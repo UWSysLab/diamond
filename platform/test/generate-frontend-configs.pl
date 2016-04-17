@@ -9,11 +9,16 @@ use strict;
 my $usage = "usage: ./generate-frontend-configs.pl num-frontends prefix";
 die $usage unless @ARGV == 2;
 
-my @hosts = ("diamond-frontend-central-8uwj",
-             "diamond-frontend-central-v02w",
-             "diamond-frontend-central-vjqi",
-             "diamond-frontend-central-wn4w",
-             "diamond-frontend-central-yk5j");
+my @hosts = ("diamond-frontend-central-08wr",
+             "diamond-frontend-central-5m1h",
+             "diamond-frontend-central-8dny",
+             "diamond-frontend-central-ahr1",
+             "diamond-frontend-central-bfv4",
+             "diamond-frontend-central-ha53",
+             "diamond-frontend-central-ha7s",
+             "diamond-frontend-central-hxft",
+             "diamond-frontend-central-tvf9",
+             "diamond-frontend-central-xasd");
 
 my $startport = 12345;
 
