@@ -5,13 +5,13 @@ import experiment_common
 import os
 
 parser = argparse.ArgumentParser(description='Run baseline client.')
+parser.add_argument('--numclients', type=int, default=40, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
 NUM_KEYS = "1000"
 NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/baseline/"
-NUM_CLIENTS = 20
 USE_REDIS = True
 
 def getCommandFunc(workingDir, configFile, keyFile):
@@ -27,5 +27,5 @@ def processOutputFunc(outputFile):
 experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
 experiment_common.copyConfigFiles(args.config)
 
-experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, args.config, "baseline-out")
+experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "baseline-out")
 experiment_common.processOutput(processOutputFunc)
