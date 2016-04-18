@@ -5,7 +5,7 @@ import experiment_common
 import os
 
 parser = argparse.ArgumentParser(description='Run baseline client.')
-parser.add_argument('--numclients', type=int, default=40, help='number of clients')
+parser.add_argument('--numclients', type=int, default=12, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
