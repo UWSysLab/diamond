@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 add_executable(benchmarkclient benchmarkclient.cc)
 add_executable(settest settest.cc)
 add_executable(scalability scalability.cc benchmark_common.cc)
+add_executable(caching caching.cc benchmark_common.cc)
 add_executable(docc docc.cc benchmark_common.cc)
 add_executable(notification_publisher notification_publisher.cc benchmark_common.cc)
 add_executable(notification_subscriber notification_subscriber.cc benchmark_common.cc)
@@ -22,6 +23,9 @@ target_link_libraries(settest ${Boost_LIBRARIES})
 
 target_link_libraries(scalability "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(scalability ${Boost_LIBRARIES})
+
+target_link_libraries(caching "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
+target_link_libraries(caching ${Boost_LIBRARIES})
 
 target_link_libraries(docc "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(docc ${Boost_LIBRARIES})
