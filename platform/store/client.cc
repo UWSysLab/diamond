@@ -388,14 +388,21 @@ Client::Subscribe(const set<string> &keys,
         participants[i].insert(key);
     }
 
-    vector<Promise *> *promises = new vector<Promise *>();
-    callback_t cb = bind(&Client::MultiGetCallback,
-			 this, callback,
-			 participants.size(),
-			 promises,
-			 placeholders::_1);
-    for (auto &p : participants) {
-	cclient[p.first]->Subscribe(p.second, address, cb);
+    if (participants.size() == 0) {
+        Promise *w = new Promise();
+        w->Reply(REPLY_OK);
+        callback(w);
+    }
+    else {
+        vector<Promise *> *promises = new vector<Promise *>();
+        callback_t cb = bind(&Client::MultiGetCallback,
+                             this, callback,
+                             participants.size(),
+                             promises,
+                             placeholders::_1);
+        for (auto &p : participants) {
+            cclient[p.first]->Subscribe(p.second, address, cb);
+        }
     }
 }
 
