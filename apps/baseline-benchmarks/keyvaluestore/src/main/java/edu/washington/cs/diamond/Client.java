@@ -17,9 +17,9 @@ import com.google.gson.JsonParser;
 
 public class Client {
 	
-	private String server;
-	private Random random;
-	private List<String> keys;
+	protected String server;
+	protected Random random;
+	protected List<String> keys;
 	
 	public void put(String key, String value) {
 		int responseCode = -1;
