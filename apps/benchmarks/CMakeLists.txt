@@ -10,6 +10,7 @@ add_executable(caching caching.cc benchmark_common.cc)
 add_executable(docc docc.cc benchmark_common.cc)
 add_executable(notification_publisher notification_publisher.cc benchmark_common.cc)
 add_executable(notification_subscriber notification_subscriber.cc benchmark_common.cc)
+add_executable(game game.cc)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 
@@ -35,3 +36,6 @@ target_link_libraries(notification_publisher ${Boost_LIBRARIES})
 
 target_link_libraries(notification_subscriber "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(notification_subscriber ${Boost_LIBRARIES})
+
+target_link_libraries(game "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
+target_link_libraries(game ${Boost_LIBRARIES})
