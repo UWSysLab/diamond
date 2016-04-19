@@ -189,7 +189,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
         regSet.insert(key);
     }
 
-    Timestamp timestamp = 0;
+    Timestamp timestamp = msg.timestamp();
     for (auto it = regSet.begin(); it != regSet.end(); it++) {
         Timestamp keyTimestamp = values[*it].GetTimestamp();
         if (timestamp < keyTimestamp) {
