@@ -74,6 +74,7 @@ public:
     void NotificationInit(std::function<void (void)> callback);
 
     void SetIsolationLevel(int isolationLevel);
+    void SetCaching(bool cachingEnabled);
 
 private:    
     /* Private helper functions. */

@@ -36,6 +36,7 @@ using namespace std;
 CacheClient::CacheClient(TxnClient* txnclient)
 {
     this->txnclient = txnclient;
+    this->cachingEnabled = true;
 }
 
 CacheClient::~CacheClient() { }
@@ -55,6 +56,11 @@ CacheClient::BeginRO(const uint64_t tid, const Timestamp &timestamp)
     txnclient->BeginRO(tid, timestamp);
 }
 
+void
+CacheClient::SetCaching(bool cachingEnabled) {
+    this->cachingEnabled = cachingEnabled;
+}
+
 /* Get value for a key.
  * Returns 0 on success, else -1. */
 void
@@ -62,10 +68,11 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 {
     Debug("GET %s", key.c_str());
     cache_lock.lock();
+    Debug("Timestamp: %lu", timestamp);
 
     Version value;
     // look for it in the cache
-    if (timestamp != MAX_TIMESTAMP && cache.Get(key, timestamp, value)) {
+    if (cachingEnabled && timestamp != MAX_TIMESTAMP && cache.Get(key, timestamp, value)) {
         // Make some decision about the timestamp?
         cache_lock.unlock();
         
@@ -82,12 +89,14 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 
     txnclient->Get(tid, key, timestamp, pp);
     if (pp->GetReply() == REPLY_OK) {
-        Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
-        cache_lock.lock();
-	// Make sure that we've capped the validity range
-	ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
-        cache.Put(key, pp->GetValue(key));
-        cache_lock.unlock();
+        if (cachingEnabled) {
+            Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
+            cache_lock.lock();
+            // Make sure that we've capped the validity range
+            ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
+            cache.Put(key, pp->GetValue(key));
+            cache_lock.unlock();
+        }
     }
 }
 
@@ -104,7 +113,7 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
     for (auto &key : keys) {
         // look for it in the cache
-        if (cache.Get(key, timestamp, value)) {
+        if (cachingEnabled && cache.Get(key, timestamp, value)) {
             // Make some decision about the timestamp?
 
             keysRead[key] = value;  
@@ -130,10 +139,12 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
         cache_lock.lock();
         for (auto &value : values) {
-            Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
-	    ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
-            cache.Put(value.first, value.second);
-            keysRead[value.first] = value.second;
+            if (cachingEnabled) {
+                Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+                ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
+                cache.Put(value.first, value.second);
+                keysRead[value.first] = value.second;
+            }
         }
         cache_lock.unlock();
         pp->Reply(REPLY_OK, keysRead);

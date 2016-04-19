@@ -101,6 +101,8 @@ public:
 
     virtual void NotificationInit(std::function<void (void)> callback);
 
+    void SetCaching(bool cachingEnabled);
+
 protected:
     // Underlying single shard transaction client implementation.
     TxnClient* txnclient;
@@ -109,6 +111,9 @@ protected:
     VersionedKVStore cache;
     std::mutex cache_lock;
     std::map<uint64_t, Transaction> prepared;
+
+    // Flag controlling whether caching is used on Get and Multiget
+    bool cachingEnabled;
 };
 
 #endif /* _CACHE_CLIENT_H_ */
