@@ -91,6 +91,12 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 {    
     Debug("[%lu] START PREPARE", tid);
 
+    if (txn.IsolationMode() == EVENTUAL) {
+	// just go ahead and commit
+	Commit(tid, 0, txn);
+	return REPLY_OK;
+    }
+    
     if (prepared.find(tid) != prepared.end()) {
         Debug("[%lu] Already prepared!", tid);
         return REPLY_OK;

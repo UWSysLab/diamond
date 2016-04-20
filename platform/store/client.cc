@@ -255,32 +255,14 @@ Client::Commit(const uint64_t tid,
     }
 
     // Do two phase commit for linearizable and SI
-    if (txn.IsolationMode() == LINEARIZABLE ||
-        txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-	function<void (Promise *)> cb =
-	    bind(&Client::CommitCallback,
-		 this,
-		 tid,
-		 callback,
-		 participants,
-		 placeholders::_1);
-	    PrepareInternal(tid, participants,
-			cb);
-	
-    } else if (txn.IsolationMode() == EVENTUAL) {
-        transport.Timer(0, [=]() { 
-		Debug("Sending request to TimeStampServer");
-		uint64_t *ts = new uint64_t(0);
-		vector<Promise *> *promises = new vector<Promise *>();
-		function<void (const string &, const string &)>  cb =
-		    bind(&Client::tssCallback,
-			 this, callback,
-			 0, promises, ts,
-			 placeholders::_1,
-			 placeholders::_2);
-		tss->Invoke("", cb);
-	    });
-    }    
+    function<void (Promise *)> cb =
+	bind(&Client::CommitCallback,
+	     this,
+	     tid,
+	     callback,
+	     participants,
+	     placeholders::_1);
+    PrepareInternal(tid, participants, cb);
 }
 
 void
@@ -321,18 +303,21 @@ Client::CommitCallback(uint64_t tid,
 		       callback_t callback,
 		       map<int, Transaction> participants,
 		       Promise *promise) {
-    
+
     if (promise->GetReply() == REPLY_OK) {
-        // Send commits
-        Debug("COMMIT Transaction at [%lu]",
+	// Send commits
+	Debug("COMMIT Transaction at [%lu]",
 	      promise->GetTimestamp());
-        for (auto &p : participants) {
-            Debug("Sending commit to shard [%d]",
-		  p.first);
-            Transaction &txn2 = p.second;
-            txn2.SetTimestamp(promise->GetTimestamp());
-            cclient[p.first]->Commit(tid, NULL, txn2);
-        }
+	for (auto &p : participants) {
+	    Transaction &txn2 = p.second;
+	    if (txn2.IsolationMode() == LINEARIZABLE ||
+		txn2.IsolationMode() == SNAPSHOT_ISOLATION) {
+		Debug("Sending commit to shard [%d]",
+		      p.first);
+		txn2.SetTimestamp(promise->GetTimestamp());
+		cclient[p.first]->Commit(tid, NULL, txn2);
+	    }
+	}
     } else {
 	AbortInternal(tid, participants);
     }
@@ -343,7 +328,10 @@ void
 Client::AbortInternal(const uint64_t tid,
 		      const map<int, Transaction> &participants) {
     for (auto &p : participants) {
-        cclient[p.first]->Abort(tid);
+	if (p.second.IsolationMode() == LINEARIZABLE ||
+	    p.second.IsolationMode() == SNAPSHOT_ISOLATION) {
+	    cclient[p.first]->Abort(tid);
+	}
     }
 }    
 

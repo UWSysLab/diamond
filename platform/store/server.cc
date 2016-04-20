@@ -102,14 +102,22 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         replicate = false;
         break;
     case strongstore::proto::Request::PREPARE:
+    {	
+	Transaction txn = Transaction(request.prepare().txn());
         // Prepare is the only case that is conditionally run at the leader
-        status = store->Prepare(request.txnid(), Transaction(request.prepare().txn()));
-
+	if (txn.IsolationMode() == LINEARIZABLE ||
+	    txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+	    status = store->Prepare(request.txnid(), txn);
+	} else {
+	    // if eventual consistency ignore the prepare
+	    status = REPLY_OK;
+	}
+	
         // if prepared, then replicate result
-        if (status == 0) {
+        if (status == REPLY_OK) {
             replicate = true;
             // get a prepare timestamp and send along to replicas
-            request.SerializeToString(&str2);
+            str2 = str1;
         } else {
             // if abort, don't replicate
             replicate = false;
@@ -117,6 +125,7 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
             reply.SerializeToString(&str2);
         }
         break;
+    }
     case strongstore::proto::Request::COMMIT:
 	if (request.commit().has_txn()) {
 	    store->Commit(request.txnid(), request.commit().timestamp(), Transaction(request.commit().txn()));
