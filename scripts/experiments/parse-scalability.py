@@ -67,10 +67,13 @@ print("Selected " + repr(len(results)) + " of " + repr(len(allResults)) + " tran
 numTxns = 0
 numAborts = 0
 sumTimes = 0
+times = []
 for i in range(0, len(startTimes)):
     numTxns += 1
     if results[i] == 1:
-        sumTimes += (endTimes[i] - startTimes[i])
+        time = (endTimes[i] - startTimes[i])
+        sumTimes += time
+        times.append(time)
     else:
         numAborts += 1
 
@@ -84,3 +87,8 @@ print("Num transactions: " + repr(numTxns) + ", num aborts: " + repr(numAborts))
 print("Avg. latency (s): " + repr(meanTime))
 print("Avg. throughput (txn/s): " + repr(meanThroughput))
 print("Abort rate: " + repr(abortRate))
+
+minLatency = min(times) / 1000.0
+maxLatency = max(times) / 1000.0
+print("Min latency: " + repr(minLatency))
+print("Max latency: " + repr(maxLatency))
