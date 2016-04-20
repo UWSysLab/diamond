@@ -35,7 +35,9 @@ main(int argc, char **argv)
     Client *client;
     enum {
         MODE_UNKNOWN,
-        MODE_DIAMOND
+        MODE_LINEARIZABLE,
+        MODE_SNAPSHOT,
+        MODE_EVENTUAL
     } mode = MODE_UNKNOWN;
 
     int opt;
@@ -136,8 +138,12 @@ main(int argc, char **argv)
 
         case 'm': // Mode to run in [occ/lock/...]
         {
-            if (strcasecmp(optarg, "diamond") == 0) {
-                mode = MODE_DIAMOND;
+            if (strcasecmp(optarg, "linearizable") == 0) {
+                mode = MODE_LINEARIZABLE;
+            } else if (strcasecmp(optarg, "snapshot") == 0) {
+                mode = MODE_SNAPSHOT;
+            } else if (strcasecmp(optarg, "eventual") == 0) {
+                mode = MODE_EVENTUAL;
             } else {
                 fprintf(stderr, "unknown mode '%s'\n", optarg);
                 exit(0);
@@ -151,8 +157,15 @@ main(int argc, char **argv)
         }
     }
 
-    if (mode == MODE_DIAMOND) {
-        client = new diamond::DiamondClient(configPath);
+    diamond::DiamondClient* diamondClient = new diamond::DiamondClient(configPath);
+    client = (Client *)diamondClient;
+
+    if (mode == MODE_LINEARIZABLE) {
+        diamondClient->SetIsolationLevel(LINEARIZABLE);
+    } else if (mode == MODE_SNAPSHOT) {
+        diamondClient->SetIsolationLevel(SNAPSHOT_ISOLATION);
+    } else if (mode == MODE_EVENTUAL) {
+        diamondClient->SetIsolationLevel(EVENTUAL);
     } else {
         fprintf(stderr, "option -m is required\n");
         exit(0);
