@@ -28,6 +28,7 @@ COPY ./run_scalability.py /home/$user/
 COPY ./run_docc.py /home/$user/
 COPY ./run_retwis.py /home/$user/
 COPY ./run_baseline.py /home/$user/
+COPY ./run_baseline_retwis.py /home/$user/
 COPY ./experiment_common.py /home/$user/
 
 RUN chown -R $user /home/$user
