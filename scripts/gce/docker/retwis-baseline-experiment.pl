@@ -19,8 +19,10 @@ my $log = "baseline-log.txt";
 system("rm -f $log; touch $log");
 
 # run experiment
-my @instanceNums = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-my @modes = ("georeplicated", "local");
+my @baselineInstanceNums = (4, 5, 6, 7);
+my @diamondInstanceNums = (4, 5, 6);
+#my @modes = ("georeplicated", "local");
+my @modes = ("local");
 my %configs;
 $configs{"georeplicated"} = "gce";
 $configs{"local"} = "gcelocaloneshard";
@@ -57,13 +59,14 @@ system("$killRedisCmd");
 
 for my $mode (@modes) {
     logPrint("Running Baseline in mode $mode\n");
+    resetClient();
     system("$startRedisCmd");
     system("$startBaselineCmd{$mode}");
 
     my $outFile = "$outputDir/baseline.$mode.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
-    for my $instances (@instanceNums) {
+    for my $instances (@baselineInstanceNums) {
         logPrint("Running $instances instances...\n");
 
         # clear output location
@@ -75,7 +78,7 @@ for my $mode (@modes) {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl baseline $image $user $instances run_baseline.py --config $configs{$mode} >> $log 2>&1");
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_baseline_retwis.py --config $configs{$mode} >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
@@ -121,14 +124,15 @@ for my $mode (@modes) {
 
 for my $mode (@modes) {
     # reset client VM, start redis, and start Diamond servers
-    logPrint("Running Diamond\n");
+    logPrint("Running Diamond in mode $mode\n");
+    resetClient();
     system("$startRedisCmd");
     system("$startDiamondCmd{$mode}");
 
     my $outFile = "$outputDir/diamond.$mode.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
-    for my $instances (@instanceNums) {
+    for my $instances (@diamondInstanceNums) {
         logPrint("Running $instances instances...\n");
 
         # clear output location
@@ -140,7 +144,7 @@ for my $mode (@modes) {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl baseline $image $user $instances run_scalability.py linearizable --numclients 200 --config $configs{$mode} >> $log 2>&1");
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
