@@ -17,7 +17,7 @@ public class RetwisClient extends Client {
 		int nKeys = keys.size();
 		
 		if (alpha < 0) {
-			return (this.random.nextInt() % nKeys);
+			return this.random.nextInt(nKeys);
 		}
 		else {
 			if (!ready) {
@@ -61,7 +61,7 @@ public class RetwisClient extends Client {
 		}
 	}
 	
-	public void start(int seconds) {
+	public void start(int seconds, boolean printKeys) {
 		double t0;
 		double t1;
 		double t2;
@@ -76,7 +76,7 @@ public class RetwisClient extends Client {
 			
 			t1 = System.currentTimeMillis() / 1000.0;
 			
-			ttype = random.nextInt() % 100;
+			ttype = random.nextInt(100);
 			
 			if (ttype < 5) {
 				// 15% - Follow/Unfollow transaction. 2,2
@@ -124,7 +124,7 @@ public class RetwisClient extends Client {
 			}
 			else {
 				// 50% - Get followers/timeline transaction. rand(1,10),0
-				int nGets = 1 + random.nextInt() % 10;
+				int nGets = 1 + random.nextInt(10);
 				for (int i = 0; i < nGets; i++) {
 					keyIdx.add(rand_key());
 				}
@@ -140,14 +140,13 @@ public class RetwisClient extends Client {
 			
 			long latency = (long)((t2 - t1) * 1000000);
 			
-			System.err.printf("%d %f %f %ld %d %d", ++nTransactions, t1, t2, latency, 1, ttype);
+			System.err.printf("%d %f %f %d %d %d\n", ++nTransactions, t1, t2, latency, 1, ttype);
 			
 			if ((t2 - t0) > seconds) {
 				break;
 			}
-			
-			System.err.println("# Client exiting..");
 		}
+		System.err.println("# Client exiting..");
 	}
 
 	public static void main(String[] args) {
