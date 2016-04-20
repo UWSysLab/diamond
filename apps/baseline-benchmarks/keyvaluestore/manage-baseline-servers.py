@@ -17,6 +17,7 @@ parser.add_argument('config_prefix', help='the config file prefix')
 parser.add_argument('--frontends', type=int, help='number of frontend servers')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
+parser.add_argument('--zipf', type=float, default=0.3, help='zipf distribution coefficient')
 args = parser.parse_args()
 
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
@@ -125,6 +126,7 @@ for frontendNum in range(0, numFrontends):
                 if keyPath != None:
                     os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                     serverCmd = serverCmd + " " + remoteKeyPath + " " + repr(numKeys)
+                serverCmd = serverCmd + " " + repr(args.zipf)
                 os.system("ssh -f " + hostname + " '" + serverCmd + " > " + remoteFrontendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteServerJarPath + "'");
