@@ -269,19 +269,19 @@ main(int argc, char **argv)
         
         long latency = (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
 
-        fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
+        fprintf(stdout, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
                 t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype);
         //int retries = (client->Stats())[0];
 
         //fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d %d", ++nTransactions, t1.tv_sec,
         //        t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype, retries);
-        fprintf(stderr, "\n");
+        fprintf(stdout, "\n");
 
         if ( ((t2.tv_sec-t0.tv_sec)*1000000 + (t2.tv_usec-t0.tv_usec)) > duration*1000000) 
             break;
     }
 
-    fprintf(stderr, "# Client exiting..\n");
+    fprintf(stdout, "# Client exiting..\n");
     return 0;
 }
 

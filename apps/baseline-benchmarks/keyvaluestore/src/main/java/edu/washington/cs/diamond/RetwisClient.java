@@ -140,13 +140,13 @@ public class RetwisClient extends Client {
 			
 			long latency = (long)((t2 - t1) * 1000000);
 			
-			System.err.printf("%d %f %f %d %d %d\n", ++nTransactions, t1, t2, latency, 1, ttype);
+			System.out.printf("%d %f %f %d %d %d\n", ++nTransactions, t1, t2, latency, 1, ttype);
 			
 			if ((t2 - t0) > seconds) {
 				break;
 			}
 		}
-		System.err.println("# Client exiting..");
+		System.out.println("# Client exiting..");
 	}
 
 	public static void main(String[] args) {
