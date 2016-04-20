@@ -36,6 +36,11 @@ string GetThreadId() {
 }
 
 void
+DObject::SetCaching(bool cachingEnabled) {
+    store->SetCaching(cachingEnabled);
+}
+
+void
 DObject::TransactionBegin(void)
 {
    Debug("TRANSACTION BEGIN");
@@ -49,6 +54,14 @@ DObject::TransactionCommit(void)
    Debug("TRANSACTION COMMIT");
 
    return store->Commit();
+}
+
+void
+DObject::BeginRO(void)
+{
+   Debug("READ-ONLY TRANSACTION BEGIN");
+
+   store->BeginRO();
 }
 
 void DObject::BeginReactive(uint64_t reactive_id) {

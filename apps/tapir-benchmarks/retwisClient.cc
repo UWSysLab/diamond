@@ -215,11 +215,17 @@ main(int argc, char **argv)
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < 2; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
+            }
+
             for (int i = 0; i < 2 && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
                 client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
             }
             ttype = 2;
@@ -232,11 +238,17 @@ main(int argc, char **argv)
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < 3; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
+            }
+
             for (int i = 0; i < 3 && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
                 client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
             }
             for (int i = 0; i < 2; i++) {
@@ -251,11 +263,15 @@ main(int argc, char **argv)
             }
 
             sort(keyIdx.begin(), keyIdx.end());
-            for (int i = 0; i < nGets && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
+
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < nGets; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
             }
             ttype = 4;
         }
@@ -269,19 +285,19 @@ main(int argc, char **argv)
         
         long latency = (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
 
-        fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
+        fprintf(stdout, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
                 t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype);
         //int retries = (client->Stats())[0];
 
         //fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d %d", ++nTransactions, t1.tv_sec,
         //        t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype, retries);
-        fprintf(stderr, "\n");
+        fprintf(stdout, "\n");
 
         if ( ((t2.tv_sec-t0.tv_sec)*1000000 + (t2.tv_usec-t0.tv_usec)) > duration*1000000) 
             break;
     }
 
-    fprintf(stderr, "# Client exiting..\n");
+    fprintf(stdout, "# Client exiting..\n");
     return 0;
 }
 

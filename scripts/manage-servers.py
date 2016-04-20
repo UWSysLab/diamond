@@ -10,7 +10,7 @@ import sys
 WORKING_DIR = "/home/nl35"
 BUILD_DIR = "../platform/build"
 
-debug = True
+debug = False
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')

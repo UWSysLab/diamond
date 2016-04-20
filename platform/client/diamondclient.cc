@@ -115,6 +115,11 @@ DiamondClient::run_client()
 }
 
 void
+DiamondClient::SetCaching(bool cachingEnabled) {
+    client->SetCaching(cachingEnabled);
+}
+
+void
 DiamondClient::SetIsolationLevel(int level) {
     if (level != LINEARIZABLE
         && level != SNAPSHOT_ISOLATION

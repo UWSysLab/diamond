@@ -95,8 +95,10 @@ ReactiveClient::NotificationInit(std::function<void (void)> callback) {
 
 void
 ReactiveClient::processNotification(const map<string, Version> &values) {
-    for (auto &pair : values) {
-        Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
-        cache.Put(pair.first, pair.second);
+    if (cachingEnabled) {
+        for (auto &pair : values) {
+            Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
+            cache.Put(pair.first, pair.second);
+        }
     }
 }

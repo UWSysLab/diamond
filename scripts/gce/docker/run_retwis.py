@@ -1,13 +1,18 @@
 #!/usr/bin/python
 
+import argparse
 import experiment_common
 import os
 
 NUM_KEYS = "1000"
 NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/retwis/"
-NUM_CLIENTS = 10
 USE_REDIS = True
+
+parser = argparse.ArgumentParser(description='Run retwis client.')
+parser.add_argument('--numclients', type=int, default=20, help='number of clients')
+parser.add_argument('--config', default="gce", help='config prefix')
+args = parser.parse_args()
 
 def getCommandFunc(workingDir, configFile, keyFile):
     return workingDir + "/retwisClient -m diamond -c " + workingDir + configFile + " -f " + workingDir + keyFile + " -k " + NUM_KEYS + " -d " + NUM_SECONDS
@@ -39,6 +44,6 @@ def processOutputFunc(outputFile):
     else:
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
         
-experiment_common.copyFiles("retwisClient", "apps/tapir-benchmarks/build")
-experiment_common.runProcesses(getCommandFunc, NUM_CLIENTS, "retwis-out")
+experiment_common.copyFiles("retwisClient", "apps/tapir-benchmarks/build", args.config)
+experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "retwis-out")
 experiment_common.processOutput(processOutputFunc)
