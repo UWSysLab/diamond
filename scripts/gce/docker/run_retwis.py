@@ -12,10 +12,11 @@ USE_REDIS = True
 parser = argparse.ArgumentParser(description='Run retwis client.')
 parser.add_argument('--numclients', type=int, default=32, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
+parser.add_argument('--isolation', choices=['linearizable', 'snapshot', 'eventual'],  default='linearizable', help='isolation level')
 args = parser.parse_args()
 
 def getCommandFunc(workingDir, configFile, keyFile):
-    return workingDir + "/retwisClient -m diamond -c " + workingDir + configFile + " -f " + workingDir + keyFile + " -k " + NUM_KEYS + " -d " + NUM_SECONDS
+    return workingDir + "/retwisClient -m " + args.isolation + " -c " + workingDir + configFile + " -f " + workingDir + keyFile + " -k " + NUM_KEYS + " -d " + NUM_SECONDS
 
 def processOutputFunc(outputFile):
     if USE_REDIS:
