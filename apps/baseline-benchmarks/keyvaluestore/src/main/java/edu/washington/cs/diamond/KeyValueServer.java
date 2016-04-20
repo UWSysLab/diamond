@@ -3,53 +3,17 @@ package edu.washington.cs.diamond;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.io.*;
-import java.nio.charset.Charset;
 import java.util.*;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import redis.clients.jedis.*;
-
-class Utils {
-	public static Map<String, String> getQueryParams(String queryString) {
-		Map<String, String> result = new HashMap<String, String>();
-		String[] paramSplit = queryString.split("&");
-		for (String param : paramSplit) {
-			String[] keyValueSplit = param.split("=");
-			if (keyValueSplit.length == 2) {
-				String key = keyValueSplit[0];
-				String value = keyValueSplit[1];
-				result.put(key, value);
-			}
-		}
-		return result;
-	}
-
-	public static Map<String, String> getBodyParams(InputStream requestBody) {
-		try {
-			byte[] bodyArray = new byte[requestBody.available()];
-			requestBody.read(bodyArray);
-			String bodyString = new String(bodyArray, "UTF-8");
-			List<NameValuePair> bodyParams = URLEncodedUtils.parse(bodyString, Charset.forName("UTF-8"));
-			Map<String, String> result = new HashMap<String, String>();
-			for (NameValuePair pair : bodyParams) {
-				result.put(pair.getName(), pair.getValue());
-			}
-			return result;
-		}
-		catch (IOException e) {
-			return null;
-		}
-	}
-}
 
 public class KeyValueServer {
 	JedisPool pool;
@@ -132,7 +96,7 @@ public class KeyValueServer {
 
 	public static void main(String[] args) {
 		if (args.length < 5) {
-			System.err.println("usage: java Server port redis-hostname redis-port num-slaves num-failures");
+			System.err.println("usage: java KeyValueServer port redis-hostname redis-port num-slaves num-failures");
 			System.exit(1);
 		}
 		new KeyValueServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));

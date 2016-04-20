@@ -93,25 +93,6 @@ public class Client {
 		return new String(keyChars);
 	}
 	
-	List<String> parseKeys(String keyFile, int numKeys) {
-		List<String> keys = new ArrayList<String>();
-		try {
-			BufferedReader reader = new BufferedReader(new FileReader(keyFile));
-			String line = reader.readLine();
-			int keyNum = 0;
-			while (line != null && keyNum < numKeys) {
-				keys.add(line);
-				keyNum++;
-				line = reader.readLine();
-			}
-			reader.close();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}
-		return keys;
-	}
-	
 	String parseConfigFile(String configFile) {
 		String server = null;
 		try {
@@ -162,7 +143,7 @@ public class Client {
 		server = parseConfigFile(configFile);
 		random = new Random();
 		
-		keys = parseKeys(keyFile, numKeys);
+		keys = Utils.parseKeys(keyFile, numKeys);
 	}
 	
 	public static void main(String[] args) {
