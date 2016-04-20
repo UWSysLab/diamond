@@ -77,14 +77,13 @@ public class RetwisServer {
 		}
 	}
 	
-	class PutGetHandler extends AbstractHandler {
+	class TxnHandler extends AbstractHandler {
 
 		@Override
 		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 				throws IOException, ServletException {
 
-			JsonObject responseJson = new JsonObject();
-			int responseCode = HttpServletResponse.SC_BAD_REQUEST;
+			int responseCode = HttpServletResponse.SC_OK;
 			
 			List<Integer> keyIdx = new ArrayList<Integer>();
 			
@@ -142,6 +141,9 @@ public class RetwisServer {
 						String value = jedis.get(keys.get(keyIdx.get(i)));
 					}
 				}
+				else {
+					responseCode = HttpServletResponse.SC_BAD_REQUEST;
+				}
 			}
 			
 			response.setStatus(responseCode);
@@ -163,7 +165,7 @@ public class RetwisServer {
 
 		try {
 			server = new Server(port);
-			server.setHandler(new PutGetHandler());
+			server.setHandler(new TxnHandler());
 			server.start();
 			server.join();
 		}
