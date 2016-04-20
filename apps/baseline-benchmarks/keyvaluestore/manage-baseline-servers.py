@@ -121,7 +121,7 @@ for frontendNum in range(0, numFrontends):
             remoteFrontendOutputPath = WORKING_DIR + "/output.keyvalueserver." + repr(frontendNum) + ".txt"
             if args.action == 'start':
                 os.system("rsync " + serverJarPath + " " + hostname + ":" + remoteServerJarPath)
-                serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.KeyValueServer " + port + " " + leaderHostname + " " + leaderPort + " " + repr(numSlaves) + " " + repr(numFailures)
+                serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.RetwisServer " + port + " " + leaderHostname + " " + leaderPort + " " + repr(numSlaves) + " " + repr(numFailures)
                 if keyPath != None:
                     os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                     serverCmd = serverCmd + " " + remoteKeyPath + " " + repr(numKeys)
