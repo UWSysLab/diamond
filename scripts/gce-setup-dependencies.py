@@ -43,6 +43,7 @@ numFrontends = maxFrontendNum + 1
 print("Setting up dependencies for %d shards, %d frontends" % (numShards, numFrontends))
 
 servers = []
+frontends = []
 
 for frontendNum in range(0, numFrontends):
     frontendConfigPath = args.config_prefix + ".frontend" + repr(frontendNum) + ".config"
@@ -52,6 +53,7 @@ for frontendNum in range(0, numFrontends):
         if match:
             hostname = match.group(1)
             servers.append(hostname)
+            frontends.append(hostname)
     frontendConfig.close()
 
 for shardNum in range(0, numShards):
@@ -76,3 +78,6 @@ tssConfig.close()
 for hostname in servers:
     for dep in dependencies:
         os.system("rsync --copy-links " + dependencies[dep] + " " + hostname + ":" + WORKING_DIR + "/" + dep)
+
+for hostname in frontends:
+    os.system("ssh " + hostname + " 'sudo apt-get install -y openjdk-8-jre-headless'")

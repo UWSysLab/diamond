@@ -16,6 +16,7 @@ int main(int argc, char ** argv) {
     int numSeconds = 10;
     bool increment = false;
     bool printKeys = false;
+    double readFrac = 0.0;
 
     po::options_description desc("Allowed options");
     desc.add_options()
@@ -24,6 +25,7 @@ int main(int argc, char ** argv) {
         ("keys", po::value<std::string>(&keyFile)->required(), "file from which to read keys (required)")
         ("numkeys", po::value<int>(&nKeys)->required(), "number of keys to read (required)")
         ("time", po::value<int>(&numSeconds), "number of seconds to run (default 10)")
+        ("readfrac", po::value<double>(&readFrac), "fraction of operations that should be reads")
         ("increment", po::bool_switch(&increment), "use ++ operator instead of Value() and Set()")
         ("printkeys", po::bool_switch(&printKeys), "print key accessed on each transaction")
     ;
@@ -60,17 +62,23 @@ int main(int argc, char ** argv) {
     while (!done) {
         std::string val(std::to_string(randInt(0, 1000000)));
         int varIndex = randInt(0, dcounters.size() - 1);
+        bool doRead = (randDouble(0, 1) <= readFrac);
 
         uint64_t startTime = currentTimeMillis();
 
         // Read from and write to a randomly chosen key from among the input keys
         DObject::TransactionBegin();
-        if (increment) {
-            ++dcounters[varIndex];
+        if (doRead) {
+            uint64_t temp = dcounters[varIndex].Value();
         }
         else {
-            uint64_t temp = dcounters[varIndex].Value();
-            dcounters[varIndex].Set(temp + 1);
+            if (increment) {
+                ++dcounters[varIndex];
+            }
+            else {
+                uint64_t temp = dcounters[varIndex].Value();
+                dcounters[varIndex].Set(temp + 1);
+            }
         }
         int committed = DObject::TransactionCommit();
 
@@ -79,11 +87,16 @@ int main(int argc, char ** argv) {
         std::cout << startTime << "\t"
                   << endTime << "\t"
                   << committed << "\t";
-        if (increment) {
-            std::cout << "increment" << "\t";
+        if (doRead) {
+            std::cout << "read" << "\t";
         }
         else {
-            std::cout << "read-write" << "\t";
+            if (increment) {
+                std::cout << "increment" << "\t";
+            }
+            else {
+                std::cout << "read-write" << "\t";
+            }
         }
         if (printKeys) {
             std::cout << keys[varIndex] << "\t";

@@ -28,6 +28,7 @@ using namespace std;
 
 void DiamondInit();
 void DiamondInit(const std::string &server, int nshards, int closestReplica);
+void DiamondInit(const std::string &server, int nshards, int closestReplica, bool enableCaching);
 void DiamondInit(const std::string &hostname, const std::string &port);
 std::string GetThreadId();
 
@@ -38,9 +39,16 @@ public:
     static int Map(DObject &addr, const std::string &key);
     static void TransactionBegin(void);
     static int TransactionCommit(void);
+    static void BeginRO(void);
     static void BeginReactive(uint64_t reactive_id);
     static uint64_t GetNextNotification(bool blocking);
     static void NotificationInit(std::function<void (void)> callback);
+
+    static void SetLinearizable();
+    static void SetSnapshotIsolation();
+    static void SetEventual();
+
+    static void SetCaching(bool cachingEnabled);
      
 protected:
     DObject() : _key("dummykey") {};

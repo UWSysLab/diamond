@@ -349,7 +349,7 @@ main(int argc, char **argv)
 
     //strongstore::Server server = strongstore::Server();
     strongstore::Server server;
-    replication::VRReplica replica(config, index, &transport, 1, &server);
+    replication::VRReplica replica(config, index, &transport, 256, &server);
     
     if (keyPath) {
         string key;

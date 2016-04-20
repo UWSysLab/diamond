@@ -634,7 +634,7 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
         return;
-    } else if (what & BEV_EVENT_ERROR) {
+    } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on incoming TCP connection");
         bufferevent_free(bev);
         return;

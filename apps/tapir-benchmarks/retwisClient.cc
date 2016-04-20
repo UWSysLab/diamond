@@ -35,7 +35,9 @@ main(int argc, char **argv)
     Client *client;
     enum {
         MODE_UNKNOWN,
-        MODE_DIAMOND
+        MODE_LINEARIZABLE,
+        MODE_SNAPSHOT,
+        MODE_EVENTUAL
     } mode = MODE_UNKNOWN;
 
     int opt;
@@ -136,8 +138,12 @@ main(int argc, char **argv)
 
         case 'm': // Mode to run in [occ/lock/...]
         {
-            if (strcasecmp(optarg, "diamond") == 0) {
-                mode = MODE_DIAMOND;
+            if (strcasecmp(optarg, "linearizable") == 0) {
+                mode = MODE_LINEARIZABLE;
+            } else if (strcasecmp(optarg, "snapshot") == 0) {
+                mode = MODE_SNAPSHOT;
+            } else if (strcasecmp(optarg, "eventual") == 0) {
+                mode = MODE_EVENTUAL;
             } else {
                 fprintf(stderr, "unknown mode '%s'\n", optarg);
                 exit(0);
@@ -151,8 +157,15 @@ main(int argc, char **argv)
         }
     }
 
-    if (mode == MODE_DIAMOND) {
-        client = new diamond::DiamondClient(configPath);
+    diamond::DiamondClient* diamondClient = new diamond::DiamondClient(configPath);
+    client = (Client *)diamondClient;
+
+    if (mode == MODE_LINEARIZABLE) {
+        diamondClient->SetIsolationLevel(LINEARIZABLE);
+    } else if (mode == MODE_SNAPSHOT) {
+        diamondClient->SetIsolationLevel(SNAPSHOT_ISOLATION);
+    } else if (mode == MODE_EVENTUAL) {
+        diamondClient->SetIsolationLevel(EVENTUAL);
     } else {
         fprintf(stderr, "option -m is required\n");
         exit(0);
@@ -215,11 +228,17 @@ main(int argc, char **argv)
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < 2; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
+            }
+
             for (int i = 0; i < 2 && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
                 client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
             }
             ttype = 2;
@@ -232,11 +251,17 @@ main(int argc, char **argv)
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < 3; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
+            }
+
             for (int i = 0; i < 3 && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
                 client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
             }
             for (int i = 0; i < 2; i++) {
@@ -251,11 +276,15 @@ main(int argc, char **argv)
             }
 
             sort(keyIdx.begin(), keyIdx.end());
-            for (int i = 0; i < nGets && status; i++) {
-                if ((ret = client->Get(keys[keyIdx[i]], value))) {
-                    Warning("Aborting due to %s %d", keys[keyIdx[i]].c_str(), ret);
-                    status = false;
-                }
+
+            vector<string> readKeys;
+            map<string, string> readValues;
+            for (int i = 0; i < nGets; i++) {
+                readKeys.push_back(keys[keyIdx[i]]);
+            }
+            if ((ret = client->MultiGet(readKeys, readValues))) {
+                Warning("Aborting due to multiget %d", ret);
+                status = false;
             }
             ttype = 4;
         }
@@ -269,19 +298,19 @@ main(int argc, char **argv)
         
         long latency = (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
 
-        fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
+        fprintf(stdout, "%d %ld.%06ld %ld.%06ld %ld %d %d", ++nTransactions, t1.tv_sec,
                 t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype);
         //int retries = (client->Stats())[0];
 
         //fprintf(stderr, "%d %ld.%06ld %ld.%06ld %ld %d %d %d", ++nTransactions, t1.tv_sec,
         //        t1.tv_usec, t2.tv_sec, t2.tv_usec, latency, status?1:0, ttype, retries);
-        fprintf(stderr, "\n");
+        fprintf(stdout, "\n");
 
         if ( ((t2.tv_sec-t0.tv_sec)*1000000 + (t2.tv_usec-t0.tv_usec)) > duration*1000000) 
             break;
     }
 
-    fprintf(stderr, "# Client exiting..\n");
+    fprintf(stdout, "# Client exiting..\n");
     return 0;
 }
 

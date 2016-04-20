@@ -36,6 +36,11 @@ string GetThreadId() {
 }
 
 void
+DObject::SetCaching(bool cachingEnabled) {
+    store->SetCaching(cachingEnabled);
+}
+
+void
 DObject::TransactionBegin(void)
 {
    Debug("TRANSACTION BEGIN");
@@ -51,6 +56,14 @@ DObject::TransactionCommit(void)
    return store->Commit();
 }
 
+void
+DObject::BeginRO(void)
+{
+   Debug("READ-ONLY TRANSACTION BEGIN");
+
+   store->BeginRO();
+}
+
 void DObject::BeginReactive(uint64_t reactive_id) {
     Debug("BEGIN REACTIVE TRANSACTION");
 
@@ -63,6 +76,21 @@ uint64_t DObject::GetNextNotification(bool blocking) {
 
 void DObject::NotificationInit(std::function<void (void)> callback) {
     store->NotificationInit(callback);
+}
+
+void
+DObject::SetLinearizable() {
+    store->SetIsolationLevel(LINEARIZABLE);
+}
+
+void
+DObject::SetSnapshotIsolation() {
+    store->SetIsolationLevel(SNAPSHOT_ISOLATION);
+}
+
+void
+DObject::SetEventual() {
+    store->SetIsolationLevel(EVENTUAL);
 }
 
 // XXX: Add an assert so that we don't map inside a transaction?

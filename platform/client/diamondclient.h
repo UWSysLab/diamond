@@ -73,6 +73,9 @@ public:
     uint64_t GetNextNotification(bool blocking);
     void NotificationInit(std::function<void (void)> callback);
 
+    void SetIsolationLevel(int isolationLevel);
+    void SetCaching(bool cachingEnabled);
+
 private:    
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
@@ -109,6 +112,9 @@ private:
     // Reactive state 
     std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
     Timestamp last_notification_ts; // Timestamp at which the last notification was received
+
+    // Transaction isolation level
+    int isolationLevel = LINEARIZABLE;
 };
 
 } // namespace diamond

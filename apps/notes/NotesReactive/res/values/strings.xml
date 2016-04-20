@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="action_new">New Note</string>
+    <string name="action_refresh">Refresh</string>
+    <string name="action_settings">Settings</string>
+    <string name="app_name">Notes1</string>
+    <string name="delete_button">Delete</string>
+    <string name="edit_error_message">You cannot save a note without a title</string>
+    <string name="edit_error_title">Error!</string>
+    <string name="email_hint">Email</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="login_button_label">Login</string>
+    <string name="login_error_message">Please make sure you enter a username and password!</string>
+    <string name="login_error_title">Error!</string>
+    <string name="logout_label">Logout</string>
+    <string name="note_content_hint">Content</string>
+    <string name="note_title_hint">Title</string>
+    <string name="password_hint">Password</string>
+    <string name="reset_password">Reset Password</string>
+    <string name="save_button">Save</string>
+    <string name="show_notes_name">ShowNotes</string>
+    <string name="sign_up_button_label">Sign Up</string>
+    <string name="signup_error_message">Please make sure you enter a username, password, and email address!</string>
+    <string name="signup_error_title">Error!</string>
+    <string name="sign_up_text">Sign Up</string>
+    <string name="title_activity_edit_note">Add/Edit</string>
+    <string name="title_activity_login">Login</string>
+    <string name="title_activity_sign_up">Sign Up</string>
+    <string name="username_hint">Username</string>
+    <string name="title_activity_reset_password">ResetPassword</string>
+
+</resources>

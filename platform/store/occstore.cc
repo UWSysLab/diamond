@@ -235,13 +235,13 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
     // Otherwise, prepare this transaction for commit
     prepared[tid] = txn;
     for (auto &write : txn.GetWriteSet()) {
-        pWrites.at(write.first)++;
+        pWrites[write.first] = pWrites[write.first] + 1;
     }
     for (auto &read : txn.GetReadSet()) {
-        pReads.at(read.first)++;
+        pReads[read.first] = pReads[read.first] + 1;
     }
     for (auto &incr : txn.GetIncrementSet()) {
-        pIncrements.at(incr.first)++;
+        pIncrements[incr.first] = pIncrements[incr.first] + 1;
     }
 
     prepared_last_commit[tid] = last_committed;
