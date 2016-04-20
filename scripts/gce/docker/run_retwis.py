@@ -4,13 +4,13 @@ import argparse
 import experiment_common
 import os
 
-NUM_KEYS = "1000"
+NUM_KEYS = "100000"
 NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/retwis/"
 USE_REDIS = True
 
 parser = argparse.ArgumentParser(description='Run retwis client.')
-parser.add_argument('--numclients', type=int, default=20, help='number of clients')
+parser.add_argument('--numclients', type=int, default=32, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 

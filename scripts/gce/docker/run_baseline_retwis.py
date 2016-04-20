@@ -5,11 +5,11 @@ import experiment_common
 import os
 
 parser = argparse.ArgumentParser(description='Run baseline client.')
-parser.add_argument('--numclients', type=int, default=10, help='number of clients')
+parser.add_argument('--numclients', type=int, default=16, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
-NUM_KEYS = "1000"
+NUM_KEYS = "100000"
 NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/baseline/"
 USE_REDIS = True
