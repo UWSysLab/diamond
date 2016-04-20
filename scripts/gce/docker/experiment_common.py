@@ -7,7 +7,7 @@ import redis
 import subprocess
 import sys
 
-SRC_HOST = "diamond-client-a1o6"
+SRC_HOST = "diamond-client"
 WORKING_DIR = "~/"
 
 COPY_CMD = "rsync " + SRC_HOST + ":diamond-src/"

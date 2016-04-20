@@ -154,10 +154,12 @@ public class RetwisServer {
 		}
 	}
 
-	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures, String keyFile, int numKeys) {
+	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures, String keyFile, int numKeys,
+			double zipfCoeff) {
 		this.numSlaves = numSlaves;
 		this.numFailures = numFailures;
 		this.keys = Utils.parseKeys(keyFile, numKeys);
+		this.alpha = zipfCoeff;
 		this.random = new Random();
 		
 		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
@@ -177,11 +179,12 @@ public class RetwisServer {
 	}
 
 	public static void main(String[] args) {
-		if (args.length < 7) {
-			System.err.println("usage: java RetwisServer port redis-hostname redis-port num-slaves num-failures key-file num-keys");
+		if (args.length < 8) {
+			System.err.println("usage: java RetwisServer port redis-hostname redis-port num-slaves num-failures key-file num-keys zipf");
 			System.exit(1);
 		}
 		new RetwisServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]),
-				Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]));
+				Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]),
+				Double.parseDouble(args[7]));
 	}
 }
