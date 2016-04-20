@@ -122,6 +122,9 @@ for frontendNum in range(0, numFrontends):
             if args.action == 'start':
                 os.system("rsync " + serverJarPath + " " + hostname + ":" + remoteServerJarPath)
                 serverCmd = "java -cp " + remoteServerJarPath + " edu.washington.cs.diamond.KeyValueServer " + port + " " + leaderHostname + " " + leaderPort + " " + repr(numSlaves) + " " + repr(numFailures)
+                if keyPath != None:
+                    os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
+                    serverCmd = serverCmd + " " + remoteKeyPath + " " + repr(numKeys)
                 os.system("ssh -f " + hostname + " '" + serverCmd + " > " + remoteFrontendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteServerJarPath + "'");
