@@ -54,11 +54,19 @@ system("$killRedisCmd");
 
 ######## BASELINE ########
 
-runBaseline("local", "0.3", 128, [3, 4, 5, 6, 7]);
+runBaseline("local", "0.3", 128, [3, 4, 5, 6, 7, 8]);
+runBaseline("local", "0.8", 128, [3, 4, 5, 6, 7, 8]);
 
 ####### DIAMOND #######
 
 runDiamond("local", "linearizable", "0.3", 64, [4, 5, 6, 7, 8]);
+runDiamond("local", "linearizable", "0.8", 64, [5, 6, 7, 8, 9, 10]);
+
+runDiamond("local", "snapshot", "0.3", 64, [4, 5, 6, 7, 8]);
+runDiamond("local", "snapshot", "0.8", 64, [5, 6, 7, 8, 9, 10]);
+
+runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6]);
+runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6]);
 
 sub getStartBaselineCmd {
     my ($mode, $zipf) = @_;
