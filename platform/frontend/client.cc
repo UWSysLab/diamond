@@ -150,12 +150,12 @@ Client::Commit(const uint64_t tid,
     }
     
     // If eventual consistency, do no checks and don't wait for a response
-    if (txn.IsolationMode() == EVENTUAL) {
-        if (promise != NULL) {
-            promise->Reply(REPLY_OK);
-        }
-        promise = NULL;
-    }
+    //if (txn.IsolationMode() == EVENTUAL) {
+    //    if (promise != NULL) {
+    //        promise->Reply(REPLY_OK);
+    //    }
+    //    promise = NULL;
+    //}
     
     Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());
     
