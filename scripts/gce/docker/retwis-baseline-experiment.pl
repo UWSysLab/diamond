@@ -19,10 +19,34 @@ my $log = "baseline-log.txt";
 system("rm -f $log; touch $log");
 
 # experimental parameters
-my @baselineInstanceNums = (3, 4, 5, 6, 7);
-my @linearizableInstanceNums = (4, 5, 6, 7, 8);
+my @baselineZipf3InstanceNums = (3, 4, 5, 6, 7);
+my @baselineZipf8InstanceNums = (3, 4, 5, 6, 7);
+my %baselineInstanceNums;
+$baselineInstanceNums{0.3} = \@baselineZipf3InstanceNums;
+$baselineInstanceNums{0.8} = \@baselineZipf8InstanceNums;
+
+my @linearizableZipf3InstanceNums = (4, 5, 6, 7, 8);
+my @linearizableZipf8InstanceNums = (4, 5, 6, 7, 8);
+my %linearizableInstanceNums;
+$linearizableInstanceNums{0.3} = \@linearizableZipf3InstanceNums;
+$linearizableInstanceNums{0.8} = \@linearizableZipf8InstanceNums;
+
+my @snapshotZipf3InstanceNums = (4, 5, 6, 7, 8);
+my @snapshotZipf8InstanceNums = (4, 5, 6, 7, 8);
+my %snapshotInstanceNums;
+$snapshotInstanceNums{0.3} = \@snapshotZipf3InstanceNums;
+$snapshotInstanceNums{0.8} = \@snapshotZipf8InstanceNums;
+
+my @eventualZipf3InstanceNums = (4, 5, 6, 7, 8);
+my @eventualZipf8InstanceNums = (4, 5, 6, 7, 8);
+my %eventualInstanceNums;
+$eventualInstanceNums{0.3} = \@eventualZipf3InstanceNums;
+$eventualInstanceNums{0.8} = \@eventualZipf8InstanceNums;
+
 my %diamondInstanceNums;
-$diamondInstanceNums{"linearizable"} = \@linearizableInstanceNums;
+$diamondInstanceNums{"linearizable"} = \%linearizableInstanceNums;
+$diamondInstanceNums{"snapshot"} = \%snapshotInstanceNums;
+$diamondInstanceNums{"eventual"} = \%eventualInstanceNums;
 
 #my @modes = ("georeplicated", "local");
 my @modes = ("local");
@@ -33,19 +57,18 @@ $configs{"local"} = "gcelocaloneshard";
 
 my @isolationLevels = ("linearizable", "snapshot", "eventual");
 
+my @zipfNums = (0.3, 0.8);
+
 my %numClients;
 $numClients{"linearizable"} = 64;
 
 my %startDiamondCmd;
 my %killDiamondCmd;
-my %startBaselineCmd;
 my %killBaselineCmd;
 $startDiamondCmd{"georeplicated"} = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gce --keys experiments/keys.txt --numkeys 100000 --shards 1' >> $log 2>&1";
 $startDiamondCmd{"local"} = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocaloneshard --keys experiments/keys.txt --numkeys 100000 --shards 1' >> $log 2>&1";
 $killDiamondCmd{"georeplicated"} = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gce' >> $log 2>&1";
 $killDiamondCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocaloneshard' >> $log 2>&1";
-$startBaselineCmd{"georeplicated"} = "ssh -t $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ~/diamond-src/platform/test/gce --keys ~/diamond-src/scripts/experiments/keys.txt --numkeys 100000' >> $log 2>&1";
-$startBaselineCmd{"local"} = "ssh -t $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ~/diamond-src/platform/test/gcelocaloneshard --keys ~/diamond-src/scripts/experiments/keys.txt --numkeys 100000' >> $log 2>&1";
 $killBaselineCmd{"georeplicated"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gce' >> $log 2>&1";
 $killBaselineCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gcelocaloneshard' >> $log 2>&1";
 
@@ -66,16 +89,38 @@ system("$killRedisCmd");
 
 ######## BASELINE ########
 
-for my $mode (@modes) {
-    logPrint("Running Baseline in mode $mode\n");
+runBaseline("local", "0.3", 128, [3, 4, 5, 6, 7]);
+
+####### DIAMOND #######
+
+runDiamond("local", "linearizable", "0.3", 64, [4, 5, 6, 7, 8]);
+
+sub getStartBaselineCmd {
+    my ($mode, $zipf) = @_;
+    my $configPrefix = "";
+    if ($mode eq "georeplicated") {
+        $configPrefix = "gce";
+    }
+    elsif ($mode eq "local") {
+        $configPrefix = "gcelocaloneshard";
+    }
+    my $startBaselineCmd = "ssh -t $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ~/diamond-src/platform/test/$configPrefix --keys ~/diamond-src/scripts/experiments/keys.txt --numkeys 100000 --zipf $zipf' >> $log 2>&1";
+    return $startBaselineCmd;
+}
+
+sub runBaseline {
+    my ($mode, $zipf, $numClients, $instanceNumsRef) = @_;
+    my @instanceNums = @{$instanceNumsRef};
+
+    logPrint("Running Baseline in mode $mode with zipf $zipf\n");
     resetClient();
     system("$startRedisCmd");
-    system("$startBaselineCmd{$mode}");
+    system(getStartBaselineCmd($mode, $zipf));
 
-    my $outFile = "$outputDir/baseline.$mode.txt";
+    my $outFile = "$outputDir/baseline.$mode.$zipf.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
-    for my $instances (@baselineInstanceNums) {
+    for my $instances (@instanceNums) {
         logPrint("Running $instances instances...\n");
 
         # clear output location
@@ -87,7 +132,7 @@ for my $mode (@modes) {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl baseline $image $user $instances run_baseline_retwis.py --config $configs{$mode} --numclients 128 >> $log 2>&1");
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_baseline_retwis.py --config $configs{$mode} --numclients $numClients >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
@@ -127,74 +172,76 @@ for my $mode (@modes) {
     # kill redis and baseline servers
     system("$killRedisCmd");
     system("$killBaselineCmd{$mode}");
+    return;
 }
 
-####### DIAMOND #######
+sub runDiamond {
+    my ($mode, $isolation, $zipf, $numClients, $instanceNumsRef) = @_;
+    my @instanceNums = @{$instanceNumsRef};
 
-for my $mode (@modes) {
-    for my $isolation (@isolationLevels) {
-        # reset client VM, start redis, and start Diamond servers
-        logPrint("Running Diamond in mode $mode with isolation $isolation\n");
-        resetClient();
+    # reset client VM
+    logPrint("Running Diamond in mode $mode with isolation $isolation and zipf $zipf\n");
+    resetClient();
+
+    my $outFile = "$outputDir/diamond.$mode.$isolation.$zipf.txt";
+    open(OUTFILE, "> $outFile");
+    print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
+    for my $instances (@instanceNums) {
+        # start redis and Diamond servers
         system("$startRedisCmd");
         system("$startDiamondCmd{$mode}");
+        logPrint("Running $instances instances...\n");
 
-        my $outFile = "$outputDir/diamond.$mode.$isolation.txt";
-        open(OUTFILE, "> $outFile");
-        print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
-        for my $instances (@{$diamondInstanceNums{$isolation}}) {
-            logPrint("Running $instances instances...\n");
-
-            # clear output location
-            if ($USE_REDIS) {
-                system("ssh $GCE_IP 'redis-3.0.7/src/redis-cli -p 6379 flushdb' >> $log 2>&1");
-            }
-            else {
-                system("ssh $GCE_IP 'rm diamond-src/scripts/experiments/$gceOutputDir/*' >> $log 2>&1");
-            }
-
-            # run Kubernetes instances
-            system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients{$isolation} >> $log 2>&1");
-
-            # parse output
-            my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
-            my $resultCmd = "cd diamond-src/scripts/experiments; ./parse-scalability.py -d $gceOutputDir";
-            if ($USE_REDIS) {
-                $clientCmd = "redis-3.0.7/src/redis-cli -p 6379 get clients";
-                $resultCmd = "diamond-src/scripts/experiments/parse-scalability.py -r";
-            }
-            my $clients = `ssh $GCE_IP '$clientCmd'`;
-            chomp($clients);
-            my @result = `ssh $GCE_IP '$resultCmd'`;
-
-            my $throughput = "ERROR";
-            my $latency = "ERROR";
-            my $abortrate = "ERROR";
-            my $seconds = "ERROR";
-            for my $line (@result) {
-                if ($line =~ /^Avg\. throughput \(txn\/s\): ([\d\.]+)$/) {
-                    $throughput = $1;
-                }
-                elsif ($line =~ /^Avg\. latency \(s\): ([\d\.]+)$/) {
-                    $latency = $1;
-                }
-                elsif ($line =~ /^Abort rate: ([\d\.]+)$/) {
-                    $abortrate = $1;
-                }
-                elsif ($line =~ /over ([\d\.]+) seconds/) {
-                    $seconds = $1;
-                }
-            }
-            print(OUTFILE "$clients\t$throughput\t$latency\t$abortrate\t$seconds\t$instances\n");
+        # clear output location
+        if ($USE_REDIS) {
+            system("ssh $GCE_IP 'redis-3.0.7/src/redis-cli -p 6379 flushdb' >> $log 2>&1");
         }
-        close(OUTFILE);
-        my $time = time();
-        system("cp $outFile $outFile.$time");
+        else {
+            system("ssh $GCE_IP 'rm diamond-src/scripts/experiments/$gceOutputDir/*' >> $log 2>&1");
+        }
+
+        # run Kubernetes instances
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients --zipf $zipf >> $log 2>&1");
+
+        # parse output
+        my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
+        my $resultCmd = "cd diamond-src/scripts/experiments; ./parse-scalability.py -d $gceOutputDir";
+        if ($USE_REDIS) {
+            $clientCmd = "redis-3.0.7/src/redis-cli -p 6379 get clients";
+            $resultCmd = "diamond-src/scripts/experiments/parse-scalability.py -r";
+        }
+        my $clients = `ssh $GCE_IP '$clientCmd'`;
+        chomp($clients);
+        my @result = `ssh $GCE_IP '$resultCmd'`;
+
+        my $throughput = "ERROR";
+        my $latency = "ERROR";
+        my $abortrate = "ERROR";
+        my $seconds = "ERROR";
+        for my $line (@result) {
+            if ($line =~ /^Avg\. throughput \(txn\/s\): ([\d\.]+)$/) {
+                $throughput = $1;
+            }
+            elsif ($line =~ /^Avg\. latency \(s\): ([\d\.]+)$/) {
+                $latency = $1;
+            }
+            elsif ($line =~ /^Abort rate: ([\d\.]+)$/) {
+                $abortrate = $1;
+            }
+            elsif ($line =~ /over ([\d\.]+) seconds/) {
+                $seconds = $1;
+            }
+        }
+        print(OUTFILE "$clients\t$throughput\t$latency\t$abortrate\t$seconds\t$instances\n");
 
         # kill redis and Diamond servers
         system("$killRedisCmd");
         system("$killDiamondCmd{$mode}");
     }
+    close(OUTFILE);
+    my $time = time();
+    system("cp $outFile $outFile.$time");
+    return;
 }
 
 sub logPrint {
