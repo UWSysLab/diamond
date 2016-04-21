@@ -104,6 +104,7 @@ for frontendNum in range(0, numFrontends):
         if match:
             hostname = match.group(1)
             remoteFrontendOutputPath = WORKING_DIR + "/output.frontend." + repr(frontendNum) + ".txt"
+            print("Handling frontend %d" % frontendNum)
             if args.action == 'start':
                 os.system("rsync " + frontendConfigPath + " " + hostname + ":" + remoteFrontendConfigPath)
                 os.system("rsync " + frontendExecutablePath + " " + hostname + ":" + remoteFrontendExecutablePath)
@@ -130,6 +131,7 @@ for shardNum in range(0, numShards):
         if match:
             hostname = match.group(1)
             remoteBackendOutputPath = WORKING_DIR + "/output.backend." + repr(shardNum) + "." + repr(replicaNum) + ".txt"
+            print("Handling replica %d in shard %d" % (replicaNum, shardNum))
             if args.action == 'start':
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
@@ -151,6 +153,7 @@ for line in tssConfig:
     if match:
         hostname = match.group(1)
         remoteTssOutputPath = WORKING_DIR + "/output.tss." + repr(replicaNum) + ".txt"
+        print("Handling TSS replica %s" % replicaNum)
         if args.action == 'start':
             os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
             os.system("rsync " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)
