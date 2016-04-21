@@ -112,12 +112,17 @@ VersionedKVStore::Put(const string &key, const Version &v)
 {
     // Key does not exist. Create a list and an entry.
     if (store.find(key) != store.end()) {
-        set<Version>::iterator it = --(store[key].end());
-        if (v.GetInterval().Start() < it->GetInterval().End()) {
-            Version v1 = *it;
-            store[key].erase(it);
-            v1.SetEnd(v.GetInterval().Start());
-            store[key].insert(v1);
+        if (v.GetTimestamp() == 0) {
+            store.erase(key);
+        }
+        else {
+            set<Version>::iterator it = --(store[key].end());
+            if (v.GetInterval().Start() < it->GetInterval().End()) {
+                Version v1 = *it;
+                store[key].erase(it);
+                v1.SetEnd(v.GetInterval().Start());
+                store[key].insert(v1);
+            }
         }
     }
     store[key].insert(v);
