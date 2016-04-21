@@ -142,6 +142,7 @@ Server::sendNotifications() {
                 value.Serialize(reply);
             }
             transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+            Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
         }
     }
     if (!anyOutstanding) {
