@@ -7,7 +7,7 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/scratch/nl35"
+WORKING_DIR = "/home/nl35"
 BUILD_DIR = "../platform/build"
 
 debug = False
