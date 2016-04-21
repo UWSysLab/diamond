@@ -214,7 +214,7 @@ main(int argc, char **argv)
             sort(keyIdx.begin(), keyIdx.end());
             
             if ((ret = client->Get(keys[keyIdx[0]], value))) {
-                Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
+                //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
                 status = false;
             }
             
@@ -234,7 +234,7 @@ main(int argc, char **argv)
                 readKeys.push_back(keys[keyIdx[i]]);
             }
             if ((ret = client->MultiGet(readKeys, readValues))) {
-                Warning("Aborting due to multiget %d", ret);
+                //Warning("Aborting due to multiget %d", ret);
                 status = false;
             }
 
@@ -257,7 +257,7 @@ main(int argc, char **argv)
                 readKeys.push_back(keys[keyIdx[i]]);
             }
             if ((ret = client->MultiGet(readKeys, readValues))) {
-                Warning("Aborting due to multiget %d", ret);
+                //Warning("Aborting due to multiget %d", ret);
                 status = false;
             }
 
@@ -283,7 +283,7 @@ main(int argc, char **argv)
                 readKeys.push_back(keys[keyIdx[i]]);
             }
             if ((ret = client->MultiGet(readKeys, readValues))) {
-                Warning("Aborting due to multiget %d", ret);
+                //Warning("Aborting due to multiget %d", ret);
                 status = false;
             }
             ttype = 4;
