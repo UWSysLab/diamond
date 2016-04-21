@@ -19,48 +19,13 @@ my $log = "baseline-log.txt";
 system("rm -f $log; touch $log");
 
 # experimental parameters
-my @baselineZipf3InstanceNums = (3, 4, 5, 6, 7);
-my @baselineZipf8InstanceNums = (3, 4, 5, 6, 7);
-my %baselineInstanceNums;
-$baselineInstanceNums{0.3} = \@baselineZipf3InstanceNums;
-$baselineInstanceNums{0.8} = \@baselineZipf8InstanceNums;
-
-my @linearizableZipf3InstanceNums = (4, 5, 6, 7, 8);
-my @linearizableZipf8InstanceNums = (4, 5, 6, 7, 8);
-my %linearizableInstanceNums;
-$linearizableInstanceNums{0.3} = \@linearizableZipf3InstanceNums;
-$linearizableInstanceNums{0.8} = \@linearizableZipf8InstanceNums;
-
-my @snapshotZipf3InstanceNums = (4, 5, 6, 7, 8);
-my @snapshotZipf8InstanceNums = (4, 5, 6, 7, 8);
-my %snapshotInstanceNums;
-$snapshotInstanceNums{0.3} = \@snapshotZipf3InstanceNums;
-$snapshotInstanceNums{0.8} = \@snapshotZipf8InstanceNums;
-
-my @eventualZipf3InstanceNums = (4, 5, 6, 7, 8);
-my @eventualZipf8InstanceNums = (4, 5, 6, 7, 8);
-my %eventualInstanceNums;
-$eventualInstanceNums{0.3} = \@eventualZipf3InstanceNums;
-$eventualInstanceNums{0.8} = \@eventualZipf8InstanceNums;
-
-my %diamondInstanceNums;
-$diamondInstanceNums{"linearizable"} = \%linearizableInstanceNums;
-$diamondInstanceNums{"snapshot"} = \%snapshotInstanceNums;
-$diamondInstanceNums{"eventual"} = \%eventualInstanceNums;
-
-#my @modes = ("georeplicated", "local");
-my @modes = ("local");
+# modes: georeplicated, local
+# isolation levels: linearizable, snapshot, eventual
+# zipf: 0.3, 0.8 (maybe other numbers work too?)
 
 my %configs;
 $configs{"georeplicated"} = "gce";
 $configs{"local"} = "gcelocaloneshard";
-
-my @isolationLevels = ("linearizable", "snapshot", "eventual");
-
-my @zipfNums = (0.3, 0.8);
-
-my %numClients;
-$numClients{"linearizable"} = 64;
 
 my %startDiamondCmd;
 my %killDiamondCmd;
