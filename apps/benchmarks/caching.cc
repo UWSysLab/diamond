@@ -85,5 +85,5 @@ int main(int argc, char ** argv) {
     }
 
     // sleep to catch the last notification from the frontend (to prevent the frontend from segfaulting)
-    sleep(1);
+    sleep(5);
 }
