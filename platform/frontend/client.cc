@@ -271,9 +271,10 @@ Client::ReceiveMessage(const TransportAddress &remote,
 
             notification_lock.lock();
             if (reactive_promise != NULL) {
-                notification_lock.unlock();
-                reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
+                Promise * old_reactive_promise = reactive_promise;
                 reactive_promise = NULL;
+                notification_lock.unlock();
+                old_reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
             }
             else {
                 pending_notifications.push(notification);
