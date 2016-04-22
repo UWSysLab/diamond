@@ -19,6 +19,7 @@ using namespace diamond;
 DString dstr;
 std::mutex m;
 std::condition_variable cv;
+bool receivedNotification = false;
 
 int main(int argc, char ** argv) {
     std::string configPrefix;
@@ -51,6 +52,7 @@ int main(int argc, char ** argv) {
     uint64_t reactive_id = reactive_txn([] () {
         std::string temp = dstr.Value();
         std::unique_lock<std::mutex> lock(m);
+        receivedNotification = true;
         cv.notify_all();
     });
 
@@ -58,11 +60,12 @@ int main(int argc, char ** argv) {
     uint64_t globalStartTime = currentTimeMillis();
     uint64_t prevEndTime = globalStartTime;
     while (!done) {
-        {
-            // wait for condition variable to run interactive transaction
+        while (!receivedNotification) {
+            // wait for notification to run next interactive transaction
             std::unique_lock<std::mutex> lock(m);
             cv.wait(lock);
         }
+        receivedNotification = false;
 
         uint64_t startTime = currentTimeMillis();
 
