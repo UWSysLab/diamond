@@ -56,6 +56,8 @@ int main(int argc, char ** argv) {
         cv.notify_all();
     });
 
+    std::cout << "prev-end-time\tend-time\tcommitted" << std::endl;
+
     bool done = false;
     uint64_t globalStartTime = currentTimeMillis();
     uint64_t prevEndTime = globalStartTime;
@@ -67,15 +69,13 @@ int main(int argc, char ** argv) {
         }
         receivedNotification = false;
 
-        uint64_t startTime = currentTimeMillis();
-
         DObject::TransactionBegin();
-        dstr.Set(std::to_string(startTime));
+        dstr.Set(std::to_string(prevEndTime));
         int committed = DObject::TransactionCommit();
 
         uint64_t endTime = currentTimeMillis();
 
-        std::cout << (endTime - prevEndTime) << "\t" << committed << std::endl;
+        std::cout << prevEndTime << "\t" << endTime << "\t" << committed << std::endl;
 
         prevEndTime = endTime;
 
@@ -85,5 +85,5 @@ int main(int argc, char ** argv) {
     }
 
     // sleep to catch the last notification from the frontend (to prevent the frontend from segfaulting)
-    sleep(1);
+    sleep(5);
 }
