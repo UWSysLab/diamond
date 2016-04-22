@@ -174,7 +174,7 @@ sub runDiamond {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients --zipf $zipf >> $log 2>&1");
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients --zipf $zipf --isolation $isolation >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
