@@ -19,6 +19,7 @@ parser.add_argument('--shards', type=int, help='number of backend shards')
 parser.add_argument('--frontends', type=int, help='number of frontend servers')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
+parser.add_argument('--batch', type=int, default=256, help='batch size for backend servers')
 args = parser.parse_args()
 
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
@@ -139,7 +140,7 @@ for shardNum in range(0, numShards):
                 if keyPath != None:
                     os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                     keyArgs = " -k " + repr(numKeys) + " -f " + remoteKeyPath
-                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
+                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " -B " + repr(args.batch) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
