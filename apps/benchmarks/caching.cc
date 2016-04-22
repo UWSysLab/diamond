@@ -1,92 +1,86 @@
 #include <boost/program_options.hpp>
+#include <condition_variable>
 #include <iostream>
+#include <mutex>
 #include <string>
 #include <vector>
 
 #include <includes/data_types.h>
+#include <includes/transactions.h>
 #include "benchmark_common.h"
 
 /*
- * Client that measures latency of read-only transactions with and without client-side caching and local commit
+ * Client that measures latency of reactive transactions with and without client-side caching
  */
 
 namespace po = boost::program_options;
 using namespace diamond;
 
+DString dstr;
+std::mutex m;
+std::condition_variable cv;
+
 int main(int argc, char ** argv) {
     std::string configPrefix;
-    std::string keyFile;
-    int nKeys = 0;
     int numSeconds = 10;
-    bool readOnly = false;
-    bool printKeys = false;
+    bool caching = false;
 
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "produce help message")
         ("config", po::value<std::string>(&configPrefix)->required(), "frontend config file prefix (required)")
-        ("keys", po::value<std::string>(&keyFile)->required(), "file from which to read keys (required)")
-        ("numkeys", po::value<int>(&nKeys)->required(), "number of keys to read (required)")
-        ("readonly", po::bool_switch(&readOnly), "run transactions in read-only mode")
+        ("caching", po::bool_switch(&caching), "enable caching (disabled by default)")
         ("time", po::value<int>(&numSeconds), "number of seconds to run (default 10)")
-        ("printkeys", po::bool_switch(&printKeys), "print keys for each transaction (default false)")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    if (vm.count("help") || !vm.count("config") || !vm.count("keys") || !vm.count("numkeys")) {
+    if (vm.count("help") || !vm.count("config")) {
         std::cout << desc << std::endl;
         return 1;
     }
     po::notify(vm);
 
     DiamondInit(configPrefix, 1, 0);
+    StartTxnManager();
     initRand();
+    DObject::SetCaching(caching);
 
-    DObject::SetLinearizable();
-    DObject::SetCaching(readOnly); // we only want to use caching if in read-only mode
+    std::string key = getRandomKey();
+    DObject::Map(dstr, key);
 
-    std::vector<std::string> keys;
-    parseKeys(keyFile, nKeys, keys);
+    uint64_t reactive_id = reactive_txn([] () {
+        std::string temp = dstr.Value();
+        std::unique_lock<std::mutex> lock(m);
+        cv.notify_all();
+    });
 
-    std::vector<DString> dstrings;
-    for (auto &key : keys) {
-        DString dstring;
-        DObject::Map(dstring, key);
-        dstrings.push_back(dstring);
-    }
+    bool done = false;
+    uint64_t globalStartTime = currentTimeMillis();
+    uint64_t prevEndTime = globalStartTime;
+    while (!done) {
+        {
+            // wait for condition variable to run interactive transaction
+            std::unique_lock<std::mutex> lock(m);
+            cv.wait(lock);
+        }
 
-    std::cout << "start-time\tend-time\tcommitted\tread-only\t";
-    if (printKeys) {
-        std::cout << "key-1\tkey-2\t";
-    }
-    std::cout << std::endl;
-
-    int varIndex1 = randInt(0, dstrings.size() - 1);
-    int varIndex2 = randInt(0, dstrings.size() - 1);
-
-    for (int i = 0; i < numSeconds; i++) {
         uint64_t startTime = currentTimeMillis();
-        if (readOnly) {
-            DObject::BeginRO();
-        }
-        else {
-            DObject::TransactionBegin();
-        }
-        std::string temp1 = dstrings[varIndex1].Value();
-        std::string temp2 = dstrings[varIndex2].Value();
+
+        DObject::TransactionBegin();
+        dstr.Set(std::to_string(startTime));
         int committed = DObject::TransactionCommit();
+
         uint64_t endTime = currentTimeMillis();
 
-        std::cout << startTime << "\t"
-                  << endTime << "\t"
-                  << committed << "\t"
-                  << readOnly << "\t";
-        if (printKeys) {
-            std::cout << keys[varIndex1] << "\t"
-                      << keys[varIndex2] << "\t";
-        }
-        std::cout << std::endl;
+        std::cout << (endTime - prevEndTime) << "\t" << committed << std::endl;
 
-        sleep(1);
+        prevEndTime = endTime;
+
+        if (endTime - globalStartTime > numSeconds * 1000) {
+            done = true;
+        }
     }
+
+    // sleep to catch the last notification from the frontend (to prevent the frontend from segfaulting)
+    sleep(1);
 }
