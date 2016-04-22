@@ -268,10 +268,11 @@ main(int argc, char **argv)
     unsigned int myShard=0, maxShard=1, nKeys=1;
     const char *configPath = NULL;
     const char *keyPath = NULL;
+    unsigned int batchSize = 256;
 
     // Parse arguments
     int opt;
-    while ((opt = getopt(argc, argv, "c:i:m:e:s:f:n:N:k:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:i:m:e:s:f:n:N:k:B:")) != -1) {
         switch (opt) {
         case 'c':
             configPath = optarg;
@@ -321,6 +322,16 @@ main(int argc, char **argv)
             break;
         }
 
+        case 'B':
+        {
+            char *strtolPtr;
+            batchSize = strtoul(optarg, &strtolPtr, 10);
+            if ((*optarg == '\0') || (*strtolPtr != '\0') || (batchSize <= 0))
+            {
+                fprintf(stderr, "option -B requires a numeric arg\n");
+            }
+        }
+
         case 'f':   // Load keys from file
         {
             keyPath = optarg;
@@ -358,7 +369,7 @@ main(int argc, char **argv)
 
     //strongstore::Server server = strongstore::Server();
     strongstore::Server server;
-    replication::VRReplica replica(config, index, &transport, 256, &server);
+    replication::VRReplica replica(config, index, &transport, batchSize, &server);
     
     if (keyPath) {
         string key;
