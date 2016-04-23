@@ -120,5 +120,16 @@ VRClient::ReceiveError(int error)
 {
     // only works for one failure :)
     leader = 1;
+
+    for (auto r : pendingRequests) {
+	proto::RequestMessage reqMsg;
+	reqMsg.mutable_req()->set_op(r.second.request);
+	reqMsg.mutable_req()->set_clientid(clientid);
+	reqMsg.mutable_req()->set_clientreqid(r.first);
+    
+	Debug("SENDING REQUEST: %lu %lu", clientid, r.first);
+	// Only send to replica 0, works if there are no view changes
+	transport->SendMessageToReplica(this, leader, reqMsg);
+    }    
 }
 } // namespace replication
