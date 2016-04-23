@@ -113,6 +113,7 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
         std::string key = msg.replies(i).key();
         Version value(msg.replies(i));
         Timestamp timestamp = value.GetTimestamp();
+        cachedKeys.insert(key);
         values[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
             transactions[*it].next_timestamp = timestamp;
@@ -136,10 +137,12 @@ Server::sendNotifications() {
             notification.set_reactiveid(rt.reactive_id);
             notification.set_timestamp(rt.next_timestamp);
             for (auto key : rt.keys) {
-                Version value = values[key];
-                ReadReply * reply = notification.add_replies();
-                reply->set_key(key);
-                value.Serialize(reply);
+                if (cachedKeys.find(key) != cachedKeys.end()) {
+                    Version value = values[key];
+                    ReadReply * reply = notification.add_replies();
+                    reply->set_key(key);
+                    value.Serialize(reply);
+                }
             }
             transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
             Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
