@@ -330,6 +330,7 @@ main(int argc, char **argv)
             {
                 fprintf(stderr, "option -B requires a numeric arg\n");
             }
+            break;
         }
 
         case 'f':   // Load keys from file
