@@ -39,7 +39,7 @@ my $local8 = "temp-local-0.8.txt";
 
 open(SCRIPT, "> $script");
 print(SCRIPT "set terminal pdfcairo\n");
-print(SCRIPT "set output \"baseline-local-0.3.pdf\"\n");
+print(SCRIPT "set output \"baseline-local-0-3.pdf\"\n");
 print(SCRIPT "set ylabel \"Throughput (txn/s)\"\n");
 print(SCRIPT "set yrange [0:*]\n");
 print(SCRIPT "set boxwidth 0.5\n");
@@ -52,7 +52,7 @@ system("gnuplot $script");
 
 open(SCRIPT, "> $script");
 print(SCRIPT "set terminal pdfcairo\n");
-print(SCRIPT "set output \"baseline-local-0.8.pdf\"\n");
+print(SCRIPT "set output \"baseline-local-0-8.pdf\"\n");
 print(SCRIPT "set ylabel \"Throughput (txn/s)\"\n");
 print(SCRIPT "set yrange [0:*]\n");
 print(SCRIPT "set boxwidth 0.5\n");

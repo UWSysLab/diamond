@@ -62,11 +62,11 @@ runBaseline("local", "0.8", 128, [3, 4, 5, 6, 7, 8]);
 runDiamond("local", "linearizable", "0.3", 64, [4, 5, 6, 7, 8]);
 runDiamond("local", "linearizable", "0.8", 64, [5, 6, 7, 8, 9, 10]);
 
-runDiamond("local", "snapshot", "0.3", 64, [4, 5, 6, 7, 8]);
-runDiamond("local", "snapshot", "0.8", 64, [5, 6, 7, 8, 9, 10]);
+runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6, 7]);
+runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6, 7]);
 
-runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6]);
-runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6]);
+runDiamond("local", "snapshot", "0.3", 64, [4, 5, 6, 7, 8]);
+runDiamond("local", "snapshot", "0.8", 128, [4, 5, 6, 7, 8]);
 
 sub getStartBaselineCmd {
     my ($mode, $zipf) = @_;
@@ -174,7 +174,7 @@ sub runDiamond {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients --zipf $zipf >> $log 2>&1");
+        system("./run-kubernetes-job.pl baseline $image $user $instances run_retwis.py --config $configs{$mode} --numclients $numClients --zipf $zipf --isolation $isolation >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/baseline | wc | awk \"{ print \\\$1 }\"";
