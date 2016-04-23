@@ -64,7 +64,7 @@ VRClient::Invoke(const string &request,
     
     Debug("SENDING REQUEST: %lu %lu", clientid, lastReqId);
     // Only send to replica 0, works if there are no view changes
-    transport->SendMessageToReplica(this, 0, reqMsg);
+    transport->SendMessageToReplica(this, leader, reqMsg);
 }
 
 void
@@ -113,5 +113,12 @@ VRClient::HandleReply(const TransportAddress &remote,
 
     pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
     pendingRequests.erase(reqId);
+}
+
+void
+VRClient::ReceiveError(int error)
+{
+    // only works for one failure :)
+    leader = 1;
 }
 } // namespace replication

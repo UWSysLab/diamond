@@ -53,7 +53,7 @@ public:
                                 continuation_t continuation);
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
-
+    virtual void ReceiveError(int error);
 protected:
     uint64_t lastReqId;
 
@@ -67,7 +67,7 @@ protected:
     };
 
     std::unordered_map<uint64_t, PendingRequest> pendingRequests;
-
+    int leader = 0;
     void HandleReply(const TransportAddress &remote,
                      const proto::ReplyMessage &msg);
 };

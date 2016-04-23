@@ -52,7 +52,7 @@ public:
 protected:
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type, const std::string &data);
-
+    void ReceiveError(int error) { };
     void HandleGet(const TransportAddress &remote,
                    const proto::GetMessage &msg);
     void HandleCommit(const TransportAddress &remote,

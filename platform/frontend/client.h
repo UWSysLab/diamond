@@ -128,7 +128,7 @@ private:
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type,
                         const std::string &data);
-
+    void ReceiveError(int error) { };
     void init(transport::Configuration *transportConfig); // constructor helper to cut down on duplicated code
 
     // Notification client state

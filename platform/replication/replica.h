@@ -53,7 +53,7 @@ public:
     
     void ReceiveMessage(const TransportAddress &remote,
                         const string &type, const string &data);
-
+    void ReceiveError(int error) { };
 private:
     view_t view;
     opnum_t lastCommitted;
