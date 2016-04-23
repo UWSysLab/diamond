@@ -71,13 +71,16 @@ int main(int argc, char ** argv) {
             string cp = players[currentMove.Value() % players.Size()];  
             if (score.Value() >= 100) {
                 //cout << cp << " won! Game Over!\n";
+                sleep(2);
                 exit(0);
             }
             else if (cp == myName) {
                 //cout << " Enter number between 1 and 10: \n";
-                std::unique_lock<std::mutex> lock(m);
-                notificationReceived = true;
-                cv.notify_all();
+                {
+                    std::unique_lock<std::mutex> lock(m);
+                    notificationReceived = true;
+                    cv.notify_all();
+                }
             }
             else {
                 //cout << " It's " << cp << "'s turn. \n";
