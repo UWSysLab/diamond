@@ -116,7 +116,9 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
         cachedKeys.insert(key);
         values[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
-            transactions[*it].next_timestamp = timestamp;
+            if (transactions[*it].next_timestamp < timestamp) {
+                transactions[*it].next_timestamp = timestamp;
+            }
         }
     }
     sendNotifications();
@@ -129,7 +131,7 @@ Server::sendNotifications() {
     bool anyOutstanding = false;
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
-        if (rt.next_timestamp != rt.last_timestamp) {
+        if (rt.next_timestamp > rt.last_timestamp) {
             anyOutstanding = true;
             Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
             Notification notification;
