@@ -10,6 +10,7 @@
 
 #include <includes/data_types.h>
 #include <includes/transactions.h>
+#include "benchmark_common.h"
 
 namespace po = boost::program_options;
 using namespace diamond;
@@ -21,6 +22,8 @@ DCounter currentMove; //naming this variable "move" caused some weird collision 
 
 std::mutex m;
 std::condition_variable cv;
+bool notificationReceived = true;
+uint64_t prevTurnTime;
 
 int main(int argc, char ** argv) {
     std::string configPrefix;
@@ -51,60 +54,64 @@ int main(int argc, char ** argv) {
     DObject::Map(currentMove, keyPrefix + "100game:move");
 
     // Add user to the game
-    execute_txn([myName] () {
+    int committed = 0;
+    while (!committed) {
+        DObject::TransactionBegin();
         if (players.Index(myName) == -1) {
             players.Append(myName);
         }
-    },
-    [] (int committed) { // If transaction fails, exit
-        if (!committed) {
-            cout << "Failed adding player to game\n";
-            exit(1);
-        }
-    });
+        committed = DObject::TransactionCommit();
+    }
 
     // Set up our reactive print outs
     uint64_t reactive_id = reactive_txn([myName] () {
-        cout << "Current total: " << score.Value() << "\n";
+        int value = score.Value();
+        //cout << "Current total: " << value << "\n";
         if (players.Size() > 0) {
             string cp = players[currentMove.Value() % players.Size()];  
-            if (score.Value() >= 100)
-                cout << cp << " won! Game Over!\n";
+            if (score.Value() >= 100) {
+                //cout << cp << " won! Game Over!\n";
+                exit(0);
+            }
             else if (cp == myName) {
-                cout << " Enter number between 1 and 10: \n";
+                //cout << " Enter number between 1 and 10: \n";
                 std::unique_lock<std::mutex> lock(m);
+                notificationReceived = true;
                 cv.notify_all();
             }
-            else
-                cout << " It's " << cp << "'s turn. \n";
+            else {
+                //cout << " It's " << cp << "'s turn. \n";
+            }
         }
     });
 
     // Cycle on user input
+    prevTurnTime = currentTimeMillis();
     while (1) {
-        {
+        while (!notificationReceived) {
             std::unique_lock<std::mutex> lock(m);
             cv.wait(lock);
         }
+        notificationReceived = false;
+
         int inc = 1;
-        execute_txn([myName, inc] () {
+        int committed = 0;
+        while (!committed) {
+            DObject::TransactionBegin();
 	    string cp = players[currentMove.Value() % players.Size()];
 	    // If it's the user's turn, make move
 	    if (cp == myName && inc >= 1 && inc <= 10) {
-	       score += inc;
-	       if (score.Value() < 100) ++currentMove;
-	    } else {
-	       abort_txn();
-	    }
-	},
-        [reactive_id] (int committed) { // If we can't make a move, just exit
-            if (!committed) {
-                cout << "Taking turn failed\n";
-                reactive_stop(reactive_id);
-                exit(1);
+	        score += inc;
+	        if (score.Value() < 100) {
+                    ++currentMove;
+                }
             }
-        }
-        );
+            committed = DObject::TransactionCommit();
+        }        
+
+        uint64_t turnTime = currentTimeMillis();
+        prevTurnTime = turnTime;
+        std::cout << prevTurnTime << "\t" << turnTime << std::endl;
     }
     return 0;
 }

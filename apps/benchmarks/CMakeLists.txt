@@ -10,7 +10,7 @@ add_executable(caching caching.cc benchmark_common.cc)
 add_executable(docc docc.cc benchmark_common.cc)
 add_executable(notification_publisher notification_publisher.cc benchmark_common.cc)
 add_executable(notification_subscriber notification_subscriber.cc benchmark_common.cc)
-add_executable(game game.cc)
+add_executable(game game.cc benchmark_common.cc)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 
