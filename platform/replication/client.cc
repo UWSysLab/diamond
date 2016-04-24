@@ -120,12 +120,12 @@ VRClient::HandleReply(const TransportAddress &remote,
 
     if (msg.has_status() && msg.status() == REPLY_RETRY) {
 	SendRequest(reqId);
-    }
-    
-    Debug("Client received reply: %lu", reqId);
+    } else if (msg.has_reply()) {    
+	Debug("Client received reply: %lu", reqId);
 
-    pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
-    pendingRequests.erase(reqId);
+	pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
+	pendingRequests.erase(reqId);
+    }
 }
 
 void
