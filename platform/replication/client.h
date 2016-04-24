@@ -37,6 +37,8 @@
 #include "vr-proto.pb.h"
 #include <unordered_map>
 
+#define RETRY_WAIT 100
+
 namespace replication {
 
 class VRClient : public Client

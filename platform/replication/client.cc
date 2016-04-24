@@ -119,7 +119,9 @@ VRClient::HandleReply(const TransportAddress &remote,
     }
 
     if (msg.has_status() && msg.status() == REPLY_RETRY) {
-	SendRequest(reqId);
+	transport->Timer(RETRY_WAIT, [=]() {
+		SendRequest(reqId);
+	    });
     } else if (msg.has_reply()) {    
 	Debug("Client received reply: %lu", reqId);
 
@@ -137,14 +139,18 @@ VRClient::ReceiveError(int error)
 
 	for (auto r : pendingRequests) {
 	    if (r.second.unlogged) {
-		proto::UnloggedRequestMessage reqMsg;
-		reqMsg.mutable_req()->set_op(r.second.request);
-		reqMsg.mutable_req()->set_clientid(clientid);
-		reqMsg.mutable_req()->set_clientreqid(r.first);
+		transport->Timer(RETRY_WAIT, [=]() {
+			proto::UnloggedRequestMessage reqMsg;
+			reqMsg.mutable_req()->set_op(r.second.request);
+			reqMsg.mutable_req()->set_clientid(clientid);
+			reqMsg.mutable_req()->set_clientreqid(r.first);
 		Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, r.first);
 		transport->SendMessageToReplica(this, leader, reqMsg);
+		    });
 	    } else {
-		SendRequest(r.first);
+		transport->Timer(RETRY_WAIT, [=]() {
+			SendRequest(r.first);
+		    });
 	    }
 	}
     }
