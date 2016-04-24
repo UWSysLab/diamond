@@ -10,10 +10,10 @@ os.system("cd ..; ./manage-servers.py start ../platform/test/niel --shards 1 --b
 game1 = subprocess.Popen("../../apps/benchmarks/build/game --name player1 --config ../../platform/test/niel.frontend0 --keyprefix test > failure-output-1.txt 2>&1", shell=True)
 game2 = subprocess.Popen("../../apps/benchmarks/build/game --name player2 --config ../../platform/test/niel.frontend0 --keyprefix test > failure-output-2.txt 2>&1", shell=True)
 
-#time.sleep(3)
+time.sleep(3)
 
-#print("Killing backend leader...")
-#os.system("pkill -f 'diamond0.config -i 0'")
+print("Killing backend leader...")
+os.system("pkill -f 'diamond0.config -i 0'")
 
 game1.wait()
 game2.wait()
