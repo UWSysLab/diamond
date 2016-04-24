@@ -69,5 +69,11 @@ Client::ReceiveMessage(const TransportAddress &remote,
     Panic("Received unexpected message type: %s",
           type.c_str());
 }
-    
+
+void
+Client::ReceiveError(int error)
+{
+    Panic("Received unexpected error");
+}
+
 } // namespace replication

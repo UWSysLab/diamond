@@ -80,7 +80,7 @@ VRClient::InvokeUnlogged(int replicaIdx,
     reqMsg.mutable_req()->set_clientid(clientid);
     reqMsg.mutable_req()->set_clientreqid(lastReqId);
     
-    transport->SendMessageToReplica(this, replicaIdx, reqMsg);
+    transport->SendMessageToReplica(this, leader, reqMsg);
 }
 
 void

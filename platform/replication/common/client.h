@@ -59,7 +59,7 @@ public:
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type,
                                 const string &data) = 0;
-    virtual void ReceiveError(int error) { };    
+    virtual void ReceiveError(int error) = 0;    
 protected:
     transport::Configuration config;
     Transport *transport;
