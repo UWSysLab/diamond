@@ -11,6 +11,7 @@ message ReplyMessage {
     optional uint64 opnum = 2;
     required uint64 clientreqid = 3;
     required bytes reply = 4;
+    optional uint32 status = 5;
 }
 
 message UnloggedRequestMessage {
