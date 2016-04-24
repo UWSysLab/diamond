@@ -75,7 +75,7 @@ int main(int argc, char ** argv) {
                 exit(0);
             }
             else if (cp == myName) {
-                //cout << " Enter number between 1 and 10: \n";
+                cout << " Enter number between 1 and 10: " << endl;
                 {
                     std::unique_lock<std::mutex> lock(m);
                     notificationReceived = true;
@@ -83,7 +83,7 @@ int main(int argc, char ** argv) {
                 }
             }
             else {
-                //cout << " It's " << cp << "'s turn. \n";
+                cout << " It's " << cp << "'s turn. " << endl;
             }
         }
     });
@@ -96,6 +96,7 @@ int main(int argc, char ** argv) {
             cv.wait(lock);
         }
         notificationReceived = false;
+        cout << "Got a signal from the CV" << endl;
 
         int inc = 1;
         int committed = 0;
@@ -104,17 +105,23 @@ int main(int argc, char ** argv) {
 	    string cp = players[currentMove.Value() % players.Size()];
 	    // If it's the user's turn, make move
 	    if (cp == myName && inc >= 1 && inc <= 10) {
+                cout << "It's my turn" << endl;
 	        score += inc;
 	        if (score.Value() < 100) {
                     ++currentMove;
                 }
             }
+            else {
+                cout << "It's " << cp << "'s turn (interactive txn)" << endl;
+            }
             committed = DObject::TransactionCommit();
         }        
 
         uint64_t turnTime = currentTimeMillis();
-        prevTurnTime = turnTime;
+
         std::cout << prevTurnTime << "\t" << turnTime << std::endl;
+
+        prevTurnTime = turnTime;
     }
     return 0;
 }
