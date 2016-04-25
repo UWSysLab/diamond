@@ -42,7 +42,7 @@ using namespace std;
 Server::Server(Transport *transport, strongstore::Client *client)
     : transport(transport), store(client)
 {
-    sendNotificationTimeout = new Timeout(transport, 500, [this]() {
+    sendNotificationTimeout = new Timeout(transport, 100, [this]() {
             sendNotifications();
         });
 }
@@ -121,8 +121,10 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
             }
         }
     }
-    sendNotifications();
-    sendNotificationTimeout->Reset();
+
+    if (!sendNotificationTimeout->Active()) {
+        sendNotificationTimeout->Start();
+    }
 }
 
 void
