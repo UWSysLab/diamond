@@ -634,12 +634,16 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
         Warning("Error on incoming TCP connection: %s",
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
-        info->receiver->ReceiveError(0);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on incoming TCP connection");
         bufferevent_free(bev);
-        info->receiver->ReceiveError(0);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     }
 }
@@ -663,7 +667,9 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         auto it2 = transport->tcpOutgoing.find(addr);
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
-        info->receiver->ReceiveError(0);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on outgoing TCP connection to server");
@@ -671,7 +677,9 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         auto it2 = transport->tcpOutgoing.find(addr);
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
-        info->receiver->ReceiveError(0);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     }
 }
