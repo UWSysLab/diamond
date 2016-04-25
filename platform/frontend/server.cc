@@ -188,11 +188,17 @@ Server::SubscribeCallback(const TransportAddress *remote,
 			  const RegisterMessage msg,
 			  Promise *promise)
 {
-    map<string, Version> values = promise->GetValues();
     set<string> regSet;
     for (int i = 0; i < msg.keys_size(); i++) {
         string key = msg.keys(i);
         regSet.insert(key);
+    }
+
+    map<string, Version> subscribeValues = promise->GetValues();
+    for (auto &pair : subscribeValues) {
+        if (values.find(pair.first) == values.end()) {
+            values[pair.first] = pair.second;
+        }
     }
 
     Timestamp timestamp = msg.timestamp();
