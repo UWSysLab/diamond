@@ -1,5 +1,6 @@
 package ariadnanorberg.notesreactive;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
@@ -24,12 +25,12 @@ import edu.washington.cs.diamond.Diamond.DString;
 import edu.washington.cs.diamond.ReactiveManager;
 
 public class EditNoteActivity extends Activity {
-	private String note;
-	private String noteTitle;
-	private Diamond.DStringList notesList;
+	private String title;
+	private String content;
+	private ArrayList<String> titles;
+	private ArrayList<String> contents;
 	private TextView titleEditText;
 	private EditText contentEditText;
-	private String postTitle;
 	private Button saveNoteButton;
 	private Button deleteButton;
 	
@@ -54,21 +55,22 @@ public class EditNoteActivity extends Activity {
 		});
 		
 	    if (intent.getExtras() != null) {
-	    	note = intent.getStringExtra("noteContent");
-	    	noteTitle = note.split(System.getProperty("line.separator"))[0];
-	        notesList = intent.getDStringListExtra("notesList");
+	    	title = intent.getStringExtra("noteTitle");
+	    	content = intent.getStringExtra("noteContent");
+	        titles = intent.getStringArrayListExtra("titles");
+	        contents = intent.getStringArrayListExtra("contents");
 	        
-	        titleEditText.setText(noteTitle);
-	        contentEditText.setText(note);
+	        titleEditText.setText(title);
+	        contentEditText.setText(content);
 	    }
 
-	    /*saveNoteButton = (Button)findViewById(R.id.saveNote);
+	    saveNoteButton = (Button)findViewById(R.id.saveNote);
 	    saveNoteButton.setOnClickListener(new View.OnClickListener() {
 	        @Override
 	        public void onClick(View v) {
-	            saveNote();
+	            saveExit();
 	        }
-	    });*/
+	    });
 	    
 	    deleteButton = (Button)findViewById(R.id.delete);
 	    deleteButton.setOnClickListener(new View.OnClickListener() {
@@ -98,11 +100,18 @@ public class EditNoteActivity extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
-
-	private void deleteNote() {
-		notesList.Remove(note);
+	
+	private void saveExit() {
 		Intent intent = new Intent(this, ShowNotes.class);
-		this.startActivity(intent);
+	    intent.putStringArrayListExtra("titles", titles);
+	    intent.putStringArrayListExtra("contents", contents);
+	    startActivity(intent);
+	}
+	
+	private void deleteNote() {
+		titles.remove(title);
+		contents.remove(content);
+		saveExit();
 	}
 	
 	private class NoteSender implements Runnable {
@@ -114,7 +123,7 @@ public class EditNoteActivity extends Activity {
 			int committed = 0;
 			while(committed == 0) {
 				Diamond.DObject.TransactionBegin();
-				int index = notesList.Index(note);
+				int index = titles.indexOf(title);
 				if (index != -1) { // note exists, isn't a new note
 					notesList.Remove(note);
 				}
