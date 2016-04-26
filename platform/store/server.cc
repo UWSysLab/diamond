@@ -41,11 +41,12 @@ namespace strongstore {
 
 using namespace proto;
 
-Server::Server()
+Server::Server(transport::Configuration &transportConfig)
     : transport()
 {
     store = new strongstore::OCCStore();
 
+    transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
 }
 
@@ -57,6 +58,21 @@ Server::~Server()
 void
 Server::runTransport() {
     transport.Run();
+}
+
+void Server::ReceiveMessage(const TransportAddress &remote,
+                    const string &type, const string &data)
+{
+    static NotifyFrontendAck ack;
+    if (type == ack.GetTypeName()) {
+        ack.ParseFromString(data);
+        Debug("Received NOTIFY-FRONTEND-ACK from %s for tid %lu", ack.address().c_str(), ack.txnid());
+        store->AckFrontendNotification(ack.txnid(), ack.address());
+    }
+}
+
+void Server::ReceiveError(int error) {
+    // NO-OP
 }
 
 void
@@ -176,7 +192,7 @@ Server::sendNotifications(const vector<FrontendNotification> &notifications) {
         getline(ss, hostname, ':');
         string port;
         getline(ss, port, ':');
-        transport.SendMessage(NULL, hostname, port, msg);
+        transport.SendMessage(this, hostname, port, msg);
     }
 }
 
@@ -371,7 +387,7 @@ main(int argc, char **argv)
     TCPTransport transport(0.0, 0.0, 0);
 
     //strongstore::Server server = strongstore::Server();
-    strongstore::Server server;
+    strongstore::Server server(config);
     replication::VRReplica replica(config, index, &transport, batchSize, &server);
     
     if (keyPath) {
