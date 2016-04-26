@@ -134,5 +134,6 @@ int main(int argc, char ** argv) {
 
         prevTurnTime = turnTime;
     }
+    sleep(5);
     return 0;
 }
