@@ -28,5 +28,11 @@ message RegisterReply {
 }
 
 message NotifyFrontendMessage {
-    repeated ReadReply replies = 1;
+    required uint64 txnid = 1;
+    repeated ReadReply replies = 2;
+}
+
+message NotifyFrontendAck {
+    required uint64 txnid = 1;
+    required string address = 2;
 }

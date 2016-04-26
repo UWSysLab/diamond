@@ -48,8 +48,6 @@ public:
     typedef std::function<void (const string &, const string &)> continuation_t;
     typedef std::function<void (const string &)> timeout_continuation_t;
 
-    static const uint32_t DEFAULT_UNLOGGED_OP_TIMEOUT = 1000; // milliseconds
-    
     Client(const transport::Configuration &config, Transport *transport,
            uint64_t clientid = 0);
     virtual ~Client();
@@ -60,8 +58,8 @@ public:
                                 continuation_t continuation) = 0;
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type,
-                                const string &data);
-    
+                                const string &data) = 0;
+    virtual void ReceiveError(int error) = 0;    
 protected:
     transport::Configuration config;
     Transport *transport;

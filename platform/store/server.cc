@@ -41,12 +41,18 @@ namespace strongstore {
 
 using namespace proto;
 
-Server::Server()
+Server::Server(transport::Configuration &transportConfig)
     : transport()
 {
     store = new strongstore::OCCStore();
 
+    transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
+
+    sendNotificationTimeout = new Timeout(&transport, 100, [this]() {
+        sendNotifications();
+    });
+    sendNotificationTimeout->Start();
 }
 
 Server::~Server()
@@ -57,6 +63,21 @@ Server::~Server()
 void
 Server::runTransport() {
     transport.Run();
+}
+
+void Server::ReceiveMessage(const TransportAddress &remote,
+                    const string &type, const string &data)
+{
+    static NotifyFrontendAck ack;
+    if (type == ack.GetTypeName()) {
+        ack.ParseFromString(data);
+        Debug("Received NOTIFY-FRONTEND-ACK from %s for tid %lu", ack.address().c_str(), ack.txnid());
+        store->AckFrontendNotification(ack.txnid(), ack.address());
+    }
+}
+
+void Server::ReceiveError(int error) {
+    // NO-OP
 }
 
 void
@@ -132,11 +153,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 	} else {
 	    store->Commit(request.txnid(), request.commit().timestamp());
 	}
-        // Send notifications
+        // Add frontend notifications for this txn to the queue
         {
-            vector<FrontendNotification> nvec;
-            store->GetFrontendNotifications(request.commit().timestamp(), request.txnid(), nvec);
-            sendNotifications(nvec);
+            store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
         }
         replicate = true;
         str2 = str1;
@@ -155,7 +174,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 }
 
 void
-Server::sendNotifications(const vector<FrontendNotification> &notifications) {
+Server::sendNotifications() {
+    vector<FrontendNotification> notifications;
+    store->GetUnackedFrontendNotifications(notifications);
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
         Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
@@ -169,12 +190,13 @@ Server::sendNotifications(const vector<FrontendNotification> &notifications) {
             reply->set_key(key);
             value.Serialize(reply);
         }
+        msg.set_txnid(it->txn_id);
         stringstream ss(it->address);
         string hostname;
         getline(ss, hostname, ':');
         string port;
         getline(ss, port, ':');
-        transport.SendMessage(NULL, hostname, port, msg);
+        transport.SendMessage(this, hostname, port, msg);
     }
 }
 
@@ -330,6 +352,7 @@ main(int argc, char **argv)
             {
                 fprintf(stderr, "option -B requires a numeric arg\n");
             }
+            break;
         }
 
         case 'f':   // Load keys from file
@@ -368,7 +391,7 @@ main(int argc, char **argv)
     TCPTransport transport(0.0, 0.0, 0);
 
     //strongstore::Server server = strongstore::Server();
-    strongstore::Server server;
+    strongstore::Server server(config);
     replication::VRReplica replica(config, index, &transport, batchSize, &server);
     
     if (keyPath) {

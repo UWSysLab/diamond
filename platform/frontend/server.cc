@@ -42,7 +42,7 @@ using namespace std;
 Server::Server(Transport *transport, strongstore::Client *client)
     : transport(transport), store(client)
 {
-    sendNotificationTimeout = new Timeout(transport, 500, [this]() {
+    sendNotificationTimeout = new Timeout(transport, 100, [this]() {
             sendNotifications();
         });
 }
@@ -113,13 +113,23 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
         std::string key = msg.replies(i).key();
         Version value(msg.replies(i));
         Timestamp timestamp = value.GetTimestamp();
+        cachedKeys.insert(key);
         values[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
-            transactions[*it].next_timestamp = timestamp;
+            if (transactions[*it].next_timestamp < timestamp) {
+                transactions[*it].next_timestamp = timestamp;
+            }
         }
     }
-    sendNotifications();
-    sendNotificationTimeout->Reset();
+
+    NotifyFrontendAck ack;
+    ack.set_txnid(msg.txnid());
+    ack.set_address(string(GetAddress().getHostname() + ":" + GetAddress().getPort()));
+    transport->SendMessage(this, remote, ack);
+
+    if (!sendNotificationTimeout->Active()) {
+        sendNotificationTimeout->Start();
+    }
 }
 
 void
@@ -128,7 +138,7 @@ Server::sendNotifications() {
     bool anyOutstanding = false;
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
-        if (rt.next_timestamp != rt.last_timestamp) {
+        if (rt.next_timestamp > rt.last_timestamp) {
             anyOutstanding = true;
             Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
             Notification notification;
@@ -136,10 +146,12 @@ Server::sendNotifications() {
             notification.set_reactiveid(rt.reactive_id);
             notification.set_timestamp(rt.next_timestamp);
             for (auto key : rt.keys) {
-                Version value = values[key];
-                ReadReply * reply = notification.add_replies();
-                reply->set_key(key);
-                value.Serialize(reply);
+                if (cachedKeys.find(key) != cachedKeys.end()) {
+                    Version value = values[key];
+                    ReadReply * reply = notification.add_replies();
+                    reply->set_key(key);
+                    value.Serialize(reply);
+                }
             }
             transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
             Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
@@ -183,11 +195,17 @@ Server::SubscribeCallback(const TransportAddress *remote,
 			  const RegisterMessage msg,
 			  Promise *promise)
 {
-    map<string, Version> values = promise->GetValues();
     set<string> regSet;
     for (int i = 0; i < msg.keys_size(); i++) {
         string key = msg.keys(i);
         regSet.insert(key);
+    }
+
+    map<string, Version> subscribeValues = promise->GetValues();
+    for (auto &pair : subscribeValues) {
+        if (values.find(pair.first) == values.end()) {
+            values[pair.first] = pair.second;
+        }
     }
 
     Timestamp timestamp = msg.timestamp();

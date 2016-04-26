@@ -44,10 +44,10 @@
 
 namespace strongstore {
 
-class Server : public replication::AppReplica
+class Server : public replication::AppReplica, public TransportReceiver
 {
 public:
-    Server();
+    Server(transport::Configuration &transportConfig);
     virtual ~Server();
 
     virtual void LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string &str2);
@@ -55,15 +55,21 @@ public:
     virtual void UnloggedUpcall(const string &str1, string &str2);
     void Load(const string &key, const string &value, const Timestamp timestamp);
 
+    virtual void ReceiveMessage(const TransportAddress &remote,
+                                const string &type, const string &data);
+    virtual void ReceiveError(int error);
+
 private:
     TxnStore *store;
 
     TCPTransport transport;
     std::thread *transportThread;
 
+    Timeout * sendNotificationTimeout;
+
     void ExecuteGet(proto::Request, string &str2);
 
-    void sendNotifications(const std::vector<FrontendNotification> &notifications);
+    void sendNotifications();
     void runTransport();
 };
 
