@@ -14,6 +14,9 @@ args = parser.parse_args()
 allPrevEndTimes = []
 allEndTimes = []
 
+numClients = 0
+numActivePlayers = 0
+
 if args.redis:
     r = redis.StrictRedis(host='localhost', port=6379)
     txns = r.lrange('txns', 0, -1)
@@ -21,6 +24,8 @@ if args.redis:
         txnDict = r.hgetall(txn)
         allPrevEndTimes.append(int(txnDict['prev-end-time']))
         allEndTimes.append(int(txnDict['end-time']))
+    numClients = int(r.get('clients'))
+    numActivePlayers = int(r.get('activeplayers'))
 
 elif args.directory != None:
     resultDir = args.directory
@@ -57,6 +62,7 @@ for i in range(0, len(allPrevEndTimes)):
         endTimes.append(allEndTimes[i])
 
 print("Selected " + repr(len(prevEndTimes)) + " of " + repr(len(allPrevEndTimes)) + " transactions over " + repr(timeRangeSeconds) + " seconds")
+print(repr(numClients) + " clients, " + repr(numActivePlayers) + " active players")
 
 numTxns = 0
 sumTimes = 0
