@@ -15,6 +15,7 @@ def processOutputFunc(outputFile):
         import sys
         r = redis.StrictRedis(host=experiment_common.SRC_HOST, port=6379)
         r.incr("clients")
+        turnCount = 0
         outfile = open(outputFile, 'r')
         for line in outfile:
             match = re.match("(\d+)\s+(\d+)", line)
@@ -28,6 +29,9 @@ def processOutputFunc(outputFile):
                 mapping['end-time'] = endTime
                 r.hmset(txnKey, mapping)
                 r.lpush("txns", txnKey)
+                turnCount += 1
+        if turnCount >= 50:
+            r.incr("activeplayers")
     else:
         experiment_common.copyToSrcHost(outputFile, OUTPUT_DEST)
 
@@ -51,15 +55,18 @@ outputFiles = []
 
 for i in range(0, args.numpairs):
     gameKeyPrefix = repr(random.randint(0, sys.maxint))
-    for j in range(0, 2):
-        outputFile = "game-" + gameKeyPrefix + "-" + repr(j)
-        configFile = args.config + ".frontend" + repr(i % NUM_FRONTENDS)
-        cmd = WORKING_DIR + "/game --config " + WORKING_DIR + configFile + " --name player" + repr(j) + " --keyprefix " + gameKeyPrefix
-        if args.nocaching:
-            cmd = cmd + " --nocaching"
-        cmd = cmd + " > " + WORKING_DIR + outputFile
-        processes.append(subprocess.Popen(cmd, shell=True))
-        outputFiles.append(outputFile)
+    outputFile1 = "game-" + gameKeyPrefix + "-1"
+    outputFile2 = "game-" + gameKeyPrefix + "-2"
+    configFile = args.config + ".frontend" + repr(i % NUM_FRONTENDS)
+    noCachingArg = ""
+    if args.nocaching:
+        noCachingArg = " --nocaching "
+    cmd1 = WORKING_DIR + "/game --config " + WORKING_DIR + configFile + " --name player1 --keyprefix " + gameKeyPrefix + noCachingArg + " > " + WORKING_DIR + outputFile1
+    cmd2 = WORKING_DIR + "/game --config " + WORKING_DIR + configFile + " --name player2 --keyprefix " + gameKeyPrefix + noCachingArg + " > " + WORKING_DIR + outputFile2
+    processes.append(subprocess.Popen(cmd1, shell=True))
+    processes.append(subprocess.Popen(cmd2, shell=True))
+    outputFiles.append(outputFile1)
+    outputFiles.append(outputFile2)
 
 for process in processes:
     process.wait()
