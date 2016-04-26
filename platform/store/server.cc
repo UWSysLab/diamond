@@ -134,8 +134,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 	}
         // Send notifications
         {
+            store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
             vector<FrontendNotification> nvec;
-            store->GetFrontendNotifications(request.commit().timestamp(), request.txnid(), nvec);
+            store->GetUnackedFrontendNotifications(nvec);
             sendNotifications(nvec);
         }
         replicate = true;
@@ -169,6 +170,7 @@ Server::sendNotifications(const vector<FrontendNotification> &notifications) {
             reply->set_key(key);
             value.Serialize(reply);
         }
+        msg.set_txnid(it->txn_id);
         stringstream ss(it->address);
         string hostname;
         getline(ss, hostname, ':');

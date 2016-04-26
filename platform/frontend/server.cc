@@ -122,6 +122,11 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
         }
     }
 
+    NotifyFrontendAck ack;
+    ack.set_txnid(msg.txnid());
+    ack.set_address(string(GetAddress().getHostname() + ":" + GetAddress().getPort()));
+    transport->SendMessage(this, remote, ack);
+
     if (!sendNotificationTimeout->Active()) {
         sendNotificationTimeout->Start();
     }
