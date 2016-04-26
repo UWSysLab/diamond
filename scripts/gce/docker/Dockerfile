@@ -30,6 +30,7 @@ COPY ./run_retwis.py /home/$user/
 COPY ./run_baseline.py /home/$user/
 COPY ./run_baseline_retwis.py /home/$user/
 COPY ./run_caching.py /home/$user/
+COPY ./run_game.py /home/$user/
 COPY ./experiment_common.py /home/$user/
 
 RUN chown -R $user /home/$user
