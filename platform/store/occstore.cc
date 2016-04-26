@@ -389,23 +389,29 @@ OCCStore::AddFrontendNotifications(const Timestamp &timestamp, const uint64_t ti
     }
     fillCacheEntries(t, notifications);
 
+    ufnMutex.lock();
     for (FrontendNotification &n : notifications) {
         unackedFrontendNotifications[n.address][n.txn_id] = n;
     }
+    ufnMutex.unlock();
 }
 
 void
 OCCStore::AckFrontendNotification(const uint64_t tid, const std::string &address) {
+    ufnMutex.lock();
     unackedFrontendNotifications[address].erase(tid);
+    ufnMutex.unlock();
 }
 
 void
 OCCStore::GetUnackedFrontendNotifications(std::vector<FrontendNotification> &notifications) {
+    ufnMutex.lock();
     for (auto &addrMapPair : unackedFrontendNotifications) {
         for (auto &pair : addrMapPair.second) {
             notifications.push_back(pair.second);
         }
     }
+    ufnMutex.unlock();
 }
 
 void

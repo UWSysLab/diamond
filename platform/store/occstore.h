@@ -45,6 +45,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <list>
+#include <mutex>
 
 namespace strongstore {
 
@@ -85,6 +86,7 @@ private:
     Timestamp last_committed = 0;
 
     std::unordered_map<std::string, std::unordered_map<uint64_t, FrontendNotification> > unackedFrontendNotifications; // map frontend address to (txn_id, FrontendNotification) pair
+    std::mutex ufnMutex; // mutex for the map above
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
     Timestamp getPreparedUpdate(const std::string &key);
