@@ -65,9 +65,11 @@ private:
     TCPTransport transport;
     std::thread *transportThread;
 
+    Timeout * sendNotificationTimeout;
+
     void ExecuteGet(proto::Request, string &str2);
 
-    void sendNotifications(const std::vector<FrontendNotification> &notifications);
+    void sendNotifications();
     void runTransport();
 };
 

@@ -48,6 +48,11 @@ Server::Server(transport::Configuration &transportConfig)
 
     transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
+
+    sendNotificationTimeout = new Timeout(&transport, 100, [this]() {
+        sendNotifications();
+    });
+    sendNotificationTimeout->Start();
 }
 
 Server::~Server()
@@ -148,12 +153,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 	} else {
 	    store->Commit(request.txnid(), request.commit().timestamp());
 	}
-        // Send notifications
+        // Add frontend notifications for this txn to the queue
         {
             store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
-            vector<FrontendNotification> nvec;
-            store->GetUnackedFrontendNotifications(nvec);
-            sendNotifications(nvec);
         }
         replicate = true;
         str2 = str1;
@@ -172,7 +174,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 }
 
 void
-Server::sendNotifications(const vector<FrontendNotification> &notifications) {
+Server::sendNotifications() {
+    vector<FrontendNotification> notifications;
+    store->GetUnackedFrontendNotifications(notifications);
     for (auto it = notifications.begin(); it != notifications.end(); it++) {
         FrontendNotification notification = *it;
         Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
