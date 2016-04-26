@@ -24,6 +24,7 @@ std::mutex m;
 std::condition_variable cv;
 bool notificationReceived = true;
 bool done = false;
+bool twoPlayers = false;
 uint64_t prevTurnTime;
 
 int main(int argc, char ** argv) {
@@ -71,8 +72,9 @@ int main(int argc, char ** argv) {
     uint64_t reactive_id = reactive_txn([myName] () {
         int value = score.Value();
         //cout << "Current total: " << value << endl;
-        if (players.Size() > 0) {
-            string cp = players[currentMove.Value() % players.Size()];  
+        int numPlayers = players.Size();
+        if (numPlayers > 0) {
+            string cp = players[currentMove.Value() % numPlayers];
             if (score.Value() >= 100) {
                 //cout << cp << " won! Game Over!" << endl;
                 {
@@ -87,6 +89,9 @@ int main(int argc, char ** argv) {
                 {
                     std::unique_lock<std::mutex> lock(m);
                     notificationReceived = true;
+                    if (numPlayers >= 2) {
+                        twoPlayers = true;
+                    }
                     cv.notify_all();
                 }
             }
@@ -106,6 +111,9 @@ int main(int argc, char ** argv) {
         notificationReceived = false;
         if (done) {
             break;
+        }
+        if (!twoPlayers) {
+            continue;
         }
         //cout << "Got a signal from the CV" << endl;
 
