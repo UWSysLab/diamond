@@ -13,13 +13,22 @@ using namespace std;
 
 // Function to pick a random key according to some distribution.
 int rand_key();
+int rand_unwriteable_key();
 
 bool ready = false;
 double alpha = -1;
 double *zipf;
+bool readyUnwriteable = false; // state for zipf distribution for unwriteable keys
+double *zipfUnwriteable;
 
 vector<string> keys;
+vector<string> unwriteableKeys;
 int nKeys = 100;
+int nUnwriteableKeys = 10;
+int nWriteableKeys = 90;
+
+const std::string PUT_VALUE("1");
+const int INCR_VALUE = 1;
 
 int
 main(int argc, char **argv)
@@ -31,11 +40,13 @@ main(int argc, char **argv)
     int closestReplica = -1; // Closest replica id.
     int skew = 0; // difference between real clock and TrueTime
     int error = 0; // error bars
+    bool docc = false;
 
-    Client *client;
+    diamond::DiamondClient *client;
     enum {
         MODE_UNKNOWN,
         MODE_LINEARIZABLE,
+        MODE_DOCC,
         MODE_SNAPSHOT,
         MODE_EVENTUAL
     } mode = MODE_UNKNOWN;
@@ -81,6 +92,8 @@ main(int argc, char **argv)
         {
             char *strtolPtr;
             nKeys = strtoul(optarg, &strtolPtr, 10);
+            nUnwriteableKeys = nKeys / 10;
+            nWriteableKeys = nKeys - nUnwriteableKeys;
             if ((*optarg == '\0') || (*strtolPtr != '\0') ||
                 (nKeys <= 0)) {
                 fprintf(stderr, "option -k requires a numeric arg\n");
@@ -140,6 +153,8 @@ main(int argc, char **argv)
         {
             if (strcasecmp(optarg, "linearizable") == 0) {
                 mode = MODE_LINEARIZABLE;
+            } else if (strcasecmp(optarg, "docc") == 0) {
+                mode = MODE_DOCC;
             } else if (strcasecmp(optarg, "snapshot") == 0) {
                 mode = MODE_SNAPSHOT;
             } else if (strcasecmp(optarg, "eventual") == 0) {
@@ -157,15 +172,17 @@ main(int argc, char **argv)
         }
     }
 
-    diamond::DiamondClient* diamondClient = new diamond::DiamondClient(configPath);
-    client = (Client *)diamondClient;
+    client = new diamond::DiamondClient(configPath);
 
     if (mode == MODE_LINEARIZABLE) {
-        diamondClient->SetIsolationLevel(LINEARIZABLE);
+        client->SetIsolationLevel(LINEARIZABLE);
+    } else if (mode == MODE_DOCC) {
+        client->SetIsolationLevel(LINEARIZABLE);
+        docc = true;
     } else if (mode == MODE_SNAPSHOT) {
-        diamondClient->SetIsolationLevel(SNAPSHOT_ISOLATION);
+        client->SetIsolationLevel(SNAPSHOT_ISOLATION);
     } else if (mode == MODE_EVENTUAL) {
-        diamondClient->SetIsolationLevel(EVENTUAL);
+        client->SetIsolationLevel(EVENTUAL);
     } else {
         fprintf(stderr, "option -m is required\n");
         exit(0);
@@ -181,7 +198,12 @@ main(int argc, char **argv)
     }
     for (int i = 0; i < nKeys; i++) {
         getline(in, key);
-        keys.push_back(key);
+        if (i < nUnwriteableKeys) {
+            unwriteableKeys.push_back(key);
+        }
+        else {
+            keys.push_back(key);
+        }
     }
     in.close();
 
@@ -199,51 +221,66 @@ main(int argc, char **argv)
         keyIdx.clear();
             
         // Begin a transaction.
-        client->Begin();
         gettimeofday(&t1, NULL);
         status = true;
 
         // Decide which type of retwis transaction it is going to be.
         ttype = rand() % 100;
 
-        if (ttype < 5) {
-            // 5% - Add user transaction. 1,3
+        if (ttype < 1) {
+            // 1% - Add user transaction. 1,3
+            client->Begin();
             keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
-            
-            if ((ret = client->Get(keys[keyIdx[0]], value))) {
-                //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
-                status = false;
+            if (docc) {
+                client->Increment(keys[keyIdx[0]], INCR_VALUE); // 1 increment
+                client->Put(keys[keyIdx[1]], PUT_VALUE); // 2 writes
+                client->Put(keys[keyIdx[2]], PUT_VALUE);
             }
-            
-            for (int i = 0; i < 3 && status; i++) {
-                client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+            else {
+                if ((ret = client->Get(keys[keyIdx[0]], value))) {
+                    //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
+                    status = false;
+                }
+
+                for (int i = 0; i < 3 && status; i++) {
+                    client->Put(keys[keyIdx[i]], PUT_VALUE);
+                }
             }
             ttype = 1;
-        } else if (ttype < 20) {
-            // 15% - Follow/Unfollow transaction. 2,2
+        } else if (ttype < 6) {
+            // 5% - Follow/Unfollow transaction. 2,2
+            client->Begin();
             keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
-            vector<string> readKeys;
-            map<string, string> readValues;
-            for (int i = 0; i < 2; i++) {
-                readKeys.push_back(keys[keyIdx[i]]);
+            if (docc) {
+                client->Increment(keys[keyIdx[0]], INCR_VALUE); // 2 increments
+                client->Increment(keys[keyIdx[1]], INCR_VALUE);
             }
-            if ((ret = client->MultiGet(readKeys, readValues))) {
-                //Warning("Aborting due to multiget %d", ret);
-                status = false;
-            }
+            else {
+                vector<string> readKeys;
+                map<string, string> readValues;
+                for (int i = 0; i < 2; i++) {
+                    readKeys.push_back(keys[keyIdx[i]]);
+                }
+                if ((ret = client->MultiGet(readKeys, readValues))) { // 2 reads
+                    //Warning("Aborting due to multiget %d", ret);
+                    status = false;
+                }
 
-            for (int i = 0; i < 2 && status; i++) {
-                client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+                for (int i = 0; i < 2 && status; i++) { // 2 writes
+                    client->Put(keys[keyIdx[i]], PUT_VALUE);
+                }
             }
             ttype = 2;
-        } else if (ttype < 50) {
-            // 30% - Post tweet transaction. 3,5
+        } else if (ttype < 30) {
+            // 24% - Post tweet transaction. 3,5
+            client->Begin();
+            keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
             keyIdx.push_back(rand_key());
@@ -251,25 +288,44 @@ main(int argc, char **argv)
             keyIdx.push_back(rand_key());
             sort(keyIdx.begin(), keyIdx.end());
 
-            vector<string> readKeys;
-            map<string, string> readValues;
-            for (int i = 0; i < 3; i++) {
-                readKeys.push_back(keys[keyIdx[i]]);
-            }
-            if ((ret = client->MultiGet(readKeys, readValues))) {
-                //Warning("Aborting due to multiget %d", ret);
-                status = false;
-            }
+            int unwriteableKeyIdx = rand_unwriteable_key();
 
-            for (int i = 0; i < 3 && status; i++) {
-                client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+            if (docc) {
+                if ((ret = client->Get(unwriteableKeys[unwriteableKeyIdx], value))) { // 1 read (UNWRITEABLE KEY)
+                    //Warning("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
+                    status = false;
+                }
+
+                for (int i = 0; i < 5; i++) { // 5 increments
+                    client->Increment(keys[keyIdx[i]], INCR_VALUE);
+                }
+                client->Put(keys[keyIdx[5]], PUT_VALUE); // 1 blind write
             }
-            for (int i = 0; i < 2; i++) {
-                client->Put(keys[keyIdx[i+3]], keys[keyIdx[i+3]]);
+            else {
+                if ((ret = client->Get(unwriteableKeys[unwriteableKeyIdx], value))) { // 1 read (UNWRITEABLE KEY)
+                    //Warning("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
+                    status = false;
+                }
+
+                vector<string> readKeys;
+                map<string, string> readValues;
+                for (int i = 0; i < 5; i++) {
+                    readKeys.push_back(keys[keyIdx[i]]);
+                }
+                if ((ret = client->MultiGet(readKeys, readValues))) { // 5 reads
+                    //Warning("Aborting due to multiget %d", ret);
+                    status = false;
+                }
+                for (int i = 0; i < 5 && status; i++) { // 5 writes
+                    client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+                }
+
+                client->Put(keys[keyIdx[5]], PUT_VALUE); // 1 blind write
             }
             ttype = 3;
-        } else {
+        } else if (ttype < 80) {
             // 50% - Get followers/timeline transaction. rand(1,10),0
+            client->BeginRO();
             int nGets = 1 + rand() % 10;
             for (int i = 0; i < nGets; i++) {
                 keyIdx.push_back(rand_key());
@@ -287,6 +343,23 @@ main(int argc, char **argv)
                 status = false;
             }
             ttype = 4;
+        } else {
+            // 20% - Like transaction. 1,1
+            client->Begin();
+            keyIdx.push_back(rand_key());
+            sort(keyIdx.begin(), keyIdx.end());
+
+            if (docc) {
+                client->Increment(keys[keyIdx[0]], INCR_VALUE); // 1 increment
+            }
+            else {
+                if ((ret = client->Get(keys[keyIdx[0]], value))) { // 1 read
+                    //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
+                    status = false;
+                }
+                client->Put(keys[keyIdx[0]], PUT_VALUE); // 1 write
+            }
+            ttype = 5;
         }
 
         if (status) {
@@ -318,20 +391,20 @@ int rand_key()
 {
     if (alpha < 0) {
         // Uniform selection of keys.
-        return (rand() % nKeys);
+        return (rand() % nWriteableKeys);
     } else {
         // Zipf-like selection of keys.
         if (!ready) {
-            zipf = new double[nKeys];
+            zipf = new double[nWriteableKeys];
 
             double c = 0.0;
-            for (int i = 1; i <= nKeys; i++) {
+            for (int i = 1; i <= nWriteableKeys; i++) {
                 c = c + (1.0 / pow((double) i, alpha));
             }
             c = 1.0 / c;
 
             double sum = 0.0;
-            for (int i = 1; i <= nKeys; i++) {
+            for (int i = 1; i <= nWriteableKeys; i++) {
                 sum += (c / pow((double) i, alpha));
                 zipf[i-1] = sum;
             }
@@ -344,7 +417,7 @@ int rand_key()
         }
 
         // binary search to find key;
-        int l = 0, r = nKeys, mid;
+        int l = 0, r = nWriteableKeys, mid;
         while (l < r) {
             mid = (l + r) / 2;
             if (random > zipf[mid]) {
@@ -357,4 +430,49 @@ int rand_key()
         }
         return mid;
     } 
+}
+
+int rand_unwriteable_key()
+{
+    if (alpha < 0) {
+        // Uniform selection of keys.
+        return (rand() % nUnwriteableKeys);
+    } else {
+        // Zipf-like selection of keys.
+        if (!readyUnwriteable) {
+            zipfUnwriteable = new double[nUnwriteableKeys];
+
+            double c = 0.0;
+            for (int i = 1; i <= nUnwriteableKeys; i++) {
+                c = c + (1.0 / pow((double) i, alpha));
+            }
+            c = 1.0 / c;
+
+            double sum = 0.0;
+            for (int i = 1; i <= nUnwriteableKeys; i++) {
+                sum += (c / pow((double) i, alpha));
+                zipfUnwriteable[i-1] = sum;
+            }
+            readyUnwriteable = true;
+        }
+
+        double random = 0.0;
+        while (random == 0.0 || random == 1.0) {
+            random = (1.0 + rand())/RAND_MAX;
+        }
+
+        // binary search to find key;
+        int l = 0, r = nUnwriteableKeys, mid;
+        while (l < r) {
+            mid = (l + r) / 2;
+            if (random > zipfUnwriteable[mid]) {
+                l = mid + 1;
+            } else if (random < zipfUnwriteable[mid]) {
+                r = mid - 1;
+            } else {
+                break;
+            }
+        }
+        return mid;
+    }
 }
