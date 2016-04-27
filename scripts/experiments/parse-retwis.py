@@ -111,6 +111,6 @@ abortRate = float(numAborts) / numTxns
 print("Type\tthroughput\tlatency\tabort-rate\tnum-txns")
 print("Overall\t%f\t%f\t%f\t%d" % (meanThroughput, meanTime, abortRate, numTxns))
 
-for i in range(1, 5):
+for i in range(1, 6):
     (meanThroughput, meanTime, abortRate, numTxns) = getStatsForType(i, startTimes, endTimes, results, types)
     print("%d\t%f\t%f\t%f\t%d" % (i, meanThroughput, meanTime, abortRate, numTxns))
