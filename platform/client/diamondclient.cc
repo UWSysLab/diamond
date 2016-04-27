@@ -212,6 +212,10 @@ DiamondClient::Get(const string &key, string &value)
             Debug("Setting ts to %lu", txn.GetTimestamp());
         }
     }
+    else if (promise.GetReply() == REPLY_NOT_FOUND) {
+        Debug("Adding [%s] (not found) to the read set", key.c_str());
+        txn.AddReadSet(key, Interval(0));
+    }
 
     value = promise.GetValues()[key].GetValue();
 
