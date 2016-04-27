@@ -6,7 +6,7 @@ import re
 import redis
 import sys
 
-def getStatsForType(txnType, startTimes, endTypes, results, types):
+def getStatsForType(txnType, timeRangeSeconds, startTimes, endTimes, results, types):
     numTxns = 0
     numAborts = 0
     sumTimes = 0
@@ -21,7 +21,9 @@ def getStatsForType(txnType, startTimes, endTypes, results, types):
 
     sumTimesSeconds = sumTimes / 1000.0
     numSuccessful = numTxns - numAborts
-    meanTime = float(sumTimesSeconds) / numSuccessful
+    meanTime = 0
+    if numSuccessful > 0:
+        meanTime = float(sumTimesSeconds) / numSuccessful
     meanThroughput = float(numSuccessful) / timeRangeSeconds
     abortRate = float(numAborts) / numTxns
     return (meanThroughput, meanTime, abortRate, numTxns)
@@ -112,5 +114,5 @@ print("Type\tthroughput\tlatency\tabort-rate\tnum-txns")
 print("Overall\t%f\t%f\t%f\t%d" % (meanThroughput, meanTime, abortRate, numTxns))
 
 for i in range(1, 6):
-    (meanThroughput, meanTime, abortRate, numTxns) = getStatsForType(i, startTimes, endTimes, results, types)
+    (meanThroughput, meanTime, abortRate, numTxns) = getStatsForType(i, timeRangeSeconds, startTimes, endTimes, results, types)
     print("%d\t%f\t%f\t%f\t%d" % (i, meanThroughput, meanTime, abortRate, numTxns))
