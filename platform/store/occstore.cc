@@ -247,7 +247,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         pReads[read.first] = pReads[read.first] + 1;
     }
     for (auto &incr : txn.GetIncrementSet()) {
-        pIncrements[incr.first] = pIncrements[incr.first] + 1;
+        pIncrements[incr.first] = pIncrements[incr.first] + 1`2;
     }
 
     prepared_last_commit[tid] = last_committed;
@@ -306,7 +306,22 @@ void
 OCCStore::Abort(const uint64_t tid)
 {
     Debug("[%lu] ABORT", tid);
-    prepared.erase(tid);
+    if (prepared.find(tid) != prepared.end()) {
+        Transaction t = prepared[tid];
+        prepared.erase(tid);
+        for (auto &write : t.GetWriteSet()) {
+            pWrites.at(write.first)--;
+            ASSERT(pWrites[write.first] >= 0);
+        }
+        for (auto &read : t.GetReadSet()) {
+            pReads.at(read.first)--;
+            ASSERT(pReads[read.first] >= 0);
+        }
+        for (auto &incr : t.GetIncrementSet()) {
+            pIncrements.at(incr.first)--;
+            ASSERT(pIncrements[incr.first] >= 0);
+        }
+    }
 }
 
 void
