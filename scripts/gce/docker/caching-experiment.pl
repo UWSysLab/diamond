@@ -36,8 +36,8 @@ if ($checkResult != 0) {
 system("$killRedisCmd");
 
 # run experiments
-runDiamond("caching", 100, [2, 4, 6, 8, 10]);
-runDiamond("nocaching", 100, [2, 4, 6, 8, 10]);
+runDiamond("caching", 200, [2, 4, 6, 8, 10]);
+runDiamond("nocaching", 200, [2, 4, 6, 8, 10]);
 
 
 
@@ -47,17 +47,17 @@ sub runDiamond {
 
     # reset client VM
     logPrint("Running notification experiment with caching $caching\n");
-    resetClient();
-
-    # start redis and Diamond servers
-    system("$startRedisCmd");
-    system("$startDiamondCmd");
 
     my $outFile = "$outputDir/diamond.$caching.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tseconds\tinstances\n");
     for my $instances (@instanceNums) {
         logPrint("Running $instances instances...\n");
+
+        # start redis and Diamond servers
+        resetClient();
+        system("$startRedisCmd");
+        system("$startDiamondCmd");
 
         # clear output location
         if ($USE_REDIS) {
@@ -102,14 +102,13 @@ sub runDiamond {
         }
         print(OUTFILE "$clients\t$throughput\t$latency\t$seconds\t$instances\n");
 
+        # kill redis and Diamond servers
+        system("$killRedisCmd");
+        system("$killDiamondCmd");
     }
     close(OUTFILE);
     my $time = time();
     system("cp $outFile $outFile.$time");
-
-    # kill redis and Diamond servers
-    system("$killRedisCmd");
-    system("$killDiamondCmd");
 
     return;
 }
