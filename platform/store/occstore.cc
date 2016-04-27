@@ -247,7 +247,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         pReads[read.first] = pReads[read.first] + 1;
     }
     for (auto &incr : txn.GetIncrementSet()) {
-        pIncrements[incr.first] = pIncrements[incr.first] + 1`2;
+        pIncrements[incr.first] = pIncrements[incr.first] + 1;
     }
 
     prepared_last_commit[tid] = last_committed;
