@@ -32,13 +32,14 @@ def processOutputFunc(outputFile):
                 startTime = int(float(match.group(1)) * 1000)
                 endTime = int(float(match.group(2)) * 1000)
                 committed = int(match.group(3))
-                type = int(match.group(4))
+                txnType = int(match.group(4))
                 txnNum = random.randint(0, sys.maxint)
                 txnKey = "txn-" + repr(txnNum)
                 mapping = dict()
                 mapping['start-time'] = startTime
                 mapping['end-time'] = endTime
                 mapping['committed'] = committed
+                mapping['type'] = txnType
                 r.hmset(txnKey, mapping)
                 r.lpush("txns", txnKey)
     else:
