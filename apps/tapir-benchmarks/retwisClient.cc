@@ -310,7 +310,7 @@ main(int argc, char **argv)
                     Panic("Aborting due to multiget %d", ret);
                 }
                 for (int i = 0; i < 5; i++) { // 5 writes
-                    client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+                    client->Put(keys[keyIdx[i]], PUT_VALUE);
                 }
 
                 client->Put(keys[keyIdx[5]], PUT_VALUE); // 1 blind write
