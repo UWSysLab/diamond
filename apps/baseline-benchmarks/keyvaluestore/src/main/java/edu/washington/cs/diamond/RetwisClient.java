@@ -7,11 +7,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 
 public class RetwisClient extends Client {
 	boolean ready = false;
@@ -21,55 +18,6 @@ public class RetwisClient extends Client {
 	public RetwisClient(String configFile, String keyFile, int numKeys) {
 		super(configFile, keyFile, numKeys);
 	}
-	
-	int rand_key() {
-		int nKeys = keys.size();
-		
-		if (alpha < 0) {
-			return this.random.nextInt(nKeys);
-		}
-		else {
-			if (!ready) {
-				zipf = new double[nKeys];
-				
-				double c = 0.0;
-				for (int i = 1; i < nKeys; i++) {
-					c = c + (1.0 / Math.pow(i, alpha));
-				}
-				c = 1.0 / c;
-				
-				double sum = 0.0;
-				for (int i = 1; i <= nKeys; i++) {
-					sum += (c / Math.pow(i,  alpha));
-					zipf[i-1] = sum;
-				}
-				ready = true;
-			}
-			
-			double random = 0.0;
-			while (random == 0.0 || random == 1.0) {
-				random = this.random.nextDouble(); 
-			}
-			
-			int l = 0;
-			int r = nKeys;
-			int mid = 0;
-			while (l < r) {
-				mid = (l + r) / 2;
-				if (random > zipf[mid]) {
-					l = mid + 1;
-				}
-				else if (random < zipf[mid]) {
-					r = mid - 1;
-				}
-				else {
-					break;
-				}
-			}
-			return mid;
-		}
-	}
-	
 	
 	public void runTxnOnServer(int txnNum) {
 		int responseCode = -1;
@@ -111,25 +59,30 @@ public class RetwisClient extends Client {
 			
 			ttype = random.nextInt(100);
 			
-			if (ttype < 5) {
-				// 15% - Follow/Unfollow transaction. 2,2
+			if (ttype < 1) {
+				// 1% - Add user transaction. 1,3
 				runTxnOnServer(1);
 				ttype = 1;
 			}
-			else if (ttype < 20) {
-				// 30% - Post tweet transaction. 3,5
+			else if (ttype < 6) {
+				// 5% - Follow/Unfollow transaction. 2,2
 				runTxnOnServer(2);
 				ttype = 2;
 			}
-			else if (ttype < 50) {
-				// 30% - Post tweet transaction. 3,5
+			else if (ttype < 30) {
+				// 24% - Post tweet transaction. 3,5
 				runTxnOnServer(3);
 				ttype = 3;
 			}
-			else {
+			else if (ttype < 80) {
 				// 50% - Get followers/timeline transaction. rand(1,10),0
 				runTxnOnServer(4);
 				ttype = 4;
+			}
+			else {
+				// 20% - Like transaction. 1,1
+				runTxnOnServer(5);
+				ttype = 5;
 			}
 			
 			t2 = System.currentTimeMillis() / 1000.0;

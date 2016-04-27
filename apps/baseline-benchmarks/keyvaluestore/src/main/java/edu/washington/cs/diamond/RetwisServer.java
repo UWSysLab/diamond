@@ -1,7 +1,5 @@
 package edu.washington.cs.diamond;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
 import java.io.*;
 import java.util.*;
 
@@ -17,6 +15,7 @@ import redis.clients.jedis.*;
 
 public class RetwisServer {
 	final int TIMEOUT = 10000;
+	final String PUT_VALUE = "1";
 	
 	JedisPool pool;
 	int numSlaves;
@@ -25,8 +24,11 @@ public class RetwisServer {
 	boolean ready = false;
 	double alpha = -1;
 	double[] zipf;
+	boolean readyUnwriteable = false;
+	double[] zipfUnwriteable;
 	
 	List<String> keys;
+	List<String> unwriteableKeys;
 	Random random;
 	
 	int rand_key() {
@@ -77,6 +79,54 @@ public class RetwisServer {
 		}
 	}
 	
+	int rand_unwriteable_key() {
+		int nKeys = unwriteableKeys.size();
+		
+		if (alpha < 0) {
+			return this.random.nextInt(nKeys);
+		}
+		else {
+			if (!readyUnwriteable) {
+				zipfUnwriteable = new double[nKeys];
+				
+				double c = 0.0;
+				for (int i = 1; i < nKeys; i++) {
+					c = c + (1.0 / Math.pow(i, alpha));
+				}
+				c = 1.0 / c;
+				
+				double sum = 0.0;
+				for (int i = 1; i <= nKeys; i++) {
+					sum += (c / Math.pow(i,  alpha));
+					zipfUnwriteable[i-1] = sum;
+				}
+				readyUnwriteable = true;
+			}
+			
+			double random = 0.0;
+			while (random == 0.0 || random == 1.0) {
+				random = this.random.nextDouble(); 
+			}
+			
+			int l = 0;
+			int r = nKeys;
+			int mid = 0;
+			while (l < r) {
+				mid = (l + r) / 2;
+				if (random > zipfUnwriteable[mid]) {
+					l = mid + 1;
+				}
+				else if (random < zipfUnwriteable[mid]) {
+					r = mid - 1;
+				}
+				else {
+					break;
+				}
+			}
+			return mid;
+		}
+	}
+	
 	class TxnHandler extends AbstractHandler {
 
 		@Override
@@ -97,7 +147,7 @@ public class RetwisServer {
 					String value = jedis.get(keys.get(keyIdx.get(0)));
 					
 					for (int i = 0; i < 3; i++) {
-						jedis.set(keys.get(keyIdx.get(i)), keys.get(keyIdx.get(i)));
+						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
 						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
 					}
 				}
@@ -108,7 +158,7 @@ public class RetwisServer {
 					
 					for (int i = 0; i < 2; i++) {
 						String value = jedis.get(keys.get(keyIdx.get(i)));
-						jedis.set(keys.get(keyIdx.get(i)), keys.get(keyIdx.get(i)));
+						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
 						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
 					}
 				}
@@ -118,17 +168,19 @@ public class RetwisServer {
 					keyIdx.add(rand_key());
 					keyIdx.add(rand_key());
 					keyIdx.add(rand_key());
+					keyIdx.add(rand_key());
 					Collections.sort(keyIdx);
 					
-					for (int i = 0; i < 3; i++) {
+					int unwriteableKeyIdx = rand_unwriteable_key();
+					String unwriteableValue = jedis.get(unwriteableKeys.get(unwriteableKeyIdx));
+					
+					for (int i = 0; i < 5; i++) {
 						String value = jedis.get(keys.get(keyIdx.get(i)));
-						jedis.set(keys.get(keyIdx.get(i)), keys.get(keyIdx.get(i)));
+						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
 						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
 					}
-					for (int i = 0; i < 2; i++) {
-						jedis.set(keys.get(keyIdx.get(i+3)), keys.get(keyIdx.get(i+3)));
-						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
-					}
+					jedis.set(keys.get(keyIdx.get(5)), PUT_VALUE);
+					jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
 				}
 				else if (target.equals("/txn4")) {
 					int nGets = 1 + random.nextInt(10);
@@ -140,6 +192,14 @@ public class RetwisServer {
 					for (int i = 0; i < nGets; i++) {
 						String value = jedis.get(keys.get(keyIdx.get(i)));
 					}
+				}
+				else if (target.equals("/txn5")) {
+					keyIdx.add(rand_key());
+					Collections.sort(keyIdx);
+					
+					String value = jedis.get(keys.get(keyIdx.get(0)));
+					jedis.set(keys.get(keyIdx.get(0)), PUT_VALUE);
+					jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
 				}
 				else {
 					responseCode = HttpServletResponse.SC_BAD_REQUEST;
@@ -158,9 +218,13 @@ public class RetwisServer {
 			double zipfCoeff) {
 		this.numSlaves = numSlaves;
 		this.numFailures = numFailures;
-		this.keys = Utils.parseKeys(keyFile, numKeys);
 		this.alpha = zipfCoeff;
 		this.random = new Random();
+		
+		List<String> allKeys = Utils.parseKeys(keyFile, numKeys);
+		int numUnwriteableKeys = allKeys.size() / 10;
+		this.unwriteableKeys = allKeys.subList(0, numUnwriteableKeys);
+		this.keys = allKeys.subList(numUnwriteableKeys, allKeys.size());
 		
 		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
 		Server server = null;
