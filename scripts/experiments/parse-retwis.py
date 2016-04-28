@@ -26,7 +26,7 @@ def getStatsForType(txnType, timeRangeSeconds, startTimes, endTimes, results, ty
         meanTime = float(sumTimesSeconds) / numSuccessful
     meanThroughput = float(numSuccessful) / timeRangeSeconds
     abortRate = float(numAborts) / numTxns
-    return (meanThroughput, meanTime, abortRate, numTxns)
+    return (meanThroughput, meanTime, abortRate, numTxns, numSuccessful)
     
 
 parser = argparse.ArgumentParser(description='Parse retwis client results.')
@@ -110,9 +110,9 @@ meanTime = float(sumTimesSeconds) / numSuccessful
 meanThroughput = float(numSuccessful) / timeRangeSeconds
 abortRate = float(numAborts) / numTxns
 
-print("Type\tthroughput\tlatency\tabort-rate\tnum-txns")
-print("Overall\t%f\t%f\t%f\t%d" % (meanThroughput, meanTime, abortRate, numTxns))
+print("Type\tthroughput\tlatency\tabort-rate\tnum-txns\tnum-successful")
+print("Overall\t%f\t%f\t%f\t%d\t%d" % (meanThroughput, meanTime, abortRate, numTxns, numSuccessful))
 
 for i in range(1, 6):
-    (meanThroughput, meanTime, abortRate, numTxns) = getStatsForType(i, timeRangeSeconds, startTimes, endTimes, results, types)
-    print("%d\t%f\t%f\t%f\t%d" % (i, meanThroughput, meanTime, abortRate, numTxns))
+    (meanThroughput, meanTime, abortRate, numTxns, numSuccessful) = getStatsForType(i, timeRangeSeconds, startTimes, endTimes, results, types)
+    print("%d\t%f\t%f\t%f\t%d\t%d" % (i, meanThroughput, meanTime, abortRate, numTxns, numSuccessful))
