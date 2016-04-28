@@ -382,4 +382,15 @@ public class Diamond {
         public native int Size();
     }
 
+   public static class DBoolean extends DObject {
+      static { Loader.load(); }
+      public DBoolean() { allocate(); }
+      public DBoolean(boolean b, String key) { allocate(b, key); }
+      private native void allocate();
+      private native void allocate(boolean b, @StdString String key);
+
+      public native boolean Value();
+      public native void Set(boolean b);
+   }
+
 }
