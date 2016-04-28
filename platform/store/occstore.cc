@@ -279,23 +279,23 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
                             timestamp);
         }
 
-	if (txn.IsolationMode() == LINEARIZABLE ||
-	    txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-	    prepared.erase(tid);
-	    for (auto &write : t.GetWriteSet()) {
-		pWrites.at(write.first)--;
-		ASSERT(pWrites[write.first] >= 0);
-	    }
-	    for (auto &read : t.GetReadSet()) {
-		pReads.at(read.first)--;
-		ASSERT(pReads[read.first] >= 0);
-	    }
-	    for (auto &incr : t.GetIncrementSet()) {
-		pIncrements.at(incr.first)--;
-		ASSERT(pIncrements[incr.first] >= 0);
-	    }
-	}
-	committed[tid] = t;
+        if (txn.IsolationMode() == LINEARIZABLE ||
+            txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            prepared.erase(tid);
+            for (auto &write : t.GetWriteSet()) {
+                pWrites.at(write.first)--;
+                ASSERT(pWrites[write.first] >= 0);
+            }
+            for (auto &read : t.GetReadSet()) {
+                pReads.at(read.first)--;
+                ASSERT(pReads[read.first] >= 0);
+            }
+            for (auto &incr : t.GetIncrementSet()) {
+                pIncrements.at(incr.first)--;
+                ASSERT(pIncrements[incr.first] >= 0);
+            }
+        }
+        committed[tid] = t;
         if (timestamp > last_committed) {
             last_committed = timestamp;
         }
