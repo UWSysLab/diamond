@@ -211,7 +211,6 @@ main(int argc, char **argv)
     int nTransactions = 0; // Number of transactions attempted.
     int ttype; // Transaction type.
     int ret;
-    bool status;
     vector<int> keyIdx;
 
     gettimeofday(&t0, NULL);
@@ -222,7 +221,6 @@ main(int argc, char **argv)
             
         // Begin a transaction.
         gettimeofday(&t1, NULL);
-        status = true;
 
         // Decide which type of retwis transaction it is going to be.
         ttype = rand() % 100;
@@ -241,11 +239,10 @@ main(int argc, char **argv)
             }
             else {
                 if ((ret = client->Get(keys[keyIdx[0]], value))) {
-                    //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
-                    status = false;
+                    Panic("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
                 }
 
-                for (int i = 0; i < 3 && status; i++) {
+                for (int i = 0; i < 3; i++) {
                     client->Put(keys[keyIdx[i]], PUT_VALUE);
                 }
             }
@@ -268,11 +265,10 @@ main(int argc, char **argv)
                     readKeys.push_back(keys[keyIdx[i]]);
                 }
                 if ((ret = client->MultiGet(readKeys, readValues))) { // 2 reads
-                    //Warning("Aborting due to multiget %d", ret);
-                    status = false;
+                    Panic("Aborting due to multiget %d", ret);
                 }
 
-                for (int i = 0; i < 2 && status; i++) { // 2 writes
+                for (int i = 0; i < 2; i++) { // 2 writes
                     client->Put(keys[keyIdx[i]], PUT_VALUE);
                 }
             }
@@ -292,8 +288,7 @@ main(int argc, char **argv)
 
             if (docc) {
                 if ((ret = client->Get(unwriteableKeys[unwriteableKeyIdx], value))) { // 1 read (UNWRITEABLE KEY)
-                    //Warning("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
-                    status = false;
+                    Panic("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
                 }
 
                 for (int i = 0; i < 5; i++) { // 5 increments
@@ -303,8 +298,7 @@ main(int argc, char **argv)
             }
             else {
                 if ((ret = client->Get(unwriteableKeys[unwriteableKeyIdx], value))) { // 1 read (UNWRITEABLE KEY)
-                    //Warning("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
-                    status = false;
+                    Panic("Aborting due to %s %d", unwriteableKeys[unwriteableKeyIdx].c_str(), ret);
                 }
 
                 vector<string> readKeys;
@@ -313,11 +307,10 @@ main(int argc, char **argv)
                     readKeys.push_back(keys[keyIdx[i]]);
                 }
                 if ((ret = client->MultiGet(readKeys, readValues))) { // 5 reads
-                    //Warning("Aborting due to multiget %d", ret);
-                    status = false;
+                    Panic("Aborting due to multiget %d", ret);
                 }
-                for (int i = 0; i < 5 && status; i++) { // 5 writes
-                    client->Put(keys[keyIdx[i]], keys[keyIdx[i]]);
+                for (int i = 0; i < 5; i++) { // 5 writes
+                    client->Put(keys[keyIdx[i]], PUT_VALUE);
                 }
 
                 client->Put(keys[keyIdx[5]], PUT_VALUE); // 1 blind write
@@ -339,8 +332,7 @@ main(int argc, char **argv)
                 readKeys.push_back(keys[keyIdx[i]]);
             }
             if ((ret = client->MultiGet(readKeys, readValues))) {
-                //Warning("Aborting due to multiget %d", ret);
-                status = false;
+                Panic("Aborting due to multiget %d", ret);
             }
             ttype = 4;
         } else {
@@ -354,19 +346,14 @@ main(int argc, char **argv)
             }
             else {
                 if ((ret = client->Get(keys[keyIdx[0]], value))) { // 1 read
-                    //Warning("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
-                    status = false;
+                    Panic("Aborting due to %s %d", keys[keyIdx[0]].c_str(), ret);
                 }
                 client->Put(keys[keyIdx[0]], PUT_VALUE); // 1 write
             }
             ttype = 5;
         }
 
-        if (status) {
-            status = client->Commit();
-        } else {
-            Debug("Aborting transaction due to failed Read");
-        }
+        bool status = client->Commit();
         gettimeofday(&t2, NULL);
         
         long latency = (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec);
