@@ -46,8 +46,9 @@ main(int argc, char **argv)
     enum {
         MODE_UNKNOWN,
         MODE_LINEARIZABLE,
-        MODE_DOCC,
+        MODE_LINEARIZABLE_DOCC,
         MODE_SNAPSHOT,
+        MODE_SNAPSHOT_DOCC,
         MODE_EVENTUAL
     } mode = MODE_UNKNOWN;
 
@@ -153,10 +154,12 @@ main(int argc, char **argv)
         {
             if (strcasecmp(optarg, "linearizable") == 0) {
                 mode = MODE_LINEARIZABLE;
-            } else if (strcasecmp(optarg, "docc") == 0) {
-                mode = MODE_DOCC;
+            } else if (strcasecmp(optarg, "linearizabledocc") == 0) {
+                mode = MODE_LINEARIZABLE_DOCC;
             } else if (strcasecmp(optarg, "snapshot") == 0) {
                 mode = MODE_SNAPSHOT;
+            } else if (strcasecmp(optarg, "snapshotdocc") == 0) {
+                mode = MODE_SNAPSHOT_DOCC;
             } else if (strcasecmp(optarg, "eventual") == 0) {
                 mode = MODE_EVENTUAL;
             } else {
@@ -176,11 +179,14 @@ main(int argc, char **argv)
 
     if (mode == MODE_LINEARIZABLE) {
         client->SetIsolationLevel(LINEARIZABLE);
-    } else if (mode == MODE_DOCC) {
+    } else if (mode == MODE_LINEARIZABLE_DOCC) {
         client->SetIsolationLevel(LINEARIZABLE);
         docc = true;
     } else if (mode == MODE_SNAPSHOT) {
         client->SetIsolationLevel(SNAPSHOT_ISOLATION);
+    } else if (mode == MODE_SNAPSHOT_DOCC) {
+        client->SetIsolationLevel(SNAPSHOT_ISOLATION);
+        docc = true;
     } else if (mode == MODE_EVENTUAL) {
         client->SetIsolationLevel(EVENTUAL);
     } else {
