@@ -57,6 +57,17 @@ def runProcesses(getCommandFunc, numClients, configPrefix, outputPrefix):
 
     sys.stderr.write("Finished running clients\n")
 
+    success = True
+    for process in processes:
+        if process.returncode:
+            success = False
+    if not success:
+        sys.stderr.write("Error: some clients returned nonzero return codes\n")
+        import time
+        while True:
+            time.sleep(1) # make sure we notice that clients failed
+
+
 def processOutput(processOutputFunc):
     for outputFileName in outputFiles:
         fullPath = os.path.expanduser(WORKING_DIR) + outputFileName
