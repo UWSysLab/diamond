@@ -206,6 +206,15 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             // don't need to check for pending increments, they commute
             
             if (txn.IsolationMode() == LINEARIZABLE) {
+		// if tehre is a write, we always abort
+		if (pWrites.find(key) != pWrites.end() &&
+		    pWrites[key] > 0) {
+		    Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+			  key.c_str());
+		    Abort(tid);
+		    return REPLY_FAIL;
+		}
+
                 // Check for pending reads
                 if (pReads.find(key) != pReads.end() &&
                     pReads[key] > 0) {
