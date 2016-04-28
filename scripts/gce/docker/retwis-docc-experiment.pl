@@ -29,7 +29,7 @@ system("$killDiamondCmd");
 
 # do sanity checks
 system("$startRedisCmd");
-my $checkResult = system("./sanity-checks.pl run_baseline.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
+my $checkResult = system("./sanity-checks.pl run_retwis.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
 if ($checkResult != 0) {
     die("Error in sanity checks: see log file for details");
 }
