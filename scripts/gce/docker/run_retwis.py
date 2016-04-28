@@ -12,7 +12,7 @@ USE_REDIS = True
 parser = argparse.ArgumentParser(description='Run retwis client.')
 parser.add_argument('--numclients', type=int, default=64, help='number of clients')
 parser.add_argument('--config', default="gce", help='config prefix')
-parser.add_argument('--isolation', choices=['linearizable', 'snapshot', 'eventual', 'docc'],  default='linearizable', help='isolation level')
+parser.add_argument('--isolation', choices=['linearizable', 'snapshot', 'eventual', 'linearizabledocc', 'snapshotdocc'],  default='linearizable', help='isolation level')
 parser.add_argument('--zipf', type=float, default=0.3, help='zipf coefficient')
 args = parser.parse_args()
 
