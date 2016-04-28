@@ -18,7 +18,7 @@ my $gceOutputDir = "docc";
 my $log = "docc-log.txt";
 system("rm -f $log; touch $log");
 
-my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocalfiveshards' >> $log 2>&1";
+my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocalfiveshards --keys experiments/keys.txt --numkeys 100000' >> $log 2>&1";
 my $killDiamondCmd = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocalfiveshards' >> $log 2>&1";
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
