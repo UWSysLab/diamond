@@ -76,6 +76,9 @@ VersionedKVStore::Get(const string &key, Version &value)
 bool
 VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 {
+    if (t == MAX_TIMESTAMP) {
+        return Get(key, value);
+    }
     if (inStore(key)) {
         set<Version>::iterator it;
         if (getValue(key, t, it) && it->GetInterval().End() >= t) {
