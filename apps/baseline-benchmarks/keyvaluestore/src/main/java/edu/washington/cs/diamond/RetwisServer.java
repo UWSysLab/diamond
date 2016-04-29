@@ -20,186 +20,138 @@ public class RetwisServer {
 	JedisPool pool;
 	int numSlaves;
 	int numFailures;
-
-	boolean ready = false;
-	double alpha = -1;
-	double[] zipf;
-	boolean readyUnwriteable = false;
-	double[] zipfUnwriteable;
 	
-	List<String> keys;
-	List<String> unwriteableKeys;
-	Random random;
+	List<String> readKeys;
+	List<String> writeKeys;
+	List<String> incrementKeys;
 	
-	int rand_key() {
-		int nKeys = keys.size();
+	RandomIndexGen readRandom;
+	RandomIndexGen writeRandom;
+	RandomIndexGen incrementRandom;
+	
+	private class RandomIndexGen { // encapsulate zipf code
+		Random random;
+		double[] zipf;
+		int nKeys;
+		double alpha;
 		
-		if (alpha < 0) {
-			return this.random.nextInt(nKeys);
-		}
-		else {
-			if (!ready) {
-				zipf = new double[nKeys];
-				
-				double c = 0.0;
-				for (int i = 1; i < nKeys; i++) {
-					c = c + (1.0 / Math.pow(i, alpha));
-				}
-				c = 1.0 / c;
-				
-				double sum = 0.0;
-				for (int i = 1; i <= nKeys; i++) {
-					sum += (c / Math.pow(i,  alpha));
-					zipf[i-1] = sum;
-				}
-				ready = true;
-			}
+		public RandomIndexGen(int nKeys, double alpha) {
+			random = new Random();
+			this.nKeys = nKeys;
+			this.alpha = alpha;
+			zipf = new double[nKeys];
 			
-			double random = 0.0;
-			while (random == 0.0 || random == 1.0) {
-				random = this.random.nextDouble(); 
+			//initialize zipf dist
+			double c = 0.0;
+			for (int i = 1; i < nKeys; i++) {
+				c = c + (1.0 / Math.pow(i, alpha));
 			}
+			c = 1.0 / c;
 			
-			int l = 0;
-			int r = nKeys;
-			int mid = 0;
-			while (l < r) {
-				mid = (l + r) / 2;
-				if (random > zipf[mid]) {
-					l = mid + 1;
-				}
-				else if (random < zipf[mid]) {
-					r = mid - 1;
-				}
-				else {
-					break;
-				}
+			double sum = 0.0;
+			for (int i = 1; i <= nKeys; i++) {
+				sum += (c / Math.pow(i,  alpha));
+				zipf[i-1] = sum;
 			}
-			return mid;
 		}
-	}
-	
-	int rand_unwriteable_key() {
-		int nKeys = unwriteableKeys.size();
 		
-		if (alpha < 0) {
-			return this.random.nextInt(nKeys);
-		}
-		else {
-			if (!readyUnwriteable) {
-				zipfUnwriteable = new double[nKeys];
+		public int rand_key() {
+			if (alpha < 0) {
+				return this.random.nextInt(nKeys);
+			}
+			else {
+				double random = 0.0;
+				while (random == 0.0 || random == 1.0) {
+					random = this.random.nextDouble(); 
+				}
 				
-				double c = 0.0;
-				for (int i = 1; i < nKeys; i++) {
-					c = c + (1.0 / Math.pow(i, alpha));
+				int l = 0;
+				int r = nKeys;
+				int mid = 0;
+				while (l < r) {
+					mid = (l + r) / 2;
+					if (random > zipf[mid]) {
+						l = mid + 1;
+					}
+					else if (random < zipf[mid]) {
+						r = mid - 1;
+					}
+					else {
+						break;
+					}
 				}
-				c = 1.0 / c;
-				
-				double sum = 0.0;
-				for (int i = 1; i <= nKeys; i++) {
-					sum += (c / Math.pow(i,  alpha));
-					zipfUnwriteable[i-1] = sum;
-				}
-				readyUnwriteable = true;
+				return mid;
 			}
-			
-			double random = 0.0;
-			while (random == 0.0 || random == 1.0) {
-				random = this.random.nextDouble(); 
-			}
-			
-			int l = 0;
-			int r = nKeys;
-			int mid = 0;
-			while (l < r) {
-				mid = (l + r) / 2;
-				if (random > zipfUnwriteable[mid]) {
-					l = mid + 1;
-				}
-				else if (random < zipfUnwriteable[mid]) {
-					r = mid - 1;
-				}
-				else {
-					break;
-				}
-			}
-			return mid;
 		}
 	}
 	
 	class TxnHandler extends AbstractHandler {
 
+		public void doReads(Jedis jedis, int numReads) {
+			List<Integer> readKeyIdx = new ArrayList<Integer>();
+			for (int i = 0; i < numReads; i++) {
+				readKeyIdx.add(readRandom.rand_key());
+			}
+			Collections.sort(readKeyIdx);
+			
+			for (int i = 0; i < numReads; i++) {
+				String value = jedis.get(readKeys.get(readKeyIdx.get(0)));
+			}
+		}
+		
+		public void doWrites(Jedis jedis, int numWrites) {
+			List<Integer> writeKeyIdx = new ArrayList<Integer>();
+			for (int i = 0; i < numWrites; i++) {
+				writeKeyIdx.add(writeRandom.rand_key());
+			}
+			Collections.sort(writeKeyIdx);
+			
+			for (int i = 0; i < numWrites; i++) {
+				jedis.set(writeKeys.get(writeKeyIdx.get(i)), PUT_VALUE);
+				jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+			}
+		}
+		
+		public void doIncrements(Jedis jedis, int numIncrements) {
+			List<Integer> incrementKeyIdx = new ArrayList<Integer>();
+			for (int i = 0; i < numIncrements; i++) {
+				incrementKeyIdx.add(incrementRandom.rand_key());
+			}
+			Collections.sort(incrementKeyIdx);
+			
+			for (int i = 0; i < numIncrements; i++) {
+				String value = jedis.get(incrementKeys.get(incrementKeyIdx.get(i)));
+				jedis.set(incrementKeys.get(incrementKeyIdx.get(i)), PUT_VALUE);
+				jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+			}
+		}
+		
 		@Override
 		public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
 				throws IOException, ServletException {
 
 			int responseCode = HttpServletResponse.SC_OK;
 			
-			List<Integer> keyIdx = new ArrayList<Integer>();
-			
 			try(Jedis jedis = pool.getResource()) {
 				if (target.equals("/txn1")) {
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					Collections.sort(keyIdx);
-					
-					String value = jedis.get(keys.get(keyIdx.get(0)));
-					
-					for (int i = 0; i < 3; i++) {
-						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
-						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
-					}
+					doIncrements(jedis, 1);
+					doWrites(jedis, 2);
 				}
 				else if (target.equals("/txn2")) {
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					Collections.sort(keyIdx);
-					
-					for (int i = 0; i < 2; i++) {
-						String value = jedis.get(keys.get(keyIdx.get(i)));
-						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
-						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
-					}
+					doIncrements(jedis, 2);
 				}
 				else if (target.equals("/txn3")) {
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					keyIdx.add(rand_key());
-					Collections.sort(keyIdx);
-					
-					int unwriteableKeyIdx = rand_unwriteable_key();
-					String unwriteableValue = jedis.get(unwriteableKeys.get(unwriteableKeyIdx));
-					
-					for (int i = 0; i < 5; i++) {
-						String value = jedis.get(keys.get(keyIdx.get(i)));
-						jedis.set(keys.get(keyIdx.get(i)), PUT_VALUE);
-						jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
-					}
-					jedis.set(keys.get(keyIdx.get(5)), PUT_VALUE);
-					jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+					doReads(jedis, 1);
+					doIncrements(jedis, 5);
+					doWrites(jedis, 1);
 				}
 				else if (target.equals("/txn4")) {
+					Random random = new Random();
 					int nGets = 1 + random.nextInt(10);
-					for (int i = 0; i < nGets; i++) {
-						keyIdx.add(rand_key());
-					}
-					
-					Collections.sort(keyIdx);
-					for (int i = 0; i < nGets; i++) {
-						String value = jedis.get(keys.get(keyIdx.get(i)));
-					}
+					doReads(jedis, nGets);
 				}
 				else if (target.equals("/txn5")) {
-					keyIdx.add(rand_key());
-					Collections.sort(keyIdx);
-					
-					String value = jedis.get(keys.get(keyIdx.get(0)));
-					jedis.set(keys.get(keyIdx.get(0)), PUT_VALUE);
-					jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+					doIncrements(jedis, 1);
 				}
 				else {
 					responseCode = HttpServletResponse.SC_BAD_REQUEST;
@@ -218,13 +170,17 @@ public class RetwisServer {
 			double zipfCoeff) {
 		this.numSlaves = numSlaves;
 		this.numFailures = numFailures;
-		this.alpha = zipfCoeff;
-		this.random = new Random();
 		
 		List<String> allKeys = Utils.parseKeys(keyFile, numKeys);
-		int numUnwriteableKeys = allKeys.size() / 10;
-		this.unwriteableKeys = allKeys.subList(0, numUnwriteableKeys);
-		this.keys = allKeys.subList(numUnwriteableKeys, allKeys.size());
+		int numReadKeys = allKeys.size() / 10;
+		int numIncrementKeys = 2 * (allKeys.size() / 10);
+		this.readKeys = allKeys.subList(0, numReadKeys);
+		this.incrementKeys = allKeys.subList(numReadKeys, numReadKeys + numIncrementKeys);
+		this.writeKeys = allKeys.subList(numReadKeys + numIncrementKeys, allKeys.size());
+		
+		readRandom = new RandomIndexGen(readKeys.size(), zipfCoeff);
+		writeRandom = new RandomIndexGen(writeKeys.size(), zipfCoeff);
+		incrementRandom = new RandomIndexGen(incrementKeys.size(), zipfCoeff);
 		
 		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
 		Server server = null;
