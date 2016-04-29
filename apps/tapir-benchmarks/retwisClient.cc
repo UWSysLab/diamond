@@ -50,29 +50,27 @@ diamond::DiamondClient *client;
 bool docc = false;
 
 void do_writes(int numWrites) {
-    vector<int> writeKeyIdx;
+    set<int> writeKeyIdx;
 
-    for (int i = 0; i < numWrites; i++) {
-        writeKeyIdx.push_back(rand_write_key());
+    while(writeKeyIdx.size() < numWrites) {
+        writeKeyIdx.insert(rand_write_key());
     }
-    sort(writeKeyIdx.begin(), writeKeyIdx.end());
 
-    for (int i = 0; i < numWrites; i++) {
-        client->Put(writeKeys[writeKeyIdx[i]], PUT_VALUE);
+    for (int idx : writeKeyIdx) {
+        client->Put(writeKeys[idx], PUT_VALUE);
     }
 }
 
 void do_reads(int numReads) {
-    vector<int> readKeyIdx;
-    for (int i = 0; i < numReads; i++) {
-        readKeyIdx.push_back(rand_read_key());
+    set<int> readKeyIdx;
+    while (readKeyIdx.size() < numReads) {
+        readKeyIdx.insert(rand_read_key());
     }
-    sort(readKeyIdx.begin(), readKeyIdx.end());
 
     vector<string> multiGetKeys;
     map<string, string> multiGetValues;
-    for (int i = 0; i < numReads; i++) {
-        multiGetKeys.push_back(readKeys[readKeyIdx[i]]);
+    for (int idx : readKeyIdx) {
+        multiGetKeys.push_back(readKeys[idx]);
     }
     int ret;
     if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
@@ -81,29 +79,28 @@ void do_reads(int numReads) {
 }
 
 void do_increments(int numIncrements) {
-    vector<int> incrementKeyIdx;
-    for (int i = 0; i < numIncrements; i++) {
-        incrementKeyIdx.push_back(rand_increment_key());
+    set<int> incrementKeyIdx;
+    while (incrementKeyIdx.size() < numIncrements) {
+        incrementKeyIdx.insert(rand_increment_key());
     }
-    sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
 
     if (docc) {
-        for (int i = 0; i < numIncrements; i++) {
-            client->Increment(incrementKeys[incrementKeyIdx[i]], INCR_VALUE);
+        for (int idx : incrementKeyIdx) {
+            client->Increment(incrementKeys[idx], INCR_VALUE);
         }
     }
     else {
         vector<string> multiGetKeys;
         map<string, string> multiGetValues;
-        for (int i = 0; i < numIncrements; i++) {
-            multiGetKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
+        for (int idx : incrementKeyIdx) {
+            multiGetKeys.push_back(incrementKeys[idx]);
         }
         int ret;
         if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
             Panic("Aborting due to multiget %d", ret);
         }
-        for (int i = 0; i < numIncrements; i++) {
-            client->Put(incrementKeys[incrementKeyIdx[i]], PUT_VALUE);
+        for (int idx : incrementKeyIdx) {
+            client->Put(incrementKeys[idx], PUT_VALUE);
         }
     }
 }
