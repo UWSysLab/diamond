@@ -228,7 +228,6 @@ main(int argc, char **argv)
         }
     }
     in.close();
-    printf("DEBUG %lu %lu %lu\n", readKeys.size(), writeKeys.size(), incrementKeys.size());
 
     zipfRead = new double[nReadKeys];
     zipfWrite = new double[nWriteKeys];
@@ -243,8 +242,7 @@ main(int argc, char **argv)
     vector<int> incrementKeyIdx;
 
     gettimeofday(&t0, NULL);
-    //srand(t0.tv_sec + t0.tv_usec);
-    srand(1); // DEBUG TODO TODO REMOVE ME
+    srand(t0.tv_sec + t0.tv_usec);
 
     while (1) {
         readKeyIdx.clear();
@@ -339,7 +337,7 @@ main(int argc, char **argv)
                 vector<string> multiGetKeys;
                 map<string, string> multiGetValues;
                 for (int i = 0; i < 5; i++) {
-                    readKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
+                    multiGetKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
                 }
                 if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) { // 5 "increments"
                     Panic("Aborting due to multiget %d", ret);
@@ -380,7 +378,6 @@ main(int argc, char **argv)
                 client->Increment(incrementKeys[incrementKeyIdx[0]], INCR_VALUE); // 1 increment
             }
             else {
-                printf("Get on key %s", incrementKeys[incrementKeyIdx[0]].c_str());
                 if ((ret = client->Get(incrementKeys[incrementKeyIdx[0]], value))) { // 1 read
                     Panic("Aborting due to %s %d", incrementKeys[incrementKeyIdx[0]].c_str(), ret);
                 }
@@ -412,7 +409,6 @@ main(int argc, char **argv)
 
 int rand_key(const int nKeys, const double alpha, bool &ready, double *zipf)
 {
-    printf("DEBUG ready? %d\n", ready);
     if (alpha < 0) {
         // Uniform selection of keys.
         return (rand() % nKeys);
