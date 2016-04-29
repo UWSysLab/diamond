@@ -242,7 +242,7 @@ DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
         auto it = txn.GetWriteSet().find(key); 
         // Read your own writes, check the write set first.
         if (it == txn.GetWriteSet().end()) {
-            keysToRead.insert(key);
+            keysToRead.push_back(key);
         } else {
             values[key] = it->second;
         }
