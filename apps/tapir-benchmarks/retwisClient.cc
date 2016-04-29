@@ -67,10 +67,10 @@ void do_reads(int numReads) {
         readKeyIdx.insert(rand_read_key());
     }
 
-    vector<string> multiGetKeys;
+    set<string> multiGetKeys;
     map<string, string> multiGetValues;
     for (int idx : readKeyIdx) {
-        multiGetKeys.push_back(readKeys[idx]);
+        multiGetKeys.insert(readKeys[idx]);
     }
     int ret;
     if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
@@ -90,10 +90,10 @@ void do_increments(int numIncrements) {
         }
     }
     else {
-        vector<string> multiGetKeys;
+        set<string> multiGetKeys;
         map<string, string> multiGetValues;
         for (int idx : incrementKeyIdx) {
-            multiGetKeys.push_back(incrementKeys[idx]);
+            multiGetKeys.insert(incrementKeys[idx]);
         }
         int ret;
         if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
