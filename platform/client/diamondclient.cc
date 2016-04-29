@@ -223,7 +223,7 @@ DiamondClient::Get(const string &key, string &value)
 }
 
 int
-DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
+DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
 {
     if (txnid == 0) {
         Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
@@ -242,7 +242,7 @@ DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
         auto it = txn.GetWriteSet().find(key); 
         // Read your own writes, check the write set first.
         if (it == txn.GetWriteSet().end()) {
-            keysToRead.push_back(key);
+            keysToRead.insert(key);
         } else {
             values[key] = it->second;
         }

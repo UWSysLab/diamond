@@ -2,7 +2,7 @@
 // vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * client/diamondclient.h:
+ * diamondclient.h:
  *   Diamond transactional store interface
  *
  * Copyright 2015 Irene Zhang  <iyzhang@cs.washington.edu>
@@ -36,86 +36,80 @@
 #include "lib/message.h"
 #include "lib/configuration.h"
 #include "lib/tcptransport.h"
-#include "frontend/client.h"
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
-#include "store/common/frontend/reactiveclient.h"
-#include "store/common/notification.h"
+#include "store-proto.pb.h"
+#include "store/shardclient.h"
 
 #include <condition_variable>
 #include <mutex>
 #include <string>
 #include <set>
 #include <thread>
-#include <functional>
 
-namespace diamond {
+namespace strongstore {
 
-class DiamondClient : public Client
+class Client : public ::Client
 {
 public:
-    DiamondClient(std::string configPath);
-    DiamondClient(const std::string &hostname, const std::string &port);
-    ~DiamondClient();
+    Client(string configPath, int nshards,
+            int closestReplica);
+    ~Client();
 
     // Overriding functions from ::Client
     void Begin();
-    void BeginRO();
-    int Get(const std::string &key, std::string &value);
-    int MultiGet(const std::set<std::string> &keys, std::map<std::string, std::string> &value);
-    int Put(const std::string &key, const std::string &value);
-    int Increment(const std::string &key, const int inc);
+    int Get(const string &key, string &value);
+    int Put(const string &key, const string &value);
     bool Commit();
     void Abort();
+    std::vector<int> Stats();
 
-    void BeginReactive(uint64_t reactive_id);
-    uint64_t GetNextNotification(bool blocking);
-    void NotificationInit(std::function<void (void)> callback);
-
-    void SetIsolationLevel(int isolationLevel);
-    void SetCaching(bool cachingEnabled);
-
-private:    
+private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
 
-    // helper methods for the constructors (to avoid duplicated code)
-    void initState();
-    void startTransport(frontend::Client *frontendclient);
+    // timestamp server call back
+    void tssCallback(const string &request, const string &reply);
 
-    static void * startHelper(void * arg); // method to be called by pthread_create()
+    // local Prepare function
+    int Prepare(uint64_t &ts);
 
     // Unique ID for this client.
     uint64_t client_id;
 
-    // transaction id counter
-    uint64_t txnid_counter;
-    // its lock
-    std::mutex txnid_lock;
-    
     // Ongoing transaction ID.
-    std::map<std::thread::id, uint64_t> ongoing;
+    uint64_t t_id;
 
-    // Transport used by storage client proxies.
+    // Number of shards in SpanStore.
+    long nshards;
+
+    // List of participants in the ongoing transaction.
+    std::set<int> participants;
+
+    // Transport used by paxos client proxies.
     TCPTransport transport;
     
     // Thread running the transport event loop.
-    pthread_t clientTransport;
+    std::thread *clientTransport;
 
-    // Caching client for the store
-    CacheClient *client;
+    // Buffering client for each shard.
+    std::vector<BufferClient *> bclient;
 
-    // Reactive helper methods
-    void processNotification(Timestamp timestamp, uint64_t reactive_id);
+    // Timestamp server shard.
+    replication::VRClient *tss; 
 
-    // Reactive state 
-    std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
-    Timestamp last_notification_ts; // Timestamp at which the last notification was received
+    // TrueTime server.
+    TrueTime timeServer;
 
-    // Transaction isolation level
-    int isolationLevel = LINEARIZABLE;
+    // Synchronization variables.
+    std::condition_variable cv;
+    std::mutex cv_m;
+    string replica_reply;
+
+    // Time spend sleeping for commit.
+    int commit_sleep;
 };
 
-} // namespace diamond
+} // namespace strongstore
 
-#endif /* _DIAMOND_CLIENT_H_ */
+#endif /* _STRONG_CLIENT_H_ */
