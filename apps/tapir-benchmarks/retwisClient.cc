@@ -22,6 +22,13 @@ int rand_read_key();
 int rand_write_key();
 int rand_increment_key();
 
+void do_writes(int numWrites);
+void do_reads(int numReads);
+void do_increments(int numIncrements);
+
+const std::string PUT_VALUE("1");
+const int INCR_VALUE = 1;
+
 // State for the three zipf distributions
 double alpha = -1;
 bool readyRead = false;
@@ -39,8 +46,67 @@ int nReadKeys = 10;
 int nWriteKeys = 70;
 int nIncrementKeys = 20;
 
-const std::string PUT_VALUE("1");
-const int INCR_VALUE = 1;
+diamond::DiamondClient *client;
+bool docc = false;
+
+void do_writes(int numWrites) {
+    vector<int> writeKeyIdx;
+
+    for (int i = 0; i < numWrites; i++) {
+        writeKeyIdx.push_back(rand_write_key());
+    }
+    sort(writeKeyIdx.begin(), writeKeyIdx.end());
+
+    for (int i = 0; i < numWrites; i++) {
+        client->Put(writeKeys[writeKeyIdx[i]], PUT_VALUE);
+    }
+}
+
+void do_reads(int numReads) {
+    vector<int> readKeyIdx;
+    for (int i = 0; i < numReads; i++) {
+        readKeyIdx.push_back(rand_read_key());
+    }
+    sort(readKeyIdx.begin(), readKeyIdx.end());
+
+    vector<string> multiGetKeys;
+    map<string, string> multiGetValues;
+    for (int i = 0; i < numReads; i++) {
+        multiGetKeys.push_back(readKeys[readKeyIdx[i]]);
+    }
+    int ret;
+    if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
+        Panic("Aborting due to multiget %d", ret);
+    }
+}
+
+void do_increments(int numIncrements) {
+    vector<int> incrementKeyIdx;
+    for (int i = 0; i < numIncrements; i++) {
+        incrementKeyIdx.push_back(rand_increment_key());
+    }
+    sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
+
+    if (docc) {
+        for (int i = 0; i < numIncrements; i++) {
+            client->Increment(incrementKeys[incrementKeyIdx[i]], INCR_VALUE);
+        }
+    }
+    else {
+        vector<string> multiGetKeys;
+        map<string, string> multiGetValues;
+        for (int i = 0; i < numIncrements; i++) {
+            multiGetKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
+        }
+        int ret;
+        if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
+            Panic("Aborting due to multiget %d", ret);
+        }
+        for (int i = 0; i < numIncrements; i++) {
+            client->Put(incrementKeys[incrementKeyIdx[i]], PUT_VALUE);
+        }
+    }
+}
 
 int
 main(int argc, char **argv)
@@ -52,9 +118,7 @@ main(int argc, char **argv)
     int closestReplica = -1; // Closest replica id.
     int skew = 0; // difference between real clock and TrueTime
     int error = 0; // error bars
-    bool docc = false;
 
-    diamond::DiamondClient *client;
     enum {
         MODE_UNKNOWN,
         MODE_LINEARIZABLE,
@@ -236,19 +300,11 @@ main(int argc, char **argv)
     struct timeval t0, t1, t2;
     int nTransactions = 0; // Number of transactions attempted.
     int ttype; // Transaction type.
-    int ret;
-    vector<int> readKeyIdx;
-    vector<int> writeKeyIdx;
-    vector<int> incrementKeyIdx;
 
     gettimeofday(&t0, NULL);
     srand(t0.tv_sec + t0.tv_usec);
 
     while (1) {
-        readKeyIdx.clear();
-        writeKeyIdx.clear();
-        incrementKeyIdx.clear();
-            
         // Begin a transaction.
         gettimeofday(&t1, NULL);
 
@@ -256,133 +312,33 @@ main(int argc, char **argv)
         ttype = rand() % 100;
 
         if (ttype < 1) {
-            // 1% - Add user transaction. 1,3
+            // 1% - Add user transaction. 0,1,2
             client->Begin();
-            incrementKeyIdx.push_back(rand_increment_key());
-            writeKeyIdx.push_back(rand_write_key());
-            writeKeyIdx.push_back(rand_write_key());
-            sort(writeKeyIdx.begin(), writeKeyIdx.end());
-            sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
-
-            if (docc) {
-                client->Increment(incrementKeys[incrementKeyIdx[0]], INCR_VALUE); // 1 increment
-                client->Put(writeKeys[writeKeyIdx[0]], PUT_VALUE); // 2 writes
-                client->Put(writeKeys[writeKeyIdx[1]], PUT_VALUE);
-            }
-            else {
-                if ((ret = client->Get(incrementKeys[incrementKeyIdx[0]], value))) { // 1 "increment"
-                    Panic("Aborting due to %s %d", incrementKeys[incrementKeyIdx[0]].c_str(), ret);
-                }
-                client->Put(incrementKeys[incrementKeyIdx[0]], PUT_VALUE);
-
-                for (int i = 0; i < 2; i++) { // 2 writes
-                    client->Put(writeKeys[writeKeyIdx[i]], PUT_VALUE);
-                }
-            }
+            do_increments(1);
+            do_writes(2);
             ttype = 1;
         } else if (ttype < 6) {
-            // 5% - Follow/Unfollow transaction. 2,2
+            // 5% - Follow/Unfollow transaction. 0,0,2
             client->Begin();
-            incrementKeyIdx.push_back(rand_increment_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
-
-            if (docc) {
-                client->Increment(incrementKeys[incrementKeyIdx[0]], INCR_VALUE); // 2 increments
-                client->Increment(incrementKeys[incrementKeyIdx[1]], INCR_VALUE);
-            }
-            else {
-                vector<string> multiGetKeys;
-                map<string, string> multiGetValues;
-                for (int i = 0; i < 2; i++) {
-                    multiGetKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
-                }
-                if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) { // 2 "increments"
-                    Panic("Aborting due to multiget %d", ret);
-                }
-                for (int i = 0; i < 2; i++) {
-                    client->Put(incrementKeys[incrementKeyIdx[i]], PUT_VALUE);
-                }
-            }
+            do_increments(2);
             ttype = 2;
         } else if (ttype < 30) {
-            // 24% - Post tweet transaction. 3,5
+            // 24% - Post tweet transaction. 1,1,5
             client->Begin();
-            readKeyIdx.push_back(rand_read_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            incrementKeyIdx.push_back(rand_increment_key());
-            writeKeyIdx.push_back(rand_write_key());
-            sort(readKeyIdx.begin(), readKeyIdx.end());
-            sort(writeKeyIdx.begin(), writeKeyIdx.end());
-            sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
-
-            if (docc) {
-                if ((ret = client->Get(readKeys[readKeyIdx[0]], value))) { // 1 read (UNWRITEABLE KEY)
-                    Panic("Aborting due to %s %d", readKeys[readKeyIdx[0]].c_str(), ret);
-                }
-
-                for (int i = 0; i < 5; i++) { // 5 increments
-                    client->Increment(incrementKeys[incrementKeyIdx[i]], INCR_VALUE);
-                }
-                client->Put(writeKeys[writeKeyIdx[0]], PUT_VALUE); // 1 blind write
-            }
-            else {
-                if ((ret = client->Get(readKeys[readKeyIdx[0]], value))) { // 1 read (UNWRITEABLE KEY)
-                    Panic("Aborting due to %s %d", readKeys[readKeyIdx[0]].c_str(), ret);
-                }
-
-                vector<string> multiGetKeys;
-                map<string, string> multiGetValues;
-                for (int i = 0; i < 5; i++) {
-                    multiGetKeys.push_back(incrementKeys[incrementKeyIdx[i]]);
-                }
-                if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) { // 5 "increments"
-                    Panic("Aborting due to multiget %d", ret);
-                }
-                for (int i = 0; i < 5; i++) {
-                    client->Put(incrementKeys[incrementKeyIdx[i]], PUT_VALUE);
-                }
-
-                client->Put(writeKeys[writeKeyIdx[5]], PUT_VALUE); // 1 blind write
-            }
+            do_reads(1);
+            do_increments(5);
+            do_writes(1);
             ttype = 3;
         } else if (ttype < 80) {
-            // 50% - Get followers/timeline transaction. rand(1,10),0
+            // 50% - Get followers/timeline transaction. rand(1,10),0,0
             client->BeginRO();
             int nGets = 1 + rand() % 10;
-            for (int i = 0; i < nGets; i++) {
-                readKeyIdx.push_back(rand_read_key());
-            }
-
-            sort(readKeyIdx.begin(), readKeyIdx.end());
-
-            vector<string> multiGetKeys;
-            map<string, string> multiGetValues;
-            for (int i = 0; i < nGets; i++) {
-                multiGetKeys.push_back(readKeys[readKeyIdx[i]]);
-            }
-            if ((ret = client->MultiGet(multiGetKeys, multiGetValues))) {
-                Panic("Aborting due to multiget %d", ret);
-            }
+            do_reads(nGets);
             ttype = 4;
         } else {
-            // 20% - Like transaction. 1,1
+            // 20% - Like transaction. 0,0,1
             client->Begin();
-            incrementKeyIdx.push_back(rand_increment_key());
-            sort(incrementKeyIdx.begin(), incrementKeyIdx.end());
-
-            if (docc) {
-                client->Increment(incrementKeys[incrementKeyIdx[0]], INCR_VALUE); // 1 increment
-            }
-            else {
-                if ((ret = client->Get(incrementKeys[incrementKeyIdx[0]], value))) { // 1 read
-                    Panic("Aborting due to %s %d", incrementKeys[incrementKeyIdx[0]].c_str(), ret);
-                }
-                client->Put(incrementKeys[incrementKeyIdx[0]], PUT_VALUE); // 1 write
-            }
+            do_increments(1);
             ttype = 5;
         }
 
