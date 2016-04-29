@@ -102,6 +102,7 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         return REPLY_OK;
     }
 
+    Timestamp ts;
     // Do OCC checks.
     // Check for conflicts with the read set.
     if (txn.IsolationMode() == LINEARIZABLE) {
@@ -144,105 +145,104 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         }
     }
 
-    if (txn.IsolationMode() == LINEARIZABLE ||
-        txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-        // Check for conflicts with the write set.
-        for (auto &write : txn.GetWriteSet()) {
-            const string &key = write.first;
-            
-            // if there is a pending write, always abort
-            if (pWrites.find(key) != pWrites.end() &&
-                pWrites[key] > 0) {
-                Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
-                      key.c_str());
-                Abort(tid);
-                return REPLY_FAIL;
-            }
-
-            // if there is a pending increment, always abort
-            if (pIncrements.find(key) != pIncrements.end() &&
-                pIncrements[key] > 0) {
-                Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
-                      key.c_str());
-                Abort(tid);
-                return REPLY_FAIL;
-            }
-	    
-            if (txn.IsolationMode() == LINEARIZABLE) {
-                // If there is a pending read for this key, abort to stay linearizable.
-                if (pReads.find(key) != pReads.end() &&
-                    pReads[key] > 0) {
-                    Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
-		// if there is a read at a later timestamp
-		Timestamp ts;
-		if (store.GetLastRead(key, ts)) {
-		    if (ts > last_committed) {
-			Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
-			      key.c_str());
-		    }
-		    return REPLY_FAIL;
-		}                    	
-            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-                // If SI, check that the snapshot hasn't been written
-                Version cur;
-                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
-                    txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
-            }
+    // Check for conflicts with the write set.
+    for (auto &write : txn.GetWriteSet()) {
+        const string &key = write.first;
+        
+        // if there is a pending write, always abort
+        if (pWrites.find(key) != pWrites.end() &&
+            pWrites[key] > 0) {
+            Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
         }
 
-        // Check for conflicts with the increment set
-        for (auto &inc : txn.GetIncrementSet()) {
-            const string &key = inc.first;
-            
-            // don't need to check for pending increments, they commute
-            
-            if (txn.IsolationMode() == LINEARIZABLE) {
-		// if tehre is a write, we always abort
-		if (pWrites.find(key) != pWrites.end() &&
-		    pWrites[key] > 0) {
-		    Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
-			  key.c_str());
-		    Abort(tid);
-		    return REPLY_FAIL;
-		}
+        // if there is a pending increment, always abort
+        if (pIncrements.find(key) != pIncrements.end() &&
+            pIncrements[key] > 0) {
+            Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
+        }
+	    
+        if (txn.IsolationMode() == LINEARIZABLE) {
+            // If there is a pending read for this key, abort to stay linearizable.
+            if (pReads.find(key) != pReads.end() &&
+                pReads[key] > 0) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
 
-                // Check for pending reads
-                if (pReads.find(key) != pReads.end() &&
-                    pReads[key] > 0) {
-                    Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
+            // if there is a read at a later timestamp
+            if (store.GetLastRead(key, ts) && ts > last_committed) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            // If SI, check that the snapshot hasn't been written
+            Version cur;
+            if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        }
+        
 
-                // Check for timestamp reads
-                Timestamp ts;
-                if (store.GetLastRead(key, ts)) {
-                    if (ts > last_committed) {
-                        Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
-                              key.c_str());
-                    }
-                    return REPLY_FAIL;
-                }
-            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-                // If SI, check that the snapshot hasn't been written
-                Version cur;
-                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
-                    txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
+    }
+
+    // Check for conflicts with the increment set
+    for (auto &inc : txn.GetIncrementSet()) {
+        const string &key = inc.first;
+            
+        // don't need to check for pending increments, they commute
+            
+        // if there is a write, we always abort
+        if (pWrites.find(key) != pWrites.end() &&
+            pWrites[key] > 0) {
+            Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
+        }
+
+        if (txn.IsolationMode() == LINEARIZABLE) {
+            // Check for pending reads
+            if (pReads.find(key) != pReads.end() &&
+                pReads[key] > 0) {
+                Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+
+            // Check for timestamp reads
+            if (store.GetLastRead(key, ts) && ts > last_committed) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            // If SI, check that the snapshot hasn't been written
+            Version cur;
+            if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
             }
         }
     }
