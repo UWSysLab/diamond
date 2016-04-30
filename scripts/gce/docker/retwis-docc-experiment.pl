@@ -125,7 +125,7 @@ sub logPrint {
 }
 
 sub resetClient {
-    system("gcloud compute instances reset diamond-client --zone us-central1-c >> $log 2>&1");
+    system("gcloud compute instances reset diamond-client --zone us-east1-c >> $log 2>&1");
     my $done = 0;
     while (!$done) {
         sleep(5);
