@@ -52,21 +52,23 @@ if ($checkResult != 0) {
 }
 system("$killRedisCmd");
 
+
+####### DIAMOND #######
+
+runDiamond("local", "linearizabledocc", "0.3", 64, [4, 5, 6, 7, 8]);
+runDiamond("local", "linearizabledocc", "0.8", 64, [5, 6, 7, 8, 9, 10]);
+
+runDiamond("local", "snapshotdocc", "0.3", 64, [4, 5, 6, 7, 8]);
+runDiamond("local", "snapshotdocc", "0.8", 64, [2, 3, 4, 5, 6, 7]);
+
+runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6, 7]);
+runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6, 7]);
+
 ######## BASELINE ########
 
 runBaseline("local", "0.3", 128, [3, 4, 5, 6, 7, 8]);
 runBaseline("local", "0.8", 128, [3, 4, 5, 6, 7, 8]);
 
-####### DIAMOND #######
-
-runDiamond("local", "linearizable", "0.3", 64, [4, 5, 6, 7, 8]);
-runDiamond("local", "linearizable", "0.8", 64, [5, 6, 7, 8, 9, 10]);
-
-runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6, 7]);
-runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6, 7]);
-
-runDiamond("local", "snapshot", "0.3", 64, [4, 5, 6, 7, 8]);
-runDiamond("local", "snapshot", "0.8", 128, [4, 5, 6, 7, 8]);
 
 sub getStartBaselineCmd {
     my ($mode, $zipf) = @_;
@@ -154,13 +156,13 @@ sub runDiamond {
 
     # reset client VM
     logPrint("Running Diamond in mode $mode with isolation $isolation and zipf $zipf\n");
-    resetClient();
 
     my $outFile = "$outputDir/diamond.$mode.$isolation.$zipf.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
     for my $instances (@instanceNums) {
         # start redis and Diamond servers
+        resetClient();
         system("$startRedisCmd");
         system("$startDiamondCmd{$mode}");
         logPrint("Running $instances instances...\n");

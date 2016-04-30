@@ -36,8 +36,8 @@ if ($checkResult != 0) {
 system("$killRedisCmd");
 
 # run experiments
-runDiamond("linearizabledocc", 200, [2, 3, 4, 5, 6, 7]);
-runDiamond("linearizable", 200, [2, 3, 4, 5, 6, 7]);
+runDiamond("linearizabledocc", 200, [3, 4, 5, 6, 7, 8]);
+runDiamond("linearizable", 200, [5, 6, 7, 8, 9, 10]);
 
 
 
