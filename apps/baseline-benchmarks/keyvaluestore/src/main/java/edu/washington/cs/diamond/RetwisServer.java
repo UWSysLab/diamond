@@ -17,9 +17,10 @@ public class RetwisServer {
 	final int TIMEOUT = 10000;
 	final String PUT_VALUE = "1";
 	
-	JedisPool pool;
-	int numSlaves;
-	int numFailures;
+	JedisPool[] pools;
+	int[] numSlaves;
+	int[] numFailures;
+	int numShards;
 	
 	List<String> readKeys;
 	List<String> writeKeys;
@@ -87,7 +88,7 @@ public class RetwisServer {
 	
 	class TxnHandler extends AbstractHandler {
 
-		public void doReads(Jedis jedis, int numReads) {
+		public void doReads(int numReads) {
 			List<Integer> readKeyIdx = new ArrayList<Integer>();
 			for (int i = 0; i < numReads; i++) {
 				readKeyIdx.add(readRandom.rand_key());
@@ -95,11 +96,14 @@ public class RetwisServer {
 			Collections.sort(readKeyIdx);
 			
 			for (int i = 0; i < numReads; i++) {
-				String value = jedis.get(readKeys.get(readKeyIdx.get(0)));
+				int shardNum = keyToShard(readKeys.get(readKeyIdx.get(i)), numShards);
+				Jedis jedis = pools[shardNum].getResource();
+				String value = jedis.get(readKeys.get(readKeyIdx.get(i)));
+				jedis.close();
 			}
 		}
 		
-		public void doWrites(Jedis jedis, int numWrites) {
+		public void doWrites(int numWrites) {
 			List<Integer> writeKeyIdx = new ArrayList<Integer>();
 			for (int i = 0; i < numWrites; i++) {
 				writeKeyIdx.add(writeRandom.rand_key());
@@ -107,12 +111,15 @@ public class RetwisServer {
 			Collections.sort(writeKeyIdx);
 			
 			for (int i = 0; i < numWrites; i++) {
+				int shardNum = keyToShard(writeKeys.get(writeKeyIdx.get(i)), numShards);
+				Jedis jedis = pools[shardNum].getResource();
 				jedis.set(writeKeys.get(writeKeyIdx.get(i)), PUT_VALUE);
-				jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+				jedis.waitReplicas(numSlaves[shardNum] - numFailures[shardNum], TIMEOUT);
+				jedis.close();
 			}
 		}
 		
-		public void doIncrements(Jedis jedis, int numIncrements) {
+		public void doIncrements(int numIncrements) {
 			List<Integer> incrementKeyIdx = new ArrayList<Integer>();
 			for (int i = 0; i < numIncrements; i++) {
 				incrementKeyIdx.add(incrementRandom.rand_key());
@@ -120,9 +127,12 @@ public class RetwisServer {
 			Collections.sort(incrementKeyIdx);
 			
 			for (int i = 0; i < numIncrements; i++) {
+				int shardNum = keyToShard(incrementKeys.get(incrementKeyIdx.get(i)), numShards);
+				Jedis jedis = pools[shardNum].getResource();
 				String value = jedis.get(incrementKeys.get(incrementKeyIdx.get(i)));
 				jedis.set(incrementKeys.get(incrementKeyIdx.get(i)), PUT_VALUE);
-				jedis.waitReplicas(numSlaves - numFailures, TIMEOUT);
+				jedis.waitReplicas(numSlaves[shardNum] - numFailures[shardNum], TIMEOUT);
+				jedis.close();
 			}
 		}
 		
@@ -132,30 +142,28 @@ public class RetwisServer {
 
 			int responseCode = HttpServletResponse.SC_OK;
 			
-			try(Jedis jedis = pool.getResource()) {
-				if (target.equals("/txn1")) {
-					doIncrements(jedis, 1);
-					doWrites(jedis, 2);
-				}
-				else if (target.equals("/txn2")) {
-					doIncrements(jedis, 2);
-				}
-				else if (target.equals("/txn3")) {
-					doReads(jedis, 1);
-					doIncrements(jedis, 5);
-					doWrites(jedis, 1);
-				}
-				else if (target.equals("/txn4")) {
-					Random random = new Random();
-					int nGets = 1 + random.nextInt(10);
-					doReads(jedis, nGets);
-				}
-				else if (target.equals("/txn5")) {
-					doIncrements(jedis, 1);
-				}
-				else {
-					responseCode = HttpServletResponse.SC_BAD_REQUEST;
-				}
+			if (target.equals("/txn1")) {
+				doIncrements(1);
+				doWrites(2);
+			}
+			else if (target.equals("/txn2")) {
+				doIncrements(2);
+			}
+			else if (target.equals("/txn3")) {
+				doReads(1);
+				doIncrements(5);
+				doWrites(1);
+			}
+			else if (target.equals("/txn4")) {
+				Random random = new Random();
+				int nGets = 1 + random.nextInt(10);
+				doReads(nGets);
+			}
+			else if (target.equals("/txn5")) {
+				doIncrements(1);
+			}
+			else {
+				responseCode = HttpServletResponse.SC_BAD_REQUEST;
 			}
 			
 			response.setStatus(responseCode);
@@ -165,12 +173,62 @@ public class RetwisServer {
 			baseRequest.setHandled(true);
 		}
 	}
+	
+	private int keyToShard(String key, int nShards) {
+		long hash = 5381;
+		for (int i = 0; i < key.length(); i++) {
+			hash = ((hash << 5) + hash) + (long)key.charAt(i);
+		}
+		return (int)(hash % nShards);
+	}
+	
+	private void parseBackendConfigs(String configPrefix, int numShards, String[] redisHostnames, int[] redisPorts,
+			int[] numSlaves, int[] numFailures) {
+		for (int shardNum = 0; shardNum < numShards; shardNum++) {
+			String configFileName = configPrefix + shardNum + ".config";
+			int shardNumSlaves = 0;
+			int shardNumFailures = 0;
+			String shardRedisHostname = null;
+			int shardRedisPort = 0;
+			
+			int numReplicas = 0;
+			BufferedReader reader;
+			try {
+				reader = new BufferedReader(new FileReader(configFileName));
+				String line;
+				while((line = reader.readLine()) != null) {
+					String[] lineSplit = line.split("\\s+");
+					if (lineSplit[0].equals("f")) {
+						shardNumFailures = Integer.parseInt(lineSplit[1]);
+					}
+					else if (lineSplit[0].equals("replica")) {
+						numReplicas++;
+						if (shardRedisHostname == null) {
+							String[] replicaSplit = lineSplit[1].split(":");
+							shardRedisHostname = replicaSplit[0];
+							shardRedisPort = Integer.parseInt(replicaSplit[1]);
+						}
+					}
+				}
+				shardNumSlaves = numReplicas - 1;
+			} catch (FileNotFoundException e) {
+				System.err.println("Error: config file " + configFileName + " not found");
+				System.exit(1);
+			} catch (IOException e) {
+				System.err.println(e);
+				System.exit(1);
+			}
+			
+			redisHostnames[shardNum] = shardRedisHostname;
+			redisPorts[shardNum] = shardRedisPort;
+			numSlaves[shardNum] = shardNumSlaves;
+			numFailures[shardNum] = shardNumFailures;
+		}
+	}
 
-	public void start(int port, String redisHostname, int redisPort, int numSlaves, int numFailures, String keyFile, int numKeys,
+	public void start(int port, String configPrefix, int numShards, String keyFile, int numKeys,
 			double zipfCoeff) {
-		this.numSlaves = numSlaves;
-		this.numFailures = numFailures;
-		
+		this.numShards = numShards;
 		List<String> allKeys = Utils.parseKeys(keyFile, numKeys);
 		int numReadKeys = allKeys.size() / 10;
 		int numIncrementKeys = 2 * (allKeys.size() / 10);
@@ -182,7 +240,16 @@ public class RetwisServer {
 		writeRandom = new RandomIndexGen(writeKeys.size(), zipfCoeff);
 		incrementRandom = new RandomIndexGen(incrementKeys.size(), zipfCoeff);
 		
-		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
+		String[] redisHostnames = new String[numShards];
+		int[] redisPorts = new int[numShards];
+		numSlaves = new int[numShards];
+		numFailures = new int[numShards];
+		parseBackendConfigs(configPrefix, numShards, redisHostnames, redisPorts, numSlaves, numFailures);
+				
+		pools = new JedisPool[numShards];
+		for (int i = 0; i < pools.length; i++) {
+			pools[i] = new JedisPool(new JedisPoolConfig(), redisHostnames[i], redisPorts[i]);
+		}
 		Server server = null;
 
 		try {
@@ -195,16 +262,23 @@ public class RetwisServer {
 			e.printStackTrace();
 			System.exit(1);
 		}
-		pool.destroy();
+		for (int i = 0; i < pools.length; i++) {
+			pools[i].destroy();
+		}
 	}
 
 	public static void main(String[] args) {
-		if (args.length < 8) {
-			System.err.println("usage: java RetwisServer port redis-hostname redis-port num-slaves num-failures key-file num-keys zipf");
+		if (args.length < 6) {
+			System.err.println("usage: java RetwisServer port config-prefix num-shards key-file num-keys zipf");
 			System.exit(1);
 		}
-		new RetwisServer().start(Integer.parseInt(args[0]), args[1], Integer.parseInt(args[2]),
-				Integer.parseInt(args[3]), Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]),
-				Double.parseDouble(args[7]));
+		int port = Integer.parseInt(args[0]);
+		String configPrefix = args[1];
+		int numShards = Integer.parseInt(args[2]);
+		String keyFile = args[3];
+		int numKeys = Integer.parseInt(args[4]);
+		double zipfCoeff = Double.parseDouble(args[5]);
+		
+		new RetwisServer().start(port, configPrefix, numShards, keyFile, numKeys, zipfCoeff);
 	}
 }
