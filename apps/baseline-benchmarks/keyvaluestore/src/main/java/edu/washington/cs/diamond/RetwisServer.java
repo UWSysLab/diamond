@@ -179,6 +179,7 @@ public class RetwisServer {
 		for (int i = 0; i < key.length(); i++) {
 			hash = ((hash << 5) + hash) + (long)key.charAt(i);
 		}
+		hash = Math.abs(hash);
 		return (int)(hash % nShards);
 	}
 	
