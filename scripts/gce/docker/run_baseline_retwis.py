@@ -10,7 +10,7 @@ parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
 NUM_KEYS = "100000"
-NUM_SECONDS = "120"
+NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/baseline/"
 USE_REDIS = True
 

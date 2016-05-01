@@ -5,7 +5,7 @@ import experiment_common
 import os
 
 NUM_KEYS = "100000"
-NUM_SECONDS = "120"
+NUM_SECONDS = "60"
 OUTPUT_DEST = "scripts/experiments/retwis/"
 USE_REDIS = True
 
