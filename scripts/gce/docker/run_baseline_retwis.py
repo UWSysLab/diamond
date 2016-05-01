@@ -9,7 +9,7 @@ parser.add_argument('--numclients', type=int, default=128, help='number of clien
 parser.add_argument('--config', default="gce", help='config prefix')
 args = parser.parse_args()
 
-NUM_KEYS = "1000000"
+NUM_KEYS = "100000"
 NUM_SECONDS = "120"
 OUTPUT_DEST = "scripts/experiments/baseline/"
 USE_REDIS = True
