@@ -4,8 +4,8 @@ import argparse
 import experiment_common
 import os
 
-NUM_KEYS = "100000"
-NUM_SECONDS = "60"
+NUM_KEYS = "1000000"
+NUM_SECONDS = "120"
 OUTPUT_DEST = "scripts/experiments/retwis/"
 USE_REDIS = True
 

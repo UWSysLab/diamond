@@ -1,2 +1,4 @@
 cluster-1 us-east1-c
 cluster-2 us-east1-c
+cluster-3 us-east1-c
+cluster-4 us-east1-c

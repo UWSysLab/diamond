@@ -13,3 +13,4 @@ system("ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platfor
 system("ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocalfiveshards'");
 system("ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gce'");
 system("ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gcelocaloneshard'");
+system("ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gcelocalfiveshards'");
