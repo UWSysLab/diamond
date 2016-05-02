@@ -1,4 +1,4 @@
-package com.example.androidchatbaseline;
+package com.example.androidchatbaselinebenchmark;
 
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
@@ -13,6 +13,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.androidchatbaselinebenchmark.R;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -25,12 +26,12 @@ import android.view.MenuItem;
 public class MainActivity extends ActionBarActivity {
 
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
-	static final int PORT = 9000;
+	static final int PORT = 8000;
 	
 	static final int NUM_ACTIONS = 1000;
 	static final int INITIAL_CAPACITY = NUM_ACTIONS;
 	
-	static String serverName = "coldwater.cs.washington.edu";
+	static String serverName = "moranis.cs.washington.edu";
 	static String userName = "android";
 	static String serverURLString = "http://" + serverName + ":" + PORT + "/chat";
 	
