@@ -52,17 +52,24 @@ if ($checkResult != 0) {
 }
 system("$killRedisCmd");
 
+####### DIAMOND DOCC ######
+
+runDiamond("local", "linearizabledocc", "0.3", 128, [4, 6, 8, 10]);
+runDiamond("local", "linearizabledocc", "0.8", 128, [4, 6, 8, 10]);
+
+runDiamond("local", "snapshotdocc", "0.3", 128, [4, 6, 8, 10]);
+runDiamond("local", "snapshotdocc", "0.8", 128, [4, 6, 8, 10]);
 
 ####### DIAMOND #######
 
-#runDiamond("local", "linearizable", "0.3", 128, [6, 8, 10, 12]);
-#runDiamond("local", "linearizable", "0.8", 128, [6, 8, 10, 12]);
+runDiamond("local", "linearizable", "0.3", 128, [6, 8, 10, 12]);
+runDiamond("local", "linearizable", "0.8", 128, [6, 8, 10, 12]);
 
-#runDiamond("local", "snapshot", "0.3", 256, [8, 10, 12, 14]);
-#runDiamond("local", "snapshot", "0.8", 256, [8, 10, 12, 14, 16]);
+runDiamond("local", "snapshot", "0.3", 256, [8, 10, 12, 14]);
+runDiamond("local", "snapshot", "0.8", 256, [8, 10, 12, 14, 16]);
 
-#runDiamond("local", "eventual", "0.3", 512, [6, 8, 10, 12, 14]);
-#runDiamond("local", "eventual", "0.8", 512, [10, 12, 14, 16, 18, 20]);
+runDiamond("local", "eventual", "0.3", 512, [6, 8, 10, 12, 14]);
+runDiamond("local", "eventual", "0.8", 512, [10, 12, 14, 16, 18, 20]);
 
 ######## BASELINE ########
 
