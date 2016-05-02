@@ -85,16 +85,18 @@ public class Main {
 	static final long MAX_SIZE = 10;
 		
 	public static void main(String[] args) {
-		if (args.length < 1) {
-			System.err.println("usage: java Main port");
+		if (args.length < 3) {
+			System.err.println("usage: java Main port redis-hostname redis-port");
 			System.exit(0);
 		}
 		
 		int port = Integer.parseInt(args[0]);
+		String redisHostname = args[1];
+		int redisPort = Integer.parseInt(args[2]);
 		
 		HttpServer server = null;
 		
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), "moranis.cs.washington.edu");
+		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
 		Jedis jedis = null;
 		
 		try {
