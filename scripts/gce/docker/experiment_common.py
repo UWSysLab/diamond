@@ -14,7 +14,7 @@ COPY_CMD = "rsync " + SRC_HOST + ":diamond-src/"
 CONFIG_DIR = "platform/test/"
 KEY_DIR = "scripts/experiments/"
 KEY_FILE = "keys.txt"
-NUM_FRONTENDS = 16
+NUM_FRONTENDS = 32
 USE_REDIS = True
 
 processes = []
