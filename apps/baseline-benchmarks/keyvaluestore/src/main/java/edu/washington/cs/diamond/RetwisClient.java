@@ -30,14 +30,14 @@ public class RetwisClient extends Client {
 			in.close();
 			responseCode = connection.getResponseCode();
 		} catch (MalformedURLException e) {
-			System.out.println("Error: malformed URL");
+			System.err.println("Error: malformed URL");
 			System.exit(1);
 		} catch (IOException e) {
-			System.out.println("Error connecting to server: " + e);
+			System.err.println("Error connecting to server: " + e);
 			System.exit(1);
 		}
 		if (responseCode != 200 || !response.equals("OK")) {
-			System.out.println("HTTP error: response code " + responseCode + ", response " + response);
+			System.err.println("HTTP error: response code " + responseCode + ", response " + response);
 			System.exit(1);
 		}
 	}
