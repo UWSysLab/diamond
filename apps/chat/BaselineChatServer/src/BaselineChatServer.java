@@ -1,25 +1,31 @@
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
-class ChatHandler implements HttpHandler {
-	Jedis jedis;
+class ChatHandler extends AbstractHandler {
+	JedisPool pool;
 	
-	public ChatHandler(Jedis j) {
-		jedis = j;
+	public ChatHandler(JedisPool p) {
+		pool = p;
 	}
 	
 	List<String> deserializeList(String str) {
@@ -41,48 +47,75 @@ class ChatHandler implements HttpHandler {
 		}
 		return sb.toString();
 	}
-	
+
 	@Override
-	public void handle(HttpExchange exchange) throws IOException {
-		String method = exchange.getRequestMethod();
+	public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response)
+			throws IOException, ServletException {
+		Jedis jedis = pool.getResource();
+		String method = request.getMethod();
+		
+		JsonElement responseJson = null;
+		int responseCode = HttpServletResponse.SC_BAD_REQUEST;
+		
 		if (method.equals("GET")) {
-			JsonArray responseJson = new JsonArray();
-			
+			JsonArray responseJsonArray = new JsonArray();
 			List<String> chatLog = deserializeList(jedis.get("baselinechat:chatlog"));
 			for (int i = 0; i < chatLog.size(); i++) {
-				responseJson.add(new JsonPrimitive(chatLog.get(i)));
+				responseJsonArray.add(new JsonPrimitive(chatLog.get(i)));
 			}
-			
-			exchange.sendResponseHeaders(200, responseJson.toString().getBytes().length);
-			OutputStream os = exchange.getResponseBody();
-			os.write(responseJson.toString().getBytes());
-			os.write('\n');
-			os.close();
+			responseJson = (JsonElement)responseJsonArray;
 		}
 		else if (method.equals("POST")) {
-			InputStream requestBody = exchange.getRequestBody();
+			InputStream requestBody = request.getInputStream();
 			byte[] bodyArray = new byte[requestBody.available()];
 			requestBody.read(bodyArray);
 			String bodyString = new String(bodyArray, "UTF-8");
 			
 			List<String> chatLog = deserializeList(jedis.get("baselinechat:chatlog"));
 			chatLog.add(bodyString);
-			if (chatLog.size() >= Main.MAX_SIZE) {
+			if (chatLog.size() >= BaselineChatServer.MAX_SIZE) {
 				chatLog.remove(0);
 			}
 			jedis.set("baselinechat:chatlog", serializeList(chatLog));
 			jedis.waitReplicas(1, 3);
 			
-			exchange.sendResponseHeaders(200, 0);
-			OutputStream os = exchange.getResponseBody();
-			os.close();
+			responseJson = new JsonObject();	
 		}
+		
+		response.setStatus(responseCode);
+		if (responseJson != null) {
+			PrintWriter out = response.getWriter();
+			out.print(responseJson.toString());
+		}
+		baseRequest.setHandled(true);
+		
+		jedis.close();
 	}
 }
 
-public class Main {
+public class BaselineChatServer {
+	JedisPool pool;
 
 	static final long MAX_SIZE = 10;
+	
+	public void start(int port, String redisHostname, int redisPort) {		
+		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
+		
+		Server server = null;
+		try {			
+			server = new Server(port);
+			server.setHandler(new ChatHandler(pool));
+			server.start();
+			server.join();
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
 		
 	public static void main(String[] args) {
 		if (args.length < 3) {
@@ -94,24 +127,6 @@ public class Main {
 		String redisHostname = args[1];
 		int redisPort = Integer.parseInt(args[2]);
 		
-		HttpServer server = null;
-		
-		JedisPool pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
-		Jedis jedis = null;
-		
-		try {
-			jedis = pool.getResource();
-			
-			server = HttpServer.create(new InetSocketAddress(port), 0);
-			server.createContext("/chat", new ChatHandler(jedis));
-			server.setExecutor(null);
-			server.start();
-		}
-		catch (IOException e) {
-			System.err.println(e);
-		}
-		finally {
-			jedis.close();
-		}
+		new BaselineChatServer().start(port, redisHostname, redisPort);
 	}
 }
