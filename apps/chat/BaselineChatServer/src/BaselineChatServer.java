@@ -54,16 +54,14 @@ class ChatHandler extends AbstractHandler {
 		Jedis jedis = pool.getResource();
 		String method = request.getMethod();
 		
-		JsonElement responseJson = null;
+		JsonArray responseJson = new JsonArray();
 		int responseCode = HttpServletResponse.SC_BAD_REQUEST;
 		
 		if (method.equals("GET")) {
-			JsonArray responseJsonArray = new JsonArray();
 			List<String> chatLog = deserializeList(jedis.get("baselinechat:chatlog"));
 			for (int i = 0; i < chatLog.size(); i++) {
-				responseJsonArray.add(new JsonPrimitive(chatLog.get(i)));
+				responseJson.add(new JsonPrimitive(chatLog.get(i)));
 			}
-			responseJson = (JsonElement)responseJsonArray;
 		}
 		else if (method.equals("POST")) {
 			InputStream requestBody = request.getInputStream();
@@ -78,15 +76,11 @@ class ChatHandler extends AbstractHandler {
 			}
 			jedis.set("baselinechat:chatlog", serializeList(chatLog));
 			jedis.waitReplicas(1, 3);
-			
-			responseJson = new JsonObject();	
 		}
 		
 		response.setStatus(responseCode);
-		if (responseJson != null) {
-			PrintWriter out = response.getWriter();
-			out.print(responseJson.toString());
-		}
+                PrintWriter out = response.getWriter();
+                out.print(responseJson.toString());
 		baseRequest.setHandled(true);
 		
 		jedis.close();
@@ -96,7 +90,7 @@ class ChatHandler extends AbstractHandler {
 public class BaselineChatServer {
 	JedisPool pool;
 
-	static final long MAX_SIZE = 10;
+	static final long MAX_SIZE = 100;
 	
 	public void start(int port, String redisHostname, int redisPort) {		
 		pool = new JedisPool(new JedisPoolConfig(), redisHostname, redisPort);
