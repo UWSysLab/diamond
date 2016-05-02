@@ -18,21 +18,24 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.StrictMode;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 public class MainActivity extends ActionBarActivity {
 
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
-	static final int PORT = 8000;
-	
-	static final int NUM_ACTIONS = 1000;
+	static final int NUM_ACTIONS = 100;
 	static final int INITIAL_CAPACITY = NUM_ACTIONS;
 	
-	static String serverName = "moranis.cs.washington.edu";
 	static String userName = "android";
+	
+	static String serverName = "104.197.217.104";
+	static final int PORT = 8000;
+
 	static String serverURLString = "http://" + serverName + ":" + PORT + "/chat";
 	
 	public static double writeMessage(String msg) {
@@ -97,7 +100,11 @@ public class MainActivity extends ActionBarActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+		//setContentView(R.layout.activity_main);
+		
+		TextView textBox = new TextView(this.getBaseContext());
+		textBox.setTextColor(Color.BLACK);
+		setContentView(textBox);
 		
 		StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
 		StrictMode.setThreadPolicy(policy);
@@ -135,7 +142,23 @@ public class MainActivity extends ActionBarActivity {
 			try {Thread.sleep(1);} catch (InterruptedException e) {}
 		}
 		
+		double totalTimeRead = 0;
+		double totalTimeWrite = 0;
+		for (int i = 0; i < timesRead.size(); i++) {
+			totalTimeRead += timesRead.get(i);
+		}
+		for (int i = 0; i < timesWrite.size(); i++) {
+			totalTimeWrite += timesWrite.get(i);
+		}
+		double averageTimeRead = totalTimeRead / NUM_ACTIONS;
+		double averageTimeWrite = totalTimeWrite / NUM_ACTIONS;
+		
+		textBox.setText("Transaction read: " + averageTimeRead + "\n"
+						+ "Transaction write: " + averageTimeWrite + "\n");
+		
 		Log.i("BENCHMARK", "Done with Diamond experiment");
+		
+		
 	}
 
 	@Override

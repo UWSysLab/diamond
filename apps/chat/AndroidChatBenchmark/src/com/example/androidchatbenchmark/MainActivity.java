@@ -17,15 +17,15 @@ import edu.washington.cs.diamond.Diamond;
 public class MainActivity extends ActionBarActivity {
 	
 	static final int MESSAGE_LIST_SIZE = 100;
-	static final int NUM_ACTIONS = 1000;
+	static final int NUM_ACTIONS = 100;
 	static final String MESSAGE = "Help, I'm trapped in a Diamond benchmark";
-	static final int PORT = 12444;
-	
 	static final int INITIAL_CAPACITY = NUM_ACTIONS;
 	
 	static String chatroomName = "androidbenchmark";
 	static String userName = "android";
-	static String serverName = "moranis.cs.washington.edu";
+	
+	static String serverName = "104.197.217.104";
+	static final int PORT = 12345;
 	
 	private Diamond.DStringList messageList;
 	
