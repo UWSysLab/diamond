@@ -13,7 +13,7 @@ REDIS_DIR = "/home/nl35/redis-3.0.7/src"
 
 redisPath = REDIS_DIR + "/redis-server"
 jarPath = "baselinechatserver.jar"
-dependencies = ["commons-pool2-2.0.jar", "gson-2.3.1.jar", "jedis-2.4.2.jar"]
+dependencies = ["commons-pool2-2.0.jar", "gson-2.3.1.jar", "jedis-2.4.2.jar", "jetty-all-9.3.7.v20160115-uber.jar"]
 localDependenciesDir = "libs"
 
 remoteRedisPath = WORKING_DIR + "/redis-server"
@@ -22,7 +22,7 @@ def startJavaServer(hostname, port, redisHostname, redisPort):
     os.system("rsync " + jarPath + " " + hostname + ":" + WORKING_DIR)
     for dep in dependencies:
         os.system("rsync " + localDependenciesDir + "/" + dep + " " + hostname + ":" + WORKING_DIR)
-    os.system("ssh -f " + hostname + " 'java -classpath commons-pool2-2.0.jar:gson-2.3.1.jar:jedis-2.4.2.jar:baselinechatserver.jar Main " + repr(port) + " " + redisHostname + " " + repr(redisPort) + "'")
+    os.system("ssh -f " + hostname + " 'java -classpath commons-pool2-2.0.jar:gson-2.3.1.jar:jedis-2.4.2.jar:baselinechatserver.jar:jetty-all-9.3.7.v20160115-uber.jar BaselineChatServer " + repr(port) + " " + redisHostname + " " + repr(redisPort) + "'")
 
 def killJavaServer(hostname, port):
     os.system("ssh " + hostname + " 'pkill -9 -f " + repr(port) + "'");
