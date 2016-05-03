@@ -47,7 +47,7 @@ def processOutputFunc(outputFile):
 
 #copy files
 experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
-experiment_common.copyConfigFiles(args.config)
+#experiment_common.copyConfigFiles(args.config)
 
 experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "baseline-out")
 experiment_common.processOutput(processOutputFunc)

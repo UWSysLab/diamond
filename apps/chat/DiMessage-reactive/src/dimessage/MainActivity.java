@@ -1,18 +1,13 @@
 package dimessage;
 
 import android.support.v7.app.ActionBarActivity;
-import android.util.Log;
 
 import com.example.dimessage.R;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.EditText;
-import android.widget.TextView;
-import edu.washington.cs.diamond.Diamond.DString;
 
 public class MainActivity extends ActionBarActivity {
 

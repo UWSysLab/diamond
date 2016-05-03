@@ -22,7 +22,7 @@ outputFiles = []
 
 def copyFiles(binary, binaryDir, configPrefix):
     copyBinary(binary, binaryDir)
-    copyConfigFiles(configPrefix)
+    #copyConfigFiles(configPrefix)
 
 def copyBinary(binary, binaryDir):
     os.system(COPY_CMD + binaryDir + "/" + binary + " " + WORKING_DIR)

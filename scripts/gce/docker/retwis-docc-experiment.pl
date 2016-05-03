@@ -36,8 +36,8 @@ if ($checkResult != 0) {
 system("$killRedisCmd");
 
 # run experiments
-runDiamond("linearizabledocc", 200, [2, 3, 4, 5, 6, 7]);
-runDiamond("linearizable", 200, [2, 3, 4, 5, 6, 7]);
+runDiamond("linearizabledocc", 200, [3, 4, 5, 6, 7, 8]);
+runDiamond("linearizable", 200, [5, 6, 7, 8, 9, 10]);
 
 
 
@@ -125,7 +125,7 @@ sub logPrint {
 }
 
 sub resetClient {
-    system("gcloud compute instances reset diamond-client --zone us-central1-c >> $log 2>&1");
+    system("gcloud compute instances reset diamond-client --zone us-east1-c >> $log 2>&1");
     my $done = 0;
     while (!$done) {
         sleep(5);
