@@ -195,8 +195,6 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
                 return REPLY_FAIL;
             }
         }
-        
-
     }
 
     // Check for conflicts with the increment set

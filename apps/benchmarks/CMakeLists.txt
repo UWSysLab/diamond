@@ -12,11 +12,15 @@ add_executable(notification_publisher notification_publisher.cc benchmark_common
 add_executable(notification_subscriber notification_subscriber.cc benchmark_common.cc)
 add_executable(game game.cc benchmark_common.cc)
 add_executable(debug debug.cc benchmark_common.cc)
+add_executable(game-redis game-redis.cc benchmark_common.cc)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 
+
 include_directories("${PROJECT_SOURCE_DIR}/../../platform")
 include_directories(${Boost_INCLUDE_DIRS})
+include_directories("${PROJECT_SOURCE_DIR}/redox")
+
 target_link_libraries(benchmarkclient "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(benchmarkclient ${Boost_LIBRARIES})
 
@@ -41,5 +45,6 @@ target_link_libraries(notification_subscriber ${Boost_LIBRARIES})
 target_link_libraries(game "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(game ${Boost_LIBRARIES})
 
+target_link_libraries(game "${PROJECT_SOURCE_DIR}/redox/libredox.so")
 target_link_libraries(debug "${PROJECT_SOURCE_DIR}/../../platform/build/libdiamond.so")
 target_link_libraries(debug ${Boost_LIBRARIES})
