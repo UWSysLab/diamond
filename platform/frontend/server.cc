@@ -204,6 +204,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
     map<string, Version> subscribeValues = promise->GetValues();
     for (auto &pair : subscribeValues) {
         if (values.find(pair.first) == values.end()) {
+            cachedKeys.insert(pair.first);
             values[pair.first] = pair.second;
         }
     }
