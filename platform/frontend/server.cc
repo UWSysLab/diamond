@@ -42,7 +42,7 @@ using namespace std;
 Server::Server(Transport *transport, strongstore::Client *client)
     : transport(transport), store(client)
 {
-    sendNotificationTimeout = new Timeout(transport, 100, [this]() {
+    sendNotificationTimeout = new Timeout(transport, 50, [this]() {
             sendNotifications();
         });
 }
@@ -128,6 +128,7 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
     transport->SendMessage(this, remote, ack);
 
     if (!sendNotificationTimeout->Active()) {
+        sendNotifications();
         sendNotificationTimeout->Start();
     }
 }
@@ -148,6 +149,7 @@ Server::sendNotifications() {
             for (auto key : rt.keys) {
                 if (cachedKeys.find(key) != cachedKeys.end()) {
                     Version value = values[key];
+                    Debug("Packing entry %s (%lu, %lu)", key.c_str(), value.GetInterval().Start(), value.GetInterval().End());
                     ReadReply * reply = notification.add_replies();
                     reply->set_key(key);
                     value.Serialize(reply);
@@ -204,6 +206,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
     map<string, Version> subscribeValues = promise->GetValues();
     for (auto &pair : subscribeValues) {
         if (values.find(pair.first) == values.end()) {
+            Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
             cachedKeys.insert(pair.first);
             values[pair.first] = pair.second;
         }
