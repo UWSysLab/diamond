@@ -153,8 +153,8 @@ public class MainActivity extends ActionBarActivity {
 		double averageTimeRead = totalTimeRead / NUM_ACTIONS;
 		double averageTimeWrite = totalTimeWrite / NUM_ACTIONS;
 		
-		textBox.setText("Transaction read: " + averageTimeRead + "\n"
-						+ "Transaction write: " + averageTimeWrite + "\n");
+		textBox.setText("Read: " + averageTimeRead + "\n"
+						+ "Write: " + averageTimeWrite + "\n");
 		
 		Log.i("BENCHMARK", "Done with Diamond experiment");
 		

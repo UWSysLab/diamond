@@ -63,7 +63,7 @@ public class MainActivity extends ActionBarActivity {
 		long readTimeEnd = 1000 * 1000 * 1000;
 		while (committed == 0) {
 			readTimeStart = System.nanoTime();
-			Diamond.DObject.TransactionBegin();
+			Diamond.DObject.BeginRO();
 			result = messageList.Members();
 			committed = Diamond.DObject.TransactionCommit();
 			if (committed == 0) {
