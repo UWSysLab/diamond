@@ -36,11 +36,8 @@ if ($checkResult != 0) {
 system("$killRedisCmd");
 
 # run experiments
-runDiamond("linearizable", 128, [2, 4, 6, 8, 10]);
-runDiamond("docc", 128, [2, 4, 6, 8, 10]);
-
-runDiamond("linearizable", 256, [2, 4, 6, 8, 10]);
-runDiamond("docc", 256, [2, 4, 6, 8, 10]);
+runDiamond("linearizabledocc", 200, [3, 4, 5, 6, 7, 8]);
+runDiamond("linearizable", 200, [5, 6, 7, 8, 9, 10]);
 
 
 
@@ -51,7 +48,7 @@ sub runDiamond {
     # reset client VM
     logPrint("Running DOCC experiment with isolation $isolation\n");
 
-    my $outFile = "$outputDir/diamond.$isolation.$numClients.txt";
+    my $outFile = "$outputDir/diamond.$isolation.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tseconds\tinstances\t");
     for (my $i = 1; $i <= 5; $i++) {
@@ -75,7 +72,7 @@ sub runDiamond {
         }
 
         # run Kubernetes instances
-        system("./run-kubernetes-job.pl docc $image $user $instances run_retwis.py --config gcelocalfiveshards --numclients $numClients --isolation $isolation >> $log 2>&1");
+        system("./run-kubernetes-job.pl docc $image $user $instances run_retwis.py --config gcelocalfiveshards --numclients $numClients --isolation $isolation --zipf 0.8 >> $log 2>&1");
 
         # parse output
         my $clientCmd = "ls diamond-src/scripts/experiments/$gceOutputDir | wc | awk \"{ print \\\$1 }\"";
@@ -128,7 +125,7 @@ sub logPrint {
 }
 
 sub resetClient {
-    system("gcloud compute instances reset diamond-client --zone us-central1-c >> $log 2>&1");
+    system("gcloud compute instances reset diamond-client --zone us-east1-c >> $log 2>&1");
     my $done = 0;
     while (!$done) {
         sleep(5);

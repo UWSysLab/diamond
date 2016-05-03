@@ -47,7 +47,6 @@
 #include <string>
 #include <set>
 #include <thread>
-#include <vector>
 #include <functional>
 
 namespace diamond {
@@ -63,7 +62,7 @@ public:
     void Begin();
     void BeginRO();
     int Get(const std::string &key, std::string &value);
-    int MultiGet(const std::vector<std::string> &keys, std::map<std::string, std::string> &value);
+    int MultiGet(const std::set<std::string> &keys, std::map<std::string, std::string> &value);
     int Put(const std::string &key, const std::string &value);
     int Increment(const std::string &key, const int inc);
     bool Commit();

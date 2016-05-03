@@ -223,7 +223,7 @@ DiamondClient::Get(const string &key, string &value)
 }
 
 int
-DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
+DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
 {
     if (txnid == 0) {
         Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");

@@ -15,12 +15,12 @@ my @tempFiles;
 
 for my $mode (@modes) {
     for my $zipf (@zipfNums) {
-        my $linearizable = getMaxThroughput("$dir/diamond.$mode.linearizable.$zipf.txt");
-        my $snapshot = getMaxThroughput("$dir/diamond.$mode.snapshot.$zipf.txt");
+        my $linearizable = getMaxThroughput("$dir/diamond.$mode.linearizabledocc.$zipf.txt");
+        my $snapshot = getMaxThroughput("$dir/diamond.$mode.snapshotdocc.$zipf.txt");
         my $eventual = getMaxThroughput("$dir/diamond.$mode.eventual.$zipf.txt");
         my $baseline = getMaxThroughput("$dir/baseline.$mode.$zipf.txt");
 
-        my $outFile = "temp-$mode-$zipf.txt";
+        my $outFile = "temp-baseline-$mode-$zipf.txt";
         push(@tempFiles, $outFile);
         open(OUT_FILE, "> $outFile");
         print(OUT_FILE "linearizable $linearizable\n");
@@ -34,8 +34,8 @@ for my $mode (@modes) {
 my $script = "temp-gnuplot-script.txt";
 push(@tempFiles, $script);
 
-my $local3 = "temp-local-0.3.txt";
-my $local8 = "temp-local-0.8.txt";
+my $local3 = "temp-baseline-local-0.3.txt";
+my $local8 = "temp-baseline-local-0.8.txt";
 
 open(SCRIPT, "> $script");
 print(SCRIPT "set terminal pdfcairo\n");

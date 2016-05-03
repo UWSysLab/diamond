@@ -25,23 +25,23 @@ system("rm -f $log; touch $log");
 
 my %configs;
 $configs{"georeplicated"} = "gce";
-$configs{"local"} = "gcelocaloneshard";
+$configs{"local"} = "gcelocalfiveshards";
 
 my %startDiamondCmd;
 my %killDiamondCmd;
 my %killBaselineCmd;
 $startDiamondCmd{"georeplicated"} = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gce --keys experiments/keys.txt --numkeys 100000 --shards 1' >> $log 2>&1";
-$startDiamondCmd{"local"} = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocaloneshard --keys experiments/keys.txt --numkeys 100000 --shards 1' >> $log 2>&1";
+$startDiamondCmd{"local"} = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocalfiveshards --keys experiments/keys.txt --numkeys 100000' >> $log 2>&1";
 $killDiamondCmd{"georeplicated"} = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gce' >> $log 2>&1";
-$killDiamondCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocaloneshard' >> $log 2>&1";
+$killDiamondCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocalfiveshards' >> $log 2>&1";
 $killBaselineCmd{"georeplicated"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gce' >> $log 2>&1";
-$killBaselineCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gcelocaloneshard' >> $log 2>&1";
+$killBaselineCmd{"local"} = "ssh $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ~/diamond-src/platform/test/gcelocalfiveshards' >> $log 2>&1";
 
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
 
 # Make sure no servers are running
-system("./build-everything.pl $image $user $GCE_IP >> $log 2>&1");
+#system("./build-everything.pl $image $user $GCE_IP >> $log 2>&1");
 system("./cleanup.pl $GCE_IP >> $log 2>&1");
 
 # do sanity checks
@@ -52,21 +52,30 @@ if ($checkResult != 0) {
 }
 system("$killRedisCmd");
 
-######## BASELINE ########
+####### DIAMOND DOCC ######
 
-runBaseline("local", "0.3", 128, [3, 4, 5, 6, 7, 8]);
-runBaseline("local", "0.8", 128, [3, 4, 5, 6, 7, 8]);
+runDiamond("local", "linearizabledocc", "0.3", 128, [4, 6, 8, 10]);
+runDiamond("local", "linearizabledocc", "0.8", 128, [4, 6, 8, 10]);
+
+runDiamond("local", "snapshotdocc", "0.3", 128, [4, 6, 8, 10]);
+runDiamond("local", "snapshotdocc", "0.8", 128, [4, 6, 8, 10]);
 
 ####### DIAMOND #######
 
-runDiamond("local", "linearizable", "0.3", 64, [4, 5, 6, 7, 8]);
-runDiamond("local", "linearizable", "0.8", 64, [5, 6, 7, 8, 9, 10]);
+runDiamond("local", "linearizable", "0.3", 128, [6, 8, 10, 12]);
+runDiamond("local", "linearizable", "0.8", 128, [6, 8, 10, 12]);
 
-runDiamond("local", "eventual", "0.3", 512, [3, 4, 5, 6, 7]);
-runDiamond("local", "eventual", "0.8", 512, [3, 4, 5, 6, 7]);
+runDiamond("local", "snapshot", "0.3", 256, [8, 10, 12, 14]);
+runDiamond("local", "snapshot", "0.8", 256, [8, 10, 12, 14, 16]);
 
-runDiamond("local", "snapshot", "0.3", 64, [4, 5, 6, 7, 8]);
-runDiamond("local", "snapshot", "0.8", 128, [4, 5, 6, 7, 8]);
+runDiamond("local", "eventual", "0.3", 512, [6, 8, 10, 12, 14]);
+runDiamond("local", "eventual", "0.8", 512, [10, 12, 14, 16, 18, 20]);
+
+######## BASELINE ########
+
+runBaseline("local", "0.3", 128, [14, 16, 18, 20]);
+runBaseline("local", "0.8", 128, [14, 16, 18, 20]);
+
 
 sub getStartBaselineCmd {
     my ($mode, $zipf) = @_;
@@ -75,7 +84,7 @@ sub getStartBaselineCmd {
         $configPrefix = "gce";
     }
     elsif ($mode eq "local") {
-        $configPrefix = "gcelocaloneshard";
+        $configPrefix = "gcelocalfiveshards";
     }
     my $startBaselineCmd = "ssh -t $GCE_IP 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ~/diamond-src/platform/test/$configPrefix --keys ~/diamond-src/scripts/experiments/keys.txt --numkeys 100000 --zipf $zipf' >> $log 2>&1";
     return $startBaselineCmd;
@@ -154,13 +163,13 @@ sub runDiamond {
 
     # reset client VM
     logPrint("Running Diamond in mode $mode with isolation $isolation and zipf $zipf\n");
-    resetClient();
 
     my $outFile = "$outputDir/diamond.$mode.$isolation.$zipf.txt";
     open(OUTFILE, "> $outFile");
     print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\n");
     for my $instances (@instanceNums) {
         # start redis and Diamond servers
+        resetClient();
         system("$startRedisCmd");
         system("$startDiamondCmd{$mode}");
         logPrint("Running $instances instances...\n");
@@ -225,7 +234,7 @@ sub logPrint {
 }
 
 sub resetClient {
-    system("gcloud compute instances reset diamond-client --zone us-central1-c >> $log 2>&1");
+    system("gcloud compute instances reset diamond-client --zone us-east1-c >> $log 2>&1");
     my $done = 0;
     while (!$done) {
         sleep(5);
