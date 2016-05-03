@@ -116,12 +116,10 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
     for (auto &key : keys) {
         // look for it in the cache
-        if (cachingEnabled) {
-	    if ((timestamp == MAX_TIMESTAMP &&
-		 cache.Get(key, value)) ||
-		cache.Get(key, timestamp, value)) {
-		keysRead[key] = value;
-	    }
+        if (cachingEnabled
+            && ((timestamp == MAX_TIMESTAMP && cache.Get(key, value))
+                || cache.Get(key, timestamp, value))) {
+            keysRead[key] = value;
         } else {
             keysToRead.push_back(key);
         }
