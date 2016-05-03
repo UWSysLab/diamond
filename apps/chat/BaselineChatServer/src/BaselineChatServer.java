@@ -13,8 +13,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 import redis.clients.jedis.Jedis;
@@ -58,10 +56,12 @@ class ChatHandler extends AbstractHandler {
 		int responseCode = HttpServletResponse.SC_BAD_REQUEST;
 		
 		if (method.equals("GET")) {
-			List<String> chatLog = deserializeList(jedis.get("baselinechat:chatlog"));
+			String serializedList = jedis.get("baselinechat:chatlog");
+			List<String> chatLog = deserializeList(serializedList);
 			for (int i = 0; i < chatLog.size(); i++) {
 				responseJson.add(new JsonPrimitive(chatLog.get(i)));
 			}
+			responseCode = HttpServletResponse.SC_OK;
 		}
 		else if (method.equals("POST")) {
 			InputStream requestBody = request.getInputStream();
@@ -76,14 +76,15 @@ class ChatHandler extends AbstractHandler {
 			}
 			jedis.set("baselinechat:chatlog", serializeList(chatLog));
 			jedis.waitReplicas(1, 3);
+			responseCode = HttpServletResponse.SC_OK;
 		}
-		
+
 		response.setStatus(responseCode);
-                PrintWriter out = response.getWriter();
-                out.print(responseJson.toString());
+		PrintWriter out = response.getWriter();
+		out.print(responseJson.toString());
 		baseRequest.setHandled(true);
 		
-		jedis.close();
+		pool.returnResource(jedis);
 	}
 }
 
@@ -109,6 +110,8 @@ public class BaselineChatServer {
 			e.printStackTrace();
 			System.exit(1);
 		}
+		
+		pool.destroy();
 	}
 		
 	public static void main(String[] args) {
