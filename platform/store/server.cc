@@ -49,7 +49,7 @@ Server::Server(transport::Configuration &transportConfig)
     transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
 
-    sendNotificationTimeout = new Timeout(&transport, 100, [this]() {
+    sendNotificationTimeout = new Timeout(&transport, 10, [this]() {
         sendNotifications();
     });
     sendNotificationTimeout->Start();
