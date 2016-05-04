@@ -46,7 +46,8 @@ int main(int argc, char ** argv) {
     po::notify(vm);
 
     vector<string> players;
-    int sum, turn;
+    int sum = 0;
+    int turn = 0;
 
     string cp;
     Redox rdx; Subscriber sub;
@@ -75,9 +76,19 @@ int main(int argc, char ** argv) {
                        }
                        r.free();
                     }
+                    else if (msg.substr(0, 4) == "move") {
+                        vector<string> elems;
+                        stringstream ss(msg);
+                        string item;
+                        while (std::getline(ss, item, ':')) {
+                            elems.push_back(item);
+                        }
+                        sum = stoi(elems[1]);
+                        turn = stoi(elems[2]);
+                    }
 
                     int numPlayers = players.size();
-                    Command<vector<string>>& r =
+                    /*Command<vector<string>>& r =
                        rdx.commandSync<vector<string>>({"MGET",
                                 keyPrefix+":sum",
                                 keyPrefix+":turn"});
@@ -95,7 +106,8 @@ int main(int argc, char ** argv) {
                     } else {
                        exit(1);
                     }
-                    r.free();
+                    r.free();*/
+                    cout << "NOTIFICATION: Sum: " << sum << " turn: " << turn << " numPlayers: " << numPlayers << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
 
                     if (numPlayers > 0) {
                        string cp = players[turn % numPlayers];
@@ -132,7 +144,7 @@ int main(int argc, char ** argv) {
         c.free();
     }
     {
-        Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "3"});
+        Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "10000"});
         if (!c.ok()) {
             exit(1);
         }
@@ -158,32 +170,48 @@ int main(int argc, char ** argv) {
 
        int inc = 1;
        string cp = players[turn % players.size()];
+       cout << "TURN: Sum: " << sum << " turn: " << turn << " numPlayers: " << players.size() << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
        // If it's the user's turn, make move
        if (cp == myName && inc >= 1 && inc <= 10) {
           //cout << "It's my turn" << endl;
+          int newSum = sum + inc;
+          int newTurn = turn + 1;
+          /*{
+             Command<string>& c = rdx.commandSync<string>({"MULTI"});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
+          }*/
           {
-             Command<int>& c = rdx.commandSync<int>({"INCRBY", keyPrefix+":sum", to_string(inc)});
-             if (!c.ok()) {
-                exit(1);
-             }
-             c.free();
-          }
-	  
-          if (sum < 100) {
-             Command<int>& c = rdx.commandSync<int>({"INCR", keyPrefix+":turn"});
+             Command<redisReply*>& c = rdx.commandSync<redisReply*>({"SET", keyPrefix+":sum", to_string(newSum)});
              if (!c.ok()) {
                 exit(1);
              }
              c.free();
           }
           {
-             Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "3"});
+             Command<redisReply*>& c = rdx.commandSync<redisReply*>({"SET", keyPrefix+":turn", to_string(newTurn)});
              if (!c.ok()) {
                 exit(1);
              }
              c.free();
           }
-          rdx.publish(keyPrefix+":ping", "move");
+          /*{
+             Command<redisReply*>& c = rdx.commandSync<redisReply*>({"EXEC"});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
+          }*/
+          {
+             Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "10000"});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
+          }
+          rdx.publish(keyPrefix+":ping", "move:" + to_string(newSum) + ":" + to_string(newTurn));
        }
        uint64_t turnTime = currentTimeMillis();
         
