@@ -89,6 +89,9 @@ private:
     void SubscribeCallback(const TransportAddress *remote,
 			   const RegisterMessage msg,
 			   Promise *promise);
+    void sendNotificationsCallback(uint64_t client_id,
+                                   uint64_t reactive_id,
+                                   Promise *promise);
 		     
 };
 

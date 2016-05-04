@@ -141,27 +141,57 @@ Server::sendNotifications() {
         ReactiveTransaction rt = it->second;
         if (rt.next_timestamp > rt.last_timestamp) {
             anyOutstanding = true;
-            Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
-            Notification notification;
-            notification.set_clientid(rt.client_id);
-            notification.set_reactiveid(rt.reactive_id);
-            notification.set_timestamp(rt.next_timestamp);
+            vector<string> keys;
             for (auto key : rt.keys) {
-                if (cachedKeys.find(key) != cachedKeys.end()) {
-                    Version value = values[key];
-                    Debug("Packing entry %s (%lu, %lu)", key.c_str(), value.GetInterval().Start(), value.GetInterval().End());
-                    ReadReply * reply = notification.add_replies();
-                    reply->set_key(key);
-                    value.Serialize(reply);
-                }
+                keys.push_back(key);
+                Debug("Adding key %s to notification MultiGet", key.c_str());
             }
-            transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
-            Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
+
+            callback_t cb =
+                std::bind(&Server::sendNotificationsCallback,
+                     this,
+                     rt.client_id,
+                     rt.reactive_id,
+                     placeholders::_1);
+
+            if (keys.size() > 1) {
+                store->MultiGet(0, keys, cb,
+                                rt.next_timestamp);
+            } else {
+                store->Get(0, keys[0], cb,
+                           rt.next_timestamp);
+            }
         }
     }
     if (!anyOutstanding) {
         sendNotificationTimeout->Stop();
     }
+}
+
+void
+Server::sendNotificationsCallback(uint64_t client_id, uint64_t reactive_id, Promise *promise) {
+    Debug("sendNotificationsCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
+
+    uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
+    ReactiveTransaction rt = transactions[frontendIndex];
+    map<string, Version> getValues = promise->GetValues();
+
+    Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
+    Notification notification;
+    notification.set_clientid(rt.client_id);
+    notification.set_reactiveid(rt.reactive_id);
+    notification.set_timestamp(rt.next_timestamp);
+    for (auto key : rt.keys) {
+        if (getValues.find(key) != getValues.end()) {
+            Version value = getValues[key];
+            Debug("Packing entry %s (%lu, %lu)", key.c_str(), value.GetInterval().Start(), value.GetInterval().End());
+            ReadReply * reply = notification.add_replies();
+            reply->set_key(key);
+            value.Serialize(reply);
+        }
+    }
+    transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+    Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
 }
 
 void
