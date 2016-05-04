@@ -110,30 +110,30 @@ int main(int argc, char ** argv) {
         }
         notificationReceived = false;
         if (done) {
-            break;
+           break;
         }
         if (!twoPlayers) {
-            continue;
+           continue;
         }
         //cout << "Got a signal from the CV" << endl;
 
         int inc = 1;
         int committed = 0;
         while (!committed) {
-            DObject::TransactionBegin();
-	    string cp = players[currentMove.Value() % players.Size()];
-	    // If it's the user's turn, make move
-	    if (cp == myName && inc >= 1 && inc <= 10) {
-                //cout << "It's my turn" << endl;
-	        score += inc;
-	        if (score.Value() < 100) {
-                    ++currentMove;
-                }
-            }
-            else {
-                //cout << "It's " << cp << "'s turn (interactive txn)" << endl;
-            }
-            committed = DObject::TransactionCommit();
+           DObject::TransactionBegin();
+           string cp = players[currentMove.Value() % players.Size()];
+           // If it's the user's turn, make move
+           if (cp == myName && inc >= 1 && inc <= 10) {
+              //cout << "It's my turn" << endl;
+              score += inc;
+              if (score.Value() < 100) {
+                 ++currentMove;
+              }
+           }
+           else {
+              //cout << "It's " << cp << "'s turn (interactive txn)" << endl;
+           }
+           committed = DObject::TransactionCommit();
         }        
 
         uint64_t turnTime = currentTimeMillis();
