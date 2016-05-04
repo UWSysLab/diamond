@@ -24,7 +24,8 @@ bool twoPlayers = false;
 uint64_t prevTurnTime;
 
 int main(int argc, char ** argv) {
-   std::string host, port;
+   std::string host;
+   int port;
    std::string myName;
    std::string keyPrefix;
 
@@ -33,7 +34,7 @@ int main(int argc, char ** argv) {
        ("help", "produce help message")
        ("name", po::value<std::string>(&myName)->required(), "name to use in the game (required)")
        ("host", po::value<std::string>(&host)->required(), "Redis host (required)")
-       ("port", po::value<std::string>(&port)->required(), "Redis port (required)")
+       ("port", po::value<int>(&port)->required(), "Redis port (required)")
        ("keyprefix", po::value<std::string>(&keyPrefix)->required(), "key prefix (required)");
        
     po::variables_map vm;
