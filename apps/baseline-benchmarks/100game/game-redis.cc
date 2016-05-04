@@ -73,6 +73,7 @@ int main(int argc, char ** argv) {
                        } else {
                           exit(1);
                        }
+                       r.free();
                     }
 
                     int numPlayers = players.size();
@@ -94,6 +95,7 @@ int main(int argc, char ** argv) {
                     } else {
                        exit(1);
                     }
+                    r.free();
 
                     if (numPlayers > 0) {
                        string cp = players[turn % numPlayers];
@@ -122,7 +124,20 @@ int main(int argc, char ** argv) {
     sleep(1); // race condition: client will miss its own update if the subscribe
               // above happens after the publish below
 
-    rdx.command<int>({"ZADD", keyPrefix+":players", "1", myName}, cb);
+    {
+        Command<int>& c = rdx.commandSync<int>({"ZADD", keyPrefix+":players", "1", myName});
+        if (!c.ok()) {
+            exit(1);
+        }
+        c.free();
+    }
+    {
+        Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "3"});
+        if (!c.ok()) {
+            exit(1);
+        }
+        c.free();
+    }
     rdx.publish(keyPrefix + ":ping", "players");
  
     // Cycle on user input
@@ -146,11 +161,27 @@ int main(int argc, char ** argv) {
        // If it's the user's turn, make move
        if (cp == myName && inc >= 1 && inc <= 10) {
           //cout << "It's my turn" << endl;
-          rdx.command<int>({"INCRBY", keyPrefix+":sum",
-                   to_string(inc)}, cb);
+          {
+             Command<int>& c = rdx.commandSync<int>({"INCRBY", keyPrefix+":sum", to_string(inc)});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
+          }
 	  
           if (sum < 100) {
-             rdx.command<int>({"INCR", keyPrefix+":turn"}, cb);
+             Command<int>& c = rdx.commandSync<int>({"INCR", keyPrefix+":turn"});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
+          }
+          {
+             Command<int>& c = rdx.commandSync<int>({"WAIT", "1", "3"});
+             if (!c.ok()) {
+                exit(1);
+             }
+             c.free();
           }
           rdx.publish(keyPrefix+":ping", "move");
        }
