@@ -8,6 +8,7 @@ RUN apt-get update
 
 RUN apt-get install -y python2.7 rsync ssh libevent-dev libprotobuf-dev libboost-program-options-dev python-pip
 RUN apt-get install -y openjdk-8-jre-headless
+RUN apt-get install -y libhiredis-dev libev-dev
 
 RUN pip install redis
 
@@ -31,6 +32,7 @@ COPY ./run_baseline.py /home/$user/
 COPY ./run_baseline_retwis.py /home/$user/
 COPY ./run_caching.py /home/$user/
 COPY ./run_game.py /home/$user/
+COPY ./run_redis_game.py /home/$user/
 COPY ./experiment_common.py /home/$user/
 
 COPY ./keys.txt /home/$user/
