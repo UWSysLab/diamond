@@ -19,6 +19,7 @@ namespace po = boost::program_options;
 std::mutex m;
 std::condition_variable cv;
 bool notificationReceived = true;
+bool turnZeroNotificationReceived = false;
 bool done = false;
 bool twoPlayers = false;
 uint64_t prevTurnTime;
@@ -65,6 +66,8 @@ int main(int argc, char ** argv) {
    // Set up our print outs
    sub.subscribe(keyPrefix + ":ping",
                  [&] (const string& topic, const string& msg) {
+                    int receivedSum = -1;
+                    int receivedTurn = -1;
                     if (msg == "players") {
                        Command<vector<string>>& r =
                           rdx.commandSync<vector<string>>({"ZRANGE",
@@ -75,6 +78,8 @@ int main(int argc, char ** argv) {
                           exit(1);
                        }
                        r.free();
+                       receivedSum = 0;
+                       receivedTurn = 0;
                     }
                     else if (msg.substr(0, 4) == "move") {
                         vector<string> elems;
@@ -83,8 +88,8 @@ int main(int argc, char ** argv) {
                         while (std::getline(ss, item, ':')) {
                             elems.push_back(item);
                         }
-                        sum = stoi(elems[1]);
-                        turn = stoi(elems[2]);
+                        receivedSum = stoi(elems[1]);
+                        receivedTurn = stoi(elems[2]);
                     }
 
                     int numPlayers = players.size();
@@ -107,29 +112,37 @@ int main(int argc, char ** argv) {
                        exit(1);
                     }
                     r.free();*/
-                    cout << "NOTIFICATION: Sum: " << sum << " turn: " << turn << " numPlayers: " << numPlayers << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
-
-                    if (numPlayers > 0) {
-                       string cp = players[turn % numPlayers];
-                       if (sum >= 100) {
-                          //cout << cp << " won! Game Over!" << endl;
-                          {
-                             std::unique_lock<std::mutex> lock(m);
-                             notificationReceived = true;
-                             done = true;
-                             cv.notify_all();
-                          }
-                       } else if (cp == myName) {
-                          //cout << " Enter number between 1 and 10: " << endl;
-                          {
-                             std::unique_lock<std::mutex> lock(m);
-                             notificationReceived = true;
-                             if (numPlayers >= 2) {
-                                twoPlayers = true;
-                             }
-                             cv.notify_all();
-                          }
-                       }
+                    if (receivedTurn > turn || (receivedTurn == 0 && numPlayers == 2 && !turnZeroNotificationReceived)) {
+                        if (receivedTurn > turn) {
+                            sum = receivedSum;
+                            turn = receivedTurn;
+                        }
+                        if (receivedTurn == 0 && numPlayers == 2 && !turnZeroNotificationReceived) {
+                            turnZeroNotificationReceived = true;
+                        }
+                        //cout << "NOTIFICATION: Sum: " << sum << " turn: " << turn << " numPlayers: " << numPlayers << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
+                        if (numPlayers > 0) {
+                           string cp = players[turn % numPlayers];
+                           if (sum >= 100) {
+                              //cout << cp << " won! Game Over!" << endl;
+                              {
+                                 std::unique_lock<std::mutex> lock(m);
+                                 notificationReceived = true;
+                                 done = true;
+                                 cv.notify_all();
+                              }
+                           } else if (cp == myName) {
+                              //cout << " Enter number between 1 and 10: " << endl;
+                              {
+                                 std::unique_lock<std::mutex> lock(m);
+                                 notificationReceived = true;
+                                 if (numPlayers >= 2) {
+                                    twoPlayers = true;
+                                 }
+                                 cv.notify_all();
+                              }
+                           }
+                        }
                     }
                  });
    
@@ -170,7 +183,7 @@ int main(int argc, char ** argv) {
 
        int inc = 1;
        string cp = players[turn % players.size()];
-       cout << "TURN: Sum: " << sum << " turn: " << turn << " numPlayers: " << players.size() << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
+       //cout << "TURN: Sum: " << sum << " turn: " << turn << " numPlayers: " << players.size() << " myTurn?: " << (myName == players[turn % players.size()]) << endl;
        // If it's the user's turn, make move
        if (cp == myName && inc >= 1 && inc <= 10) {
           //cout << "It's my turn" << endl;
@@ -212,7 +225,11 @@ int main(int argc, char ** argv) {
              c.free();
           }
           rdx.publish(keyPrefix+":ping", "move:" + to_string(newSum) + ":" + to_string(newTurn));
+          //cout << "PUBLISH: Sum: " << newSum << " turn: " << newTurn << endl;
        }
+        else {
+            cout << "ERROR why am I taking a turn?" << endl;
+        }
        uint64_t turnTime = currentTimeMillis();
         
        std::cout << prevTurnTime << "\t" << turnTime << std::endl;
