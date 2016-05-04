@@ -39,7 +39,7 @@ int main(int argc, char ** argv) {
        
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
-    if (vm.count("help") || !vm.count("config")) {
+    if (vm.count("help") || !vm.count("host") || !vm.count("port") || !vm.count("keyprefix")) {
        std::cout << desc << std::endl;
        return 1;
     }
@@ -61,11 +61,8 @@ int main(int argc, char ** argv) {
    if (!rdx.connect(host, port)) exit(1);
    if (!sub.connect(host, port)) exit(1);
 
-   rdx.command<int>({"ZADD", keyPrefix+":players", "1", myName}, cb);
-   rdx.publish(keyPrefix + ":ping", "players");
-   
    // Set up our print outs
-   sub.subscribe("ping",
+   sub.subscribe(keyPrefix + ":ping",
                  [&] (const string& topic, const string& msg) {
                     if (msg == "players") {
                        Command<vector<string>>& r =
@@ -76,44 +73,57 @@ int main(int argc, char ** argv) {
                        } else {
                           exit(1);
                        }
-                    } else {
-                       int numPlayers = players.size();
-                       Command<vector<string>>& r =
-                          rdx.commandSync<vector<string>>({"MGET",
-                                   keyPrefix+":sum",
-                                   keyPrefix+":turn"});
-                       if (r.ok()) {
-                          sum = stoi(r.reply()[0]);
-                          turn = stoi(r.reply()[1]);
-                       } else {
-                          exit(1);
-                       }
+                    }
 
-                       if (numPlayers > 0) {
-                          string cp = players[turn % numPlayers];
-                          if (sum >= 100) {
-                             //cout << cp << " won! Game Over!" << endl;
-                             {
-                                std::unique_lock<std::mutex> lock(m);
-                                notificationReceived = true;
-                                done = true;
-                                cv.notify_all();
+                    int numPlayers = players.size();
+                    Command<vector<string>>& r =
+                       rdx.commandSync<vector<string>>({"MGET",
+                                keyPrefix+":sum",
+                                keyPrefix+":turn"});
+                    if (r.ok()) {
+                       string sumStr = r.reply()[0];
+                       if (sumStr.size() == 0) {
+                          sumStr = "0";
+                       }
+                       string turnStr = r.reply()[1];
+                       if (turnStr.size() == 0) {
+                          turnStr = "0";
+                       }
+                       sum = stoi(sumStr);
+                       turn = stoi(turnStr);
+                    } else {
+                       exit(1);
+                    }
+
+                    if (numPlayers > 0) {
+                       string cp = players[turn % numPlayers];
+                       if (sum >= 100) {
+                          //cout << cp << " won! Game Over!" << endl;
+                          {
+                             std::unique_lock<std::mutex> lock(m);
+                             notificationReceived = true;
+                             done = true;
+                             cv.notify_all();
+                          }
+                       } else if (cp == myName) {
+                          //cout << " Enter number between 1 and 10: " << endl;
+                          {
+                             std::unique_lock<std::mutex> lock(m);
+                             notificationReceived = true;
+                             if (numPlayers >= 2) {
+                                twoPlayers = true;
                              }
-                          } else if (cp == myName) {
-                             //cout << " Enter number between 1 and 10: " << endl;
-                             {
-                                std::unique_lock<std::mutex> lock(m);
-                                notificationReceived = true;
-                                if (numPlayers >= 2) {
-                                   twoPlayers = true;
-                                }
-                                cv.notify_all();
-                             }
+                             cv.notify_all();
                           }
                        }
                     }
                  });
    
+    sleep(1); // race condition: client will miss its own update if the subscribe
+              // above happens after the publish below
+
+    rdx.command<int>({"ZADD", keyPrefix+":players", "1", myName}, cb);
+    rdx.publish(keyPrefix + ":ping", "players");
  
     // Cycle on user input
     prevTurnTime = currentTimeMillis();
@@ -142,7 +152,7 @@ int main(int argc, char ** argv) {
           if (sum < 100) {
              rdx.command<int>({"INCR", keyPrefix+":turn"}, cb);
           }
-          rdx.publish(keyPrefix+"ping", "move");
+          rdx.publish(keyPrefix+":ping", "move");
        }
        uint64_t turnTime = currentTimeMillis();
         
@@ -150,6 +160,5 @@ int main(int argc, char ** argv) {
 
        prevTurnTime = turnTime;
     }
-    sleep(5);
     return 0;
 }
