@@ -206,13 +206,11 @@ DiamondClient::Get(const string &key, string &value)
     if (promise.GetReply() == REPLY_OK) {
         Debug("Adding [%s] with ts %lu to the read set", key.c_str(), promise.GetValue(key).GetTimestamp());
         txn.AddReadSet(key, promise.GetValue(key).GetInterval());
-        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
-            !txn.HasTimestamp()) {
-            txn.SetTimestamp(promise.GetValue(key).GetTimestamp());
+        if (!txn.HasTimestamp()) {
+            txn.SetTimestamp(promise.GetValue(key).GetInterval().End());
             Debug("Setting ts to %lu", txn.GetTimestamp());
         }
-    }
-    else if (promise.GetReply() == REPLY_NOT_FOUND) {
+    } else if (promise.GetReply() == REPLY_NOT_FOUND) {
         Debug("Adding [%s] (not found) to the read set", key.c_str());
         txn.AddReadSet(key, Interval(0));
     }
@@ -263,9 +261,8 @@ DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
             values[value.first] = value.second.GetValue();
         }
 
-        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
-            !txn.HasTimestamp()) {
-            txn.SetTimestamp((values.begin())->second.GetTimestamp());
+        if (!txn.HasTimestamp()) {
+            txn.SetTimestamp((values.begin())->second.GetInterval().End());
             Debug("Setting ts to %lu", txn.GetTimestamp());
         }
     }
