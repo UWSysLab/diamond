@@ -109,7 +109,6 @@ void
 Server::HandleNotifyFrontend(const TransportAddress &remote,
                              const NotifyFrontendMessage &msg) {
     Debug("Handling NOTIFY-FRONTEND");
-    reactiveMtx.lock();
     for (int i = 0; i < msg.replies_size(); i++) {
         std::string key = msg.replies(i).key();
         Version value(msg.replies(i));
@@ -121,7 +120,6 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
             }
         }
     }
-    reactiveMtx.unlock();
 
     NotifyFrontendAck ack;
     ack.set_txnid(msg.txnid());
@@ -139,7 +137,6 @@ Server::sendNotifications() {
     Debug("Sending notifications");
     bool anyOutstanding = false;
     int numNotifications = 0;
-    //TODO: add reactiveMtx lock and unlock around this loop
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
         if (rt.next_timestamp > rt.last_timestamp) {
@@ -186,44 +183,41 @@ Server::sendNotifications() {
 
 void
 Server::sendNotificationsCallback(const uint64_t client_id, const uint64_t reactive_id, const Timestamp next_timestamp, Promise *promise) {
-    Debug("sendNotificationsCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
-
-    reactiveMtx.lock();
-    uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
-    ReactiveTransaction rt = transactions[frontendIndex];
-    map<string, Version> multiGetValues = promise->GetValues();
-    for (auto &pair : multiGetValues) {
-        cachedValues[pair.first] = pair.second;
-    }
-
-    if (rt.next_timestamp != next_timestamp) {
-        Debug("Not sending notification because the timestamp changed (%lu -> %lu)", next_timestamp, rt.next_timestamp);
-        reactiveMtx.unlock();
-        return;
-    }
-
-    Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
-    Notification notification;
-    notification.set_clientid(rt.client_id);
-    notification.set_reactiveid(rt.reactive_id);
-    notification.set_timestamp(rt.next_timestamp);
-    for (auto key : rt.keys) {
-        if (cachedValues.find(key) != cachedValues.end()
-            && (rt.next_timestamp >= cachedValues[key].GetInterval().Start()
-                && rt.next_timestamp <= cachedValues[key].GetInterval().End())) {
-            Version value = cachedValues[key];
-            Debug("Packing entry %s (%lu, %lu)", key.c_str(), value.GetInterval().Start(), value.GetInterval().End());
-            ReadReply * reply = notification.add_replies();
-            reply->set_key(key);
-            value.Serialize(reply);
-        }
-    }
-    reactiveMtx.unlock();
     transport->Timer(0, [=]() { 
-            transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
-            });
-    Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
-    delete promise;
+        Debug("sendNotificationsCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
+
+        uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
+        ReactiveTransaction rt = transactions[frontendIndex];
+        map<string, Version> multiGetValues = promise->GetValues();
+        for (auto &pair : multiGetValues) {
+            cachedValues[pair.first] = pair.second;
+        }
+
+        if (rt.next_timestamp != next_timestamp) {
+            Debug("Not sending notification because the timestamp changed (%lu -> %lu)", next_timestamp, rt.next_timestamp);
+            return;
+        }
+
+        Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
+        Notification notification;
+        notification.set_clientid(rt.client_id);
+        notification.set_reactiveid(rt.reactive_id);
+        notification.set_timestamp(rt.next_timestamp);
+        for (auto key : rt.keys) {
+            if (cachedValues.find(key) != cachedValues.end()
+                && (rt.next_timestamp >= cachedValues[key].GetInterval().Start()
+                    && rt.next_timestamp <= cachedValues[key].GetInterval().End())) {
+                Version value = cachedValues[key];
+                Debug("Packing entry %s (%lu, %lu)", key.c_str(), value.GetInterval().Start(), value.GetInterval().End());
+                ReadReply * reply = notification.add_replies();
+                reply->set_key(key);
+                value.Serialize(reply);
+            }
+        }
+        transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+        Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
+        delete promise;
+    });
 }
 
 void
@@ -235,7 +229,6 @@ Server::HandleRegister(const TransportAddress &remote,
         Debug("Registering %s", msg.keys(i).c_str());
     }
 
-    reactiveMtx.lock();
     set<string> subscribeSet; // set of keys from regSet that we aren't already subscribed to
     for (int i = 0; i < msg.keys_size(); i++) {
         string key = msg.keys(i);
@@ -243,7 +236,6 @@ Server::HandleRegister(const TransportAddress &remote,
             subscribeSet.insert(key);
         }
     }
-    reactiveMtx.unlock();
 
     callback_t cb =
 	std::bind(&Server::SubscribeCallback,
@@ -266,7 +258,6 @@ Server::SubscribeCallback(const TransportAddress *remote,
         regSet.insert(key);
     }
 
-    reactiveMtx.lock();
     map<string, Version> subscribeValues = promise->GetValues();
     for (auto &pair : subscribeValues) {
         if (cachedValues.find(pair.first) == cachedValues.end()
@@ -300,7 +291,6 @@ Server::SubscribeCallback(const TransportAddress *remote,
     for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
         listeners[*it].insert(rt.frontend_index);
     }
-    reactiveMtx.unlock();
 
     RegisterReply reply;
     reply.set_status(REPLY_OK);
@@ -488,7 +478,7 @@ main(int argc, char **argv)
 
     strongstore::Client *client = new strongstore::Client(backendConfig, maxShard, closestReplica);
 
-    diamond::frontend::Server server(&transport, client);
+    diamond::frontend::Server server = diamond::frontend::Server(&transport, client);
 
     // The server's transport for handling incoming connections
     transport.Register(&server, config, 0);
