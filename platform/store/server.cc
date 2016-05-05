@@ -49,7 +49,7 @@ Server::Server(transport::Configuration &transportConfig)
     transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
 
-    sendNotificationTimeout = new Timeout(&transport, 10, [this]() {
+    sendNotificationTimeout = new Timeout(&transport, 1, [this]() {
         sendNotifications();
     });
     sendNotificationTimeout->Start();
@@ -156,6 +156,10 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         // Add frontend notifications for this txn to the queue
         {
             store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
+            if (!sendNotificationTimeout->Active()) {
+                sendNotifications();
+                sendNotificationTimeout->Start();
+            }
         }
         replicate = true;
         str2 = str1;
@@ -197,6 +201,9 @@ Server::sendNotifications() {
         string port;
         getline(ss, port, ':');
         transport.SendMessage(this, hostname, port, msg);
+    }
+    if (notifications.size() == 0) {
+        sendNotificationTimeout->Stop();
     }
 }
 
