@@ -42,7 +42,7 @@ using namespace std;
 Server::Server(Transport *transport, strongstore::Client *client)
     : transport(transport), store(client)
 {
-    sendNotificationTimeout = new Timeout(transport, 50, [this]() {
+    sendNotificationTimeout = new Timeout(transport, 10, [this]() {
             sendNotifications();
         });
 }
@@ -152,6 +152,7 @@ Server::sendNotifications() {
                      this,
                      rt.client_id,
                      rt.reactive_id,
+                     rt.next_timestamp,
                      placeholders::_1);
 
             if (keys.size() > 1) {
@@ -169,12 +170,16 @@ Server::sendNotifications() {
 }
 
 void
-Server::sendNotificationsCallback(uint64_t client_id, uint64_t reactive_id, Promise *promise) {
+Server::sendNotificationsCallback(const uint64_t client_id, const uint64_t reactive_id, const Timestamp next_timestamp, Promise *promise) {
     Debug("sendNotificationsCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
 
     uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
     ReactiveTransaction rt = transactions[frontendIndex];
     map<string, Version> getValues = promise->GetValues();
+
+    if (rt.next_timestamp != next_timestamp) {
+        return;
+    }
 
     Debug("Sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
     Notification notification;
@@ -190,7 +195,9 @@ Server::sendNotificationsCallback(uint64_t client_id, uint64_t reactive_id, Prom
             value.Serialize(reply);
         }
     }
-    transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+    transport->Timer(0, [=]() { 
+            transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
+            });
     Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
 }
 
