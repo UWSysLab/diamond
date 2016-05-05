@@ -90,16 +90,15 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
     Promise *pp = (promise != NULL) ? promise : &p;
 
     txnclient->Get(tid, key, timestamp, pp);
-    // if (pp->GetReply() == REPLY_OK) {
-    //     if (cachingEnabled) {
-    //         Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
-    //         cache_lock.lock();
-    //         // Make sure that we've capped the validity range
-    //         ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
-    //         cache.Put(key, pp->GetValue(key));
-    //         cache_lock.unlock();
-    //     }
-    // }
+    if (pp->GetReply() == REPLY_OK) {
+        Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
+        cache_lock.lock();
+        // Make sure that we've capped the validity range
+        ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
+        
+        cache.Put(key, pp->GetValue(key));
+        cache_lock.unlock();
+    }
 }
 
 void
@@ -140,17 +139,15 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
     if (pp->GetReply() == REPLY_OK){
         map<string, Version> values = pp->GetValues();
 
-        // cache_lock.lock();
-        // for (auto &value : values) {
-        //     if (cachingEnabled) {
-        //         Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
-        //         ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
-        //         cache.Put(value.first, value.second);
-        //         keysRead[value.first] = value.second;
-        //     }
-        // }
-        // cache_lock.unlock();
-        pp->Reply(REPLY_OK, keysRead);
+        cache_lock.lock();
+        for (auto &value : values) {
+            Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+            ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
+            
+            cache.Put(value.first, value.second);
+            keysRead[value.first] = value.second;
+        }
+        cache_lock.unlock();
     }
 }
 
@@ -192,28 +189,29 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     txnclient->Commit(tid, txn, pp);
 
     // update the cache
-     pp->GetReply();
-    // cache_lock.lock();
+
     // const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
     // prepared.erase(tid);
         
     // // update the cache
-    // if (reply == REPLY_OK) {
+    if (pp->GetReply() == REPLY_OK) {
     //     for (auto &write : t.GetWriteSet()) {
     // 	    Debug("Adding [%s] with ts %lu to the cache", write.first.c_str(), pp->GetTimestamp());
     //         cache.Put(write.first, write.second, pp->GetTimestamp());
     //     }
     // } else if (reply == REPLY_FAIL) {
-    //     for (auto &read : t.GetReadSet()) {
-    //         Debug("Removing [%s] from the cache", read.first.c_str());
-    //         cache.Remove(read.first);
-    //     }        
-    // }
+        cache_lock.lock();
+        for (auto &read : txn.GetReadSet()) {
+            Debug("Removing [%s] from the cache", read.first.c_str());
+            cache.Remove(read.first);
+        }
+        cache_lock.unlock();
+    }
     // for (auto &inc : t.GetIncrementSet()) {
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
     //     cache.Remove(inc.first);
     // }
-    // cache_lock.unlock();
+    
 }
 
 /* Aborts the ongoing transaction. */
