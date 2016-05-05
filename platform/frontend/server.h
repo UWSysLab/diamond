@@ -74,7 +74,6 @@ private:
     std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
     std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
     std::unordered_map<std::string, Version> cachedValues; // map keys to their cached values
-    std::mutex reactiveMtx; // lock for the above three variables
     Timeout * sendNotificationTimeout;
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);

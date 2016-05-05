@@ -137,6 +137,7 @@ Server::sendNotifications() {
     Debug("Sending notifications");
     bool anyOutstanding = false;
     int numNotifications = 0;
+    int numCallbacks = 0;
     for (auto it = transactions.begin(); it != transactions.end(); it++) {
         ReactiveTransaction rt = it->second;
         if (rt.next_timestamp > rt.last_timestamp) {
@@ -163,9 +164,11 @@ Server::sendNotifications() {
             if (multiGetKeys.size() > 1) {
                 store->MultiGet(0, multiGetKeys, cb,
                                 rt.next_timestamp);
+                numCallbacks++;
             } else if (multiGetKeys.size() > 0) {
                 store->Get(0, multiGetKeys[0], cb,
                            rt.next_timestamp);
+                numCallbacks++;
             } else {
                 Promise *p = new Promise();
                 p->Reply(REPLY_OK);
@@ -178,7 +181,7 @@ Server::sendNotifications() {
     if (!anyOutstanding) {
         sendNotificationTimeout->Stop();
     }
-    Debug("Sent MultiGets for %d notifications", numNotifications);
+    Debug("Sent MultiGets for %d notifications, scheduled %d callbacks", numNotifications, numCallbacks);
 }
 
 void
@@ -252,55 +255,61 @@ Server::SubscribeCallback(const TransportAddress *remote,
 			  const RegisterMessage msg,
 			  Promise *promise)
 {
-    set<string> regSet;
-    for (int i = 0; i < msg.keys_size(); i++) {
-        string key = msg.keys(i);
-        regSet.insert(key);
-    }
-
-    map<string, Version> subscribeValues = promise->GetValues();
-    for (auto &pair : subscribeValues) {
-        if (cachedValues.find(pair.first) == cachedValues.end()
-            || pair.second.GetTimestamp() > cachedValues[pair.first].GetTimestamp()
-            || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
-            Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
-            cachedValues[pair.first] = pair.second;
-        }
-    }
-
-    Timestamp timestamp = msg.timestamp();
-    for (auto it = regSet.begin(); it != regSet.end(); it++) {
-        Timestamp keyTimestamp = cachedValues[*it].GetTimestamp();
-        if (timestamp < keyTimestamp) {
-            timestamp = keyTimestamp;
-        }
-    }
-
-    ReactiveTransaction rt;
-    rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
-    rt.reactive_id = msg.reactiveid();
-    rt.client_id = msg.clientid();
-    rt.last_timestamp = msg.timestamp();
-    rt.next_timestamp = timestamp;
-    rt.keys = regSet;
-    rt.client_hostname = remote->getHostname();
-    rt.client_port = remote->getPort();
-
-    transactions[rt.frontend_index] = rt;
-
-    for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
-        listeners[*it].insert(rt.frontend_index);
-    }
-
-    RegisterReply reply;
-    reply.set_status(REPLY_OK);
-    reply.set_msgid(msg.msgid());
     transport->Timer(0, [=]() { 
-	    transport->SendMessage(this, *remote, reply);
-	    sendNotificationTimeout->Reset();
-	    delete remote;
-	    });
-    delete promise;
+        set<string> regSet;
+        for (int i = 0; i < msg.keys_size(); i++) {
+            string key = msg.keys(i);
+            regSet.insert(key);
+        }
+
+        map<string, Version> subscribeValues = promise->GetValues();
+        for (auto &pair : subscribeValues) {
+            if (cachedValues.find(pair.first) == cachedValues.end()
+                || pair.second.GetTimestamp() > cachedValues[pair.first].GetTimestamp()
+                || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
+                Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
+                cachedValues[pair.first] = pair.second;
+            }
+        }
+
+        Timestamp timestamp = msg.timestamp();
+        for (auto it = regSet.begin(); it != regSet.end(); it++) {
+            Timestamp keyTimestamp = cachedValues[*it].GetTimestamp();
+            if (timestamp < keyTimestamp) {
+                timestamp = keyTimestamp;
+            }
+        }
+
+        ReactiveTransaction rt;
+        rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
+        rt.reactive_id = msg.reactiveid();
+        rt.client_id = msg.clientid();
+        rt.last_timestamp = msg.timestamp();
+        rt.next_timestamp = timestamp;
+        rt.keys = regSet;
+        rt.client_hostname = remote->getHostname();
+        rt.client_port = remote->getPort();
+
+        transactions[rt.frontend_index] = rt;
+
+        for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
+            listeners[*it].insert(rt.frontend_index);
+        }
+
+        RegisterReply reply;
+        reply.set_status(REPLY_OK);
+        reply.set_msgid(msg.msgid());
+
+        transport->SendMessage(this, *remote, reply);
+        delete remote;
+
+        if (!sendNotificationTimeout->Active()) {
+            sendNotifications();
+            sendNotificationTimeout->Start();
+        }
+
+        delete promise;
+    });
 }
 
 void
