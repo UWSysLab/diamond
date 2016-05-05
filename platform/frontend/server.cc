@@ -139,11 +139,16 @@ void
 Server::HandleNotifyFrontend(const TransportAddress &remote,
                              const NotifyFrontendMessage &msg) {
     Debug("Handling NOTIFY-FRONTEND");
-    for (int i = 0; i < msg.replies_size(); i++) {
+    for (int i = 0; i < msg.replies_size(); i++) { // update cache with packaged values
+        std::string key = msg.replies(i).key();
+        Version value(msg.replies(i));
+        cachedValues[key] = value;
+    }
+
+    for (int i = 0; i < msg.replies_size(); i++) { // trigger notifications
         std::string key = msg.replies(i).key();
         Version value(msg.replies(i));
         Timestamp timestamp = value.GetTimestamp();
-        cachedValues[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
             ReactiveTransaction &rt = transactions[*it];
             if (rt.next_timestamp < timestamp) {
