@@ -74,11 +74,11 @@ private:
     std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
     std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
     std::unordered_map<std::string, Version> cachedValues; // map keys to their cached values
-    Timeout * sendNotificationTimeout;
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
-    void sendNotifications();
-
+    void SendNotifications(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
+    void UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp);
+    
     // callbacks
     void GetCallback(const TransportAddress *remote,
 		     const proto::GetMessage msg,
