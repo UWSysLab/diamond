@@ -72,17 +72,16 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 
     Version value;
     // look for it in the cache
-    if (cachingEnabled) {
-	if ((timestamp == MAX_TIMESTAMP &&
-	     cache.Get(key, value)) ||
-	    cache.Get(key, timestamp, value)) {
-	    cache_lock.unlock();
-			
-	    Debug("CACHE HIT %s at ts %lu", key.c_str(), value.GetTimestamp());
-	    if (promise != NULL)
-		promise->Reply(REPLY_OK, key, value);
-	    return;
-	}
+    if ((cachingEnabled &&
+         timestamp == MAX_TIMESTAMP &&
+         cache.Get(key, value)) ||
+        cache.Get(key, timestamp, value)) {
+        cache_lock.unlock();
+		
+        Debug("CACHE HIT %s at ts %lu", key.c_str(), value.GetTimestamp());
+        if (promise != NULL)
+            promise->Reply(REPLY_OK, key, value);
+        return;
     }
 
     cache_lock.unlock();
@@ -116,9 +115,10 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
     for (auto &key : keys) {
         // look for it in the cache
-        if (cachingEnabled
-            && ((timestamp == MAX_TIMESTAMP && cache.Get(key, value))
-                || cache.Get(key, timestamp, value))) {
+        if ((cachingEnabled &&
+             timestamp == MAX_TIMESTAMP &&
+             cache.Get(key, value))
+            || cache.Get(key, timestamp, value)) {
             keysRead[key] = value;
         } else {
             keysToRead.push_back(key);
