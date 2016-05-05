@@ -69,7 +69,7 @@ private:
 
     void ExecuteGet(proto::Request, string &str2);
 
-    void sendNotifications();
+    void sendNotification(uint64_t tid);
     void runTransport();
 };
 

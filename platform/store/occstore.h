@@ -73,7 +73,7 @@ public:
     void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values);
     void AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid);
     void AckFrontendNotification(const uint64_t tid, const std::string &address);
-    void GetUnackedFrontendNotifications(std::vector<FrontendNotification> &notifications);
+    void GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications);
 
 private:
     // Data store.

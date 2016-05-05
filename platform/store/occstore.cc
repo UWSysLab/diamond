@@ -426,11 +426,12 @@ OCCStore::AckFrontendNotification(const uint64_t tid, const std::string &address
 }
 
 void
-OCCStore::GetUnackedFrontendNotifications(std::vector<FrontendNotification> &notifications) {
+OCCStore::GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications) {
     ufnMutex.lock();
     for (auto &addrMapPair : unackedFrontendNotifications) {
-        for (auto &pair : addrMapPair.second) {
-            notifications.push_back(pair.second);
+	auto it = addrMapPair.second.find(tid);
+	if (it != addrMapPair.second.end()) {
+            notifications.push_back(it->second);
         }
     }
     ufnMutex.unlock();

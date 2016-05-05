@@ -67,7 +67,7 @@ public:
     virtual void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values) = 0;
     virtual void AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid) = 0;
     virtual void AckFrontendNotification(const uint64_t tid, const std::string &address) = 0;
-    virtual void GetUnackedFrontendNotifications(std::vector<FrontendNotification> &notifications) = 0;
+    virtual void GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications) = 0;
     
 };
 }

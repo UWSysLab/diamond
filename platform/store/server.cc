@@ -49,10 +49,6 @@ Server::Server(transport::Configuration &transportConfig)
     transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
 
-    sendNotificationTimeout = new Timeout(&transport, 1, [this]() {
-        sendNotifications();
-    });
-    sendNotificationTimeout->Start();
 }
 
 Server::~Server()
@@ -156,10 +152,7 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         // Add frontend notifications for this txn to the queue
         {
             store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
-            if (!sendNotificationTimeout->Active()) {
-                sendNotifications();
-                sendNotificationTimeout->Start();
-            }
+	    sendNotification(request.txnid());
         }
         replicate = true;
         str2 = str1;
@@ -178,32 +171,34 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
 }
 
 void
-Server::sendNotifications() {
+Server::sendNotification(uint64_t tid) {
     vector<FrontendNotification> notifications;
-    store->GetUnackedFrontendNotifications(notifications);
-    for (auto it = notifications.begin(); it != notifications.end(); it++) {
-        FrontendNotification notification = *it;
-        Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
-        NotifyFrontendMessage msg;
-        for (auto it2 = notification.values.begin(); it2 != notification.values.end(); it2++) {
-            string key = it2->first;
-            Version value = it2->second;
-            Timestamp timestamp = value.GetTimestamp();
-            Debug("%s, %lu", key.c_str(), timestamp);
-            ReadReply * reply = msg.add_replies();
-            reply->set_key(key);
-            value.Serialize(reply);
-        }
-        msg.set_txnid(it->txn_id);
-        stringstream ss(it->address);
-        string hostname;
-        getline(ss, hostname, ':');
-        string port;
-        getline(ss, port, ':');
-        transport.SendMessage(this, hostname, port, msg);
-    }
-    if (notifications.size() == 0) {
-        sendNotificationTimeout->Stop();
+    store->GetUnackedFrontendNotifications(tid, notifications);
+
+    if (notifications.size() > 0) {
+	for (auto notification : notifications) {
+	    Debug("Sending NOTIFY-FRONTEND to frontend %s:", notification.address.c_str());
+	    NotifyFrontendMessage msg;
+	    for (auto v : notification.values) {
+		string key = v.first;
+		Version value = v.second;
+		Timestamp timestamp = value.GetTimestamp();
+		Debug("%s, %lu", key.c_str(), timestamp);
+		ReadReply * reply = msg.add_replies();
+		reply->set_key(key);
+		value.Serialize(reply);
+	    }
+	    msg.set_txnid(tid);
+	    stringstream ss(notification.address);
+	    string hostname;
+	    getline(ss, hostname, ':');
+	    string port;
+	    getline(ss, port, ':');
+	    transport.SendMessage(this, hostname, port, msg);
+	}
+	transport.Timer(10, [=]() {
+		sendNotification(tid);
+	    });
     }
 }
 
