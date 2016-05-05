@@ -42,9 +42,6 @@ using namespace std;
 Server::Server(Transport *transport, strongstore::Client *client)
     : transport(transport), store(client)
 {
-    sendNotificationTimeout = new Timeout(transport, 10, [this]() {
-            sendNotifications();
-        });
 }
 
 Server::~Server()
@@ -215,7 +212,7 @@ Server::UpdateCacheCallback(const uint64_t client_id, const uint64_t reactive_id
 	    }
 	    delete promise;
 
-	    sendNotifications(client_id, reactive_id, next_timestamp);
+	    SendNotification(client_id, reactive_id, next_timestamp);
     });
 }
 

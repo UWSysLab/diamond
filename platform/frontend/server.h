@@ -76,9 +76,9 @@ private:
     std::unordered_map<std::string, Version> cachedValues; // map keys to their cached values
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
-    void SendNotifications(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
+    void SendNotification(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
     void UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp);
-    
+
     // callbacks
     void GetCallback(const TransportAddress *remote,
 		     const proto::GetMessage msg,
@@ -89,7 +89,7 @@ private:
     void SubscribeCallback(const TransportAddress *remote,
 			   const RegisterMessage msg,
 			   Promise *promise);
-    void sendNotificationsCallback(const uint64_t client_id,
+    void UpdateCacheCallback(const uint64_t client_id,
                                    const uint64_t reactive_id,
                                    const Timestamp next_timestamp,
                                    Promise *promise);
