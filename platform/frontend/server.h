@@ -81,19 +81,19 @@ private:
 
     // callbacks
     void GetCallback(const TransportAddress *remote,
-		     const proto::GetMessage msg,
-		     Promise *promise);
+                     const proto::GetMessage msg,
+                     Promise *promise);
     void CommitCallback(const TransportAddress *remote,
-		       const proto::CommitMessage msg,
-		       Promise *promise);
+                        const proto::CommitMessage msg,
+                        Promise *promise);
     void SubscribeCallback(const TransportAddress *remote,
-			   const RegisterMessage msg,
-			   Promise *promise);
+                           const RegisterMessage msg,
+                           Promise *promise);
     void UpdateCacheCallback(const uint64_t client_id,
-                                   const uint64_t reactive_id,
-                                   const Timestamp next_timestamp,
-                                   Promise *promise);
-		     
+                             const uint64_t reactive_id,
+                             const Timestamp next_timestamp,
+                             Promise *promise);
+
 };
 
 } // namespace frontend

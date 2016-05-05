@@ -101,32 +101,32 @@ void
 Server::UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp) {
     vector<string> multiGetKeys;
     for (auto key : rt.keys) {
-	if (cachedValues.find(key) == cachedValues.end()
-	    || (timestamp < cachedValues[key].GetInterval().Start()
-		|| timestamp > cachedValues[key].GetInterval().End())) {
-	    multiGetKeys.push_back(key);
-	    Debug("Adding key %s to notification MultiGet", key.c_str());
-	}
+        if (cachedValues.find(key) == cachedValues.end()
+            || (timestamp < cachedValues[key].GetInterval().Start()
+            || timestamp > cachedValues[key].GetInterval().End())) {
+            multiGetKeys.push_back(key);
+            Debug("Adding key %s to UpdateCache MultiGet", key.c_str());
+        }
     }
 
     callback_t cb =
-	std::bind(&Server::UpdateCacheCallback,
-		  this,
-		  rt.client_id,
-		  rt.reactive_id,
-		  timestamp,
-		  placeholders::_1);
+    std::bind(&Server::UpdateCacheCallback,
+          this,
+          rt.client_id,
+          rt.reactive_id,
+          timestamp,
+          placeholders::_1);
 
     if (multiGetKeys.size() > 1) {
-	store->MultiGet(0, multiGetKeys, cb,
-			timestamp);
+        store->MultiGet(0, multiGetKeys, cb,
+                timestamp);
     } else if (multiGetKeys.size() > 0) {
-	store->Get(0, multiGetKeys[0], cb,
-		   timestamp);
+        store->Get(0, multiGetKeys[0], cb,
+               timestamp);
     } else {
-	Promise *p = new Promise();
-	p->Reply(REPLY_OK);
-	UpdateCacheCallback(rt.client_id, rt.reactive_id, timestamp, p);
+        Promise *p = new Promise();
+        p->Reply(REPLY_OK);
+        UpdateCacheCallback(rt.client_id, rt.reactive_id, timestamp, p);
     }
 }
     
@@ -145,11 +145,11 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
         Timestamp timestamp = value.GetTimestamp();
         cachedValues[key] = value;
         for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
-	    ReactiveTransaction &rt = transactions[*it];
+            ReactiveTransaction &rt = transactions[*it];
             if (rt.next_timestamp < timestamp) {
-		// update cache
-		UpdateCache(rt, timestamp);
-		rt.next_timestamp = timestamp;
+                // update cache
+                UpdateCache(rt, timestamp);
+                rt.next_timestamp = timestamp;
             }
         }
     }
@@ -167,7 +167,7 @@ Server::SendNotification(const uint64_t client_id, const uint64_t reactive_id, c
 
     // if there is a pending notification for this client at this timestamp
     if (rt.last_timestamp < timestamp && timestamp == rt.next_timestamp) {
-	Notification notification;
+        Notification notification;
 
         notification.set_clientid(rt.client_id);
         notification.set_reactiveid(rt.reactive_id);
@@ -186,33 +186,33 @@ Server::SendNotification(const uint64_t client_id, const uint64_t reactive_id, c
         transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
         Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
 
-	// schedule a check back in 50ms
-	transport->Timer(50, [=] {
-		SendNotification(client_id, reactive_id, timestamp);
-	    });
+        // schedule a check back in 50ms
+        transport->Timer(50, [=] {
+            SendNotification(client_id, reactive_id, timestamp);
+        });
     }
 }
     
 void
 Server::UpdateCacheCallback(const uint64_t client_id, const uint64_t reactive_id, const Timestamp next_timestamp, Promise *promise) {
     transport->Timer(0, [=]() { 
-	    Debug("sendNotificationsCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
+        Debug("UpdateCacheCallback called for reactive transaction (%lu, %lu)", client_id, reactive_id);
 
-	    uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
-	    ReactiveTransaction rt = transactions[frontendIndex];
+        uint64_t frontendIndex = getFrontendIndex(client_id, reactive_id);
+        ReactiveTransaction rt = transactions[frontendIndex];
 
-	    // if we are not the latest notification any more, just leave
-	    if (rt.next_timestamp > next_timestamp) {
-		Debug("Not sending notification because the timestamp changed (%lu -> %lu)", next_timestamp, rt.next_timestamp);
-		return;
-	    }
-	
-	    for (auto &pair : promise->GetValues()) {
-		cachedValues[pair.first] = pair.second;
-	    }
-	    delete promise;
+        // if we are not the latest notification any more, just leave
+        if (rt.next_timestamp > next_timestamp) {
+            Debug("Not sending notification because the timestamp changed (%lu -> %lu)", next_timestamp, rt.next_timestamp);
+            return;
+        }
 
-	    SendNotification(client_id, reactive_id, next_timestamp);
+        for (auto &pair : promise->GetValues()) {
+            cachedValues[pair.first] = pair.second;
+        }
+        delete promise;
+
+        SendNotification(client_id, reactive_id, next_timestamp);
     });
 }
 
@@ -234,11 +234,11 @@ Server::HandleRegister(const TransportAddress &remote,
     }
 
     callback_t cb =
-	std::bind(&Server::SubscribeCallback,
-		  this,
-		  remote.clone(),
-		  msg,
-		  placeholders::_1);
+    std::bind(&Server::SubscribeCallback,
+          this,
+          remote.clone(),
+          msg,
+          placeholders::_1);
 
     store->Subscribe(subscribeSet, GetAddress(), cb);
 }
@@ -249,53 +249,53 @@ Server::SubscribeCallback(const TransportAddress *remote,
 			  Promise *promise)
 {
     transport->Timer(0, [=]() { 
-	    set<string> regSet;
-	    for (int i = 0; i < msg.keys_size(); i++) {
-		string key = msg.keys(i);
-		regSet.insert(key);
-	    }
+        set<string> regSet;
+        for (int i = 0; i < msg.keys_size(); i++) {
+            string key = msg.keys(i);
+            regSet.insert(key);
+        }
 
-	    for (auto &pair : promise->GetValues()) {
-		if (cachedValues.find(pair.first) == cachedValues.end()
-		    || pair.second.GetTimestamp() > cachedValues[pair.first].GetTimestamp()
-		    || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
-		    Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
-		    cachedValues[pair.first] = pair.second;
-		}
-	    }
+        for (auto &pair : promise->GetValues()) {
+            if (cachedValues.find(pair.first) == cachedValues.end()
+                || pair.second.GetTimestamp() > cachedValues[pair.first].GetTimestamp()
+                || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
+                Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
+                cachedValues[pair.first] = pair.second;
+            }
+        }
 
-	    Timestamp timestamp = msg.timestamp();
-	    for (auto it = regSet.begin(); it != regSet.end(); it++) {
-		Timestamp keyTimestamp = cachedValues[*it].GetTimestamp();
-		if (timestamp < keyTimestamp) {
-		    timestamp = keyTimestamp;
-		}
-	    }
+        Timestamp timestamp = msg.timestamp();
+        for (auto it = regSet.begin(); it != regSet.end(); it++) {
+            Timestamp keyTimestamp = cachedValues[*it].GetTimestamp();
+            if (timestamp < keyTimestamp) {
+                timestamp = keyTimestamp;
+            }
+        }
 
-	    ReactiveTransaction rt;
-	    rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
-	    rt.reactive_id = msg.reactiveid();
-	    rt.client_id = msg.clientid();
-	    rt.last_timestamp = msg.timestamp();
-	    rt.next_timestamp = timestamp;
-	    rt.keys = regSet;
-	    rt.client_hostname = remote->getHostname();
-	    rt.client_port = remote->getPort();
+        ReactiveTransaction rt;
+        rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
+        rt.reactive_id = msg.reactiveid();
+        rt.client_id = msg.clientid();
+        rt.last_timestamp = msg.timestamp();
+        rt.next_timestamp = timestamp;
+        rt.keys = regSet;
+        rt.client_hostname = remote->getHostname();
+        rt.client_port = remote->getPort();
 
-	    transactions[rt.frontend_index] = rt;
-	    
-	    for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
-		listeners[*it].insert(rt.frontend_index);
-	    }
+        transactions[rt.frontend_index] = rt;
+        
+        for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
+            listeners[*it].insert(rt.frontend_index);
+        }
 
-	    RegisterReply reply;
-	    reply.set_status(REPLY_OK);
-	    reply.set_msgid(msg.msgid());
+        RegisterReply reply;
+        reply.set_status(REPLY_OK);
+        reply.set_msgid(msg.msgid());
 
-	    SendNotification(rt.client_id, rt.reactive_id, rt.next_timestamp);
-	    transport->SendMessage(this, *remote, reply);
-	    delete remote;
-	    delete promise;
+        SendNotification(rt.client_id, rt.reactive_id, rt.next_timestamp);
+        transport->SendMessage(this, *remote, reply);
+        delete remote;
+        delete promise;
     });
 }
 
