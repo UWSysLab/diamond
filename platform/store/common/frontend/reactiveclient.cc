@@ -64,7 +64,7 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
             }
             else {
                 //TODO: implement registration retry
-                Panic("Registration retry not implemented");
+                Panic("Registration error: %d", reply);
             }
         }
         else { // Otherwise, ack notification
