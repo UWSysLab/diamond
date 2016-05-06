@@ -89,14 +89,16 @@ Server::ExecuteGet(Request request, string &str2)
                             request.get().timestamp());
 
         if (status == REPLY_OK) {
-	    ReadReply *rep = reply.add_replies();
-	    rep->set_key(key);
+            ReadReply *rep = reply.add_replies();
+            ASSERT(val.GetInterval().End() != MAX_TIMESTAMP);
+
+            rep->set_key(key);
             val.Serialize(rep);
         } else {
-	    reply.set_status(status);
-	    reply.SerializeToString(&str2);
-	    return;
-	}
+            reply.set_status(status);
+            reply.SerializeToString(&str2);
+            return;
+        }
     }
     reply.set_status(REPLY_OK);	
     reply.SerializeToString(&str2);

@@ -218,15 +218,16 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(getReply.msgid());
 
         if (it != waiting.end()) {
-	    Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
+            Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
             map<string, Version> ret;
             int status = getReply.status(); 
             if (status == REPLY_OK) {
                 for (int i = 0; i < getReply.replies_size(); i++) {
-		    string key = getReply.replies(i).key();
-		    Version v = Version(getReply.replies(i));
-		    ret[key] = v;
-		    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
+                    string key = getReply.replies(i).key();
+                    Version v = Version(getReply.replies(i));
+                    ret[key] = v;
+                    ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
+                    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);

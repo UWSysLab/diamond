@@ -194,10 +194,11 @@ ShardClient::GetCallback(callback_t callback, const string &request_str, const s
     map<string, Version> ret;
 
     if (reply.status() == REPLY_OK) {
-	for (int i = 0; i < reply.replies_size(); i++) {
-	    ReadReply rep = reply.replies(i);
-	    ret[rep.key()] = Version(rep);
-	}
+        for (int i = 0; i < reply.replies_size(); i++) {
+            ReadReply rep = reply.replies(i);
+            ret[rep.key()] = Version(rep);
+            ASSERT(ret[rep.key()].GetInterval().End() != MAX_TIMESTAMP);
+        }
     }
     w->Reply(reply.status(), ret);
     callback(w);
