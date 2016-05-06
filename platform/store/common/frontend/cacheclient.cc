@@ -149,6 +149,9 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
         }
         cache_lock.unlock();
     }
+    if (promise != NULL) {
+        promise->Reply(pp->GetReply(), keysRead);
+    }
 }
 
 /* Set value for a key. (Always succeeds).
