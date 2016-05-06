@@ -630,10 +630,18 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
                                        short what, void *arg)
 {
     TCPTransportTCPListener *info = (TCPTransportTCPListener *)arg;
+    TCPTransport *transport = info->transport;
+    auto it = transport->tcpAddresses.find(bev);    
+    ASSERT(it != transport->tcpAddresses.end());
+    TCPTransportAddress addr = it->second;
+    
     if (what & BEV_EVENT_ERROR) {
         Warning("Error on incoming TCP connection: %s",
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
             info->receiver->ReceiveError(0);
         }
@@ -641,6 +649,9 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
     } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on incoming TCP connection");
         bufferevent_free(bev);
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
             info->receiver->ReceiveError(0);
         }
