@@ -203,12 +203,14 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     //         cache.Put(write.first, write.second, pp->GetTimestamp());
     //     }
     // } else if (reply == REPLY_FAIL) {
-        cache_lock.lock();
-        for (auto &read : txn.GetReadSet()) {
-            Debug("Removing [%s] from the cache", read.first.c_str());
-            cache.Remove(read.first);
+        if (!cachingEnabled) {
+            cache_lock.lock();
+            for (auto &read : txn.GetReadSet()) {
+                Debug("Removing [%s] from the cache", read.first.c_str());
+                cache.Remove(read.first);
+            }
+            cache_lock.unlock();
         }
-        cache_lock.unlock();
     }
     // for (auto &inc : t.GetIncrementSet()) {
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
