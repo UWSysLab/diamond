@@ -297,7 +297,9 @@ Server::SubscribeCallback(const TransportAddress *remote,
         reply.set_status(REPLY_OK);
         reply.set_msgid(msg.msgid());
 
-        SendNotification(rt.client_id, rt.reactive_id, rt.next_timestamp);
+        transport->Timer(1, [=]() {
+            SendNotification(rt.client_id, rt.reactive_id, rt.next_timestamp);
+        });
         transport->SendMessage(this, *remote, reply);
         delete remote;
         delete promise;
