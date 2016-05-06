@@ -154,7 +154,9 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         // Add frontend notifications for this txn to the queue
         {
             store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
-	    sendNotification(request.txnid());
+            transport.Timer(1, [=]() {
+		sendNotification(request.txnid());
+	    });
         }
         replicate = true;
         str2 = str1;
