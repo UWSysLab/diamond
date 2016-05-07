@@ -120,8 +120,12 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
-                
+        
+        self.sendCurrentMoveStartTime = 0
+        self.showMoveEndTime = 0
+        
         ReactiveManager.add(self.drawScreen)
+
     
     def destroy(self):
         ReactiveManager.remove(self.drawScreen)
@@ -133,6 +137,11 @@ class GameFrame(gtk.Frame):
         self.drawUserList()
         self.drawUI()
         self.cacheHack()
+        self.showMoveEndTime = datetime.datetime.now()
+        if self.showMoveEndTime != 0 and self.sendCurrentMoveStartTime != 0:
+            timeMillis = (self.showMoveEndTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (self.showMoveEndTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
+            print("click send move -> finish showing update latency: " + repr(timeMillis))
+            self.sendCurrentMoveStartTime = 0
         
     def cacheHack(self):
         self.currentGame.onboardX.Members()
@@ -835,7 +844,7 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        startTime = datetime.datetime.now()
+        self.sendCurrentMoveStartTime = datetime.datetime.now()
         DObject.TransactionBegin()
         
         if (self.isCurrentTurn() == False):
@@ -869,7 +878,7 @@ class GameFrame(gtk.Frame):
             
         DObject.TransactionCommit()
         endTime = datetime.datetime.now()
-        timeMillis = (endTime.second - startTime.second) * 1000.0 + (endTime.microsecond - startTime.microsecond) / 1000.0
+        timeMillis = (endTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (endTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
         print("sendCurrentMoveHelper latency: " + repr(timeMillis))
     
     # Player send move to game

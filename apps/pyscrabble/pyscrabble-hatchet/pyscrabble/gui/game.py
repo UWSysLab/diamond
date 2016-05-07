@@ -86,6 +86,8 @@ class GameFrame(gtk.Frame):
         self.userView.columns_autosize()
         
         self.sendCurrentMoveStartTime = 0
+        self.sendCurrentMoveEndTime = 0
+        self.showMoveEndTime = 0
     
     ### UI Creation ####
         
@@ -827,10 +829,9 @@ class GameFrame(gtk.Frame):
         '''
         self.onBoard.clear()
         self.currentTurn = False
-        endTime = datetime.datetime.now()
-        timeMillis = (endTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (endTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
+        self.sendCurrentMoveEndTime = datetime.datetime.now()
+        timeMillis = (self.sendCurrentMoveEndTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (self.sendCurrentMoveEndTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
         print("sendCurrentMove latency: " + repr(timeMillis))
-        self.sendCurrentMoveStartTime = 0
         
     def refreshLetterBox(self):
         '''
@@ -1010,6 +1011,10 @@ class GameFrame(gtk.Frame):
             for letter, x, y in move.getTiles():
                 self.board.putLetter(letter, x, y)
         self.board.show_all()
+        self.showMoveEndTime = datetime.datetime.now()
+        if self.showMoveEndTime != 0 and self.sendCurrentMoveStartTime != 0:
+            timeMillis = (self.showMoveEndTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (self.showMoveEndTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
+            print("click send move -> finish showing update latency: " + repr(timeMillis))
         
         if opt:
             if self.mainwindow.is_active() and self.mainwindow.gameFrameHasFocus(self):
