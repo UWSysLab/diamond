@@ -132,6 +132,18 @@ class GameFrame(gtk.Frame):
         self.drawBoard()
         self.drawUserList()
         self.drawUI()
+        self.cacheHack()
+        
+    def cacheHack(self):
+        self.currentGame.onboardX.Members()
+        self.currentGame.onboardY.Members()
+        self.currentGame.onboardLetters.Members()
+        self.currentGame.onboardLetterScores.Members()
+        self.currentGame.bag.letterScores.Members()
+        self.currentGame.bag.letterStrs.Members()
+        empty = DBoolean()
+        DBoolean.Map(empty, "game:" + self.currentGameId + ":board:empty")
+        empty.Value()
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
