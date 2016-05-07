@@ -84,6 +84,8 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
+        
+        self.sendCurrentMoveStartTime = 0
     
     ### UI Creation ####
         
@@ -622,6 +624,7 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
+        self.sendCurrentMoveStartTime = datetime.datetime.now()
         if (self.currentTurn == False):
             self.error(util.ErrorMessage(_("Its not your turn")))
             return
@@ -824,6 +827,10 @@ class GameFrame(gtk.Frame):
         '''
         self.onBoard.clear()
         self.currentTurn = False
+        endTime = datetime.datetime.now()
+        timeMillis = (endTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (endTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
+        print("sendCurrentMove latency: " + repr(timeMillis))
+        self.sendCurrentMoveStartTime = 0
         
     def refreshLetterBox(self):
         '''

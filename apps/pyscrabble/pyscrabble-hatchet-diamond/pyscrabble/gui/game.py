@@ -823,6 +823,7 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
+        startTime = datetime.datetime.now()
         DObject.TransactionBegin()
         
         if (self.isCurrentTurn() == False):
@@ -855,6 +856,9 @@ class GameFrame(gtk.Frame):
             gobject.idle_add(self.error, util.ErrorMessage(inst.message))
             
         DObject.TransactionCommit()
+        endTime = datetime.datetime.now()
+        timeMillis = (endTime.second - startTime.second) * 1000.0 + (endTime.microsecond - startTime.microsecond) / 1000.0
+        print("sendCurrentMoveHelper latency: " + repr(timeMillis))
     
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves):
