@@ -24,20 +24,20 @@ my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $l
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
 
 # make sure Diamond and redis servers are not running
-system("$killRedisCmd");
+#system("$killRedisCmd");
 system("$killDiamondCmd");
 
 # do sanity checks
 system("$startRedisCmd");
-my $checkResult = system("./sanity-checks.pl run_baseline.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
+my $checkResult = system("./sanity-checks.pl run_game.py $outputDir $gceOutputDir $GCE_IP $USE_REDIS >> $log 2>&1");
 if ($checkResult != 0) {
     die("Error in sanity checks: see log file for details");
 }
-system("$killRedisCmd");
+#system("$killRedisCmd");
 
 # run experiments
-runDiamond("caching", 200, [2, 4, 6, 8, 10]);
-runDiamond("nocaching", 200, [2, 4, 6, 8, 10]);
+runDiamond("caching", 50, [6, 7, 8, 9, 10]);
+runDiamond("nocaching", 100, [8, 9, 10, 11, 12]);
 
 
 
@@ -55,8 +55,8 @@ sub runDiamond {
         logPrint("Running $instances instances...\n");
 
         # start redis and Diamond servers
-        resetClient();
-        system("$startRedisCmd");
+        #resetClient();
+        #system("$startRedisCmd");
         system("$startDiamondCmd");
 
         # clear output location
@@ -103,7 +103,7 @@ sub runDiamond {
         print(OUTFILE "$clients\t$throughput\t$latency\t$seconds\t$instances\n");
 
         # kill redis and Diamond servers
-        system("$killRedisCmd");
+        #system("$killRedisCmd");
         system("$killDiamondCmd");
     }
     close(OUTFILE);

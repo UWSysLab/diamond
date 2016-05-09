@@ -255,6 +255,10 @@ Client::ReceiveMessage(const TransportAddress &remote,
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
+
+        // Ack notification
+        ReplyToNotification(reactive_id, timestamp);
+
         if (timestamp > last_timestamp[reactive_id]) {
             last_timestamp[reactive_id] = timestamp;
             map<string, Version> cache_entries;
@@ -270,13 +274,13 @@ Client::ReceiveMessage(const TransportAddress &remote,
             }
 
             notification_lock.lock();
-            if (reactive_promise != NULL) {
+            if (reactive_promise != NULL) { // Directly signal reactive thread if it's waiting on a notification
                 Promise * old_reactive_promise = reactive_promise;
                 reactive_promise = NULL;
                 notification_lock.unlock();
                 old_reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
             }
-            else {
+            else { // Otherwise, put the notification in the "pending notifications" queue
                 pending_notifications.push(notification);
                 notification_lock.unlock();
             }

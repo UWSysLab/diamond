@@ -67,10 +67,6 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
                 Panic("Registration error: %d", reply);
             }
         }
-        else { // Otherwise, ack notification
-            txnclient->ReplyToNotification(reactive_id, timestamp);
-        }
-        
     }
 }
 
