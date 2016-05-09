@@ -83,18 +83,16 @@ class LoginWindow(gtk.Window):
         username = self.username.get_text()
         password = util.hashPassword( self.password.get_text() )
         
-        ReactiveManager.runInBackground(self.clickLoginHelper, username, password)
+        ReactiveManager.txn_execute(self.clickLoginHelper, username, password)
     
     def clickLoginHelper(self, username, password):
         pwString = DString()
         DString.Map(pwString, "user:" + username + ":hashedpw")
         
-        DObject.TransactionBegin()
         if pwString.Value() == password:
             gobject.idle_add(self.loginOK)
         else:
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([INVALID_USERNAME_PASSWORD])))
-        DObject.TransactionCommit()
     
     def loginOK(self):
         '''

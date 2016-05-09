@@ -274,7 +274,7 @@ class RegisterWindow(gtk.Window):
             self.error(util.ErrorMessage(_("Passwords do not match")),dialog)
             return
         
-        ReactiveManager.runInBackground(self.createNewUserHelper, uname, pw1)
+        ReactiveManager.txn_execute(self.createNewUserHelper, uname, pw1)
         
     def createNewUserHelper(self, username, password):
         hashedPassword = util.hashPassword(password)
@@ -282,7 +282,6 @@ class RegisterWindow(gtk.Window):
         users = DStringList();
         DStringList.Map(users, "global:users")
         
-        DObject.TransactionBegin()
         if username.upper() in map(upper, users.Members()):
             self.error(util.ErrorMessage(ServerMessage([USER_ALREADY_EXISTS])))
         
@@ -297,7 +296,6 @@ class RegisterWindow(gtk.Window):
         pwString = DString()
         DString.Map(pwString, "user:" + username + ":hashedpw")
         pwString.Set(hashedPassword)
-        DObject.TransactionCommit()
         
         gobject.idle_add(self.loginWindow.populateFields_cb, username, password, "DEBUG")
         gobject.idle_add(self.destroy)
