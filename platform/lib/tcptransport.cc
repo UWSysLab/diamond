@@ -42,6 +42,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -284,6 +285,13 @@ TCPTransport::Register(TransportReceiver *receiver,
     if (setsockopt(fd, SOL_SOCKET,
                    SO_REUSEADDR, (char *)&n, sizeof(n)) < 0) {
         PWarning("Failed to set SO_REUSEADDR on TCP listening socket");
+    }
+
+    // Set TCP_NODELAY
+    n = 1;
+    if (setsockopt(fd, IPPROTO_TCP,
+                   TCP_NODELAY, (char *)&n, sizeof(n)) < 0) {
+        PWarning("Failed to set TCP_NODELAY on TCP listening socket");
     }
 
     // Registering a replica. Bind socket to the designated
