@@ -394,5 +394,33 @@ Client::Subscribe(const set<string> &keys,
     }
 }
 
+void
+Client::Unsubscribe(const set<string> &keys,
+                  const TransportAddress &address,
+		  callback_t callback) {
+    map<int, set<string> > participants;
+
+    for (auto &key : keys) {
+        int i = key_to_shard(key, nshards);
+        participants[i].insert(key);
+    }
+
+    if (participants.size() == 0) {
+        Promise *w = new Promise();
+        w->Reply(REPLY_OK);
+        callback(w);
+    }
+    else {
+        vector<Promise *> *promises = new vector<Promise *>();
+        callback_t cb = bind(&Client::MultiGetCallback,
+                             this, callback,
+                             participants.size(),
+                             promises,
+                             placeholders::_1);
+        for (auto &p : participants) {
+            cclient[p.first]->Unsubscribe(p.second, address, cb);
+        }
+    }
+}
 
 } // namespace strongstore

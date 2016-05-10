@@ -62,6 +62,7 @@ public:
     void Remove(const std::string &key);
 
     void Subscribe(const std::set<std::string> &keys, const std::string &address);
+    void Unsubscribe(const std::set<std::string> &keys, const std::string &address);
     void GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications);
     
     
@@ -73,7 +74,6 @@ protected:
     bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
 
     std::unordered_map< std::string, std::set<std::string> > keyAddressMap; // indexed by key
-    std::unordered_map< std::string, std::set<std::string> > addressKeyMap; // indexed by address
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */

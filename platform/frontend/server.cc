@@ -226,15 +226,31 @@ Server::HandleRegister(const TransportAddress &remote,
                        const RegisterMessage &msg)
 {
     Debug("Handling REGISTER");
+    set<string> regSet;
     for (int i = 0; i < msg.keys_size(); i++) {
         Debug("Registering %s", msg.keys(i).c_str());
+        regSet.insert(msg.keys(i));
     }
 
-    set<string> subscribeSet; // set of keys from regSet that we aren't already subscribed to
-    for (int i = 0; i < msg.keys_size(); i++) {
-        string key = msg.keys(i);
-        if (listeners.find(key) == listeners.end()) {
+    // subscribe to keys from regSet that no reactive transaction is already listening to
+    set<string> subscribeSet;
+    for (const string &key : regSet) {
+        if (listeners[key].size() == 0) {
             subscribeSet.insert(key);
+        }
+    }
+
+    // unsubscribe to keys from the old registration set that are not in the new regSet and that
+    // no other reactive transaction is listening to
+    set<string> unsubscribeSet;
+    uint64_t frontendIndex = getFrontendIndex(msg.clientid(), msg.reactiveid());
+    if (transactions.count(frontendIndex)) {
+        ReactiveTransaction rt = transactions[frontendIndex];
+        set<string> oldRegSet = rt.keys;
+        for (const string &key : oldRegSet) {
+            if (!regSet.count(key) && listeners[key].size() == 1 && listeners[key].count(frontendIndex)) {
+                unsubscribeSet.insert(key);
+            }
         }
     }
 
@@ -246,6 +262,7 @@ Server::HandleRegister(const TransportAddress &remote,
           placeholders::_1);
 
     store->Subscribe(subscribeSet, GetAddress(), cb);
+    store->Unsubscribe(unsubscribeSet, GetAddress(), [](Promise *p) {delete p;});
 }
 
 void
@@ -266,6 +283,19 @@ Server::SubscribeCallback(const TransportAddress *remote,
                 || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
                 Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
                 cachedValues[pair.first] = pair.second;
+            }
+        }
+
+        // Remove this reactive transaction from the listeners set of all of the keys in its old
+        // registration set that are not in the new registration set
+        uint64_t frontendIndex = getFrontendIndex(msg.clientid(), msg.reactiveid());
+        if (transactions.count(frontendIndex)) {
+            ReactiveTransaction oldRt = transactions[frontendIndex];
+            set<string> oldRegSet = oldRt.keys;
+            for (const string &key : oldRegSet) {
+                if (!regSet.count(key)) {
+                    listeners[key].erase(frontendIndex);
+                }
             }
         }
 

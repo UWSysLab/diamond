@@ -194,7 +194,13 @@ void
 VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
-        addressKeyMap[address].insert(*it);
+    }
+}
+
+void
+VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address) {
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        keyAddressMap[*it].erase(address);
     }
 }
 

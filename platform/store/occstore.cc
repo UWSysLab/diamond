@@ -387,6 +387,12 @@ OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, 
 }
 
 void
+OCCStore::Unsubscribe(const set<string> &keys, const string &address)
+{
+    store.Unsubscribe(keys, address);
+}
+
+void
 OCCStore::AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid)
 {
     Transaction t;

@@ -74,6 +74,10 @@ public:
                            const TransportAddress &myAddress,
                            callback_t callback) = 0;
 
+    virtual void Unsubscribe(const std::set<std::string> &keys,
+                           const TransportAddress &myAddress,
+                           callback_t callback) = 0;
+
 };
 
 #endif /* _ASYNC_CLIENT_H_ */

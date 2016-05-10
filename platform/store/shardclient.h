@@ -89,6 +89,10 @@ public:
     void Subscribe(const std::set<std::string> &keys,
                    const TransportAddress &myAddress,
                    callback_t callback);
+
+    void Unsubscribe(const std::set<std::string> &keys,
+                     const TransportAddress &myAddress,
+                     callback_t callback);
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.
@@ -108,6 +112,7 @@ private:
     void CommitCallback(callback_t callback, const std::string &, const std::string &);
     void AbortCallback(const std::string &, const std::string &);
     void SubscribeCallback(callback_t callback, const std::string &, const std::string &);
+    void UnsubscribeCallback(callback_t callback, const std::string &, const std::string &);
 
     /* Helper Functions for starting and finishing requests */
     void StartRequest();

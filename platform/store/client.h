@@ -85,6 +85,10 @@ public:
                    const TransportAddress &address,
                    callback_t callback);
 
+    void Unsubscribe(const std::set<std::string> &keys,
+                   const TransportAddress &address,
+                   callback_t callback);
+
 private:
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.

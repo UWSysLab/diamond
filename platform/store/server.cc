@@ -169,6 +169,10 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         replicate = true;
         str2 = str1;
         break;
+    case strongstore::proto::Request::UNSUBSCRIBE:
+        replicate = true;
+        str2 = str1;
+        break;
     default:
         Panic("Unrecognized operation.");
     }
@@ -260,6 +264,18 @@ Server::ReplicaUpcall(opnum_t opnum,
                 rep->set_key(key);
                 val.Serialize(rep);
             }
+        }
+        break;
+    case strongstore::proto::Request::UNSUBSCRIBE:
+        {
+            Debug("Handling UNSUBSCRIBE");
+            string address = request.unsubscribe().address();
+            set<string> keys;
+            for (int i = 0; i < request.unsubscribe().keys_size(); i++) {
+                Debug("%s", request.unsubscribe().keys(i).c_str());
+                keys.insert(request.unsubscribe().keys(i));
+            }
+            store->Unsubscribe(keys, address);
         }
         break;
     default:

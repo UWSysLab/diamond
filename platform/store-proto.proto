@@ -24,6 +24,11 @@ message SubscribeMessage {
     repeated string keys = 2;
 }
 
+message UnsubscribeMessage {
+    required string address = 1;
+    repeated string keys = 2;
+}
+
 message Request {
      enum Operation {
           GET = 1;
@@ -31,6 +36,7 @@ message Request {
           COMMIT = 3;
           ABORT = 4;
           SUBSCRIBE = 5;
+          UNSUBSCRIBE = 6;
      }	
      required Operation op = 1;
      required uint64 txnid = 2;
@@ -39,6 +45,7 @@ message Request {
      optional CommitMessage commit = 5;
      optional AbortMessage abort = 6;
      optional SubscribeMessage subscribe = 7;
+     optional UnsubscribeMessage unsubscribe = 8;
 }
 
 message Reply {
