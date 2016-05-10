@@ -374,6 +374,7 @@ DiamondClient::Deregister(uint64_t reactive_id)
 {
     Promise p;
     client->Deregister(reactive_id, &p);
+    p.GetReply();
 }
 
 } // namespace diamond

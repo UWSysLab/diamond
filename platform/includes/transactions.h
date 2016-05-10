@@ -45,6 +45,7 @@ class TxnManager {
     static void executeTxnCallback(evutil_socket_t fd, short what, void * arg);
     static void signalCallback(evutil_socket_t fd, short what, void * arg);
     static void registerCallback(evutil_socket_t fd, short what, void * arg);
+    static void reactiveStopCallback(evutil_socket_t fd, short what, void * arg);
 };
 
 TxnManager * txnManager = NULL;
