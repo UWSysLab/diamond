@@ -82,6 +82,8 @@ BOOST_PYTHON_MODULE(libpydiamond)
         .staticmethod("BeginReactive")
         .def("NotificationInit", &DObject::NotificationInit)
         .staticmethod("NotificationInit")
+        .def("Deregister", &DObject::Deregister)
+        .staticmethod("Deregister")
         .def("Map", &DObject::Map)
     ;
 
