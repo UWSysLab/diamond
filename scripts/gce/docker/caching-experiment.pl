@@ -18,7 +18,7 @@ my $gceOutputDir = "caching";
 my $log = "caching-log.txt";
 system("rm -f $log; touch $log");
 
-my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocaloneshard' >> $log 2>&1";
+my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocaloneshard --batch 64' >> $log 2>&1";
 my $killDiamondCmd = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocaloneshard' >> $log 2>&1";
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
