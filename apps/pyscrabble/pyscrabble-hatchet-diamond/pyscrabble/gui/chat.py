@@ -58,8 +58,8 @@ class ChatFrame(gtk.Frame):
         self.show_all()
         
         self.displayedGameSet = set()
-        ReactiveManager.add(self.showGames)
-        ReactiveManager.add(self.refreshGameList)
+        ReactiveManager.reactive_txn(self.showGames)
+        ReactiveManager.reactive_txn(self.refreshGameList)
     
     def showGames(self):
         for gameId in self.joinedGamesSet.Members():

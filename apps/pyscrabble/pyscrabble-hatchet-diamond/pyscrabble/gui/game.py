@@ -124,11 +124,11 @@ class GameFrame(gtk.Frame):
         self.sendCurrentMoveStartTime = 0
         self.showMoveEndTime = 0
         
-        ReactiveManager.add(self.drawScreen)
+        ReactiveManager.reactive_txn(self.drawScreen)
 
     
     def destroy(self):
-        ReactiveManager.remove(self.drawScreen)
+        ReactiveManager.reactive_stop(self.drawScreen)
         gtk.Frame.destroy(self)
     
     def drawScreen(self):
