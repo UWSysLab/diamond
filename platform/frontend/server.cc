@@ -57,6 +57,7 @@ Server::ReceiveMessage(const TransportAddress &remote,
     static CommitMessage commit;
     static AbortMessage abort;
     static RegisterMessage reg;
+    static DeregisterMessage deregister;
     static NotifyFrontendMessage notify;
     static NotificationReply reply;
 
@@ -72,6 +73,9 @@ Server::ReceiveMessage(const TransportAddress &remote,
     } else if (type == reg.GetTypeName()) {
         reg.ParseFromString(data);
         HandleRegister(remote, reg);
+    } else if (type == deregister.GetTypeName()) {
+        deregister.ParseFromString(data);
+        HandleDeregister(remote, deregister);
     } else if (type == notify.GetTypeName()) {
         notify.ParseFromString(data);
         HandleNotifyFrontend(remote, notify);
@@ -334,6 +338,46 @@ Server::SubscribeCallback(const TransportAddress *remote,
         delete remote;
         delete promise;
     });
+}
+
+void
+Server::HandleDeregister(const TransportAddress &remote,
+                         const DeregisterMessage &msg)
+{
+    Debug("Handling DEREGISTER");
+
+    DeregisterReply reply;
+    reply.set_msgid(msg.msgid());
+
+    uint64_t frontendIndex = getFrontendIndex(msg.clientid(), msg.reactiveid());
+    if (!transactions.count(frontendIndex)) {
+        Debug("No reactive transaction with client_id %lu, reactive_id %lu", msg.clientid(), msg.reactiveid());
+        reply.set_status(REPLY_NOT_FOUND);
+    }
+    else {
+        ReactiveTransaction rt = transactions[frontendIndex];
+
+        // unsubscribe to keys that no other reactive transaction is listening to
+        set<string> unsubscribeSet;
+        for (const string &key : rt.keys) {
+            if (listeners[key].size() == 1 && listeners[key].count(frontendIndex)) {
+                unsubscribeSet.insert(key);
+            }
+        }
+        store->Unsubscribe(unsubscribeSet, GetAddress(), [](Promise *p) {delete p;});
+
+        // remove this reactive transaction from the listener set of each key
+        for (const string &key : rt.keys) {
+            listeners[key].erase(frontendIndex);
+        }
+
+        // delete ReactiveTransaction object from transactions map
+        transactions.erase(frontendIndex);
+
+        reply.set_status(REPLY_OK);
+    }
+
+    transport->SendMessage(this, remote, reply);
 }
 
 void

@@ -62,6 +62,8 @@ protected:
                      const proto::AbortMessage &msg);
     void HandleRegister(const TransportAddress &remote,
                         const RegisterMessage &msg);
+    void HandleDeregister(const TransportAddress &remote,
+                          const DeregisterMessage &msg);
     void HandleNotifyFrontend(const TransportAddress &remote,
                               const NotifyFrontendMessage &msg);
     void HandleNotificationReply(const TransportAddress &remote,
