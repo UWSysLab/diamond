@@ -18,7 +18,7 @@ my $gceOutputDir = "docc";
 my $log = "docc-log.txt";
 system("rm -f $log; touch $log");
 
-my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocalfiveshards --keys experiments/keys.txt --numkeys 100000' >> $log 2>&1";
+my $startDiamondCmd = "ssh -t $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py start ../platform/test/gcelocalfiveshards --keys experiments/keys.txt --numkeys 100000 --batch 64' >> $log 2>&1";
 my $killDiamondCmd = "ssh $GCE_IP 'cd diamond-src/scripts; ./manage-servers.py kill ../platform/test/gcelocalfiveshards' >> $log 2>&1";
 my $startRedisCmd = "ssh -f $GCE_IP 'nohup redis-3.0.7/src/redis-server &' >> $log 2>&1";
 my $killRedisCmd = "ssh $GCE_IP 'pkill redis-server'";
@@ -36,8 +36,8 @@ if ($checkResult != 0) {
 system("$killRedisCmd");
 
 # run experiments
-runDiamond("linearizabledocc", 200, [3, 4, 5, 6, 7, 8]);
-runDiamond("linearizable", 200, [5, 6, 7, 8, 9, 10]);
+runDiamond("linearizabledocc", 128, [4, 6, 8, 10]);
+runDiamond("linearizable", 128, [8, 10, 12, 14]);
 
 
 
@@ -50,7 +50,7 @@ sub runDiamond {
 
     my $outFile = "$outputDir/diamond.$isolation.txt";
     open(OUTFILE, "> $outFile");
-    print(OUTFILE "clients\tthroughput\tlatency\tseconds\tinstances\t");
+    print(OUTFILE "clients\tthroughput\tlatency\tabortrate\tseconds\tinstances\t");
     for (my $i = 1; $i <= 5; $i++) {
         print(OUTFILE "throughput-$i\tlatency-$i\tabortrate-$i\t");
     }
@@ -100,7 +100,7 @@ sub runDiamond {
                 $seconds = $1;
             }
         }
-        print(OUTFILE "$clients\t$throughput{Overall}\t$latency{Overall}\t$seconds\t$instances\t");
+        print(OUTFILE "$clients\t$throughput{Overall}\t$latency{Overall}\t$abortrate{Overall}\t$seconds\t$instances\t");
         for (my $i = 1; $i <= 5; $i++) {
             print(OUTFILE "$throughput{$i}\t$latency{$i}\t$abortrate{$i}\t");
         }

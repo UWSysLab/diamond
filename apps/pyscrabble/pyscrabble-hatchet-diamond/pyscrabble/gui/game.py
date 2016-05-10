@@ -554,7 +554,7 @@ class GameFrame(gtk.Frame):
     
     # Trade letters in for new letters
     def tradeLettersBackground(self, button):
-        ReactiveManager.runInBackground(self.tradeLetters, button)
+        ReactiveManager.txn_execute(self.tradeLetters, button)
         
     def tradeLetters(self, button):
         '''
@@ -562,9 +562,7 @@ class GameFrame(gtk.Frame):
         
         @param button: Button that was clicked
         '''  
-        
-        DObject.TransactionBegin()
-        
+                
         l = []
         for letter in self.letterBox.get_children():
             if isinstance(letter, GameLetter):
@@ -588,13 +586,11 @@ class GameFrame(gtk.Frame):
             self.doGameTurn()
         else:
             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-            
-        DObject.TransactionCommit()
         
     
     # Start the game
     def startGame(self, button):
-        ReactiveManager.runInBackground(self.startGameHelper, button)
+        ReactiveManager.txn_execute(self.startGameHelper, button)
     
     def startGameHelper(self, button):
         '''
@@ -603,15 +599,12 @@ class GameFrame(gtk.Frame):
         @param gameId: Game ID
         @param client: ScrabbleServer Protocol
         '''
-        DObject.TransactionBegin()
         if self.username != self.currentGame.getCreator():
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_CREATOR])))
-            DObject.TransactionCommit()
             return
         
         if (self.currentGame.isStarted()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
-            DObject.TransactionCommit()
             return
 
         self.currentGame.start()
@@ -626,7 +619,6 @@ class GameFrame(gtk.Frame):
 
         #TODO
         self.doGameTurn()
-        DObject.TransactionCommit()
         #TODO
         #self.refreshGameList()
         
@@ -688,11 +680,10 @@ class GameFrame(gtk.Frame):
         #TODO: verify that this is correct
         #TODO: put in transaction
         
-        ReactiveManager.runInBackground(self.leaveGameHelper)
+        ReactiveManager.txn_execute(self.leaveGameHelper)
         #self.showLetters([])
     
     def leaveGameHelper(self):
-        DObject.TransactionBegin()
         gameSet = DStringSet()
         DStringSet.Map(gameSet, "user:" + self.player.getUsername() + ":games")
         gameSet.Remove(self.currentGameId)
@@ -700,7 +691,6 @@ class GameFrame(gtk.Frame):
         self.doGameTurn()
         self.currentGame.playerLeave(self.player)
         self.player.reset()
-        DObject.TransactionCommit()
     
     # Game state management methods added by Niel
     def addLetter(self, letter):
@@ -734,10 +724,9 @@ class GameFrame(gtk.Frame):
         self.currentGame.removeFromOnboard( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
-        ReactiveManager.runInBackground(self.swapTilesHelper, gTileA, gTileB)
+        ReactiveManager.txn_execute(self.swapTilesHelper, gTileA, gTileB)
         
     def swapTilesHelper(self, gTileA, gTileB):
-        DObject.TransactionBegin()
         letterA = gTileA.getLetter()
         letterB = gTileB.getLetter()
         if letterA == None:
@@ -751,13 +740,11 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
-        DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
-        ReactiveManager.runInBackground(self.swapTileAndLetterHelper, gTile, gLetter)
+        ReactiveManager.txn_execute(self.swapTileAndLetterHelper, gTile, gLetter)
         
     def swapTileAndLetterHelper(self, gTile, gLetter):
-        DObject.TransactionBegin()
         origLetterLetter = gLetter.getLetter()
         origTileLetter = gTile.getLetter()
         
@@ -774,14 +761,14 @@ class GameFrame(gtk.Frame):
         
             gTile.putLetter(origLetterLetter)
             self.registerMove(gTile, gTile.x, gTile.y)
-        DObject.TransactionCommit()
         
     def putTileOnPlaceholder(self, gTile):
-        DObject.TransactionBegin()
+        ReactiveManager.txn_execute(self.putTileOnPlaceholderHelper, gTile)
+        
+    def putTileOnPlaceholderHelper(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
-        DObject.TransactionCommit()
     
     
     def getNumOnBoardMoves(self):
@@ -808,12 +795,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to clear letters put on board
     def clearCurrentMoveBackground(self, event=None):
-        ReactiveManager.runInBackground(self.clearCurrentMoveBackgroundHelper)
-    
-    def clearCurrentMoveBackgroundHelper(self):
-        DObject.TransactionBegin()
-        self.clearCurrentMove()
-        DObject.TransactionCommit()
+        ReactiveManager.txn_execute(self.clearCurrentMove)
         
     def clearCurrentMove(self):
         '''
@@ -835,7 +817,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to send current move
     def sendCurrentMove(self, event = None):
-        ReactiveManager.runInBackground(self.sendCurrentMoveHelper, event)
+        ReactiveManager.txn_execute(self.sendCurrentMoveHelper, event)
         
     def sendCurrentMoveHelper(self, event = None):
         '''
@@ -845,16 +827,13 @@ class GameFrame(gtk.Frame):
         '''
         
         self.sendCurrentMoveStartTime = datetime.datetime.now()
-        DObject.TransactionBegin()
         
         if (self.isCurrentTurn() == False):
             gobject.idle_add(self.error, util.ErrorMessage(_("Its not your turn")))
-            DObject.TransactionCommit()
             return
         
         if (not self.currentGame.getOnboardMove().isValid()):
             gobject.idle_add(self.error, util.ErrorMessage(_("Move is invalid")))
-            DObject.TransactionCommit()
             return
         
         # Make sure the board has a letter in the center or one of the tiles in this move does
@@ -865,7 +844,6 @@ class GameFrame(gtk.Frame):
                     center = True
             if not center:
                 gobject.idle_add(self.error, util.ErrorMessage(_("Move must cover center tile.")))
-                DObject.TransactionCommit()
                 return
     
         try:
@@ -875,11 +853,6 @@ class GameFrame(gtk.Frame):
             #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
             gobject.idle_add(self.error, util.ErrorMessage(inst.message))
-            
-        DObject.TransactionCommit()
-        endTime = datetime.datetime.now()
-        timeMillis = (endTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (endTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
-        print("sendCurrentMoveHelper latency: " + repr(timeMillis))
     
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves):
@@ -1036,19 +1009,16 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        ReactiveManager.runInBackground(self.passMoveHelper)
+        ReactiveManager.txn_execute(self.passMoveHelper)
     
     def passMoveHelper(self):
-        DObject.TransactionBegin()
         self.clearCurrentMove()
         
         if not self.player == self.currentGame.getCurrentPlayer():
-            DObject.TransactionCommit()
             return
         
         if (not self.currentGame.isInProgress()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
-            DObject.TransactionCommit()
             return
         
         try:
@@ -1066,8 +1036,6 @@ class GameFrame(gtk.Frame):
             #self.gameOver(self.currentGame)
             self.currentGame.setComplete()
             self.gameOver()
-        
-        DObject.TransactionCommit()
     
     def getMoves(self):
         '''
@@ -1304,20 +1272,16 @@ class GameFrame(gtk.Frame):
         
         self.showError(data)
         
-        ReactiveManager.runInBackground(self.errorHelper)
+        ReactiveManager.txn_execute(self.errorHelper)
     
     def errorHelper(self):
-        committed = 0
-        while not committed:
-            DObject.TransactionBegin()
-            if self.isCurrentTurn():
-                gobject.idle_add(self.okButton.set_sensitive, True)
-            
-            o = manager.OptionManager()
-            
-            if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
-                self.clearCurrentMove()
-            committed = DObject.TransactionCommit()
+        if self.isCurrentTurn():
+            gobject.idle_add(self.okButton.set_sensitive, True)
+        
+        o = manager.OptionManager()
+        
+        if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
+            self.clearCurrentMove()
     
     def info(self, log):
         '''
