@@ -369,4 +369,11 @@ DiamondClient::NotificationInit(std::function<void (void)> callback) {
     client->NotificationInit(callback);
 }
 
+void
+DiamondClient::Deregister(uint64_t reactive_id)
+{
+    Promise p;
+    client->Deregister(reactive_id, &p);
+}
+
 } // namespace diamond

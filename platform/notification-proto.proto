@@ -27,6 +27,17 @@ message RegisterReply {
     required uint32 msgid = 2;
 }
 
+message DeregisterMessage {
+    required uint64 clientid = 1;
+    required uint32 msgid = 2;
+    required uint64 reactiveid = 3;
+}
+
+message DeregisterReply {
+    required uint32 status = 1;
+    required uint32 msgid = 2;
+}
+
 message NotifyFrontendMessage {
     required uint64 txnid = 1;
     repeated ReadReply replies = 2;

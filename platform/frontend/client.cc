@@ -210,6 +210,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
     static AbortReply abortReply;
     static Notification notification;
     static RegisterReply regReply;
+    static DeregisterReply deregReply;
 
     if (type == getReply.GetTypeName()) {
         // Handle Get
@@ -297,6 +298,15 @@ Client::ReceiveMessage(const TransportAddress &remote,
             it->second->Reply(regReply.status());
             waiting.erase(it);
         }
+    } else if (type == deregReply.GetTypeName()) {
+        deregReply.ParseFromString(data);
+        auto it = waiting.find(deregReply.msgid());
+
+        if (it != waiting.end() && it->second != NULL) {
+	    Debug("Received DEREGISTER response [%u] %i", deregReply.msgid(), deregReply.status());
+            it->second->Reply(deregReply.status());
+            waiting.erase(it);
+        }
     }
 }
 
@@ -348,6 +358,25 @@ Client::Register(const uint64_t reactive_id,
             }
             msg.set_reactiveid(reactive_id);
             msg.set_timestamp(timestamp);
+            msg.set_msgid(msgid++);
+            if (transport->SendMessageToReplica(this, 0, msg)) {
+                if (promise != NULL)
+                    waiting[msg.msgid()] = promise;
+            } else if (promise != NULL) {
+                promise->Reply(REPLY_NETWORK_FAILURE);
+            }
+        });
+}
+
+void
+Client::Deregister(const uint64_t reactive_id,
+                   Promise *promise) {
+    Debug("Sending DEREGISTER for reactive_id %lu", reactive_id);
+    // Send message
+    transport->Timer(0, [=]() {
+            DeregisterMessage msg;
+            msg.set_clientid(client_id);
+            msg.set_reactiveid(reactive_id);
             msg.set_msgid(msgid++);
             if (transport->SendMessageToReplica(this, 0, msg)) {
                 if (promise != NULL)

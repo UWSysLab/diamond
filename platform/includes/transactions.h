@@ -28,6 +28,7 @@ class TxnManager {
     void Start();
     int ExecuteTxn(txn_function_t func, txn_callback_t callback);
     uint64_t ReactiveTxn(txn_function_t func);
+    void ReactiveStop(uint64_t reactive_id);
 
   private:
     event_base * txnEventBase;

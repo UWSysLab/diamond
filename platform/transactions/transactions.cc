@@ -93,6 +93,10 @@ namespace diamond {
         delete info;
     }
 
+    void TxnManager::ReactiveStop(uint64_t reactive_id) {
+        DObject::Deregister(reactive_id);
+    }
+
     void StartTxnManager() {
         if (txnManager == NULL) {
             txnManager = new TxnManager();
@@ -122,7 +126,10 @@ namespace diamond {
     }
 
     void reactive_stop(uint64_t reactive_id) {
-        //TODO: implement
+        if (txnManager == NULL) {
+            Panic("txnManager is null"); 
+        }
+        txnManager->ReactiveStop(reactive_id);
     }
     void abort_txn() {
         //TODO: implement

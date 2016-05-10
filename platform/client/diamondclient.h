@@ -71,6 +71,7 @@ public:
     void BeginReactive(uint64_t reactive_id);
     uint64_t GetNextNotification(bool blocking);
     void NotificationInit(std::function<void (void)> callback);
+    void Deregister(uint64_t reactive_id);
 
     void SetIsolationLevel(int isolationLevel);
     void SetCaching(bool cachingEnabled);

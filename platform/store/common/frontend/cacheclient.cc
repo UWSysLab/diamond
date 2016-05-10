@@ -198,10 +198,12 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
         
     // // update the cache
     if (pp->GetReply() == REPLY_OK) {
-    //     for (auto &write : t.GetWriteSet()) {
+    //    cache_lock.lock();
+    //     for (auto &write : txn.GetWriteSet()) {
     // 	    Debug("Adding [%s] with ts %lu to the cache", write.first.c_str(), pp->GetTimestamp());
     //         cache.Put(write.first, write.second, pp->GetTimestamp());
     //     }
+    //    cache_lock.unlock();
     // } else if (reply == REPLY_FAIL) {
         if (!cachingEnabled) {
             cache_lock.lock();
@@ -260,6 +262,12 @@ CacheClient::Register(const uint64_t reactive_id,
                       const std::set<std::string> &keys,
                       Promise *promise) {
     Panic("Register not implemented for this client");
+}
+
+void
+CacheClient::Deregister(const uint64_t reactive_id,
+                        Promise *promise) {
+    txnclient->Deregister(reactive_id, promise);
 }
 
 void
