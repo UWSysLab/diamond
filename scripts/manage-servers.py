@@ -7,10 +7,12 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/home/nl35"
+if "DIAMOND_WORKING_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_WORKING_DIR is not set")
+    print("(It should point to the working directory you want to use on the server host machines)")
+    sys.exit()
+WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
 BUILD_DIR = "../platform/build"
-
-debug = False
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
@@ -20,6 +22,7 @@ parser.add_argument('--frontends', type=int, help='number of frontend servers')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
 parser.add_argument('--batch', type=int, default=1, help='batch size for backend servers')
+parser.add_argument('--debug', action='store_true', help='enable debug logging')
 args = parser.parse_args()
 
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
@@ -49,7 +52,7 @@ if keyPath != None:
 
 setVarsCmd = "LD_LIBRARY_PATH=" + repr(WORKING_DIR)
 debugCmd = ""
-if debug:
+if args.debug:
     debugCmd = "DEBUG=all"
 
 # find number of shards
@@ -89,7 +92,7 @@ if numFrontends > totalNumFrontends:
 print("Running command for %d shards (%d config files detected)" % (numShards, totalNumShards));
 print("Running command for %d frontends (%d config files detected)" % (numFrontends, totalNumFrontends));
 if args.action == 'start':
-    if debug:
+    if args.debug:
         print("Enabling debug output")
     print("Starting servers...")
 elif args.action == 'kill':
