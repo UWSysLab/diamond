@@ -7,9 +7,17 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/home/nl35"
+if "DIAMOND_WORKING_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_WORKING_DIR is not set")
+    print("(It should point to the working directory you want to use on the server host machines)")
+    sys.exit()
+if "REDIS_DIR" not in os.environ:
+    print("Error: environment variable REDIS_DIR is not set")
+    print("(It should point to a folder containing redis-server and redis-cli binaries)")
+    sys.exit()
+WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
 SERVER_DIR = "target"
-REDIS_DIR = "/home/nl35/redis-3.0.7/src"
+REDIS_DIR = os.environ["REDIS_DIR"]
 
 redisPath = REDIS_DIR + "/redis-server"
 redisCliPath = REDIS_DIR + "/redis-cli"
@@ -35,12 +43,12 @@ args = parser.parse_args()
 
 if args.action == 'start':
     print("Starting servers...")
-    startRedis("diamond-backend-central-a-6cores", 8001, "diamond-backend-central-a-6cores", 8001)
-    startRedis("diamond-backend-central-b-6cores", 8001, "diamond-backend-central-a-6cores", 8001)
-    startRedis("diamond-backend-central-c-6cores", 8001, "diamond-backend-central-a-6cores", 8001)
-    os.system(redisCliPath + " -h diamond-backend-central-a-6cores -p 8001 FLUSHDB")
+    startRedis("moranis.cs.washington.edu", 8001, "moranis.cs.washington.edu", 8001)
+    startRedis("moranis.cs.washington.edu", 8002, "moranis.cs.washington.edu", 8001)
+    startRedis("moranis.cs.washington.edu", 8003, "moranis.cs.washington.edu", 8001)
+    os.system(redisCliPath + " -h moranis.cs.washington.edu -p 8001 FLUSHDB")
 elif args.action == 'kill':
     print("Killing servers...")
-    killRedis("diamond-backend-central-a-6cores", 8001)
-    killRedis("diamond-backend-central-b-6cores", 8001)
-    killRedis("diamond-backend-central-c-6cores", 8001)
+    killRedis("moranis.cs.washington.edu", 8001)
+    killRedis("moranis.cs.washington.edu", 8002)
+    killRedis("moranis.cs.washington.edu", 8003)
