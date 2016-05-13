@@ -51,8 +51,8 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
         processes = []
         for i in range(0, numMachines):
             machine = machines[i]
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/run_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
 
         for i in range(0, numMachines):
             machine = machines[i]

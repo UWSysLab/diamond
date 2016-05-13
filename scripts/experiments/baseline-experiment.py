@@ -40,14 +40,15 @@ def runBaseline(zipf, numClientsPerMachine, machineNums):
 
     outFile.write("clients\tthroughput\tlatency\tabortrate\tseconds\tmachines\n")
     for numMachines in machineNums:
+        logPrint("Running %d machines" % numMachines)
         subprocess.call(startBaselineCmd, shell=True)
         subprocess.call(clearRedisCmd, shell=True)
 
         processes = []
         for i in range(0, numMachines):
             machine = machines[i]
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/run_baseline_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_baseline_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
 
         for i in range(0, numMachines):
             machine = machines[i]
@@ -60,7 +61,6 @@ def runBaseline(zipf, numClientsPerMachine, machineNums):
 
         clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
-
         throughput = "ERROR"
         latency = "ERROR"
         abortRate = "ERROR"
@@ -99,8 +99,8 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
         processes = []
         for i in range(0, numMachines):
             machine = machines[i]
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/run_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments-new/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
 
         for i in range(0, numMachines):
             machine = machines[i]
@@ -113,7 +113,6 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
 
         clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
-
         throughput = "ERROR"
         latency = "ERROR"
         abortRate = "ERROR"
@@ -142,4 +141,4 @@ subprocess.call("rm %s" % LOG, shell=True)
 
 # run experiments
 runDiamond("linearizable", 0.8, 10, [1])
-#runBaseline(0.8, 10, [1])
+runBaseline(0.8, 10, [1])
