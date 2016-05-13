@@ -10,38 +10,58 @@ import sys
 DATA_REDIS_HOST = "moranis.cs.washington.edu"
 DATA_REDIS_PORT = "6379"
 SRC_HOST = "moranis.cs.washington.edu"
-WORKING_DIR = "/scratch/nl35"
 
-CONFIG_DIR = "platform/test/"
-KEY_DIR = "scripts/experiments/"
-KEY_FILE = "keys.txt"
-NUM_FRONTENDS = 1
+workingDir = "."
+
+configPrefix = ""
+numFrontends = 0
+keyFile = ""
+numKeys = 0
 
 processes = []
 outputFiles = []
 
-def copyCommonFiles(configPrefix):
-    copyIntoWorkingDir("platform/build/libdiamond.so");
-    copyConfigFiles(configPrefix)
+def addCommonArgs(parser):
+    parser.add_argument('--config', required=True, help='config file prefix')
+    parser.add_argument('--numfrontends', type=int, default=1, help='number of frontend servers to use')
+    parser.add_argument('--keys', default="scripts/experiments/keys.txt", help='keys file to use')
+    parser.add_argument('--numkeys', type=int, default=100000, help='number of keys to read from keys file')
 
-def copyConfigFiles(configPrefix):
-    for i in range(0, NUM_FRONTENDS):
+def handleCommonArgs(args):
+    global configPrefix
+    global numFrontends
+    global keyFile
+    global numKeys
+    configPrefix = args.config
+    numFrontends = args.numfrontends
+    keyFile = args.keys
+    numKeys = args.numkeys
+
+def copyCommonFiles():
+    copyIntoWorkingDir("platform/build/libdiamond.so");
+    copyConfigFiles()
+    copyIntoWorkingDirWithName(keyFile, "keys.txt")
+
+def copyConfigFiles():
+    for i in range(0, numFrontends):
         configFile = configPrefix + ".frontend" + repr(i)
-        copyIntoWorkingDir(CONFIG_DIR + configFile + ".config")
-    copyIntoWorkingDir(KEY_DIR + KEY_FILE)
+        copyIntoWorkingDirWithName(configPrefix + ".frontend" + repr(i) + ".config", "diamond.frontend" + repr(i) + ".config")
 
 def copyIntoWorkingDir(filename):
-    os.system("rsync " + SRC_HOST + ":diamond-src/" + filename + " " + WORKING_DIR)
+    os.system("rsync " + SRC_HOST + ":diamond-src/" + filename + " " + workingDir)
 
-# getCommandFunc should be a function with arguments (workingDir, configFile, keyFile) that
-# returns the the shell command to execute the binary
-def runProcesses(getCommandFunc, numClients, configPrefix, outputPrefix):
+def copyIntoWorkingDirWithName(fileName, newName):
+    os.system("rsync " + SRC_HOST + ":diamond-src/" + fileName + " " + workingDir + "/" + newName)
+
+# getCommandFunc must be a function with arguments (workingDir, configFile, keyFile) that
+# returns the the shell command to execute the client
+def runProcesses(getCommandFunc, numClients):
     sys.stderr.write("Running clients...\n")
 
     for i in range(0, numClients):
-        outputFile = outputPrefix + "-" + repr(random.randint(0, sys.maxint))
-        configFile = configPrefix + ".frontend" + repr(i % NUM_FRONTENDS)
-        cmd = getCommandFunc(WORKING_DIR, configFile, KEY_FILE) + " > " + WORKING_DIR + "/" + outputFile
+        outputFile = "output-" + repr(random.randint(0, sys.maxint))
+        configFile = "diamond.frontend" + repr(i % numFrontends)
+        cmd = getCommandFunc(workingDir, configFile, "keys.txt", numKeys) + " > " + workingDir + "/" + outputFile
         processes.append(subprocess.Popen(cmd, shell=True))
         outputFiles.append(outputFile)
 
@@ -59,8 +79,9 @@ def runProcesses(getCommandFunc, numClients, configPrefix, outputPrefix):
 
 def processOutput(processOutputFunc):
     for outputFileName in outputFiles:
-        fullPath = os.path.expanduser(WORKING_DIR) + "/" + outputFileName
+        fullPath = os.path.expanduser(workingDir) + "/" + outputFileName
         processOutputFunc(fullPath)
+        subprocess.call(["rm", fullPath]);
         sys.stderr.write("Finished processing output file %s\n" % outputFileName)
 
 def putDataInRedis(outputFileName):
@@ -102,3 +123,28 @@ def putRetwisDataInRedis(outputFileName):
             mapping['type'] = txnType
             r.hmset(txnKey, mapping)
             r.lpush("txns", txnKey)
+
+def putGameDataInRedis(outputFileName):
+    import random
+    import redis
+    import re
+    import sys
+    r = redis.StrictRedis(host=DATA_REDIS_HOST, port=DATA_REDIS_PORT)
+    r.incr("clients")
+    turnCount = 0
+    outfile = open(outputFileName, 'r')
+    for line in outfile:
+        match = re.match("(\d+)\s+(\d+)", line)
+        if match:
+            prevEndTime = int(match.group(1))
+            endTime = int(match.group(2))
+            txnNum = random.randint(0, sys.maxint)
+            txnKey = "txn-" + repr(txnNum)
+            mapping = dict()
+            mapping['prev-end-time'] = prevEndTime
+            mapping['end-time'] = endTime
+            r.hmset(txnKey, mapping)
+            r.lpush("txns", txnKey)
+            turnCount += 1
+    if turnCount >= 50:
+        r.incr("activeplayers")

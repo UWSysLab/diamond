@@ -6,19 +6,17 @@ import os
 
 parser = argparse.ArgumentParser(description='Run baseline client.')
 parser.add_argument('--numclients', type=int, default=128, help='number of clients')
-parser.add_argument('--config', default="local", help='config prefix')
+parser.add_argument('--time', type=int, default=60, help='number of seconds to run')
+experiment_common.addCommonArgs(parser)
 args = parser.parse_args()
+experiment_common.handleCommonArgs(args)
 
-NUM_KEYS = "100000"
-NUM_SECONDS = "60"
-OUTPUT_DEST = "scripts/experiments/baseline/"
-
-def getCommandFunc(workingDir, configFile, keyFile):
-    return "java -cp " + workingDir + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar edu.washington.cs.diamond.RetwisClient " + workingDir + "/" + configFile + ".config" + " " + workingDir + "/" + keyFile + " " + NUM_KEYS + " " + NUM_SECONDS
+def getCommandFunc(workingDir, configFile, keyFile, numKeys):
+    return "java -cp " + workingDir + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar edu.washington.cs.diamond.RetwisClient " + workingDir + "/" + configFile + ".config" + " " + workingDir + "/" + keyFile + " " + repr(numKeys) + " " + repr(args.time)
 
 #copy files
 experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
-experiment_common.copyCommonFiles(args.config)
+experiment_common.copyCommonFiles()
 
-experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "baseline-out")
+experiment_common.runProcesses(getCommandFunc, args.numclients)
 experiment_common.processOutput(experiment_common.putRetwisDataInRedis)
