@@ -3,10 +3,6 @@
 import argparse
 import experiment_common
 import os
-import random
-import redis
-import re
-import sys
 
 parser = argparse.ArgumentParser(description='Run baseline client.')
 parser.add_argument('--numclients', type=int, default=128, help='number of clients')
@@ -20,30 +16,9 @@ OUTPUT_DEST = "scripts/experiments/baseline/"
 def getCommandFunc(workingDir, configFile, keyFile):
     return "java -cp " + workingDir + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar edu.washington.cs.diamond.RetwisClient " + workingDir + "/" + configFile + ".config" + " " + workingDir + "/" + keyFile + " " + NUM_KEYS + " " + NUM_SECONDS
 
-def processOutputFunc(outputFile):
-        r = redis.StrictRedis(host=experiment_common.SRC_HOST, port=6379)
-        r.incr("clients")
-        outfile = open(outputFile, 'r')
-        for line in outfile:
-            match = re.match("^\d+\s+([\d\.]+)\s+([\d\.]+)\s+\d+\s+(\d+)\s+(\d+)", line)
-            if match:
-                startTime = int(float(match.group(1)) * 1000)
-                endTime = int(float(match.group(2)) * 1000)
-                committed = int(match.group(3))
-                txnType = int(match.group(4))
-                txnNum = random.randint(0, sys.maxint)
-                txnKey = "txn-" + repr(txnNum)
-                mapping = dict()
-                mapping['start-time'] = startTime
-                mapping['end-time'] = endTime
-                mapping['committed'] = committed
-                mapping['type'] = txnType
-                r.hmset(txnKey, mapping)
-                r.lpush("txns", txnKey)
-
 #copy files
 experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
 experiment_common.copyCommonFiles(args.config)
 
 experiment_common.runProcesses(getCommandFunc, args.numclients, args.config, "baseline-out")
-experiment_common.processOutput(processOutputFunc)
+experiment_common.processOutput(experiment_common.putRetwisDataInRedis)

@@ -4,14 +4,12 @@ import argparse
 import experiment_common
 import os
 import random
+import redis
+import re
 import subprocess
 import sys
 
 def processOutputFunc(outputFile):
-    import random
-    import redis
-    import re
-    import sys
     r = redis.StrictRedis(host=experiment_common.DATA_REDIS_HOST, port=experiment_common.DATA_REDIS_PORT)
     r.incr("clients")
     turnCount = 0
@@ -35,14 +33,14 @@ def processOutputFunc(outputFile):
 WORKING_DIR = experiment_common.WORKING_DIR
 NUM_FRONTENDS = experiment_common.NUM_FRONTENDS
 
-parser = argparse.ArgumentParser(description='Run 100 game benchmark.')
+parser = argparse.ArgumentParser(description='Run Redis version of the 100 game benchmark.')
 parser.add_argument('--numpairs', type=int, default=50, help='number of client pairs')
-parser.add_argument('--config', default="local", help='config prefix')
-parser.add_argument('--nocaching', action="store_true", help='disable caching')
+parser.add_argument('--hostname', default="moranis.cs.washington.edu", help='Redis hostname')
+parser.add_argument('--port', default="8001", help='Redis port')
 args = parser.parse_args()
         
-experiment_common.copyCommonFiles(args.config)
-experiment_common.copyIntoWorkingDir("apps/benchmarks/build/game")
+experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/100game/build/game-redis")
+os.system("rsync " + experiment_common.SRC_HOST + ":diamond-src/apps/baseline-benchmarks/redox/build/libredox.so.0.3.0 " + experiment_common.WORKING_DIR + "/libredox.so.0")
 
 sys.stderr.write("Running clients...\n")
 
@@ -51,14 +49,10 @@ outputFiles = []
 
 for i in range(0, args.numpairs):
     gameKeyPrefix = repr(random.randint(0, sys.maxint))
-    outputFile1 = "game-" + gameKeyPrefix + "-1"
-    outputFile2 = "game-" + gameKeyPrefix + "-2"
-    configFile = args.config + ".frontend" + repr(i % NUM_FRONTENDS)
-    noCachingArg = ""
-    if args.nocaching:
-        noCachingArg = " --nocaching "
-    cmd1 = WORKING_DIR + "/game --config " + WORKING_DIR + "/" + configFile + " --name player1 --keyprefix " + gameKeyPrefix + noCachingArg + " > " + WORKING_DIR + "/" + outputFile1
-    cmd2 = WORKING_DIR + "/game --config " + WORKING_DIR + "/" + configFile + " --name player2 --keyprefix " + gameKeyPrefix + noCachingArg + " > " + WORKING_DIR + "/" + outputFile2
+    outputFile1 = "game-redis-" + gameKeyPrefix + "-1"
+    outputFile2 = "game-redis-" + gameKeyPrefix + "-2"
+    cmd1 = WORKING_DIR + "/game-redis --host " + args.hostname + " --port " + args.port + " --name player1 --keyprefix " + gameKeyPrefix + " > " + WORKING_DIR + "/" + outputFile1
+    cmd2 = WORKING_DIR + "/game-redis --host " + args.hostname + " --port " + args.port + " --name player2 --keyprefix " + gameKeyPrefix + " > " + WORKING_DIR + "/" + outputFile2
     processes.append(subprocess.Popen(cmd1, shell=True))
     processes.append(subprocess.Popen(cmd2, shell=True))
     outputFiles.append(outputFile1)
@@ -68,6 +62,13 @@ for process in processes:
     process.wait()
 
 sys.stderr.write("Finished running clients\n")
+
+success = True
+for process in processes:
+    if process.returncode:
+        success = False
+if not success:
+    sys.stderr.write("Error: some clients returned nonzero return codes\n")
 
 for outputFileName in outputFiles:
     fullPath = os.path.expanduser(WORKING_DIR) + "/" + outputFileName
