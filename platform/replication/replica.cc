@@ -48,7 +48,7 @@ namespace replication {
 
 using namespace proto;
     
-VRReplica::VRReplica(transport::Configuration config, int myIdx,
+VRReplica::VRReplica(Configuration config, int myIdx,
                      Transport *transport, unsigned int batchSize,
                      AppReplica *app)
     : Replica(config, myIdx, transport, app),

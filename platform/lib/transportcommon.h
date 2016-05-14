@@ -67,7 +67,7 @@ public:
     }
 
     virtual bool
-    SendMessageToReplica(TransportReceiver *src, int replicaIdx,
+    SendMessageToServer(TransportReceiver *src, int serverIdx,
                          const Message &m)
     {
         const transport::Configuration *cfg = configurations[src];
@@ -83,44 +83,23 @@ public:
         return SendMessageInternal(src, kv->second, m, false);
     }
 
-    virtual bool
-    SendMessageToAll(TransportReceiver *src, const Message &m)
+private:
+    std::mutex mtx;
+    struct TransportTimerInfo
     {
-        const transport::Configuration *cfg = configurations[src];
-        ASSERT(cfg != NULL);
+        Transport *transport;
+        timer_callback_t cb;
+        event *ev;
+        int id;
+    };
 
-        if (!replicaAddressesInitialized) {
-            LookupAddresses();
-        }
-
-        auto kv = multicastAddresses.find(cfg);
-        if (kv != multicastAddresses.end()) {
-            // Send by multicast if we can
-            return SendMessageInternal(src, kv->second, m, true);
-        } else {
-            // ...or by individual messages to every replica if not
-	     for (auto & kv2 : replicaAddresses[cfg]) {
-		  if (src->HasAddress()) {
-		       const ADDR &srcAddr = dynamic_cast<const ADDR &>(src->GetAddress());
-		       if (srcAddr == kv2.second) {
-			    continue;
-		       }
-		  }
-		  if (!SendMessageInternal(src, kv2.second, m, false)) {
-		       return false;
-		  }
-	     }
-	     return true;	     
-        }
-    }
-    
 protected:
     virtual bool SendMessageInternal(TransportReceiver *src,
                                      const ADDR &dst,
                                      const Message &m,
                                      bool multicast = false) = 0;
     virtual ADDR LookupAddress(const transport::Configuration &cfg,
-                               int replicaIdx) = 0;
+                               int serverIdx) = 0;
     virtual const ADDR *
     LookupMulticastAddress(const transport::Configuration *cfg) = 0;
 
@@ -129,16 +108,15 @@ protected:
     std::map<TransportReceiver *,
              transport::Configuration *> configurations;
     std::map<const transport::Configuration *,
-             std::map<int, ADDR> > replicaAddresses;
+             std::map<int, ADDR> > serverAddresses;
     std::map<const transport::Configuration *,
-             std::map<int, TransportReceiver *> > replicaReceivers;
-    std::map<const transport::Configuration *, ADDR> multicastAddresses;
-    bool replicaAddressesInitialized;
+             std::map<int, TransportReceiver *> > serverReceivers;
+    bool serverAddressesInitialized;
 
     virtual transport::Configuration *
     RegisterConfiguration(TransportReceiver *receiver,
                           const transport::Configuration &config,
-                          int replicaIdx)
+                          int serverIdx)
     {
         ASSERT(receiver != NULL);
 
@@ -146,8 +124,7 @@ protected:
         // pointer to the canonical copy; if not, create one. This
         // allows us to use that pointer as a key in various
         // structures. 
-        transport::Configuration *canonical
-            = canonicalConfigs[config];
+        transport::Configuration *canonical = canonicalConfigs[config];
         if (canonical == NULL) {
             canonical = new transport::Configuration(config);
             canonicalConfigs[config] = canonical;
@@ -156,15 +133,15 @@ protected:
         // Record configuration
         configurations.insert(std::make_pair(receiver, canonical));
 
-        // If this is a replica, record the receiver
-        if (replicaIdx != -1) {
-            replicaReceivers[canonical].insert(std::make_pair(replicaIdx,
-                                                              receiver));
+        // If this is a server, record the receiver
+        if (serverIdx != -1) {
+            serverReceivers[canonical].insert(std::make_pair(serverIdx,
+                                                             receiver));
         }
 
         // Mark replicaAddreses as uninitalized so we'll look up
         // replica addresses again the next time we send a message.
-        replicaAddressesInitialized = false;
+        serverAddressesInitialized = false;
 
         return canonical;
     }
@@ -173,9 +150,8 @@ protected:
     LookupAddresses()
     {
         // Clear any existing list of addresses
-        replicaAddresses.clear();
-        multicastAddresses.clear();
-
+        serverAddresses.clear();
+        
         // For every configuration, look up all addresses and cache
         // them.
         for (auto &kv : canonicalConfigs) {
@@ -183,21 +159,94 @@ protected:
 
             for (int i = 0; i < cfg->n; i++) {
                 const ADDR addr = LookupAddress(*cfg, i);
-                replicaAddresses[cfg].insert(std::make_pair(i, addr));
-            }
-
-            // And check if there's a multicast address
-            if (cfg->multicast()) {
-                const ADDR *addr = LookupMulticastAddress(cfg);
-                if (addr) {
-                    multicastAddresses.insert(std::make_pair(cfg, *addr));
-                    delete addr;
-                }
+                sereverAddresses[cfg].insert(std::make_pair(i, addr));
             }
         }
         
-        replicaAddressesInitialized = true;
+        serverAddressesInitialized = true;
     }
+
+    virtual int
+    Timer(uint64_t ms, timer_callback_t cb)
+    {
+        std::lock_guard<std::mutex> lck(mtx);
+    
+        TCPTransportTimerInfo *info = new TCPTransportTimerInfo();
+
+        struct timeval tv;
+        tv.tv_sec = ms/1000;
+        tv.tv_usec = (ms % 1000) * 1000;
+    
+        ++lastTimerId;
+    
+        info->transport = this;
+        info->id = lastTimerId;
+        info->cb = cb;
+        info->ev = event_new(libeventBase, -1, 0,
+                             TimerCallback, info);
+
+        timers[info->id] = info;
+    
+        event_add(info->ev, &tv);
+    
+        return info->id;
+    }
+
+    virtual bool
+    TCPTransport::CancelTimer(int id)
+{
+    std::lock_guard<std::mutex> lck(mtx);
+    TCPTransportTimerInfo *info = timers[id];
+
+    if (info == NULL) {
+        return false;
+    }
+
+    timers.erase(info->id);
+    event_del(info->ev);
+    event_free(info->ev);
+    delete info;
+    
+    return true;
+}
+
+void
+TCPTransport::CancelAllTimers()
+{
+    while (!timers.empty()) {
+        auto kv = timers.begin();
+        CancelTimer(kv->first);
+    }
+}
+
+void
+TCPTransport::OnTimer(TCPTransportTimerInfo *info)
+{
+    {
+	    std::lock_guard<std::mutex> lck(mtx);
+	    
+	    timers.erase(info->id);
+	    event_del(info->ev);
+	    event_free(info->ev);
+    }
+    
+    info->cb();
+
+    delete info;
+}
+
+void
+TCPTransport::TimerCallback(evutil_socket_t fd, short what, void *arg)
+{
+    TCPTransport::TCPTransportTimerInfo *info =
+        (TCPTransport::TCPTransportTimerInfo *)arg;
+
+    ASSERT(what & EV_TIMEOUT);
+
+    info->transport->OnTimer(info);
+}
+
+
 };
 
 #endif // _LIB_TRANSPORTCOMMON_H_

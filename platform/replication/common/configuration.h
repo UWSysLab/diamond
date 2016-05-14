@@ -32,6 +32,8 @@
 #ifndef _LIB_CONFIGURATION_H_
 #define _LIB_CONFIGURATION_H_
 
+#include "replication/common/viewstamp.h"
+
 #include <fstream>
 #include <stdbool.h>
 #include <string>
@@ -39,39 +41,35 @@
 
 using std::string;
 
-namespace transport {
+namespace replication {
 
-struct HostAddress
-{
-    string host;
-    string port;
-    HostAddress(const string &host, const string &port);
-    bool operator==(const HostAddress &other) const;
-    inline bool operator!=(const HostAddress &other) const {
-        return !(*this == other);
-    }
-};
-
-
-class Configuration
+class Configuration : transport::Configuration
 {
 public:
-    Configuration(const Configuration &c) : hosts(c.hosts) { };
-    Configuration(std::vector<HostAddress> hosts) : hosts(hosts) { };
+    Configuration(const Configuration &c);
+    Configuration(int n, int f, std::vector<HostAddress> replicas,
+                  HostAddress *multicastAddress = nullptr) : hosts(replicas) { };
     Configuration(std::ifstream &file);
     virtual ~Configuration();
-    HostAddress host(int idx) const;
+    HostAddress replica(int idx) const;
+    const HostAddress *multicast() const;
+    int GetLeaderIndex(view_t view) const;
+    int QuorumSize() const;
+    int FastQuorumSize() const;
     bool operator==(const Configuration &other) const;
     inline bool operator!= (const Configuration &other) const {
         return !(*this == other);
     }
-
+    
+public:
+    int n;                      // number of replicas
+    int f;                      // number of failures tolerated
 private:
-    std::vector<HostAddress> hosts;
-
+    HostAddress *multicastAddress;
+    bool hasMulticast = false;
 };
 
-}
+}      // namespace replication
 
 namespace std {
 template <> struct hash<transport::HostAddress>
