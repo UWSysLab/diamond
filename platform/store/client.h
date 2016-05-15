@@ -53,7 +53,7 @@ namespace strongstore {
 class Client : public AsyncClient
 {
 public:
-    Client(string configPath, int nshards, int closestReplica);
+    Client(string configPath, int nshards, int closestReplica, Transport *transport);
     ~Client();
 
     // Get the value corresponding to key (valid at given timestamp).
@@ -90,9 +90,6 @@ public:
                    callback_t callback);
 
 private:
-    /* Private helper functions. */
-    void run_client(); // Runs the transport event loop.
-
     // Callback functions
     void MultiGetCallback(callback_t callback, size_t total,
 			  std::vector<Promise *> *promises, Promise *promise);
@@ -128,11 +125,8 @@ private:
     long nshards;
 
     // Transport used by paxos client proxies.
-    TCPTransport transport;
+    Transport *transport;
     
-    // Thread running the transport event loop.
-    std::thread *clientTransport;
-
     // Caching client for each shard.
     std::vector<ShardClient *> cclient;
 

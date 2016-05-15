@@ -37,8 +37,8 @@ using namespace std;
 namespace strongstore {
 
 Client::Client(string configPath, int nShards,
-                int closestReplica)
-    : transport()
+	       int closestReplica, Transport *transport)
+    : transport(transport)
 {
     // Initialize all state here;
     client_id = 0;
@@ -61,39 +61,27 @@ Client::Client(string configPath, int nShards,
 	fprintf(stderr, "unable to read configuration file: %s\n",
 		tssConfigPath.c_str());
     }
-    transport::Configuration tssConfig(tssConfigStream);
-    tss = new replication::VRClient(tssConfig, &transport);
+    replication::Configuration tssConfig(tssConfigStream);
+    tss = new replication::VRClient(tssConfig, transport);
     
     /* Start a client for each shard. */
     for (int i = 0; i < nShards; i++) {
         string shardConfigPath = configPath + to_string(i) + ".config";
         cclient[i] = new ShardClient(shardConfigPath,
-				     &transport,
+				     transport,
 				     client_id, i,
 				     closestReplica);
     }
-
-    /* Run the transport in a new thread. */
-    clientTransport = new thread(&Client::run_client, this);
 
     Debug("Diamond Store client [%lu] created!", client_id);
 }
 
 Client::~Client()
 {
-    transport.Stop();
     delete tss;
     for (auto b : cclient) {
         delete b;
     }
-    clientTransport->join();
-}
-
-/* Runs the transport event loop. */
-void
-Client::run_client()
-{
-    transport.Run();
 }
 
 void
@@ -184,7 +172,7 @@ Client::PrepareInternal(const uint64_t tid,
     }
 
     // In the meantime ... go get a timestamp for OCC
-    transport.Timer(0, [=]() {
+    transport->Timer(0, [=]() {
             Debug("Sending request to TimeStampServer");
 	    function<void (const string &, const string &)> cb =
 		bind(&Client::tssCallback,

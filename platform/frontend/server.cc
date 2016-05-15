@@ -548,15 +548,20 @@ main(int argc, char **argv)
     // Load configuration
     std::ifstream configStream(configPath);
     if (configStream.fail()) {
-        fprintf(stderr, "unable to read configuration file: %s\n", configPath);
+        fprintf(stderr,
+		"unable to read configuration file: %s\n",
+		configPath);
     }
     transport::Configuration config(configStream);
 
     TCPTransport transport(0.0, 0.0, 0);
 
-    strongstore::Client *client = new strongstore::Client(backendConfig, maxShard, closestReplica);
+    strongstore::Client *client =
+	new strongstore::Client(backendConfig, maxShard,
+				closestReplica, &transport);
 
-    diamond::frontend::Server server = diamond::frontend::Server(&transport, client);
+    diamond::frontend::Server server =
+	diamond::frontend::Server(&transport, client);
 
     // The server's transport for handling incoming connections
     transport.Register(&server, config, 0);
