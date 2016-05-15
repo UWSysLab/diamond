@@ -52,7 +52,6 @@ HostAddress::operator==(const HostAddress &other) const {
             (port == other.port));
 }
 
-
 Configuration::Configuration(const Configuration &c)
     : hosts(c.hosts)
 {

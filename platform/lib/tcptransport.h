@@ -74,32 +74,17 @@ public:
     virtual ~TCPTransport();
     void Register(TransportReceiver *receiver,
                   const transport::Configuration &config,
-                  int replicaIdx);
-    bool SendMessage(TransportReceiver *src,
-                     const std::string &hostname,
-                     const std::string &port,
-                     const Message &m);
+                  int serverIdx);
     void Run();
     void Stop();
-    int Timer(uint64_t ms, timer_callback_t cb);
-    bool CancelTimer(int id);
-    void CancelAllTimers();
     
 private:
-    std::mutex mtx;
-    struct TCPTransportTimerInfo
-    {
-        TCPTransport *transport;
-        timer_callback_t cb;
-        event *ev;
-        int id;
-    };
     struct TCPTransportTCPListener
     {
         TCPTransport *transport;
         TransportReceiver *receiver;
         int acceptFd;
-        int replicaIdx;
+        int serverIdx;
         event *acceptEvent;
         std::list<struct bufferevent *> connectionEvents;
     };
@@ -115,14 +100,13 @@ private:
     std::map<struct bufferevent *, TCPTransportAddress> tcpAddresses;
     
     bool SendMessageInternal(TransportReceiver *src,
-                             const TCPTransportAddress &dst,
-                             const Message &m, bool multicast = false);
+                             const TCPTransportAddress &dst);
 
     TCPTransportAddress
-    LookupAddress(const transport::ReplicaAddress &addr);
+    LookupAddress(const transport::HostAddress &addr);
     TCPTransportAddress
     LookupAddress(const transport::Configuration &cfg,
-                  int replicaIdx);
+                  int serverIdx);
     const TCPTransportAddress *
     LookupMulticastAddress(const transport::Configuration*config) { return NULL; };
 

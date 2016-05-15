@@ -61,7 +61,6 @@ public:
     }
     
 public:
-    int n;                      // number of replicas
     int f;                      // number of failures tolerated
 };
 

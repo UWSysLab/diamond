@@ -36,10 +36,6 @@
 #include <google/protobuf/message.h>
 #include <functional>
 
-#define CLIENT_NETWORK_DELAY 0
-#define REPLICA_NETWORK_DELAY 0
-#define READ_AT_LEADER 1
-
 class TransportAddress
 {
 public:
@@ -80,12 +76,7 @@ public:
                           int replicaIdx) = 0;
     virtual bool SendMessage(TransportReceiver *src, const TransportAddress &dst,
                              const Message &m) = 0;
-    virtual bool SendMessage(TransportReceiver *src,
-                             const std::string &hostname,
-                             const std::string &port,
-                             const Message &m) = 0;
-    virtual bool SendMessageToReplica(TransportReceiver *src, int replicaIdx, const Message &m) = 0;
-    virtual bool SendMessageToAll(TransportReceiver *src, const Message &m) = 0;
+    virtual bool SendMessageToServer(TransportReceiver *src, int replicaIdx, const Message &m) = 0;
     virtual int Timer(uint64_t ms, timer_callback_t cb) = 0;
     virtual bool CancelTimer(int id) = 0;
     virtual void CancelAllTimers() = 0;

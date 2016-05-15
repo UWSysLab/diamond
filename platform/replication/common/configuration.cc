@@ -38,7 +38,7 @@
 #include <string>
 #include <string.h>
 
-namespace hosttion {
+namespace replication {
 
 Configuration::Configuration(const Configuration &c)
     : n(c.n), f(c.f), hosts(c.hosts)
@@ -138,4 +138,4 @@ Configuration::FastQuorumSize() const
 }
 
 
-} // namespace transport
+} // namespace replication
