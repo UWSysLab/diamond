@@ -7,9 +7,17 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/home/nl35"
+if "DIAMOND_WORKING_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_WORKING_DIR is not set")
+    print("(It should point to the working directory you want to use on the server host machines)")
+    sys.exit()
+if "REDIS_DIR" not in os.environ:
+    print("Error: environment variable REDIS_DIR is not set")
+    print("(It should point to a folder containing redis-server and redis-cli binaries)")
+    sys.exit()
+WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
 SERVER_DIR = "target"
-REDIS_DIR = "/home/nl35/redis-3.0.7/src"
+REDIS_DIR = os.environ["REDIS_DIR"]
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
