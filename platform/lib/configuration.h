@@ -91,10 +91,10 @@ template <> struct hash<transport::Configuration>
     size_t operator()(const transport::Configuration & x) const
         {
             size_t out = 0;
-            out = x.n * 37 + x.f;
+            out = x.n * 37;
             for (int i = 0; i < x.n; i++) {
                 out *= 37;
-                out += hash<transport::HostAddress>()(x.replica(i));
+                out += hash<transport::HostAddress>()(x.host(i));
             }
             return out;
         }

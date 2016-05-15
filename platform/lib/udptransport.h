@@ -67,12 +67,11 @@ private:
 class UDPTransport : public TransportCommon<UDPTransportAddress>
 {
 public:
-    UDPTransport(double dropRate = 0.0, double reorderRate = 0.0,
-                 int dscp = 0, event_base *evbase = nullptr);
+    UDPTransport(int dscp = 0, event_base *evbase = nullptr);
     virtual ~UDPTransport();
     void Register(TransportReceiver *receiver,
                   const transport::Configuration &config,
-                  int replicaIdx);
+                  int hostIdx);
     bool SendMessage(TransportReceiver *src,
                      const std::string &hostname,
                      const std::string &port,
@@ -93,10 +92,6 @@ private:
         int id;
     };
 
-    double dropRate;
-    double reorderRate;
-    std::uniform_real_distribution<double> uniformDist;
-    std::default_random_engine randomEngine;
     struct
     {
         bool valid;
@@ -112,8 +107,6 @@ private:
     std::vector<event *> signalEvents;
     std::map<int, TransportReceiver*> receivers; // fd -> receiver
     std::map<TransportReceiver*, int> fds; // receiver -> fd
-    std::map<const transport::Configuration *, int> multicastFds;
-    std::map<int, const transport::Configuration *> multicastConfigs;
     int lastTimerId;
     std::map<int, UDPTransportTimerInfo *> timers;
     uint64_t lastFragMsgId;
@@ -126,16 +119,12 @@ private:
 
     bool SendMessageInternal(TransportReceiver *src,
                              const UDPTransportAddress &dst,
-                             const Message &m, bool multicast = false);
+                             const Message &m);
     UDPTransportAddress
-    LookupAddress(const transport::ReplicaAddress &addr);
+    LookupAddress(const transport::HostAddress &addr);
     UDPTransportAddress
     LookupAddress(const transport::Configuration &cfg,
-                  int replicaIdx);
-    const UDPTransportAddress *
-    LookupMulticastAddress(const transport::Configuration *cfg);
-    void ListenOnMulticastPort(const transport::Configuration
-                               *canonicalConfig);
+                  int hostIdx);
     void OnReadable(int fd);
     void OnTimer(UDPTransportTimerInfo *info);
     static void SocketCallback(evutil_socket_t fd,

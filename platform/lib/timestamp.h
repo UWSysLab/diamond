@@ -1,5 +1,5 @@
-#ifndef TIMESTAMP_H
-#define TIMESTAMP_H
+#ifndef _TIMESTAMP_H_
+#define _TIMESTAMP_H_
 
 #include <stdlib.h>
 #include <stdio.h>

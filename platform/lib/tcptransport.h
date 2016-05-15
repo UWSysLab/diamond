@@ -1,8 +1,8 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * udptransport.h:
- *   message-passing network interface that uses UDP message delivery
+ * tcptransport.h:
+ *   message-passing network interface that uses TCP message delivery
  *   and libasync
  *
  * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
@@ -77,14 +77,26 @@ public:
                   int serverIdx);
     void Run();
     void Stop();
+    int Timer(uint64_t ms, timer_callback_t cb);
+    bool CancelTimer(int id);
+    void CancelAllTimers();
     
 private:
+    std::mutex mtx;
+    struct TCPTransportTimerInfo
+    {
+        TCPTransport *transport;
+        timer_callback_t cb;
+        event *ev;
+        int id;
+    };
+
     struct TCPTransportTCPListener
     {
         TCPTransport *transport;
         TransportReceiver *receiver;
         int acceptFd;
-        int serverIdx;
+        int hostIdx;
         event *acceptEvent;
         std::list<struct bufferevent *> connectionEvents;
     };
@@ -100,7 +112,8 @@ private:
     std::map<struct bufferevent *, TCPTransportAddress> tcpAddresses;
     
     bool SendMessageInternal(TransportReceiver *src,
-                             const TCPTransportAddress &dst);
+                             const TCPTransportAddress &dst,
+			     const Message &m);
 
     TCPTransportAddress
     LookupAddress(const transport::HostAddress &addr);
