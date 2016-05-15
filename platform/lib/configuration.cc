@@ -40,49 +40,33 @@
 
 namespace transport {
 
-ReplicaAddress::ReplicaAddress(const string &host, const string &port)
+HostAddress::HostAddress(const string &host, const string &port)
     : host(host), port(port)
 {
 
 }
 
 bool
-ReplicaAddress::operator==(const ReplicaAddress &other) const {
+HostAddress::operator==(const HostAddress &other) const {
     return ((host == other.host) &&
             (port == other.port));
 }
 
 
 Configuration::Configuration(const Configuration &c)
-    : n(c.n), f(c.f), replicas(c.replicas), hasMulticast(c.hasMulticast)
+    : hosts(c.hosts)
 {
-    multicastAddress = NULL;
-    if (hasMulticast) {
-        multicastAddress = new ReplicaAddress(*c.multicastAddress);
-    }
+    n = hosts.size();
 }
-    
-Configuration::Configuration(int n, int f,
-                             std::vector<ReplicaAddress> replicas,
-                             ReplicaAddress *multicastAddress)
-    : n(n), f(f), replicas(replicas)
+
+Configuration::Configuration(std::vector<HostAddress> hosts)
+    : hosts(hosts)
 {
-    if (multicastAddress) {
-        hasMulticast = true;
-        this->multicastAddress =
-            new ReplicaAddress(*multicastAddress);
-    } else {
-        hasMulticast = false;
-        multicastAddress = NULL;
-    }
+    n = hosts.size();
 }
 
 Configuration::Configuration(std::ifstream &file)
 {
-    f = -1;
-    hasMulticast = false;
-    multicastAddress = NULL;
-    
     while (!file.eof()) {
         // Read a line
         string line;
@@ -98,119 +82,42 @@ Configuration::Configuration(std::ifstream &file)
         // is going to be a mutable contiguous buffer...
         char *cmd = strtok(&line[0], " \t");
 
-        if (strcasecmp(cmd, "f") == 0) {
+	if (strcasecmp(cmd, "host") == 0) {
             char *arg = strtok(NULL, " \t");
             if (!arg) {
-                Panic ("'f' configuration line requires an argument");
-            }
-            char *strtolPtr;
-            f = strtoul(arg, &strtolPtr, 0);
-            if ((*arg == '\0') || (*strtolPtr != '\0')) {
-                Panic("Invalid argument to 'f' configuration line");
-            }
-        } else if (strcasecmp(cmd, "replica") == 0) {
-            char *arg = strtok(NULL, " \t");
-            if (!arg) {
-                Panic ("'replica' configuration line requires an argument");
+                Panic ("'host' configuration line requires an argument");
             }
 
             char *host = strtok(arg, ":");
             char *port = strtok(NULL, "");
             
             if (!host || !port) {
-                Panic("Configuration line format: 'replica host:port'");
+                Panic("Configuration line format: 'host host:port'");
             }
 
-            replicas.push_back(ReplicaAddress(string(host), string(port)));
-        } else if (strcasecmp(cmd, "multicast") == 0) {
-            char *arg = strtok(NULL, " \t");
-            if (!arg) {
-                Panic ("'multicast' configuration line requires an argument");
-            }
-
-            char *host = strtok(arg, ":");
-            char *port = strtok(NULL, "");
-            
-            if (!host || !port) {
-                Panic("Configuration line format: 'multicast host:port'");
-            }
-
-            multicastAddress = new ReplicaAddress(string(host),
-                                                  string(port));
-            hasMulticast = true;
+            hosts.push_back(HostAddress(string(host), string(port)));
         } else {
             Panic("Unknown configuration directive: %s", cmd);
         }
     }
 
-    n = replicas.size();
-    if (n == 0) {
-        Panic("Configuration did not specify any replicas");
-    }
-
-    if (f == -1) {
-        Panic("Configuration did not specify a 'f' parameter");
-    }
+    n = hosts.size();
 }
 
 Configuration::~Configuration()
 {
-    if (hasMulticast) {
-        delete multicastAddress;
-    }
 }
 
-ReplicaAddress
-Configuration::replica(int idx) const
+HostAddress
+Configuration::host(int idx) const
 {
-    return replicas[idx];
-}
-
-const ReplicaAddress *
-Configuration::multicast() const
-{
-    if (hasMulticast) {
-        return multicastAddress;
-    } else {
-        return nullptr;
-    }
-}
-
-int
-Configuration::GetLeaderIndex(view_t view) const
-{
-    return (view % this->n);
-}
-
-int
-Configuration::QuorumSize() const
-{
-    return f+1;
-}
-
-int
-Configuration::FastQuorumSize() const
-{
-    return f + (f+1)/2 + 1;
+    return hosts[idx];
 }
 
 bool
 Configuration::operator==(const Configuration &other) const
 {
-    if ((n != other.n) ||
-        (f != other.f) ||
-        (replicas != other.replicas) ||
-        (hasMulticast != other.hasMulticast)) {
-        return false;
-    }
-
-    if (hasMulticast) {
-        if (*multicastAddress != *other.multicastAddress) {
-            return false;
-        }
-    }
-    
-    return true;
+    return hosts == other.hosts;
 }
 
 } // namespace transport

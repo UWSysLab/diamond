@@ -39,7 +39,7 @@
 
 namespace replication {
 
-VRClient::VRClient(const transport::Configuration &config,
+VRClient::VRClient(const Configuration &config,
                    Transport *transport,
                    uint64_t clientid)
     : Client(config, transport, clientid)

@@ -40,7 +40,7 @@
 
 namespace replication {
     
-Replica::Replica(const transport::Configuration &configuration, int myIdx,
+Replica::Replica(const Configuration &configuration, int myIdx,
                  Transport *transport, AppReplica *app)
     : configuration(configuration), myIdx(myIdx),
       transport(transport), app(app)

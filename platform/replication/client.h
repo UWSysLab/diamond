@@ -33,7 +33,7 @@
 #define _VR_CLIENT_H_
 
 #include "replication/common/client.h"
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
 #include "vr-proto.pb.h"
 #include <unordered_map>
 
@@ -44,7 +44,7 @@ namespace replication {
 class VRClient : public Client
 {
 public:
-    VRClient(const transport::Configuration &config,
+    VRClient(const Configuration &config,
              Transport *transport,
              uint64_t clientid = 0);
     virtual ~VRClient();

@@ -34,7 +34,7 @@
 #define _COMMON_REPLICA_H_
 
 
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
 #include "replication/common/log.h"
 #include "request.pb.h"
 #include "lib/transport.h"
@@ -66,7 +66,7 @@ public:
 class Replica : public TransportReceiver
 {
 public:
-    Replica(const transport::Configuration &config, int myIdx, Transport *transport, AppReplica *app);
+    Replica(const Configuration &config, int myIdx, Transport *transport, AppReplica *app);
     virtual ~Replica();
     
 protected:
@@ -80,7 +80,7 @@ protected:
                                                MSG &reply);
     
 protected:
-    transport::Configuration configuration;
+    Configuration configuration;
     int myIdx;
     Transport *transport;
     AppReplica *app;

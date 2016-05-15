@@ -2,10 +2,10 @@
 /***********************************************************************
  *
  * configuration.h:
- *   Representation of a replica group configuration, i.e. the number
- *   and list of replicas in the group
+ *   Representation of a configuration, i.e. a number of hosts
  *
  * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
+ * Copyright 2016 Irene Zhang  <iyzhang@cs.washington.edu>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -32,8 +32,6 @@
 #ifndef _LIB_CONFIGURATION_H_
 #define _LIB_CONFIGURATION_H_
 
-#include "replication/common/viewstamp.h"
-
 #include <fstream>
 #include <stdbool.h>
 #include <string>
@@ -43,13 +41,13 @@ using std::string;
 
 namespace transport {
 
-struct ReplicaAddress
+struct HostAddress
 {
     string host;
     string port;
-    ReplicaAddress(const string &host, const string &port);
-    bool operator==(const ReplicaAddress &other) const;
-    inline bool operator!=(const ReplicaAddress &other) const {
+    HostAddress(const string &host, const string &port);
+    bool operator==(const HostAddress &other) const;
+    inline bool operator!=(const HostAddress &other) const {
         return !(*this == other);
     }
 };
@@ -59,35 +57,28 @@ class Configuration
 {
 public:
     Configuration(const Configuration &c);
-    Configuration(int n, int f, std::vector<ReplicaAddress> replicas,
-                  ReplicaAddress *multicastAddress = nullptr);
+    Configuration(std::vector<HostAddress> hosts);
     Configuration(std::ifstream &file);
     virtual ~Configuration();
-    ReplicaAddress replica(int idx) const;
-    const ReplicaAddress *multicast() const;
-    int GetLeaderIndex(view_t view) const;
-    int QuorumSize() const;
-    int FastQuorumSize() const;
+    HostAddress host(int idx) const;
     bool operator==(const Configuration &other) const;
     inline bool operator!= (const Configuration &other) const {
         return !(*this == other);
     }
     
 public:
-    int n;                      // number of replicas
-    int f;                      // number of failures tolerated
+    int n;                      // number of hosts
+
 private:
-    std::vector<ReplicaAddress> replicas;
-    ReplicaAddress *multicastAddress;
-    bool hasMulticast;
+    std::vector<HostAddress> hosts;
 };
 
-}      // namespace replication
+} // namespace transport
 
 namespace std {
-template <> struct hash<transport::ReplicaAddress>
+template <> struct hash<transport::HostAddress>
 {
-    size_t operator()(const transport::ReplicaAddress & x) const
+    size_t operator()(const transport::HostAddress & x) const
         {
             return hash<string>()(x.host) * 37 + hash<string>()(x.port);
         }
@@ -103,12 +94,12 @@ template <> struct hash<transport::Configuration>
             out = x.n * 37 + x.f;
             for (int i = 0; i < x.n; i++) {
                 out *= 37;
-                out += hash<transport::ReplicaAddress>()(x.replica(i));
+                out += hash<transport::HostAddress>()(x.replica(i));
             }
             return out;
         }
 };
-}
+} // namespace std
 
 
 #endif  /* _LIB_CONFIGURATION_H_ */
