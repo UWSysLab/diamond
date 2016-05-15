@@ -355,7 +355,7 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
                        sizeof(totalLen) +
                        sizeof(uint32_t));
 
-    Debug("Sending %ld byte %s message to host over TCP",
+    Debug("Sending %d byte %s message to host over TCP",
           totalLen, type.c_str());
     
     char buf[totalLen];
@@ -512,11 +512,11 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
         ASSERT(totalSize < 1073741826);
     
         if (evbuffer_get_length(evbuf) < totalSize) {
-            Debug("Don't have %ld bytes for a message yet, only %ld",
+            Debug("Don't have %d bytes for a message yet, only %d",
                   totalSize, evbuffer_get_length(evbuf));
             return;
         }
-        Debug("Receiving %ld byte message", totalSize);
+        Debug("Receiving %d byte message", totalSize);
 
         char buf[totalSize];
         size_t copied = evbuffer_remove(evbuf, buf, totalSize);
