@@ -4,11 +4,10 @@
 # run the baseline Redis/Jetty system, and it uses parse-retwis.py when parsing the results
 # to break out the numbers by transaction type.
 
+import experiment_common
+from experiment_common import logPrint
 import re
 import subprocess
-
-def logPrint(msg):
-    subprocess.call("echo %s | tee -a %s" % (msg, LOG), shell=True)
 
 SRC_HOST = "moranis.cs.washington.edu"
 DATA_REDIS_PORT = 6379
@@ -20,16 +19,20 @@ KEY_FILE = "scripts/experiments/keys.txt"
 NUM_KEYS = 100000
 BATCH_SIZE = 64
 
+CLIENTS_FILE = "clients.txt"
+
 OUTPUT_DIR = "results/docc"
 LOG = "docc-log.txt"
 
-machines = ["charlottetown.cs.washington.edu"]
+machines = experiment_common.readClients(CLIENTS_FILE)
 
 startDiamondCmd = "ssh -t %s 'cd diamond-src/scripts; ./manage-servers.py start ../%s --keys ../%s --numkeys %d --batch %d' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, KEY_FILE, NUM_KEYS, BATCH_SIZE, LOG)
 killDiamondCmd = "ssh %s 'cd diamond-src/scripts; ./manage-servers.py kill ../%s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
 startRedisCmd = "ssh -f %s 'nohup %s/redis-server &' >> %s 2>&1" % (SRC_HOST, REDIS_DIR, LOG)
 killRedisCmd = "ssh %s 'pkill -f %d'" % (SRC_HOST, DATA_REDIS_PORT)
 clearRedisCmd = "ssh %s '%s/redis-cli -p %d flushdb' >> %s 2>&1" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT, LOG)
+
+experiment_common.setLog(LOG)
 
 def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
     logPrint("Running Diamond with isolation %s and zipf %f" % (isolation, zipf))
