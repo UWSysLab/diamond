@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-import experiment_common
+import client_common
 import os
 import random
 import redis
@@ -15,10 +15,10 @@ parser.add_argument('--hostname', default="moranis.cs.washington.edu", help='Red
 parser.add_argument('--port', default="8001", help='Redis port')
 args = parser.parse_args()
         
-WORKING_DIR = experiment_common.workingDir
+WORKING_DIR = client_common.getWorkingDir()
 
-experiment_common.copyIntoWorkingDir("apps/baseline-benchmarks/100game/build/game-redis")
-experiment_common.copyIntoWorkingDirWithName("apps/baseline-benchmarks/redox/build/libredox.so.0.3.0", "libredox.so.0")
+client_common.copyIntoWorkingDir("apps/baseline-benchmarks/100game/build/game-redis")
+client_common.copyIntoWorkingDirWithName("apps/baseline-benchmarks/redox/build/libredox.so.0.3.0", "libredox.so.0")
 
 sys.stderr.write("Running clients...\n")
 
@@ -50,6 +50,6 @@ if not success:
 
 for outputFileName in outputFiles:
     fullPath = os.path.expanduser(WORKING_DIR) + "/" + outputFileName
-    experiment_common.putGameDataInRedis(fullPath)
+    client_common.putGameDataInRedis(fullPath)
     subprocess.call(["rm", fullPath]);
     sys.stderr.write("Finished processing output file %s\n" % outputFileName)

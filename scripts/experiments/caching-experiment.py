@@ -47,7 +47,7 @@ def runDiamond(caching, numPairsPerMachine, machineNums):
         for i in range(0, numMachines):
             machine = machines[i]
             subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_game.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/experiment_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/client_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
 
         cachingArg = ""
         if not caching:

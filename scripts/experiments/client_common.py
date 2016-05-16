@@ -37,6 +37,12 @@ def handleCommonArgs(args):
     keyFile = args.keys
     numKeys = args.numkeys
 
+def getWorkingDir():
+    return workingDir
+
+def getNumFrontends():
+    return numFrontends
+
 def copyCommonFiles():
     copyIntoWorkingDir("platform/build/libdiamond.so");
     copyConfigFiles()

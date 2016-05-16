@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-import experiment_common
+import client_common
 import os
 import random
 import subprocess
@@ -10,15 +10,15 @@ import sys
 parser = argparse.ArgumentParser(description='Run 100 game benchmark.')
 parser.add_argument('--numpairs', type=int, default=50, help='number of client pairs')
 parser.add_argument('--nocaching', action="store_true", help='disable caching')
-experiment_common.addCommonArgs(parser)
+client_common.addCommonArgs(parser)
 args = parser.parse_args()
-experiment_common.handleCommonArgs(args)
+client_common.handleCommonArgs(args)
 
-WORKING_DIR = experiment_common.workingDir
-NUM_FRONTENDS = experiment_common.numFrontends
+WORKING_DIR = client_common.getWorkingDir()
+NUM_FRONTENDS = client_common.getNumFrontends()
         
-experiment_common.copyCommonFiles()
-experiment_common.copyIntoWorkingDir("apps/benchmarks/build/game")
+client_common.copyCommonFiles()
+client_common.copyIntoWorkingDir("apps/benchmarks/build/game")
 
 sys.stderr.write("Running clients...\n")
 
@@ -47,6 +47,6 @@ sys.stderr.write("Finished running clients\n")
 
 for outputFileName in outputFiles:
     fullPath = os.path.expanduser(WORKING_DIR) + "/" + outputFileName
-    experiment_common.putGameDataInRedis(fullPath)
+    client_common.putGameDataInRedis(fullPath)
     subprocess.call(["rm", fullPath]);
     sys.stderr.write("Finished processing output file %s\n" % outputFileName)
