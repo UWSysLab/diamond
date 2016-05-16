@@ -7,9 +7,8 @@ import redis
 import subprocess
 import sys
 
-DATA_REDIS_HOST = "moranis.cs.washington.edu"
-DATA_REDIS_PORT = "6379"
 SRC_HOST = "moranis.cs.washington.edu"
+DATA_REDIS_PORT = "6379"
 
 workingDir = "."
 
@@ -91,7 +90,7 @@ def processOutput(processOutputFunc):
         sys.stderr.write("Finished processing output file %s\n" % outputFileName)
 
 def putDataInRedis(outputFileName):
-    r = redis.StrictRedis(host=DATA_REDIS_HOST, port=DATA_REDIS_PORT)
+    r = redis.StrictRedis(host=SRC_HOST, port=DATA_REDIS_PORT)
     r.incr("clients")
     outputFile = open(outputFileName, 'r')
     for line in outputFile:
@@ -110,7 +109,7 @@ def putDataInRedis(outputFileName):
             r.lpush("txns", txnKey)
 
 def putRetwisDataInRedis(outputFileName):
-    r = redis.StrictRedis(host=DATA_REDIS_HOST, port=DATA_REDIS_PORT)
+    r = redis.StrictRedis(host=SRC_HOST, port=DATA_REDIS_PORT)
     r.incr("clients")
     outfile = open(outputFileName, 'r')
     for line in outfile:
@@ -135,7 +134,7 @@ def putGameDataInRedis(outputFileName):
     import redis
     import re
     import sys
-    r = redis.StrictRedis(host=DATA_REDIS_HOST, port=DATA_REDIS_PORT)
+    r = redis.StrictRedis(host=SRC_HOST, port=DATA_REDIS_PORT)
     r.incr("clients")
     turnCount = 0
     outfile = open(outputFileName, 'r')
