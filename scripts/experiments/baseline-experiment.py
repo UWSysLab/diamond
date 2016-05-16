@@ -14,8 +14,6 @@ OUTPUT_DIR = "results/baseline"
 LOG = "baseline-log.txt"
 
 SRC_HOST = experiment_common.getSrcHost()
-DATA_REDIS_PORT = experiment_common.getDataRedisPort()
-REDIS_DIR = experiment_common.getRedisDir()
 
 experiment_common.setLog(LOG)
 experiment_common.init()
@@ -46,7 +44,7 @@ def runBaseline(zipf, numClientsPerMachine, machineNums):
                 % (CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS)
         experiment_common.runOnClientMachines(command, numMachines)
 
-        clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
+        clients = experiment_common.getClientCountFromDataRedis()
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
         throughput = "ERROR"
         latency = "ERROR"
@@ -89,7 +87,7 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
                 % (CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS, isolation, zipf)
         experiment_common.runOnClientMachines(command, numMachines)
 
-        clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
+        clients = experiment_common.getClientCountFromDataRedis()
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
         throughput = "ERROR"
         latency = "ERROR"

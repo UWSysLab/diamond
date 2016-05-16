@@ -69,8 +69,6 @@ def runOnClientMachines(command, numMachines):
 def getSrcHost():
     return SRC_HOST
 
-def getDataRedisPort():
-    return DATA_REDIS_PORT
-
-def getRedisDir():
-    return REDIS_DIR
+def getClientCountFromDataRedis():
+    clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
+    return clients
