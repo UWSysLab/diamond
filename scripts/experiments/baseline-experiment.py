@@ -5,31 +5,24 @@ from experiment_common import logPrint
 import re
 import subprocess
 
-SRC_HOST = "moranis.cs.washington.edu"
-DATA_REDIS_PORT = 6379
-REDIS_DIR = "redis-3.0.7/src";
-WORKING_DIR = "/scratch/nl35";
-
 CONFIG_PREFIX = "platform/test/niel"
 KEY_FILE = "scripts/experiments/keys.txt"
 NUM_KEYS = 100000
 BATCH_SIZE = 64
 
-CLIENTS_FILE = "clients.txt"
-
 OUTPUT_DIR = "results/baseline"
 LOG = "baseline-log.txt"
 
-machines = experiment_common.readClients(CLIENTS_FILE)
-
-startDiamondCmd = "ssh -t %s 'cd diamond-src/scripts; ./manage-servers.py start ../%s --keys ../%s --numkeys %d --batch %d' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, KEY_FILE, NUM_KEYS, BATCH_SIZE, LOG)
-killDiamondCmd = "ssh %s 'cd diamond-src/scripts; ./manage-servers.py kill ../%s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
-killBaselineCmd = "ssh %s 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ../../../%s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
-startRedisCmd = "ssh -f %s 'nohup %s/redis-server &' >> %s 2>&1" % (SRC_HOST, REDIS_DIR, LOG)
-killRedisCmd = "ssh %s 'pkill -f %d'" % (SRC_HOST, DATA_REDIS_PORT)
-clearRedisCmd = "ssh %s '%s/redis-cli -p %d flushdb' >> %s 2>&1" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT, LOG)
+SRC_HOST = experiment_common.getSrcHost()
+DATA_REDIS_PORT = experiment_common.getDataRedisPort()
+REDIS_DIR = experiment_common.getRedisDir()
 
 experiment_common.setLog(LOG)
+experiment_common.init()
+
+experiment_common.copyFromSrcHostToClients("scripts/experiments/run_retwis.py")
+experiment_common.copyFromSrcHostToClients("scripts/experiments/run_baseline_retwis.py")
+experiment_common.copyFromSrcHostToClients("scripts/experiments/client_common.py")
 
 def runBaseline(zipf, numClientsPerMachine, machineNums):
     logPrint("Running baseline with zipf %f" % zipf)
@@ -38,29 +31,20 @@ def runBaseline(zipf, numClientsPerMachine, machineNums):
 
     startBaselineCmd = "ssh -t %s 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ../../../%s --keys ../../../%s --numkeys %d --zipf %f' >> %s 2>&1" \
             % (SRC_HOST, CONFIG_PREFIX, KEY_FILE, NUM_KEYS, zipf, LOG)
+    killBaselineCmd = "ssh %s 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ../../../%s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
 
-    subprocess.call(startRedisCmd, shell=True)
+    experiment_common.startDataRedis()
 
     outFile.write("clients\tthroughput\tlatency\tabortrate\tseconds\tmachines\n")
     for numMachines in machineNums:
         logPrint("Running %d machines" % numMachines)
+
         subprocess.call(startBaselineCmd, shell=True)
-        subprocess.call(clearRedisCmd, shell=True)
+        experiment_common.clearDataRedis()
 
-        processes = []
-        for i in range(0, numMachines):
-            machine = machines[i]
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_baseline_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/client_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-
-        for i in range(0, numMachines):
-            machine = machines[i]
-            p = subprocess.Popen("ssh %s 'cd %s; ./run_baseline_retwis.py --config %s --numclients %d --keys %s --numkeys %d' >> %s 2>&1" \
-                    % (machine, WORKING_DIR, CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS, LOG), shell=True)
-            processes.append(p)
-
-        for p in processes:
-            p.wait()
+        command = "./run_baseline_retwis.py --config %s --numclients %d --keys %s --numkeys %d" \
+                % (CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS)
+        experiment_common.runOnClientMachines(command, numMachines)
 
         clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
@@ -92,28 +76,18 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
     outFileName = OUTPUT_DIR + "/diamond." + isolation + "." + repr(zipf) + ".txt"
     outFile = open(outFileName, "w")
 
-    subprocess.call(startRedisCmd, shell=True)
+    experiment_common.startDataRedis()
 
     outFile.write("clients\tthroughput\tlatency\tabortrate\tseconds\tmachines\n")
     for numMachines in machineNums:
         logPrint("Running %d machines" % numMachines)
-        subprocess.call(startDiamondCmd, shell=True)
-        subprocess.call(clearRedisCmd, shell=True)
 
-        processes = []
-        for i in range(0, numMachines):
-            machine = machines[i]
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/run_retwis.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
-            subprocess.call("ssh %s 'rsync %s:diamond-src/scripts/experiments/client_common.py %s'" % (machine, SRC_HOST, WORKING_DIR), shell=True)
+        experiment_common.startDiamond(CONFIG_PREFIX, keys=KEY_FILE, numKeys=NUM_KEYS, batchSize=64)
+        experiment_common.clearDataRedis()
 
-        for i in range(0, numMachines):
-            machine = machines[i]
-            p = subprocess.Popen("ssh %s 'cd %s; ./run_retwis.py --config %s --numclients %d --keys %s --numkeys %d --isolation %s --zipf %f' >> %s 2>&1" \
-                    % (machine, WORKING_DIR, CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS, isolation, zipf, LOG), shell=True)
-            processes.append(p)
-
-        for p in processes:
-            p.wait()
+        command = "./run_retwis.py --config %s --numclients %d --keys %s --numkeys %d --isolation %s --zipf %f" \
+                % (CONFIG_PREFIX, numClientsPerMachine, KEY_FILE, NUM_KEYS, isolation, zipf)
+        experiment_common.runOnClientMachines(command, numMachines)
 
         clients = int(subprocess.check_output("ssh %s '%s/redis-cli -p %d get clients'" % (SRC_HOST, REDIS_DIR, DATA_REDIS_PORT), shell=True))
         result = subprocess.check_output("ssh %s 'diamond-src/scripts/experiments/parse-scalability.py -r'" % SRC_HOST, shell=True)
@@ -136,13 +110,10 @@ def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
                 seconds = match.group(1)
         outFile.write("%d\t%s\t%s\t%s\t%s\t%d\n" % (clients, throughput, latency, abortRate, seconds, numMachines))
 
-        subprocess.call(killDiamondCmd, shell=True)
+        experiment_common.killDiamond(CONFIG_PREFIX)
 
     outFile.close()
 
-# clear log file
-subprocess.call("rm %s" % LOG, shell=True)
-
 # run experiments
-runDiamond("linearizable", 0.8, 10, [1])
-runBaseline(0.8, 10, [1])
+runDiamond("linearizable", 0.8, 10, [1, 2])
+runBaseline(0.8, 10, [1, 2])
