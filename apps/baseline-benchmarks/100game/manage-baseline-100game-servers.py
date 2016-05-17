@@ -38,16 +38,31 @@ def killRedis(hostname, port):
 
 parser = argparse.ArgumentParser(description='Launch Redis servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
+parser.add_argument('config_prefix', help='the config file prefix')
 args = parser.parse_args()
 
+backendConfigPath = args.config_prefix + "0.config"
+backendConfig = open(backendConfigPath, 'r')
+replicaNum = 0
+isLeader = True
+leaderHostname = ""
+leaderPort = ""
+for line in backendConfig:
+    match = re.match("^replica\s+([\w\.-]+):(\d+)", line)
+    if match:
+        hostname = match.group(1)
+        port = match.group(2)
+        print("Handling Redis replica %d" % replicaNum)
+        if isLeader:
+            leaderHostname = hostname
+            leaderPort = port
+        if args.action == 'start':
+            startRedis(hostname, port, leaderHostname, leaderPort)
+        elif args.action == 'kill':
+            killRedis(hostname, port)
+        replicaNum = replicaNum + 1
+        isLeader = False
+
 if args.action == 'start':
-    print("Starting servers...")
-    startRedis("moranis.cs.washington.edu", 8001, "moranis.cs.washington.edu", 8001)
-    startRedis("moranis.cs.washington.edu", 8002, "moranis.cs.washington.edu", 8001)
-    startRedis("moranis.cs.washington.edu", 8003, "moranis.cs.washington.edu", 8001)
-    os.system(redisCliPath + " -h moranis.cs.washington.edu -p 8001 FLUSHDB")
-elif args.action == 'kill':
-    print("Killing servers...")
-    killRedis("moranis.cs.washington.edu", 8001)
-    killRedis("moranis.cs.washington.edu", 8002)
-    killRedis("moranis.cs.washington.edu", 8003)
+    print("Calling FLUSHDB...")
+    os.system(redisCliPath + " -h %s -p %s FLUSHDB" % (leaderHostname, leaderPort))
