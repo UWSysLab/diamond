@@ -3,7 +3,7 @@ DIAMOND_BACKEND_DIR="$DIAMOND_SRC_DIR/platform"
 PROJECT_DIR=$2
 
 if [ $# -ne 2 ]
-    then echo "usage: ./build-diamond-android.sh <diamond-src-dir> <android-project-dir>"
+    then echo "usage: ./build-diamond-android-eclipse.sh <diamond-src-dir> <android-project-dir>"
     exit
 fi
 
