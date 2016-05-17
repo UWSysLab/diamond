@@ -5,8 +5,8 @@ from experiment_common import logPrint
 import re
 import subprocess
 
-CONFIG_PREFIX = "platform/test/niel"
-KEY_FILE = "scripts/experiments/keys.txt"
+CONFIG_PREFIX = "diamond-src/platform/test/niel"
+KEY_FILE = "diamond-src/scripts/experiments/keys.txt"
 NUM_KEYS = 100000
 BATCH_SIZE = 64
 
@@ -18,18 +18,18 @@ SRC_HOST = experiment_common.getSrcHost()
 experiment_common.setLog(LOG)
 experiment_common.init()
 
-experiment_common.copyFromSrcHostToClients("scripts/experiments/run_retwis.py")
-experiment_common.copyFromSrcHostToClients("scripts/experiments/run_baseline_retwis.py")
-experiment_common.copyFromSrcHostToClients("scripts/experiments/client_common.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/run_retwis.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/run_baseline_retwis.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/client_common.py")
 
 def runBaseline(zipf, numClientsPerMachine, machineNums):
     logPrint("Running baseline with zipf %f" % zipf)
     outFileName = OUTPUT_DIR + "/baseline." + repr(zipf) + ".txt"
     outFile = open(outFileName, "w")
 
-    startBaselineCmd = "ssh -t %s 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py start ../../../%s --keys ../../../%s --numkeys %d --zipf %f' >> %s 2>&1" \
+    startBaselineCmd = "ssh -t %s 'diamond-src/apps/baseline-benchmarks/keyvaluestore/manage-baseline-servers.py start %s --keys %s --numkeys %d --zipf %f' >> %s 2>&1" \
             % (SRC_HOST, CONFIG_PREFIX, KEY_FILE, NUM_KEYS, zipf, LOG)
-    killBaselineCmd = "ssh %s 'cd diamond-src/apps/baseline-benchmarks/keyvaluestore; ./manage-baseline-servers.py kill ../../../%s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
+    killBaselineCmd = "ssh %s 'diamond-src/apps/baseline-benchmarks/keyvaluestore/manage-baseline-servers.py kill %s' >> %s 2>&1" % (SRC_HOST, CONFIG_PREFIX, LOG)
 
     experiment_common.startDataRedis()
 

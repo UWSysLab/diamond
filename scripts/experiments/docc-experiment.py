@@ -9,8 +9,8 @@ from experiment_common import logPrint
 import re
 import subprocess
 
-CONFIG_PREFIX = "platform/test/niel"
-KEY_FILE = "scripts/experiments/keys.txt"
+CONFIG_PREFIX = "diamond-src/platform/test/niel"
+KEY_FILE = "diamond-src/scripts/experiments/keys.txt"
 NUM_KEYS = 100000
 BATCH_SIZE = 64
 
@@ -20,8 +20,8 @@ LOG = "docc-log.txt"
 experiment_common.setLog(LOG)
 experiment_common.init()
 
-experiment_common.copyFromSrcHostToClients("scripts/experiments/run_retwis.py")
-experiment_common.copyFromSrcHostToClients("scripts/experiments/client_common.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/run_retwis.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/client_common.py")
 
 def runDiamond(isolation, zipf, numClientsPerMachine, machineNums):
     logPrint("Running Diamond with isolation %s and zipf %f" % (isolation, zipf))

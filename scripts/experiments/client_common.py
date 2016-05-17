@@ -21,9 +21,9 @@ processes = []
 outputFiles = []
 
 def addCommonArgs(parser):
-    parser.add_argument('--config', required=True, help='config file prefix')
+    parser.add_argument('--config', required=True, help='config file prefix (path on SRC_HOST)')
     parser.add_argument('--numfrontends', type=int, default=1, help='number of frontend servers to use')
-    parser.add_argument('--keys', default="scripts/experiments/keys.txt", help='keys file to use')
+    parser.add_argument('--keys', default="diamond-src/scripts/experiments/keys.txt", help='keys file to use (path on SRC_HOST)')
     parser.add_argument('--numkeys', type=int, default=100000, help='number of keys to read from keys file')
 
 def handleCommonArgs(args):
@@ -43,20 +43,20 @@ def getNumFrontends():
     return numFrontends
 
 def copyCommonFiles():
-    copyIntoWorkingDir("platform/build/libdiamond.so");
+    copyFromSrcHost("diamond-src/platform/build/libdiamond.so");
     copyConfigFiles()
-    copyIntoWorkingDirWithName(keyFile, "keys.txt")
+    copyFromSrcHostWithName(keyFile, "keys.txt")
 
 def copyConfigFiles():
     for i in range(0, numFrontends):
         configFile = configPrefix + ".frontend" + repr(i)
-        copyIntoWorkingDirWithName(configPrefix + ".frontend" + repr(i) + ".config", "diamond.frontend" + repr(i) + ".config")
+        copyFromSrcHostWithName(configPrefix + ".frontend" + repr(i) + ".config", "diamond.frontend" + repr(i) + ".config")
 
-def copyIntoWorkingDir(filename):
-    os.system("rsync " + SRC_HOST + ":diamond-src/" + filename + " " + workingDir)
+def copyFromSrcHost(filename):
+    os.system("rsync " + SRC_HOST + ":" + filename + " " + workingDir)
 
-def copyIntoWorkingDirWithName(fileName, newName):
-    os.system("rsync " + SRC_HOST + ":diamond-src/" + fileName + " " + workingDir + "/" + newName)
+def copyFromSrcHostWithName(fileName, newName):
+    os.system("rsync " + SRC_HOST + ":" + fileName + " " + workingDir + "/" + newName)
 
 # getCommandFunc must be a function with arguments (workingDir, configFile, keyFile) that
 # returns the the shell command to execute the client

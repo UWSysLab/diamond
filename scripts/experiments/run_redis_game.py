@@ -17,8 +17,8 @@ args = parser.parse_args()
         
 WORKING_DIR = client_common.getWorkingDir()
 
-client_common.copyIntoWorkingDir("apps/baseline-benchmarks/100game/build/game-redis")
-client_common.copyIntoWorkingDirWithName("apps/baseline-benchmarks/redox/build/libredox.so.0.3.0", "libredox.so.0")
+client_common.copyFromSrcHost("diamond-src/apps/baseline-benchmarks/100game/build/game-redis")
+client_common.copyFromSrcHostWithName("diamond-src/apps/baseline-benchmarks/redox/build/libredox.so.0.3.0", "libredox.so.0")
 
 sys.stderr.write("Running clients...\n")
 

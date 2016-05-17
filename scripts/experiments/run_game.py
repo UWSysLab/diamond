@@ -18,7 +18,7 @@ WORKING_DIR = client_common.getWorkingDir()
 NUM_FRONTENDS = client_common.getNumFrontends()
         
 client_common.copyCommonFiles()
-client_common.copyIntoWorkingDir("apps/benchmarks/build/game")
+client_common.copyFromSrcHost("diamond-src/apps/benchmarks/build/game")
 
 sys.stderr.write("Running clients...\n")
 

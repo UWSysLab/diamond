@@ -5,15 +5,13 @@ DATA_REDIS_PORT = 6379
 REDIS_DIR = "redis-3.0.7/src"
 WORKING_DIR = "/scratch/nl35"
 
-CLIENTS_FILE = "clients.txt"
-
 logFile = ""
 clients = []
 
 def getClientMachines():
     global clients
     if len(clients) == 0:
-        clientsFile = open(CLIENTS_FILE, "r")
+        clientsFile = open("clients.txt", "r")
         for line in clientsFile:
             clients.append(line.rstrip())
     return clients
@@ -31,13 +29,13 @@ def init():
 def startDiamond(configPrefix, keys = None, numKeys = 0, batchSize = 1):
     keyArgs = ""
     if keys != None:
-        keyArgs = "--keys ../%s --numkeys %d" % (keys, numKeys)
-    startDiamondCmd = "ssh -t %s 'cd diamond-src/scripts; ./manage-servers.py start ../%s %s --batch %d' >> %s 2>&1" \
+        keyArgs = "--keys %s --numkeys %d" % (keys, numKeys)
+    startDiamondCmd = "ssh -t %s 'diamond-src/scripts/manage-servers.py start %s %s --batch %d' >> %s 2>&1" \
             % (SRC_HOST, configPrefix, keyArgs, batchSize, logFile)
     subprocess.call(startDiamondCmd, shell=True)
 
 def killDiamond(configPrefix):
-    killDiamondCmd = "ssh %s 'cd diamond-src/scripts; ./manage-servers.py kill ../%s' >> %s 2>&1" \
+    killDiamondCmd = "ssh %s 'diamond-src/scripts/manage-servers.py kill %s' >> %s 2>&1" \
             % (SRC_HOST, configPrefix, logFile)
     subprocess.call(killDiamondCmd, shell=True)
 
@@ -55,7 +53,7 @@ def clearDataRedis():
 
 def copyFromSrcHostToClients(filename):
     for machine in getClientMachines():
-        subprocess.call("ssh %s 'rsync %s:diamond-src/%s %s'" % (machine, SRC_HOST, filename, WORKING_DIR), shell=True)
+        subprocess.call("ssh %s 'rsync %s:%s %s'" % (machine, SRC_HOST, filename, WORKING_DIR), shell=True)
 
 def runOnClientMachines(command, numMachines):
     machines = getClientMachines()

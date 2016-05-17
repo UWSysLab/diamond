@@ -11,7 +11,7 @@ or servers, but will instead perform a set of special functions:
 
 * The Diamond platform and application code will be compiled on this
 machine and copied from this machine to the other machines.
-* Diamond servers will be started and stopped from this machine.
+* The script to start and stop Diamond servers will run on this machine.
 * An instance of Redis (called the data Redis instance) will run on this
 machine, and clients will store their data in this Redis instance when they
 finish executing.
@@ -27,8 +27,7 @@ VMs, while the staging machine might be your office desktop.
 To summarize, we have the following computers/VMs:
 
 1. A set of client/server machines.
-2. A special machine called `SRC_HOST` running the same version of Linux
-as the client/server machines and able to connect to all of them.
+2. A special client/server machine called `SRC_HOST`.
 3. A staging machine able to connect to the client machines and `SRC_HOST`
 where top-level wrapper scripts will be run from and the final results will be
 stored.
@@ -39,10 +38,10 @@ There are three main categories of scripts in this folder:
 
 1. Client scripts that run on the client machines, launching client processes
 and storing their output to the data Redis instance on `SRC_HOST`.
-    * run_retwis.py
-    * run_baseline_retwis.py
-    * run_game.py
-    * run_redis_game.py
+    * run\_retwis.py
+    * run\_baseline\_retwis.py
+    * run\_game.py
+    * run\_redis\_game.py
 2. Data-parsing scripts that run on `SRC_HOST`. These scripts are used to
 calculate throughputs and latencies from the transaction data in the data Redis
 instance.
@@ -63,25 +62,26 @@ by every experiment that should be set by the user. These constants are near
 the top of the file, and more information about setting them is included in
 the setup instructions below.
 
-### A note about file paths in scripts
+### File paths, file copying, and command execution
 
-The experiment and client scripts copy all the files they need from
-the `diamond-src` repo located in the home directory of `SRC_HOST` to a fixed
-working directory on the client/server machines (the instructions below have
-more information on setting these directories up). As a result, the config
-prefix and key file paths passed into the client scripts are the relative paths
-of these files on `SRC_HOST` from the `diamond-src` directory.
+The experiment and client scripts copy all the files they need from `SRC_HOST`
+to a fixed working directory on the client/server machines. As a result, the
+config prefix and key file paths passed into the client scripts are the paths
+of these files on `SRC_HOST`. In general, all of the copying functions in
+the scripts copy a file at an arbitrary path on `SRC_HOST`
+(either an absolute path or a path relative to the user's home directory)
+into the working directory of the client/server machines.
 
-More generally, when the functions in the experiment and client scripts take
-paths to files on `SRC_HOST`, these paths
-are relative to the `diamond-src` directory, and functions that copy files to
-or execute commands on the client machines always do so in the working
-directory. The exception is that `REDIS_DIR` can point anywhere in `SRC_HOST`'s
-filesystem.
+The individual experiment and client scripts explicitly copy the specific files
+they require over to the client. The pathnames of these files are generally
+given assuming the `diamond-src` repo has been cloned in the user's home directory
+on `SRC_HOST` (the setup instructions below describe how to set things up to ensure
+that the scripts work properly).
 
-* The file path convention and the overall convention for moving
-files between `SRC_HOST` and the client/server machines may be confusing, so let
-me know if you have any suggestions for improving them.
+All commands executed by the scripts on `SRC_HOST` run in the user's home
+directory there. Commands executed by the experiment scripts on client machines
+with `runOnClientMachines()` run in the working directory on each client
+machine.
 
 ## Setting things up
 

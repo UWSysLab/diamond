@@ -15,7 +15,7 @@ def getCommandFunc(workingDir, configFile, keyFile, numKeys):
     return "java -cp " + workingDir + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar edu.washington.cs.diamond.RetwisClient " + workingDir + "/" + configFile + ".config" + " " + workingDir + "/" + keyFile + " " + repr(numKeys) + " " + repr(args.time)
 
 #copy files
-client_common.copyIntoWorkingDir("apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
+client_common.copyFromSrcHost("diamond-src/apps/baseline-benchmarks/keyvaluestore/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar")
 client_common.copyCommonFiles()
 
 client_common.runProcesses(getCommandFunc, args.numclients)

@@ -5,7 +5,7 @@ from experiment_common import logPrint
 import re
 import subprocess
 
-CONFIG_PREFIX = "platform/test/niel"
+CONFIG_PREFIX = "diamond-src/platform/test/niel"
 BATCH_SIZE = 64
 
 OUTPUT_DIR = "results/caching"
@@ -14,8 +14,8 @@ LOG = "caching-log.txt"
 experiment_common.setLog(LOG)
 experiment_common.init()
 
-experiment_common.copyFromSrcHostToClients("scripts/experiments/run_game.py")
-experiment_common.copyFromSrcHostToClients("scripts/experiments/client_common.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/run_game.py")
+experiment_common.copyFromSrcHostToClients("diamond-src/scripts/experiments/client_common.py")
 
 def runDiamond(caching, numPairsPerMachine, machineNums):
     logPrint("Running Diamond with caching %s" % (caching))

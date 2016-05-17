@@ -17,7 +17,7 @@ def retwisCommandFunc(workingDir, configFile, keyFile, numKeys):
     return workingDir + "/retwisClient -m " + args.isolation + " -c " + workingDir + "/" + configFile + " -f " + workingDir + "/" + keyFile + " -k " + repr(numKeys) + " -d " + repr(args.time) + " -z " + repr(args.zipf)
 
 client_common.copyCommonFiles()
-client_common.copyIntoWorkingDir("apps/tapir-benchmarks/build/retwisClient")
+client_common.copyFromSrcHost("diamond-src/apps/tapir-benchmarks/build/retwisClient")
 
 client_common.runProcesses(retwisCommandFunc, args.numclients)
 client_common.processOutput(client_common.putRetwisDataInRedis)
