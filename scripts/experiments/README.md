@@ -98,13 +98,16 @@ dependencies required to compile Diamond, you'll also need to download a copy of
 Redis and compile it.
 
 3. Clone this repository in your home directory on `SRC_HOST`.
-Compile the Diamond platform code, the programs in `apps/benchmarks`, the
-programs in `apps/tapir-benchmarks`, and the programs in each subfolder of
-`apps/baseline-benchmarks`.
+Compile the Diamond platform code and the programs in `apps/benchmarks`,
+`apps/tapir-benchmarks`, `apps/baseline-benchmarks/keyvaluestore`, and
+`apps/baseline-benchmarks/100game`. For most of the apps, you'll just need to
+make a `build` subfolder and run CMake, but for the baseline key-value store,
+you'll need to run `mvn package`.
 
 4. Change the constants at the top of `client_common.py` and `experiment_common.py`
 so that `SRC_HOST` contains the right address or hostname, `DATA_REDIS_PORT`
 contains a valid port on which to run Redis, `REDIS_DIR` points to a directory
+on `SRC_HOST`
 containing `redis-cli` and `redis-server` binaries, and `WORKING_DIR` points to
 a directory that exists on every client/server machine where binaries will be
 copied and results will be stored.
