@@ -103,6 +103,10 @@ Compile the Diamond platform code and the programs in `apps/benchmarks`,
 `apps/baseline-benchmarks/100game`. For most of the apps, you'll just need to
 make a `build` subfolder and run CMake, but for the baseline key-value store,
 you'll need to run `mvn package`.
+    * For the Redis version of the 100 game, you'll also need Redox. Clone
+    the Redox repo (at https://github.com/hmartiro/redox.git)
+    into `apps/baseline-benchmarks` and compile Redox according
+    to the instructions inside.
 
 4. Change the constants at the top of `experiment_common.py`
 so that `SRC_HOST` contains the right address or hostname, `DATA_REDIS_PORT`
