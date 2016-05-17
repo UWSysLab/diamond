@@ -11,8 +11,12 @@ if "DIAMOND_WORKING_DIR" not in os.environ:
     print("Error: environment variable DIAMOND_WORKING_DIR is not set")
     print("(It should point to the working directory you want to use on the server host machines)")
     sys.exit()
+if "DIAMOND_SRC_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_SRC_DIR is not set")
+    print("(It should point to the location of the diamond-src repo on this machine)")
+    sys.exit()
 WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
-BUILD_DIR = "../platform/build"
+BUILD_DIR = os.environ["DIAMOND_SRC_DIR"] + "/platform/build"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')

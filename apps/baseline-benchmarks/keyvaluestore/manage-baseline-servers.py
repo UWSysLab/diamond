@@ -11,12 +11,16 @@ if "DIAMOND_WORKING_DIR" not in os.environ:
     print("Error: environment variable DIAMOND_WORKING_DIR is not set")
     print("(It should point to the working directory you want to use on the server host machines)")
     sys.exit()
+if "DIAMOND_SRC_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_SRC_DIR is not set")
+    print("(It should point to the location of the diamond-src repo on this machine)")
+    sys.exit()
 if "REDIS_DIR" not in os.environ:
     print("Error: environment variable REDIS_DIR is not set")
     print("(It should point to a folder containing redis-server and redis-cli binaries)")
     sys.exit()
 WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
-SERVER_DIR = "target"
+PROJECT_DIR = os.environ["DIAMOND_SRC_DIR"] + "/apps/baseline-benchmarks/keyvaluestore"
 REDIS_DIR = os.environ["REDIS_DIR"]
 
 parser = argparse.ArgumentParser(description='Launch servers.')
@@ -36,10 +40,10 @@ if args.action == 'start' and args.keys == None:
     parser.error('--keys is required for action \'start\'')
     sys.exit()
 
-serverJarPath = SERVER_DIR + "/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar"
+serverJarPath = PROJECT_DIR + "/target/keyvaluestore-1.0-SNAPSHOT-jar-with-dependencies.jar"
 redisPath = REDIS_DIR + "/redis-server"
 redisClientPath = REDIS_DIR + "/redis-cli"
-protocolScriptPath = "./generate-fill-protocol.pl"
+protocolScriptPath = PROJECT_DIR + "/generate-fill-protocol.pl"
 keyPath = args.keys
 numKeys = args.numkeys
 numFrontends = args.frontends

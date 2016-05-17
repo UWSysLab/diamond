@@ -16,7 +16,6 @@ if "REDIS_DIR" not in os.environ:
     print("(It should point to a folder containing redis-server and redis-cli binaries)")
     sys.exit()
 WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
-SERVER_DIR = "target"
 REDIS_DIR = os.environ["REDIS_DIR"]
 
 redisPath = REDIS_DIR + "/redis-server"
