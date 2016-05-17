@@ -65,35 +65,56 @@ the setup instructions below.
 
 ### A note about file paths in scripts
 
-Generally, the scripts assume that the `diamond-src` repo location on `SRC_HOST`
-is in the home directory, and that there is one working directory path on the
-client/server machines (specified by the constant `WORKING_DIR`) where binaries
-will be copied and temporary files will be created. As a result, when the
-functions in these scripts take paths to files on `SRC_HOST`, these paths
+The experiment and client scripts copy all the files they need from
+the `diamond-src` repo located in the home directory of `SRC_HOST` to a fixed
+working directory on the client/server machines (the instructions below have
+more information on setting these directories up). As a result, the config
+prefix and key file paths passed into the client scripts are the relative paths
+of these files on `SRC_HOST` from the `diamond-src` directory.
+
+More generally, when the functions in the experiment and client scripts take
+paths to files on `SRC_HOST`, these paths
 are relative to the `diamond-src` directory, and functions that copy files to
 or execute commands on the client machines always do so in the working
-directory.
+directory. The exception is that `REDIS_DIR` can point anywhere in `SRC_HOST`'s
+filesystem.
+
+* The file path convention and the overall convention for moving
+files between `SRC_HOST` and the client/server machines may be confusing, so let
+me know if you have any suggestions for improving them.
 
 ## Setting things up
 
 1. Install dependencies on the client/server machines. These dependencies
 include, but are not necessarily limited to, the following:
 
-    apt-get install libprotobuf-dev libevent-dev libpython-dev libboost-program-options-dev python-pip openjdk-8-jre-headless libhiredis-dev libev-dev
-    pip install redis
+        apt-get install libprotobuf-dev libevent-dev libpython-dev \
+            libboost-program-options-dev python-pip openjdk-8-jre-headless \
+            libhiredis-dev libev-dev
+        pip install redis
 
-2. Clone this repository in your home directory on the `SRC_HOST` machine.
+2. Install dependencies on the `SRC_HOST` machine. In addition to the usual
+dependencies required to compile Diamond, you'll also need to download a copy of
+Redis and compile it.
+
+3. Clone this repository in your home directory on `SRC_HOST`.
 Compile the Diamond platform code, the programs in `apps/benchmarks`, the
 programs in `apps/tapir-benchmarks`, and the programs in each subfolder of
 `apps/baseline-benchmarks`.
 
-3. Change the constants at the top of `client_common.py` and `experiment_common.py`
+4. Change the constants at the top of `client_common.py` and `experiment_common.py`
 so that `SRC_HOST` contains the right address or hostname, `DATA_REDIS_PORT`
 contains a valid port on which to run Redis, `REDIS_DIR` points to a directory
 containing `redis-cli` and `redis-server` binaries, and `WORKING_DIR` points to
 a directory that exists on every client/server machine where binaries will be
 copied and results will be stored.
 
-4. Make a text file called `clients.txt` in the `experiments` directory on your
-staging machine (this directory) that contains the addresses of each client
+5. Make a text file called `clients.txt` in the `experiments` directory (this
+directory) on your staging machine that contains the addresses of each client
 machine, one per line.
+
+6. Create your config files and keys file and place them somewhere in the
+`diamond-src` repo on `SRC_HOST` (since they will need to be copied to
+client/server machines). Change the constants at the top of each experiment
+script to reflect the config prefix and keys file you want to use for each
+experiment.
