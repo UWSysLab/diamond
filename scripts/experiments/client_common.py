@@ -7,8 +7,15 @@ import redis
 import subprocess
 import sys
 
-SRC_HOST = "moranis.cs.washington.edu"
-DATA_REDIS_PORT = "6379"
+if "SRC_HOST" not in os.environ:
+    print("Error: environment variable SRC_HOST is not set")
+    sys.exit()
+if "DATA_REDIS_PORT" not in os.environ:
+    print("Error: environment variable DATA_REDIS_PORT is not set")
+    sys.exit()
+
+SRC_HOST = os.environ["SRC_HOST"]
+DATA_REDIS_PORT = os.environ["DATA_REDIS_PORT"]
 
 workingDir = "."
 

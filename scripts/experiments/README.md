@@ -104,20 +104,26 @@ Compile the Diamond platform code and the programs in `apps/benchmarks`,
 make a `build` subfolder and run CMake, but for the baseline key-value store,
 you'll need to run `mvn package`.
 
-4. Change the constants at the top of `client_common.py` and `experiment_common.py`
+4. Change the constants at the top of `experiment_common.py`
 so that `SRC_HOST` contains the right address or hostname, `DATA_REDIS_PORT`
 contains a valid port on which to run Redis, `REDIS_DIR` points to a directory
 on `SRC_HOST`
 containing `redis-cli` and `redis-server` binaries, and `WORKING_DIR` points to
 a directory that exists on every client/server machine where binaries will be
-copied and results will be stored.
+copied and results will be stored. These changes should be made on the staging
+machine.
 
-5. Make a text file called `clients.txt` in the `experiments` directory (this
+5. Set the environment variables `DIAMOND_SRC_DIR`, `DIAMOND_WORKING_DIR`, and
+`REDIS_DIR` on `SRC_HOST` to point to the location of the `diamond-src` repo on
+`SRC_HOST`, the working directory on the server machines, and a directory
+containing Redis binaries on `SRC_HOST`, respectively.
+
+6. Make a text file called `clients.txt` in the `experiments` directory (this
 directory) on your staging machine that contains the addresses of each client
 machine, one per line.
 
-6. Create your config files and keys file and place them somewhere in the
-`diamond-src` repo on `SRC_HOST` (since they will need to be copied to
-client/server machines). Change the constants at the top of each experiment
-script to reflect the config prefix and keys file you want to use for each
-experiment.
+7. Create your config files and keys file and place them on `SRC_HOST` (since
+they will need to be copied to client/server machines). Change the constants at
+the top of each experiment script to reflect the config prefix and keys file
+you want to use for each experiment. These changes should be made on the
+staging machine.

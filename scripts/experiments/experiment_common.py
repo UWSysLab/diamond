@@ -59,7 +59,7 @@ def runOnClientMachines(command, numMachines):
     machines = getClientMachines()
     processes = []
     for i in range(0, numMachines):
-        p = subprocess.Popen("ssh %s 'cd %s; %s' >> %s 2>&1" % (machines[i], WORKING_DIR, command, logFile), shell=True)
+        p = subprocess.Popen("ssh %s 'cd %s; SRC_HOST=%s DATA_REDIS_PORT=%s %s' >> %s 2>&1" % (machines[i], WORKING_DIR, SRC_HOST, DATA_REDIS_PORT, command, logFile), shell=True)
         processes.append(p)
     for p in processes:
         p.wait()
