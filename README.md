@@ -109,14 +109,14 @@ add the following line to your bashrc file:
 
 ### Running a test Android app
 The project DiamondAndroidTest in `apps/test-apps` is an Eclipse project containing a simple Diamond test app for Android.
-The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
-source directory and $ANDROID_SDK with the path to the Android SDK folder. These instructions have been tested on Mac and Linux
+The following instructions describe how to set up and run the app. Replace `$DIAMOND_SRC` with the path to the base Diamond
+source directory and `$ANDROID_SDK` with the path to the Android SDK folder. These instructions have been tested on Mac and Linux
 using an Android SDK with Android 5.1.1 (API level 22) installed.
 
-1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
+1. Run the script `build-diamond-android-eclipse.sh` to copy all required shared libraries into the project folder:
 
         $ cd scripts/build-scripts
-        $ ./build-diamond-android.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
+        $ ./build-diamond-android-eclipse.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
@@ -126,7 +126,7 @@ using an Android SDK with Android 5.1.1 (API level 22) installed.
 3. Add the Android support v7 appcompat library to the project:
 
     1. Go to File -> Import -> General -> Existing Projects into Workspace.
-    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory and click Finish.
+    2. Select `$ANDROID_SDK/extras/android/support/v7/appcompat` as the root directory and click Finish.
     3. Right click on android-support-v7-appcompat in the Package Explorer, then go to Android, and select Android 5.1.1 as the build target.
     4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
 
@@ -143,3 +143,17 @@ using an Android SDK with Android 5.1.1 (API level 22) installed.
     1. Right click on the project name in the Package Explorer pane.
     2. Select "Run As" -> "Android Application."
     3. Choose a device (either an emulator or a physical device) to run on.
+
+### A note about Eclipse vs Android Studio
+Google no longer supports developing Android apps with Eclipse. The new official
+IDE for Android development is Android studio, a version of IntelliJ IDEA. The
+link to the Eclipse Android Development Tools plugin is no longer on the official
+Android website, although it can be found in a mirror of the old version
+(https://stuff.mit.edu/afs/sipb/project/android/docs/sdk/installing/installing-adt.html).
+Anecdotally, it also seems like Diamond projects compile and run more smoothly in
+Android Studio as compared to Eclipse. For these reasons, in the future, we may
+move Android Diamond apps from Eclipse projects to Android Studio projects
+(some apps may already be Android Studio projects and will be noted in their
+individual directories). In the meantime, if you want to develop Diamond apps
+using Android Studio, there is a script called `build-diamond-android-studio.sh`
+that copies the required libraries into an Android Studio project folder.
