@@ -46,7 +46,7 @@ namespace replication {
 class VRReplica : public Replica
 {
 public:
-    VRReplica(Configuration config, int myIdx,
+    VRReplica(ReplicaConfig config, int myIdx,
               Transport *transport, unsigned int batchSize,
               AppReplica *app);
     ~VRReplica();

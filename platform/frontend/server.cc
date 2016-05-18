@@ -165,7 +165,7 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
 
     NotifyFrontendAck ack;
     ack.set_txnid(msg.txnid());
-    ack.set_address(string(GetAddress().getHostname() + ":" + GetAddress().getPort()));
+    // USE something else as the front-end id
     transport->SendMessage(this, remote, ack);
 }
 
@@ -192,8 +192,8 @@ Server::SendNotification(const uint64_t client_id, const uint64_t reactive_id, c
                 value.Serialize(reply);
             }
         }
-        transport->SendMessage(this, rt.client_hostname, rt.client_port, notification);
-        Debug("FINISHED sending NOTIFICATION: reactive_id %lu, timestamp %lu, client %s:%s", rt.reactive_id, rt.next_timestamp, rt.client_hostname.c_str(), rt.client_port.c_str());
+        transport->SendMessage(this, *rt.client, notification);
+        Debug("FINISHED sending NOTIFICATION: reactive_id %llu, timestamp %llu, client %llu", rt.reactive_id, rt.next_timestamp, rt.client_id);
 
         // schedule a check back in 50ms
         transport->Timer(50, [=] {
@@ -318,8 +318,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
         rt.last_timestamp = msg.timestamp();
         rt.next_timestamp = timestamp;
         rt.keys = regSet;
-        rt.client_hostname = remote->getHostname();
-        rt.client_port = remote->getPort();
+        rt.client = remote->clone();
 
         transactions[rt.frontend_index] = rt;
         

@@ -44,33 +44,44 @@
 
 namespace strongstore {
 
-class Server : public replication::AppReplica, public TransportReceiver
+class Server : public replication::AppReplica
 {
 public:
-    Server(transport::Configuration &transportConfig);
+    Server();
     virtual ~Server();
 
-    virtual void LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string &str2);
-    virtual void ReplicaUpcall(opnum_t opnum, const string &str1, string &str2);
-    virtual void UnloggedUpcall(const string &str1, string &str2);
-    void Load(const string &key, const string &value, const Timestamp timestamp);
-
-    virtual void ReceiveMessage(const TransportAddress &remote,
-                                const string &type, const string &data);
-    virtual void ReceiveError(int error);
-
+    virtual void LeaderUpcall(opnum_t opnum,
+			      const string &str1,
+			      const TransportAddress &remote,
+			      bool &replicate,
+			      string &str2);
+    virtual void ReplicaUpcall(opnum_t opnum,
+			       const string &str1,
+			       string &str2);
+    virtual void UnloggedUpcall(const string &str1,
+				string &str2);
+    void Load(const string &key,
+	      const string &value,
+	      const Timestamp timestamp);
 private:
     TxnStore *store;
-
-    TCPTransport transport;
-    std::thread *transportThread;
-
     Timeout * sendNotificationTimeout;
 
-    void ExecuteGet(proto::Request, string &str2);
-
-    void sendNotification(uint64_t tid);
-    void runTransport();
+    void HandleGet(proto::Request request,
+		   string &str2);
+    bool HandlePrepare(proto::Request request,
+		       string &str2);
+    void HandleCommit(proto::Request request);
+    void HandleSubscribe(TCPTransportAddress &remote,
+			 proto::Request request,
+			 string &str2);
+    void HandleUnsubscribe(TCPTransportAddress &remote,
+			   proto::Request request,
+			   string &str2);
+    void HandleAck(TCPTransport &remote,
+		   proto::Request request,
+		   string &str2);
+    void SendNotification(uint64_t tid);
 };
 
 } // namespace strongstore

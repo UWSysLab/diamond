@@ -34,13 +34,14 @@
 
 #include "lib/assert.h"
 #include "lib/message.h"
+#include "lib/tcptransport.h"
 #include "store/common/timestamp.h"
 #include "store/common/version.h"
 #include "store/common/notification.h"
 
 #include <set>
 #include <map>
-#include <unordered_map>
+#include <map>
 #include <fstream>
 #include <iostream>
 
@@ -51,29 +52,49 @@ public:
     VersionedKVStore();
     virtual ~VersionedKVStore();
 
-    bool Get(const std::string &key, Version &value);
-    bool Get(const std::string &key, const Timestamp &t, Version &value);
-    bool GetRange(const std::string &key, const Timestamp &t, Interval &range);
-    bool GetLastRead(const std::string &key, Timestamp &readTime);
-    bool GetLastRead(const std::string &key, const Timestamp &t, Timestamp &readTime);
-    void Put(const std::string &key, const std::string &value, const Timestamp &t);
-    void Put(const std::string &key, const Version &v);
-    void CommitGet(const std::string &key, const Timestamp &readTime, const Timestamp &commit);
+    bool Get(const std::string &key,
+	     Version &value);
+    bool Get(const std::string &key,
+	     const Timestamp &t,
+	     Version &value);
+    bool GetRange(const std::string &key,
+		  const Timestamp &t,
+		  Interval &range);
+    bool GetLastRead(const std::string &key,
+		     Timestamp &readTime);
+    bool GetLastRead(const std::string &key,
+		     const Timestamp &t,
+		     Timestamp &readTime);
+    void Put(const std::string &key,
+	     const std::string &value,
+	     const Timestamp &t);
+    void Put(const std::string &key,
+	     const Version &v);
+    void CommitGet(const std::string &key,
+		   const Timestamp &readTime,
+		   const Timestamp &commit);
     void Remove(const std::string &key);
 
-    void Subscribe(const std::set<std::string> &keys, const std::string &address);
-    void Unsubscribe(const std::set<std::string> &keys, const std::string &address);
-    void GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications);
+    void Subscribe(const TCPTransportAddress &remote,
+		   const Timestamp timestamp,
+		   const std::set<std::string> &keys);
+    void Unsubscribe(const TCPTransportAddress &remote,
+		     const std::set<std::string> &keys);
+    void Publish(const Timestamp &timestamp,
+		 const std::set<std::string> &keys,
+		 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
     
     
 protected:
 
     /* Global store which keeps key -> (timestamp, value) list. */
-    std::unordered_map< std::string, std::set<Version> > store;
+    std::map< std::string, std::set<Version> > store;
     bool inStore(const std::string &key);
-    bool getValue(const std::string &key, const Timestamp &t, std::set<Version>::iterator &it);
+    bool getValue(const std::string &key,
+		  const Timestamp &t,
+		  std::set<Version>::iterator &it);
 
-    std::unordered_map< std::string, std::set<std::string> > keyAddressMap; // indexed by key
+    std::map<std::string, std::map<TCPTransportAddress, Timestamp>> subscribers; // indexed by key
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */

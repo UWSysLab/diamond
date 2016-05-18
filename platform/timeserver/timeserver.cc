@@ -27,7 +27,7 @@ TimeStampServer::ReplicaUpcall(opnum_t opnum,
                                const string &str1,
                                string &str2)
 {
-    Debug("Received Upcall: %lu, %s", opnum, str1.c_str());
+    Debug("Received Upcall: %llu, %s", opnum, str1.c_str());
     // Get a new timestamp from the TimeStampServer
     str2 = newTimeStamp();
 }
@@ -89,7 +89,7 @@ main(int argc, char **argv)
         configPath);
     Usage(argv[0]);
   }
-  transport::Configuration config(configStream);
+  replication::ReplicaConfig config(configStream);
 
   if (index >= config.n) {
     fprintf(stderr, "replica index %d is out of bounds; "

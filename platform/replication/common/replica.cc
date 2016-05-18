@@ -40,7 +40,7 @@
 
 namespace replication {
     
-Replica::Replica(const Configuration &configuration, int myIdx,
+Replica::Replica(const ReplicaConfig &configuration, int myIdx,
                  Transport *transport, AppReplica *app)
     : configuration(configuration), myIdx(myIdx),
       transport(transport), app(app)
@@ -54,10 +54,12 @@ Replica::~Replica()
 }
 
 void
-Replica::LeaderUpcall(opnum_t opnum, const string &op, bool &replicate, string &res)
+Replica::LeaderUpcall(opnum_t opnum, const string &op,
+		      const TransportAddress &remote,
+		      bool &replicate, string &res)
 {
     Debug("Making leader upcall for operation %s", op.c_str());
-    app->LeaderUpcall(opnum, op, replicate, res);
+    app->LeaderUpcall(opnum, op, remote, replicate, res);
     Debug("Upcall result: %s %s", replicate ? "yes":"no", res.c_str());
 }
 

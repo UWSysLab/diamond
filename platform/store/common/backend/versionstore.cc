@@ -174,7 +174,9 @@ VersionedKVStore::GetLastRead(const string &key, Timestamp &lastRead)
  * Get the latest read for the write valid at timestamp t
  */
 bool
-VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key,
+			      const Timestamp &t,
+			      Timestamp &lastRead)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
@@ -191,29 +193,36 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 }
 
 void
-VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
-    for (auto it = keys.begin(); it != keys.end(); it++) {
-        keyAddressMap[*it].insert(address);
-    }
-}
-
-void
-VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address) {
-    for (auto it = keys.begin(); it != keys.end(); it++) {
-        keyAddressMap[*it].erase(address);
-    }
-}
-
-void
-VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications) {
-    std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
+VersionedKVStore::Subscribe(const TCPTransportAddress &remote,
+			    const Timestamp timestamp,
+			    const set<string> &keys)
+{
     for (auto &key : keys) {
-        for (auto &address : keyAddressMap[key]) {
-            addressNotificationMap[address].address = address;
-            addressNotificationMap[address].values[key] = Version(timestamp);
-        }
+	if (subscribers[key].count(remote) == 0 ||
+	    subscribers[key][remote] < timestamp) {	    
+	    subscribers[key][remote] = timestamp;
+	}
     }
-    for (auto it = addressNotificationMap.begin(); it != addressNotificationMap.end(); it++) {
-        notifications.push_back(it->second);
+}
+
+void
+VersionedKVStore::Unsubscribe(const TCPTransportAddress &remote,
+			      const set<string> &keys)
+{
+    for (auto &key : keys) {
+	subscribers[key].erase(remote);
+    }
+}
+
+void
+VersionedKVStore::Publish(const Timestamp &timestamp,
+			  const set<string> &keys,
+			  map<TCPTransportAddress, set<string>> &notifications) {
+    for (auto &key : keys) {
+        for (auto &address : subscribers[key]) {
+	    if (timestamp > address.second) {
+		notifications[address.first].insert(key);
+	    }
+        }
     }
 }

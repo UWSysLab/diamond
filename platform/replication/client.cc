@@ -39,7 +39,7 @@
 
 namespace replication {
 
-VRClient::VRClient(const Configuration &config,
+VRClient::VRClient(const ReplicaConfig &config,
                    Transport *transport,
                    uint64_t clientid)
     : Client(config, transport, clientid)
@@ -78,7 +78,7 @@ VRClient::InvokeUnlogged(int replicaIdx,
     reqMsg.mutable_req()->set_clientreqid(lastReqId);
     Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, lastReqId);
     
-    transport->SendMessageToReplica(this, leader, reqMsg);
+    transport->SendMessageToHost(this, leader, reqMsg);
 }
 
 void
@@ -90,7 +90,7 @@ VRClient::SendRequest(int reqid) {
     reqMsg.mutable_req()->set_clientreqid(reqid);
     
     Debug("SENDING REQUEST: %lu %lu", clientid, reqid);
-    transport->SendMessageToReplica(this, leader, reqMsg);
+    transport->SendMessageToHost(this, leader, reqMsg);
 }   
 void
 VRClient::ReceiveMessage(const TransportAddress &remote,
@@ -145,7 +145,7 @@ VRClient::ReceiveError(int error)
 			reqMsg.mutable_req()->set_clientid(clientid);
 			reqMsg.mutable_req()->set_clientreqid(r.first);
 		Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, r.first);
-		transport->SendMessageToReplica(this, leader, reqMsg);
+		transport->SendMessageToHost(this, leader, reqMsg);
 		    });
 	    } else {
 		transport->Timer(RETRY_WAIT, [=]() {

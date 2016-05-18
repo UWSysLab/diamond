@@ -56,27 +56,28 @@ public:
     ~OCCStore();
 
     // Overriding from TxnStore.
-    int Get(const uint64_t tid, const std::string &key, Version &value,
-            const Timestamp &timestamp = MAX_TIMESTAMP);
+    int Get(const uint64_t tid,
+	    const std::string &key,
+	    Version &value,
+	    const Timestamp &timestamp = MAX_TIMESTAMP);
 
     // check whether we can commit this transaction (and lock the read/write set)
-    int Prepare(const uint64_t tid, const Transaction &txn);
+    int Prepare(const uint64_t tid,
+		const Transaction &txn);
 
     // commit the transaction
-    void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction());
+    void Commit(const uint64_t tid,
+		const Timestamp &timestamp,
+		const Transaction &txn = Transaction());
 
     // abort a running transaction
     void Abort(const uint64_t tid);
 
-    void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
+    void Load(const std::string &key,
+	      const std::string &value,
+	      const Timestamp &timestamp);
 
-    void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values);
-    void Unsubscribe(const std::set<std::string> &keys, const std::string &address);
-    void AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid);
-    void AckFrontendNotification(const uint64_t tid, const std::string &address);
-    void GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications);
-
-private:
+protected:
     // Data store.
     CommutativeStore store;
 
@@ -86,12 +87,10 @@ private:
     std::unordered_map<string, int> pReads, pWrites, pIncrements;
     Timestamp last_committed = 0;
 
-    std::unordered_map<std::string, std::unordered_map<uint64_t, FrontendNotification> > unackedFrontendNotifications; // map frontend address to (txn_id, FrontendNotification) pair
-    std::mutex ufnMutex; // mutex for the map above
-
-    void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
+    void getPreparedOps(std::unordered_set<std::string> &reads,
+			std::unordered_set<std::string> &writes,
+			std::unordered_set<std::string> &increments);
     Timestamp getPreparedUpdate(const std::string &key);
-    void fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications);
 };
 
 } // namespace strongstore

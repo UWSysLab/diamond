@@ -48,7 +48,7 @@ public:
     typedef std::function<void (const string &, const string &)> continuation_t;
     typedef std::function<void (const string &)> timeout_continuation_t;
 
-    Client(const Configuration &config, Transport *transport,
+    Client(const ReplicaConfig &config, Transport *transport,
            uint64_t clientid = 0);
     virtual ~Client();
     virtual void Invoke(const string &request,
@@ -61,7 +61,7 @@ public:
                                 const string &data) = 0;
     virtual void ReceiveError(int error) = 0;    
 protected:
-    Configuration config;
+    ReplicaConfig config;
     Transport *transport;
     
     uint64_t clientid;

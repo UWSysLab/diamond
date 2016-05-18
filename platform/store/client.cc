@@ -61,7 +61,7 @@ Client::Client(string configPath, int nShards,
 	fprintf(stderr, "unable to read configuration file: %s\n",
 		tssConfigPath.c_str());
     }
-    replication::Configuration tssConfig(tssConfigStream);
+    replication::ReplicaConfig tssConfig(tssConfigStream);
     tss = new replication::VRClient(tssConfig, transport);
     
     /* Start a client for each shard. */

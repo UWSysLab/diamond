@@ -47,7 +47,7 @@ ShardClient::ShardClient(const string &configPath,
         fprintf(stderr, "unable to read configuration file: %s\n",
                 configPath.c_str());
     }
-    transport::Configuration config(configStream);
+    replication::ReplicaConfig config(configStream);
 
     client = new replication::VRClient(config, transport);
 

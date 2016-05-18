@@ -30,7 +30,7 @@
  **********************************************************************/
 
 #include "lib/assert.h"
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
 #include "lib/message.h"
 
 #include <iostream>
@@ -40,99 +40,44 @@
 
 namespace replication {
 
-Configuration::Configuration(const Configuration &c)
-    : n(c.n), f(c.f), hosts(c.hosts)
+ReplicaConfig::ReplicaConfig(const ReplicaConfig &c)
+    : Configuration(c.hosts), f(c.f)
 {
 }
     
-Configuration::Configuration(int n, int f,
-                             std::vector<HostAddress> hosts)
-    : n(n), f(f), hosts(hosts)
+ReplicaConfig::ReplicaConfig(int n, int f,
+                             std::vector<transport::HostAddress> hosts)
+    : Configuration(hosts), f(f)
 {
 }
 
-Configuration::Configuration(std::ifstream &file)
+ReplicaConfig::ReplicaConfig(std::ifstream &file)
+    : Configuration(file)
 {
-    f = -1;
-    
-    while (!file.eof()) {
-        // Read a line
-        string line;
-        getline(file, line);;
-
-        // Ignore comments
-        if ((line.size() == 0) || (line[0] == '#')) {
-            continue;
-        }
-
-        // Get the command
-        // This is pretty horrible, but C++ does promise that &line[0]
-        // is going to be a mutable contiguous buffer...
-        char *cmd = strtok(&line[0], " \t");
-
-        if (strcasecmp(cmd, "f") == 0) {
-            char *arg = strtok(NULL, " \t");
-            if (!arg) {
-                Panic ("'f' configuration line requires an argument");
-            }
-            char *strtolPtr;
-            f = strtoul(arg, &strtolPtr, 0);
-            if ((*arg == '\0') || (*strtolPtr != '\0')) {
-                Panic("Invalid argument to 'f' configuration line");
-            }
-        } else if (strcasecmp(cmd, "host") == 0) {
-            char *arg = strtok(NULL, " \t");
-            if (!arg) {
-                Panic ("'host' configuration line requires an argument");
-            }
-
-            char *host = strtok(arg, ":");
-            char *port = strtok(NULL, "");
-            
-            if (!host || !port) {
-                Panic("Configuration line format: 'host host:port'");
-            }
-
-            hosts.push_back(HostAddress(string(host), string(port)));
-        } else {
-            Panic("Unknown configuration directive: %s", cmd);
-        }
-    }
-
-    n = hosts.size();
     if (n == 0) {
-        Panic("Configuration did not specify any hosts");
+        Panic("ReplicaConfig did not specify any hosts");
     }
-
-    if (f == -1) {
-        Panic("Configuration did not specify a 'f' parameter");
-    }
+    f = (n-1)/2;
 }
 
-Configuration::~Configuration()
+ReplicaConfig::~ReplicaConfig()
 {
-}
-
-HostAddress
-Configuration::host(int idx) const
-{
-    return hosts[idx];
 }
 
 int
-Configuration::GetLeaderIndex(view_t view) const
+ReplicaConfig::GetLeaderIndex(view_t view) const
 {
     return (view % this->n);
 }
 
 int
-Configuration::QuorumSize() const
+ReplicaConfig::QuorumSize() const
 {
     return f+1;
 }
 
 int
-Configuration::FastQuorumSize() const
+ReplicaConfig::FastQuorumSize() const
 {
     return f + (f+1)/2 + 1;
 }

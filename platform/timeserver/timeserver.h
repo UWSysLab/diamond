@@ -9,7 +9,7 @@
 #ifndef _TIME_SERVER_H_
 #define _TIME_SERVER_H_
 
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
 #include "replication/common/replica.h"
 #include "lib/tcptransport.h"
 #include "replication/replica.h"
