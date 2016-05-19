@@ -10,6 +10,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import edu.washington.cs.diamond.Diamond;
+
 public class MainActivity extends AppCompatActivity {
 
     private static String TAG = "DiamondParse";
@@ -18,6 +20,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Diamond.DiamondInit("128.208.6.132", "12444");
 
         Button updateButton = (Button) findViewById(R.id.updatebutton);
         Button pullButton = (Button) findViewById(R.id.pullbutton);
@@ -86,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
                 query.whereEqualTo("name", "singleton");
                 query.findInBackground(new FindCallback<ParseObject>() {
                     @Override
-                    public void done(List<ParseObject> objects, ParseException e) {
+                    public void done(final List<ParseObject> objects, ParseException e) {
                         if (e == null) {
                             if (objects.size() == 1) {
                                 TextView field1TextView = (TextView) findViewById(R.id.field1);
