@@ -184,7 +184,13 @@ class GameFrame(gtk.Frame):
         started = self.currentGame.started.Value()
         thisPlayerName = self.player.getUsername()
         if currentPlayerName == thisPlayerName:
-            self.board.activate()
+            for x in range(0, 15):
+                for y in range(0, 15):
+                    gameTile = self.board.get(x, y)
+                    if (not gameTile.letterPresent.Value()) or (gameTile.getLetter(), x, y) in self.currentGame.getOnboardMove().getTiles():
+                        gameTile.activate()
+                    else:
+                        gameTile.deactivate()
         else:
             self.board.deactivate()
         gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName)
