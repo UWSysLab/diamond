@@ -136,6 +136,8 @@ class GameFrame(gtk.Frame):
         self.drawBoard()
         self.drawUserList()
         self.drawUI()
+        self.handleGameOver()
+        
         self.cacheHack()
         self.showMoveEndTime = datetime.datetime.now()
         if self.showMoveEndTime != 0 and self.sendCurrentMoveStartTime != 0:
@@ -153,6 +155,10 @@ class GameFrame(gtk.Frame):
         empty = DBoolean()
         DBoolean.Map(empty, "game:" + self.currentGameId + ":board:empty")
         empty.Value()
+    
+    def handleGameOver(self):
+        if self.currentGame.isComplete():
+            gobject.idle_add(self.createGameOverPopup)
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
@@ -183,7 +189,7 @@ class GameFrame(gtk.Frame):
         currentPlayerName = self.currentGame.getCurrentPlayer().getUsername()
         started = self.currentGame.started.Value()
         thisPlayerName = self.player.getUsername()
-        if currentPlayerName == thisPlayerName:
+        if currentPlayerName == thisPlayerName and not self.currentGame.complete.Value():
             for x in range(0, 15):
                 for y in range(0, 15):
                     gameTile = self.board.get(x, y)
@@ -193,10 +199,10 @@ class GameFrame(gtk.Frame):
                         gameTile.deactivate()
         else:
             self.board.deactivate()
-        gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName)
+        gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName, self.currentGame.complete.Value())
     
     # runs in UI thread
-    def drawUIHelper(self, started, thisPlayerName, currentPlayerName):
+    def drawUIHelper(self, started, thisPlayerName, currentPlayerName, gameComplete):
         if started:
             self.startButton.hide()
             self.saveButton.set_sensitive(True)
@@ -207,7 +213,7 @@ class GameFrame(gtk.Frame):
             self.mainwindow.setCurrentTurn(self.currentGameId, isPlayerTurn)
             self.wasPlayerTurn = isPlayerTurn
         
-        if isPlayerTurn:
+        if isPlayerTurn and not gameComplete:
             self.okButton.set_sensitive(True)
             self.passButton.set_sensitive(True)
             if self.hideTradeButton == False:
@@ -646,8 +652,18 @@ class GameFrame(gtk.Frame):
         
         Notify the user and then disable the buttons
         '''
-        self.leaveGameHelper()
-        gobject.idle_add(self.createGameOverPopup)
+        # Set the game to be complete
+        self.currentGame.setComplete()
+        
+        # Remove players from the game and reset players
+        for playerName in self.currentGame.players.Members():
+            gameSet = DStringSet()
+            DStringSet.Map(gameSet, "user:" + playerName + ":games")
+            gameSet.Remove(self.currentGameId)
+        
+            player = Player(playerName)
+            self.currentGame.playerLeave(player)
+            player.reset()
     
     def createGameOverPopup(self):
         p = gtkutil.Popup( title=self.currentGameId, text=_('Game over'))
@@ -919,7 +935,6 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() )
             
             #self.gameOver(game)
-            self.currentGame.setComplete()
             self.gameOver()
             return
 
@@ -1040,7 +1055,6 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() * -1 )
                 
             #self.gameOver(self.currentGame)
-            self.currentGame.setComplete()
             self.gameOver()
     
     def getMoves(self):
