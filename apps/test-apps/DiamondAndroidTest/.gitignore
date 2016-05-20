@@ -9,5 +9,6 @@
 .idea
 /app/build
 /app/src/main/jniLibs
+/app/src/main/libs
 /app/libs
 import-summary.txt

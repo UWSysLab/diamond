@@ -6,25 +6,35 @@ See the README in each app's directory for more information about the different
 versions of that app.
 
 ## Porting apps to Android Studio
-Niel originally started working with the Android apps in Eclipse, but Google has
+We originally started working with the Android apps in Eclipse, but Google has
 since dropped support for Eclipse in favor of Android Studio. As a result, we'd
-like to move all of the Android apps over to Android Studio. Moving apps to
-Android Studio is mainly a matter of changing the project directory structure
-to fit Android Studio's requirements, but you might also have to add some metadata
-files.
+like to move all of the Android apps over to Android Studio.
 
-Android apps still set up for Eclipse:
+These Android apps are set up for Android Studio:
 
 * `chat/AndroidChatBaseline`
 * `chat/AndroidChatBaselineBenchmark`
-* `chat/AndroidChatBenchmark`
-* `chat/DiMessage`
-* `chat/DiMessage-reactive`
+* `chat/DiamondChatBenchmark`
+* `chat/DiamondChat`
+* `parse/DiamondParse`
+* `parse/Parse-Starter-Project-1.13.0/` (the baseline Parse app)
+* `test-apps/DiamondAndroidTest`
+
+These Android apps are still set up for Eclipse:
+
 * `notes/NotesReactive`
 * `notes/NotesUnreactive`
-* `test-apps/DiamondAndroidTest`
 * `twitter/twimight-hatchet`
 * `twitter/twimight_ng`
 * `twitter/twimight-diamond`
 
-Android apps set up for Android Studio:
+Here are some instructions for moving apps from Eclipse to
+Android Studio, using Android Studio's import feature:
+
+1. On the Android Studio splash screen, click "Import project (Eclipse ADT, Gradle, etc.)."
+2. Go through the wizard, selecting the Eclipse project directory and then a location
+for the new Android Studio project directory (the import wizard leaves the Eclipse project
+untouched and makes a new directory).
+3. Copy over the gitignore file from `test-apps/DiamondAndroidTest` (or any of the other
+Android apps already ported to Android Studio) into the new Android Studio project directory.
+4. Add the new project directory to Git.
