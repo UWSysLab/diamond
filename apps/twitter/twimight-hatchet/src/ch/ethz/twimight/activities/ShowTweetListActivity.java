@@ -12,18 +12,14 @@
  ******************************************************************************/
 package ch.ethz.twimight.activities;
 
-import java.util.List;
-
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.StrictMode;
 import android.preference.PreferenceManager;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
@@ -33,10 +29,7 @@ import ch.ethz.twimight.data.StatisticsDBHelper;
 import ch.ethz.twimight.fragments.TweetListFragment;
 import ch.ethz.twimight.fragments.adapters.ListViewPageAdapter;
 import ch.ethz.twimight.listeners.TabListener;
-import ch.ethz.twimight.net.twitter.TwitterService;
 import ch.ethz.twimight.util.Constants;
-import winterwell.jtwitter.Twitter;
-import winterwell.jtwitter.URLConnectionHttpClient;
 
 
 
@@ -120,13 +113,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 				.setTabListener(new TabListener(viewPager ));
 		actionBar.addTab(tab);		
 
-		boolean benchmark = false;
-		if (benchmark) {
-			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-			StrictMode.setThreadPolicy(policy);
-			doBenchmark(getBaseContext());
-			//new BenchmarkTask().execute();
-		}
 	}
 	
 
@@ -225,45 +211,6 @@ public class ShowTweetListActivity extends TwimightBaseActivity{
 			Toast.makeText(this, getString(R.string.disastermode_running), Toast.LENGTH_LONG).show();
 
 
-	}
-
-	public static void doBenchmark(Context c) {
-		final long TOTAL_REPS = 200;
-		final long WARMUP_REPS = 20;
-		String screenName = LoginActivity.getTwitterScreenname(c);
-		String twitterUrl = LoginActivity.getTwitterUrl(c);
-		Twitter twitter = new Twitter(null, new URLConnectionHttpClient(screenName, TwitterService.HACK_PASSWORD), twitterUrl);
-		for (int i = 0; i < WARMUP_REPS; i++) {
-			List<winterwell.jtwitter.Status> timeline = twitter.getHomeTimeline();
-			if (!timeline.get(0).getText().equals("Old James Bond movies are better")) {
-				Log.i("BENCHMARK", "Error: sanity check failed: string is " + timeline.get(0).getText());
-			}
-		}
-		double totalTime = 0;
-		long numReps = 0;
-		for (int i = 0; i < TOTAL_REPS; i++) {
-			long startTime = System.nanoTime();
-			twitter.getHomeTimeline();
-			long endTime = System.nanoTime();
-			double time = ((double)(endTime - startTime))/(1000 * 1000);
-			if (i >= TOTAL_REPS / 10 && i <= 9 * TOTAL_REPS / 10) {
-				totalTime += time;
-				numReps++;
-			}
-			Log.i("BENCHMARK", "OG twimight timeline read time: " + time);
-		}
-		double avgLatency = totalTime / numReps;
-		Log.i("BENCHMARK", "OG twimight timeline average read latency: " + avgLatency + " reps: " + numReps);
-		Log.i("BENCHMARK", "Done with Diamond experiment");
-	}
-	
-	class BenchmarkTask extends AsyncTask<Void, Void, Void> {
-
-		@Override
-		protected Void doInBackground(Void... params) {
-			ShowTweetListActivity.doBenchmark(getBaseContext());
-			return null;
-		}
 	}
 	
 	
