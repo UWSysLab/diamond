@@ -30,3 +30,16 @@ PyScrabble simply connects to the Diamond frontend server specified in the
 5. The registration dialog does not disappear after successfully creating an
 account, due to a bug. Click the "Cancel" button to exit the registration dialog.
 6. You can now use your username and password to log into PyScrabble running on Diamond.
+
+# Work still to be done on PyScrabble
+The only work that really needs to be done on the Diamond version of PyScrabble is to
+add callbacks to all of the read/write transactions to re-run them if they abort.
+Aborts should be very rare in practice, though, since the app handles concurrency control
+during the game, and the only points of contention are in joining games and creating new
+games. As long as you're not running PyScrabble at scales where multiple players doing
+these actions simultaneously is likely, the game should work fine without the retry callbacks.
+
+There may also be a few features from `pyscrabble-hatchet` that still have not been
+ported to `pyscrabble-hatchet-diamond` (such as some game statistics and options). Niel
+believes that the port is virtually complete, and that any features that were not ported would
+not significantly change the LoC of the Diamond version if they were added.
