@@ -1,2 +1,13 @@
-/bin/
-/gen/
+*.iml
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
+.idea
+/app/build
+/app/src/main/jniLibs
+/app/libs
+import-summary.txt
