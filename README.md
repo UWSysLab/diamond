@@ -124,7 +124,14 @@ Ubuntu 14.04 using an Android SDK with Android 6.0 (API level 23) installed.
     1. Go to File -> New -> Import Project...
     2. Select `$DIAMOND_SRC/apps/test-apps/DiamondAndroidTest` as the root directory and click Finish.
 
-3. Run the project as an Android application:
+3. Add the Diamond libraries to the project:
+
+    1. Click the Project button on the left-hand border of the window to view the Project pane.
+    2. Select the Project view in the drop-down menu at the top of the pane.
+    3. Navigate to the `app/src/main/libs` directory.
+    4. Right-click on each library in the folder and select "Add As Library..."
+
+4. Run the project as an Android application:
 
     1. Either click the green Run button in the toolbar or select Run -> Run 'app' on the menu.
 
