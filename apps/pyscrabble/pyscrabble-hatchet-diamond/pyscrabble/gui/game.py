@@ -654,16 +654,6 @@ class GameFrame(gtk.Frame):
         '''
         # Set the game to be complete
         self.currentGame.setComplete()
-        
-        # Remove players from the game and reset players
-        for playerName in self.currentGame.players.Members():
-            gameSet = DStringSet()
-            DStringSet.Map(gameSet, "user:" + playerName + ":games")
-            gameSet.Remove(self.currentGameId)
-        
-            player = Player(playerName)
-            self.currentGame.playerLeave(player)
-            player.reset()
     
     def createGameOverPopup(self):
         p = gtkutil.Popup( title=self.currentGameId, text=_('Game over'))
@@ -706,9 +696,6 @@ class GameFrame(gtk.Frame):
         #self.showLetters([])
     
     def leaveGameHelper(self):
-        gameSet = DStringSet()
-        DStringSet.Map(gameSet, "user:" + self.player.getUsername() + ":games")
-        gameSet.Remove(self.currentGameId)
         self.clearCurrentMove()
         self.doGameTurn()
         self.currentGame.playerLeave(self.player)

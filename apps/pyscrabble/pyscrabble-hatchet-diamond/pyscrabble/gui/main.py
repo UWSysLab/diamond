@@ -216,6 +216,7 @@ class MainWindow(gtk.Window):
         '''
         self.games[gameId].destroy()
         del self.games[gameId]
+        self.chatwin.removeGame(gameId)
     
     def setCurrentTurn(self, gameId, isCurrentTurn):
         '''

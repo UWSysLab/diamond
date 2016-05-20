@@ -76,6 +76,12 @@ class ChatFrame(gtk.Frame):
     def gameListAppendWrapper(self, tuple):
         self.gameList.append(None, tuple)
     
+    def removeGame(self, gameId):
+        self.displayedGameSet.remove(gameId)
+        ReactiveManager.txn_execute(self.removeGameHelper, gameId)
+    
+    def removeGameHelper(self, gameId):
+        self.joinedGamesSet.Remove(gameId)
             
     def createUsersWindow(self):
         '''
