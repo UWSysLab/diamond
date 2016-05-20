@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><!-- This is the background for the 
-	dashed line -->
+<?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 	<item>
 		<shape>
@@ -17,9 +16,9 @@
 	</item>
 
 	<!-- This is the main color -->
-	<item android:bottom="4dp">
+	<item android:top="4dp" android:bottom="4dp">
 		<shape>
-			<solid android:color="@color/twimightBackgroundLight" />
+			<solid android:color="@color/twimightBackgroundDark" />
 		</shape>
 	</item>
 

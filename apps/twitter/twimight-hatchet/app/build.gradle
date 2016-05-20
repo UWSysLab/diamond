@@ -1,0 +1,31 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 22
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        applicationId "ch.ethz.twimight"
+        minSdkVersion 14
+        targetSdkVersion 17
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_1_7
+            targetCompatibility JavaVersion.VERSION_1_7
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:support-v4:22.2.1'
+    compile files('libs/android-support-v13.jar')
+    compile files('libs/scprov-jdk15-1.46.99.3-UNOFFICIAL-ROBERTO-RELEASE.jar')
+    compile files('libs/signpost-commonshttp4-1.2.1.2.jar')
+    compile files('libs/signpost-core-1.2.1.2.jar')
+}

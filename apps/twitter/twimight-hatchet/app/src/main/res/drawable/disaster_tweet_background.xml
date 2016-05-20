@@ -1,15 +1,16 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?><!-- This is the background for the 
+	dashed line -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 	<item>
 		<shape>
-			<solid android:color="@color/twimightBackgroundLight" />
+			<solid android:color="@color/twimightBackgroundDisaster" />
 		</shape>
 	</item>
 
 	<!-- This is the bottom line -->
 	<item>
 		<shape>
-			<solid android:color="@color/twimightBackgroundLight" />
+			<solid android:color="@color/twimightBackgroundDisaster" />
 			<stroke android:width="4dp" android:color="@color/twimightSeparator"
 				android:dashWidth="10dp" android:dashGap="7dp" />
 		</shape>
@@ -18,7 +19,7 @@
 	<!-- This is the main color -->
 	<item android:bottom="4dp">
 		<shape>
-			<solid android:color="@color/twimightBackgroundDark" />
+			<solid android:color="@color/twimightBackgroundDisaster" />
 		</shape>
 	</item>
 
