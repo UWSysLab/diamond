@@ -459,7 +459,7 @@ class GameFrame(gtk.Frame):
         
         self.okButton.connect("clicked", self.sendCurrentMove)
         self.passButton.connect("clicked", self.askPass)
-        self.tradeButton.connect("clicked", self.tradeLetters)
+        self.tradeButton.connect("clicked", self.tradeLettersBackground)
         self.cancelButton.connect("clicked", self.clearCurrentMoveBackground)
         self.shuffleButton.connect('clicked', self.shuffleLetters_cb)
         
@@ -583,16 +583,11 @@ class GameFrame(gtk.Frame):
                     letter.set_active(False)
                 
         if len(l) > 0:
-            print "DEBUG TRADELETTERS"
             self.clearCurrentMove()
-            print "player letters: " + repr(self.player.getLetters())
             self.player.removeLetters( l )
-            print "list l is: " + repr(l)
             letters = self.currentGame.getLetters( self.player.getNumberOfLettersNeeded() )
-            print "list letters is: " + repr(letters)
             self.player.addLetters( letters )
             self.currentGame.returnLetters( l )
-            print "player letters: " + repr(self.player.getLetters())
 
             self.currentGame.resetPassCount()
             self.doGameTurn()
