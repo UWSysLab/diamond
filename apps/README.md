@@ -5,10 +5,10 @@ for data management (in the case of ported apps, the original version of the app
 See the README in each app's directory for more information about the different
 versions of that app.
 
-## Porting apps to Android Studio
+## Porting Android apps to Android Studio
 We originally started working with the Android apps in Eclipse, but Google has
-since dropped support for Eclipse in favor of Android Studio. As a result, we'd
-like to move all of the Android apps over to Android Studio.
+since dropped support for Eclipse in favor of Android Studio. As a result, we've
+moved most of the Android apps over to Android Studio.
 
 These Android apps are set up for Android Studio:
 
@@ -19,14 +19,14 @@ These Android apps are set up for Android Studio:
 * `parse/DiamondParse`
 * `parse/Parse-Starter-Project-1.13.0/` (the baseline Parse app)
 * `test-apps/DiamondAndroidTest`
+* `twitter/twimight-hatchet`
 
 These Android apps are still set up for Eclipse:
 
 * `notes/NotesReactive`
 * `notes/NotesUnreactive`
-* `twitter/twimight-hatchet`
 * `twitter/twimight_ng`
-* `twitter/twimight-diamond`
+* `twitter/twimight-diamond-old`
 
 Here are some instructions for moving apps from Eclipse to
 Android Studio, using Android Studio's import feature:
