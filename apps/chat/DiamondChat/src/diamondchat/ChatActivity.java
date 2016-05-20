@@ -1,4 +1,4 @@
-package dimessage;
+package diamondchat;
 
 import java.util.Date;
 
@@ -57,6 +57,9 @@ public class ChatActivity extends ActionBarActivity {
 		
 		DiamondTextView timestampBox = (DiamondTextView)findViewById(R.id.timestampTextBox);
 		timestampBox.bindDString("dimessage:lasttimestamp");
+		
+		DiamondCheckBox checkBox = (DiamondCheckBox)findViewById(R.id.checkBox);
+		checkBox.bindDBoolean("dimessage:globalboolean");
 		
 		ReactiveManager.reactive_txn(new ReactiveManager.TxnFunction() {
 			public void func(Object...objects) {

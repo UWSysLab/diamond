@@ -1,4 +1,4 @@
-package dimessage;
+package diamondchat;
 
 import android.support.v7.app.ActionBarActivity;
 

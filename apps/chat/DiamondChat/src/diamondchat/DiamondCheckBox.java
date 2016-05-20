@@ -1,4 +1,4 @@
-package dimessage;
+package diamondchat;
 
 import android.content.Context;
 import android.util.AttributeSet;

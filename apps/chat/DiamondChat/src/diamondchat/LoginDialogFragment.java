@@ -1,4 +1,4 @@
-package dimessage;
+package diamondchat;
 
 import com.example.dimessage.R;
 

@@ -1,4 +1,4 @@
-package com.example.androidchatbenchmark;
+package com.example.diamondchatbenchmark;
 
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
