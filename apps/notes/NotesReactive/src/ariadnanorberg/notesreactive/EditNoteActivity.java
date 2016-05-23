@@ -1,12 +1,7 @@
 package ariadnanorberg.notesreactive;
 
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
-import java.util.TreeMap;
-
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,10 +13,7 @@ import android.view.Window;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 import edu.washington.cs.diamond.Diamond;
-import edu.washington.cs.diamond.Diamond.DObject;
-import edu.washington.cs.diamond.Diamond.DString;
 import edu.washington.cs.diamond.ReactiveManager;
 
 public class EditNoteActivity extends Activity {
@@ -33,6 +25,7 @@ public class EditNoteActivity extends Activity {
 	private EditText contentEditText;
 	private Button saveNoteButton;
 	private Button deleteButton;
+	private Diamond.DStringList notesList;			
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,15 +34,25 @@ public class EditNoteActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_edit_note);
 		
+		Diamond.DiamondInit("128.208.6.85", "12444");
+		ReactiveManager.StartManager();
+		ReactiveManager.RegisterLogger(new ReactiveManager.Logger() {
+			public void onLog(String message) {
+				Log.i("NotesReactive", message);
+			}
+		});
+		
 		Intent intent = this.getIntent();
 	    titleEditText = (TextView) findViewById(R.id.noteTitle);
 	    contentEditText = (EditText) findViewById(R.id.noteContent);
 	    
+	    notesList = new Diamond.DStringList("notesreactive:noteslist");
+	    
 		contentEditText.setOnEditorActionListener(new EditText.OnEditorActionListener() {
 			public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+				System.out.println("texteditor works");
 				EditText ev = (EditText)v;
 				new Thread(new NoteSender(ev.getText().toString())).start();
-				ev.setText("");
 				return true;
 			}
 		});
@@ -57,8 +60,8 @@ public class EditNoteActivity extends Activity {
 	    if (intent.getExtras() != null) {
 	    	title = intent.getStringExtra("noteTitle");
 	    	content = intent.getStringExtra("noteContent");
-	        titles = intent.getStringArrayListExtra("titles");
-	        contents = intent.getStringArrayListExtra("contents");
+	        //titles = intent.getStringArrayListExtra("titles");
+	        //contents = intent.getStringArrayListExtra("contents");
 	        
 	        titleEditText.setText(title);
 	        contentEditText.setText(content);
@@ -80,6 +83,39 @@ public class EditNoteActivity extends Activity {
 	    	}
 	    });
 	    
+	    ReactiveManager.reactive_txn(new ReactiveManager.TxnFunction() {
+			public void func(Object...objects) {
+				//Perform Diamond accesses
+				titles = new ArrayList<String>();
+				contents = new ArrayList<String>();
+				for (int i = 0; i < notesList.Size(); i++) {
+					String[] noteParts = notesList.Value(i).split(System.getProperty("line.separator"));
+					titles.add(noteParts[0]);
+					contents.add(noteParts[1]);
+				}
+			}
+		});
+	    
+	}
+	
+	private class NoteSender implements Runnable {
+		String noteContent;
+		public NoteSender(String content) {
+			noteContent = content;
+		}
+		public void run() {
+			int committed = 0;
+			while(committed == 0) {
+				Diamond.DObject.TransactionBegin();
+				int index = notesList.Index(title + System.lineSeparator() + content);
+				if (index != -1) { // note exists, isn't a new note
+					notesList.Erase(index);
+				}
+				notesList.Append(title + System.lineSeparator() + noteContent);
+				content = noteContent;
+				committed = Diamond.DObject.TransactionCommit();
+			}
+		}
 	}
 
 	@Override
@@ -109,28 +145,16 @@ public class EditNoteActivity extends Activity {
 	}
 	
 	private void deleteNote() {
-		titles.remove(title);
-		contents.remove(content);
-		saveExit();
-	}
-	
-	private class NoteSender implements Runnable {
-		String noteContent;
-		public NoteSender(String content) {
-			noteContent = content;
+		Intent intent = new Intent(this, ShowNotes.class);
+		int committed = 0;
+		while (committed == 0) {
+			Diamond.DObject.TransactionBegin();
+			notesList.Remove(title + System.lineSeparator() + content);
+			committed = Diamond.DObject.TransactionCommit();
 		}
-		public void run() {
-			int committed = 0;
-			while(committed == 0) {
-				Diamond.DObject.TransactionBegin();
-				int index = titles.indexOf(title);
-				if (index != -1) { // note exists, isn't a new note
-					notesList.Remove(note);
-				}
-				notesList.Append(noteContent);
-				committed = Diamond.DObject.TransactionCommit();
-			}
-		}
+	    intent.putStringArrayListExtra("titles", titles);
+	    intent.putStringArrayListExtra("contents", contents);
+	    startActivity(intent);
 	}
 		
 }

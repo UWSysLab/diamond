@@ -20,7 +20,9 @@
         android:layout_weight="1.37"
         android:ems="10"
         android:gravity="top"
-        android:hint="@string/note_content_hint" />
+        android:inputType="textMultiLine"
+        android:hint="@string/note_content_hint" 
+        android:imeActionId="@+id/saveNote"/>
 
     <Button
         android:id="@+id/delete"

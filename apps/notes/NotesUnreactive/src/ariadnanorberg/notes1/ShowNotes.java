@@ -4,13 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.parse.FindCallback;
-import com.parse.GetCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
-import com.parse.RequestPasswordResetCallback;
-
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
@@ -19,7 +16,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 import android.widget.Toolbar;
 
 public class ShowNotes extends ListActivity {
@@ -28,8 +24,6 @@ public class ShowNotes extends ListActivity {
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
-		Intent intent = getIntent();
-		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.shownotes);
 		ParseUser currentUser = ParseUser.getCurrentUser();
@@ -80,6 +74,7 @@ public class ShowNotes extends ListActivity {
 		setProgressBarIndeterminateVisibility(true);
 		query.findInBackground(new FindCallback<ParseObject>() {
 			
+			@SuppressWarnings("unchecked")
 			@Override
 			public void done(List<ParseObject> postList, ParseException e) {
 				setProgressBarIndeterminateVisibility(false);
