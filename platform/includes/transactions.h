@@ -28,6 +28,7 @@ class TxnManager {
     void Start();
     int ExecuteTxn(txn_function_t func, txn_callback_t callback);
     uint64_t ReactiveTxn(txn_function_t func);
+    void ReactiveStop(uint64_t reactive_id);
 
   private:
     event_base * txnEventBase;
@@ -44,6 +45,7 @@ class TxnManager {
     static void executeTxnCallback(evutil_socket_t fd, short what, void * arg);
     static void signalCallback(evutil_socket_t fd, short what, void * arg);
     static void registerCallback(evutil_socket_t fd, short what, void * arg);
+    static void reactiveStopCallback(evutil_socket_t fd, short what, void * arg);
 };
 
 TxnManager * txnManager = NULL;

@@ -33,6 +33,7 @@
 #ifndef _DIAMOND_FRONTEND_SERVER_H_
 #define _DIAMOND_FRONTEND_SERVER_H_
 
+#include <mutex>
 
 #include "lib/configuration.h"
 #include "lib/tcptransport.h"
@@ -52,7 +53,7 @@ public:
 protected:
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type, const std::string &data);
-
+    void ReceiveError(int error) { };
     void HandleGet(const TransportAddress &remote,
                    const proto::GetMessage &msg);
     void HandleCommit(const TransportAddress &remote,
@@ -61,6 +62,8 @@ protected:
                      const proto::AbortMessage &msg);
     void HandleRegister(const TransportAddress &remote,
                         const RegisterMessage &msg);
+    void HandleDeregister(const TransportAddress &remote,
+                          const DeregisterMessage &msg);
     void HandleNotifyFrontend(const TransportAddress &remote,
                               const NotifyFrontendMessage &msg);
     void HandleNotificationReply(const TransportAddress &remote,
@@ -72,23 +75,27 @@ private:
 
     std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
     std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
-    std::unordered_map<std::string, Version> values; // map keys to their cached values
-    Timeout * sendNotificationTimeout;
+    std::unordered_map<std::string, Version> cachedValues; // map keys to their cached values
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
-    void sendNotifications();
+    void SendNotification(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
+    void UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp);
 
     // callbacks
     void GetCallback(const TransportAddress *remote,
-		     const proto::GetMessage msg,
-		     Promise *promise);
+                     const proto::GetMessage msg,
+                     Promise *promise);
     void CommitCallback(const TransportAddress *remote,
-		       const proto::CommitMessage msg,
-		       Promise *promise);
+                        const proto::CommitMessage msg,
+                        Promise *promise);
     void SubscribeCallback(const TransportAddress *remote,
-			   const RegisterMessage msg,
-			   Promise *promise);
-		     
+                           const RegisterMessage msg,
+                           Promise *promise);
+    void UpdateCacheCallback(const uint64_t client_id,
+                             const uint64_t reactive_id,
+                             const Timestamp next_timestamp,
+                             Promise *promise);
+
 };
 
 } // namespace frontend

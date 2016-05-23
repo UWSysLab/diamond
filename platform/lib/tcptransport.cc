@@ -42,6 +42,7 @@
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -284,6 +285,13 @@ TCPTransport::Register(TransportReceiver *receiver,
     if (setsockopt(fd, SOL_SOCKET,
                    SO_REUSEADDR, (char *)&n, sizeof(n)) < 0) {
         PWarning("Failed to set SO_REUSEADDR on TCP listening socket");
+    }
+
+    // Set TCP_NODELAY
+    n = 1;
+    if (setsockopt(fd, IPPROTO_TCP,
+                   TCP_NODELAY, (char *)&n, sizeof(n)) < 0) {
+        PWarning("Failed to set TCP_NODELAY on TCP listening socket");
     }
 
     // Registering a replica. Bind socket to the designated
@@ -629,14 +637,32 @@ void
 TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
                                        short what, void *arg)
 {
+    TCPTransportTCPListener *info = (TCPTransportTCPListener *)arg;
+    TCPTransport *transport = info->transport;
+    auto it = transport->tcpAddresses.find(bev);    
+    ASSERT(it != transport->tcpAddresses.end());
+    TCPTransportAddress addr = it->second;
+    
     if (what & BEV_EVENT_ERROR) {
         Warning("Error on incoming TCP connection: %s",
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on incoming TCP connection");
         bufferevent_free(bev);
+        auto it2 = transport->tcpOutgoing.find(addr);
+        transport->tcpOutgoing.erase(it2);
+        transport->tcpAddresses.erase(bev);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     }
 }
@@ -660,6 +686,9 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         auto it2 = transport->tcpOutgoing.find(addr);
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     } else if (what & BEV_EVENT_EOF) {
         Warning("EOF on outgoing TCP connection to server");
@@ -667,6 +696,9 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         auto it2 = transport->tcpOutgoing.find(addr);
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
+        if (info != NULL && info->receiver != NULL) {
+            info->receiver->ReceiveError(0);
+        }
         return;
     }
 }

@@ -91,11 +91,18 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 {    
     Debug("[%lu] START PREPARE", tid);
 
+    if (txn.IsolationMode() == EVENTUAL) {
+	// just go ahead and commit
+	Commit(tid, 0, txn);
+	return REPLY_OK;
+    }
+    
     if (prepared.find(tid) != prepared.end()) {
         Debug("[%lu] Already prepared!", tid);
         return REPLY_OK;
     }
 
+    Timestamp ts;
     // Do OCC checks.
     // Check for conflicts with the read set.
     if (txn.IsolationMode() == LINEARIZABLE) {
@@ -138,96 +145,102 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         }
     }
 
-    if (txn.IsolationMode() == LINEARIZABLE ||
-        txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-        // Check for conflicts with the write set.
-        for (auto &write : txn.GetWriteSet()) {
-            const string &key = write.first;
-            
-            // if there is a pending write, always abort
-            if (pWrites.find(key) != pWrites.end() &&
-                pWrites[key] > 0) {
-                Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
-                      key.c_str());
-                Abort(tid);
-                return REPLY_FAIL;
-            }
-
-            // if there is a pending increment, always abort
-            if (pIncrements.find(key) != pIncrements.end() &&
-                pIncrements[key] > 0) {
-                Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
-                      key.c_str());
-                Abort(tid);
-                return REPLY_FAIL;
-            }
-	    
-            if (txn.IsolationMode() == LINEARIZABLE) {
-                // If there is a pending read for this key, abort to stay linearizable.
-                if (pReads.find(key) != pReads.end() &&
-                    pReads[key] > 0) {
-                    Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
-		// if there is a read at a later timestamp
-		Timestamp ts;
-		if (store.GetLastRead(key, ts)) {
-		    if (ts > last_committed) {
-			Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
-			      key.c_str());
-		    }
-		    return REPLY_FAIL;
-		}                    	
-            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-                // If SI, check that the snapshot hasn't been written
-                Version cur;
-                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
-                    txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
-            }
+    // Check for conflicts with the write set.
+    for (auto &write : txn.GetWriteSet()) {
+        const string &key = write.first;
+        
+        // if there is a pending write, always abort
+        if (pWrites.find(key) != pWrites.end() &&
+            pWrites[key] > 0) {
+            Debug("[%lu] ABORT ww conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
         }
 
-        // Check for conflicts with the increment set
-        for (auto &inc : txn.GetIncrementSet()) {
-            const string &key = inc.first;
-            
-            // don't need to check for pending increments, they commute
-            
-            if (txn.IsolationMode() == LINEARIZABLE) {
-                // Check for pending reads
-                if (pReads.find(key) != pReads.end() &&
-                    pReads[key] > 0) {
-                    Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
+        // if there is a pending increment, always abort
+        if (pIncrements.find(key) != pIncrements.end() &&
+            pIncrements[key] > 0) {
+            Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
+        }
+	    
+        if (txn.IsolationMode() == LINEARIZABLE) {
+            // If there is a pending read for this key, abort to stay linearizable.
+            if (pReads.find(key) != pReads.end() &&
+                pReads[key] > 0) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
 
-                // Check for timestamp reads
-                Timestamp ts;
-                if (store.GetLastRead(key, ts)) {
-                    if (ts > last_committed) {
-                        Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
-                              key.c_str());
-                    }
-                    return REPLY_FAIL;
-                }
-            } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
-                // If SI, check that the snapshot hasn't been written
-                Version cur;
-                if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
-                    txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
-                    Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
-                          key.c_str());
-                    Abort(tid);
-                    return REPLY_FAIL;
-                }
+            // if there is a read at a later timestamp
+            if (store.GetLastRead(key, ts) && ts > last_committed) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            // If SI, check that the snapshot hasn't been written
+            Version cur;
+            if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        }
+    }
+
+    // Check for conflicts with the increment set
+    for (auto &inc : txn.GetIncrementSet()) {
+        const string &key = inc.first;
+            
+        // don't need to check for pending increments, they commute
+            
+        // if there is a write, we always abort
+        if (pWrites.find(key) != pWrites.end() &&
+            pWrites[key] > 0) {
+            Debug("[%lu] ABORT wi conflict w/ prepared key:%s", tid,
+                  key.c_str());
+            Abort(tid);
+            return REPLY_FAIL;
+        }
+
+        if (txn.IsolationMode() == LINEARIZABLE) {
+            // Check for pending reads
+            if (pReads.find(key) != pReads.end() &&
+                pReads[key] > 0) {
+                Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+
+            // Check for timestamp reads
+            if (store.GetLastRead(key, ts) && ts > last_committed) {
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
+            }
+        } else if (txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            // If SI, check that the snapshot hasn't been written
+            Version cur;
+            if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
+                txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s",
+                      tid,
+                      key.c_str());
+                Abort(tid);
+                return REPLY_FAIL;
             }
         }
     }
@@ -272,6 +285,36 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
                             inc.second,
                             timestamp);
         }
+
+        if (txn.IsolationMode() == LINEARIZABLE ||
+            txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+            prepared.erase(tid);
+            for (auto &write : t.GetWriteSet()) {
+                pWrites.at(write.first)--;
+                ASSERT(pWrites[write.first] >= 0);
+            }
+            for (auto &read : t.GetReadSet()) {
+                pReads.at(read.first)--;
+                ASSERT(pReads[read.first] >= 0);
+            }
+            for (auto &incr : t.GetIncrementSet()) {
+                pIncrements.at(incr.first)--;
+                ASSERT(pIncrements[incr.first] >= 0);
+            }
+        }
+        committed[tid] = t;
+        if (timestamp > last_committed) {
+            last_committed = timestamp;
+        }
+    }
+}
+
+void
+OCCStore::Abort(const uint64_t tid)
+{
+    Debug("[%lu] ABORT", tid);
+    if (prepared.find(tid) != prepared.end()) {
+        Transaction t = prepared[tid];
         prepared.erase(tid);
         for (auto &write : t.GetWriteSet()) {
             pWrites.at(write.first)--;
@@ -285,18 +328,7 @@ OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transacti
             pIncrements.at(incr.first)--;
             ASSERT(pIncrements[incr.first] >= 0);
         }
-        committed[tid] = t;
-        if (timestamp > last_committed) {
-            last_committed = timestamp;
-        }
     }
-}
-
-void
-OCCStore::Abort(const uint64_t tid)
-{
-    Debug("[%lu] ABORT", tid);
-    prepared.erase(tid);
 }
 
 void
@@ -355,7 +387,13 @@ OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, 
 }
 
 void
-OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, vector<FrontendNotification> &notifications)
+OCCStore::Unsubscribe(const set<string> &keys, const string &address)
+{
+    store.Unsubscribe(keys, address);
+}
+
+void
+OCCStore::AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid)
 {
     Transaction t;
     if (committed.find(tid) != committed.end()) {
@@ -371,8 +409,38 @@ OCCStore::GetFrontendNotifications(const Timestamp &timestamp, const uint64_t ti
     for (auto &inc : t.GetIncrementSet()) {
         keys.insert(inc.first);
     }
+
+    std::vector<FrontendNotification> notifications;
     store.GetFrontendNotifications(timestamp, keys, notifications);
+    for (FrontendNotification &n : notifications) {
+        n.txn_id = tid;
+    }
     fillCacheEntries(t, notifications);
+
+    ufnMutex.lock();
+    for (FrontendNotification &n : notifications) {
+        unackedFrontendNotifications[n.address][n.txn_id] = n;
+    }
+    ufnMutex.unlock();
+}
+
+void
+OCCStore::AckFrontendNotification(const uint64_t tid, const std::string &address) {
+    ufnMutex.lock();
+    unackedFrontendNotifications[address].erase(tid);
+    ufnMutex.unlock();
+}
+
+void
+OCCStore::GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications) {
+    ufnMutex.lock();
+    for (auto &addrMapPair : unackedFrontendNotifications) {
+	auto it = addrMapPair.second.find(tid);
+	if (it != addrMapPair.second.end()) {
+            notifications.push_back(it->second);
+        }
+    }
+    ufnMutex.unlock();
 }
 
 void

@@ -72,11 +72,13 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 
     Version value;
     // look for it in the cache
-    if (cachingEnabled && timestamp != MAX_TIMESTAMP && cache.Get(key, timestamp, value)) {
-        // Make some decision about the timestamp?
+    if ((cachingEnabled &&
+         timestamp == MAX_TIMESTAMP &&
+         cache.Get(key, value)) ||
+        cache.Get(key, timestamp, value)) {
         cache_lock.unlock();
-        
-	Debug("CACHE HIT %s at ts %lu", key.c_str(), value.GetTimestamp());
+		
+        Debug("CACHE HIT %s at ts %lu", key.c_str(), value.GetTimestamp());
         if (promise != NULL)
             promise->Reply(REPLY_OK, key, value);
         return;
@@ -89,14 +91,13 @@ CacheClient::Get(const uint64_t tid, const string &key, const Timestamp &timesta
 
     txnclient->Get(tid, key, timestamp, pp);
     if (pp->GetReply() == REPLY_OK) {
-        if (cachingEnabled) {
-            Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
-            cache_lock.lock();
-            // Make sure that we've capped the validity range
-            ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
-            cache.Put(key, pp->GetValue(key));
-            cache_lock.unlock();
-        }
+        Debug("Adding [%s] with ts %lu to the cache", key.c_str(), pp->GetValue(key).GetTimestamp());
+        cache_lock.lock();
+        // Make sure that we've capped the validity range
+        ASSERT(pp->GetValue(key).GetInterval().End() != MAX_TIMESTAMP);
+        
+        cache.Put(key, pp->GetValue(key));
+        cache_lock.unlock();
     }
 }
 
@@ -113,10 +114,11 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
     for (auto &key : keys) {
         // look for it in the cache
-        if (cachingEnabled && cache.Get(key, timestamp, value)) {
-            // Make some decision about the timestamp?
-
-            keysRead[key] = value;  
+        if ((cachingEnabled &&
+             timestamp == MAX_TIMESTAMP &&
+             cache.Get(key, value))
+            || cache.Get(key, timestamp, value)) {
+            keysRead[key] = value;
         } else {
             keysToRead.push_back(key);
         }
@@ -139,15 +141,16 @@ CacheClient::MultiGet(const uint64_t tid, const vector<string> &keys, const Time
 
         cache_lock.lock();
         for (auto &value : values) {
-            if (cachingEnabled) {
-                Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
-                ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
-                cache.Put(value.first, value.second);
-                keysRead[value.first] = value.second;
-            }
+            Debug("Adding [%s] with ts %lu to the cache", value.first.c_str(), value.second.GetTimestamp());
+            ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
+            
+            cache.Put(value.first, value.second);
+            keysRead[value.first] = value.second;
         }
         cache_lock.unlock();
-        pp->Reply(REPLY_OK, keysRead);
+    }
+    if (promise != NULL) {
+        promise->Reply(pp->GetReply(), keysRead);
     }
 }
 
@@ -189,28 +192,33 @@ CacheClient::Commit(const uint64_t tid, const Transaction &txn, Promise *promise
     txnclient->Commit(tid, txn, pp);
 
     // update the cache
-     pp->GetReply();
-    // cache_lock.lock();
+
     // const Transaction t = (prepared.find(tid) != prepared.end()) ? prepared[tid] : txn;
     // prepared.erase(tid);
         
     // // update the cache
-    // if (reply == REPLY_OK) {
-    //     for (auto &write : t.GetWriteSet()) {
+    if (pp->GetReply() == REPLY_OK) {
+    //    cache_lock.lock();
+    //     for (auto &write : txn.GetWriteSet()) {
     // 	    Debug("Adding [%s] with ts %lu to the cache", write.first.c_str(), pp->GetTimestamp());
     //         cache.Put(write.first, write.second, pp->GetTimestamp());
     //     }
+    //    cache_lock.unlock();
     // } else if (reply == REPLY_FAIL) {
-    //     for (auto &read : t.GetReadSet()) {
-    //         Debug("Removing [%s] from the cache", read.first.c_str());
-    //         cache.Remove(read.first);
-    //     }        
-    // }
+        if (!cachingEnabled) {
+            cache_lock.lock();
+            for (auto &read : txn.GetReadSet()) {
+                Debug("Removing [%s] from the cache", read.first.c_str());
+                cache.Remove(read.first);
+            }
+            cache_lock.unlock();
+        }
+    }
     // for (auto &inc : t.GetIncrementSet()) {
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
     //     cache.Remove(inc.first);
     // }
-    // cache_lock.unlock();
+    
 }
 
 /* Aborts the ongoing transaction. */
@@ -254,6 +262,12 @@ CacheClient::Register(const uint64_t reactive_id,
                       const std::set<std::string> &keys,
                       Promise *promise) {
     Panic("Register not implemented for this client");
+}
+
+void
+CacheClient::Deregister(const uint64_t reactive_id,
+                        Promise *promise) {
+    txnclient->Deregister(reactive_id, promise);
 }
 
 void

@@ -78,6 +78,10 @@ void DObject::NotificationInit(std::function<void (void)> callback) {
     store->NotificationInit(callback);
 }
 
+void DObject::Deregister(uint64_t reactive_id) {
+    store->Deregister(reactive_id);
+}
+
 void
 DObject::SetLinearizable() {
     store->SetIsolationLevel(LINEARIZABLE);

@@ -93,6 +93,20 @@ namespace diamond {
         delete info;
     }
 
+    void TxnManager::ReactiveStop(uint64_t reactive_id) {
+        reg_info_t * info = new reg_info_t();
+        info->reactive_id = reactive_id;
+        event * ev = event_new(txnEventBase, -1, 0, reactiveStopCallback, info);
+        event_add(ev, NULL);
+        event_active(ev, 0, 1);
+    }
+
+    void TxnManager::reactiveStopCallback(evutil_socket_t fd, short what, void * arg) {
+        reg_info_t * info = (reg_info_t *)arg;
+        DObject::Deregister(info->reactive_id);
+        delete info;
+    }
+
     void StartTxnManager() {
         if (txnManager == NULL) {
             txnManager = new TxnManager();
@@ -122,7 +136,10 @@ namespace diamond {
     }
 
     void reactive_stop(uint64_t reactive_id) {
-        //TODO: implement
+        if (txnManager == NULL) {
+            Panic("txnManager is null"); 
+        }
+        txnManager->ReactiveStop(reactive_id);
     }
     void abort_txn() {
         //TODO: implement

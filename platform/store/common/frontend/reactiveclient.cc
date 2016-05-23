@@ -64,13 +64,9 @@ ReactiveClient::Commit(const uint64_t tid, const Transaction &txn, Promise *prom
             }
             else {
                 //TODO: implement registration retry
-                Panic("Registration retry not implemented");
+                Panic("Registration error: %d", reply);
             }
         }
-        else { // Otherwise, ack notification
-            txnclient->ReplyToNotification(reactive_id, timestamp);
-        }
-        
     }
 }
 
@@ -98,6 +94,7 @@ ReactiveClient::processNotification(const map<string, Version> &values) {
     if (cachingEnabled) {
         for (auto &pair : values) {
             Debug("Adding [%s] with ts %lu to the cache (from notification)", pair.first.c_str(), pair.second.GetTimestamp());
+            cache.Remove(pair.first);
             cache.Put(pair.first, pair.second);
         }
     }

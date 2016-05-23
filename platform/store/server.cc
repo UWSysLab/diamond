@@ -41,12 +41,14 @@ namespace strongstore {
 
 using namespace proto;
 
-Server::Server()
+Server::Server(transport::Configuration &transportConfig)
     : transport()
 {
     store = new strongstore::OCCStore();
 
+    transport.Register(this, transportConfig, -1);
     transportThread = new thread(&Server::runTransport, this);
+
 }
 
 Server::~Server()
@@ -57,6 +59,21 @@ Server::~Server()
 void
 Server::runTransport() {
     transport.Run();
+}
+
+void Server::ReceiveMessage(const TransportAddress &remote,
+                    const string &type, const string &data)
+{
+    static NotifyFrontendAck ack;
+    if (type == ack.GetTypeName()) {
+        ack.ParseFromString(data);
+        Debug("Received NOTIFY-FRONTEND-ACK from %s for tid %lu", ack.address().c_str(), ack.txnid());
+        store->AckFrontendNotification(ack.txnid(), ack.address());
+    }
+}
+
+void Server::ReceiveError(int error) {
+    // NO-OP
 }
 
 void
@@ -72,14 +89,16 @@ Server::ExecuteGet(Request request, string &str2)
                             request.get().timestamp());
 
         if (status == REPLY_OK) {
-	    ReadReply *rep = reply.add_replies();
-	    rep->set_key(key);
+            ReadReply *rep = reply.add_replies();
+            ASSERT(val.GetInterval().End() != MAX_TIMESTAMP);
+
+            rep->set_key(key);
             val.Serialize(rep);
         } else {
-	    reply.set_status(status);
-	    reply.SerializeToString(&str2);
-	    return;
-	}
+            reply.set_status(status);
+            reply.SerializeToString(&str2);
+            return;
+        }
     }
     reply.set_status(REPLY_OK);	
     reply.SerializeToString(&str2);
@@ -102,14 +121,22 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         replicate = false;
         break;
     case strongstore::proto::Request::PREPARE:
+    {	
+	Transaction txn = Transaction(request.prepare().txn());
         // Prepare is the only case that is conditionally run at the leader
-        status = store->Prepare(request.txnid(), Transaction(request.prepare().txn()));
-
+	if (txn.IsolationMode() == LINEARIZABLE ||
+	    txn.IsolationMode() == SNAPSHOT_ISOLATION) {
+	    status = store->Prepare(request.txnid(), txn);
+	} else {
+	    // if eventual consistency ignore the prepare
+	    status = REPLY_OK;
+	}
+	
         // if prepared, then replicate result
-        if (status == 0) {
+        if (status == REPLY_OK) {
             replicate = true;
             // get a prepare timestamp and send along to replicas
-            request.SerializeToString(&str2);
+            str2 = str1;
         } else {
             // if abort, don't replicate
             replicate = false;
@@ -117,17 +144,19 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
             reply.SerializeToString(&str2);
         }
         break;
+    }
     case strongstore::proto::Request::COMMIT:
 	if (request.commit().has_txn()) {
 	    store->Commit(request.txnid(), request.commit().timestamp(), Transaction(request.commit().txn()));
 	} else {
 	    store->Commit(request.txnid(), request.commit().timestamp());
 	}
-        // Send notifications
+        // Add frontend notifications for this txn to the queue
         {
-            vector<FrontendNotification> nvec;
-            store->GetFrontendNotifications(request.commit().timestamp(), request.txnid(), nvec);
-            sendNotifications(nvec);
+            store->AddFrontendNotifications(request.commit().timestamp(), request.txnid());
+            transport.Timer(1, [=]() {
+		sendNotification(request.txnid());
+	    });
         }
         replicate = true;
         str2 = str1;
@@ -140,32 +169,44 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string 
         replicate = true;
         str2 = str1;
         break;
+    case strongstore::proto::Request::UNSUBSCRIBE:
+        replicate = true;
+        str2 = str1;
+        break;
     default:
         Panic("Unrecognized operation.");
     }
 }
 
 void
-Server::sendNotifications(const vector<FrontendNotification> &notifications) {
-    for (auto it = notifications.begin(); it != notifications.end(); it++) {
-        FrontendNotification notification = *it;
-        Debug("Sending NOTIFY-FRONTEND to frontend %s:", it->address.c_str());
-        NotifyFrontendMessage msg;
-        for (auto it2 = notification.values.begin(); it2 != notification.values.end(); it2++) {
-            string key = it2->first;
-            Version value = it2->second;
-            Timestamp timestamp = value.GetTimestamp();
-            Debug("%s, %lu", key.c_str(), timestamp);
-            ReadReply * reply = msg.add_replies();
-            reply->set_key(key);
-            value.Serialize(reply);
-        }
-        stringstream ss(it->address);
-        string hostname;
-        getline(ss, hostname, ':');
-        string port;
-        getline(ss, port, ':');
-        transport.SendMessage(NULL, hostname, port, msg);
+Server::sendNotification(uint64_t tid) {
+    vector<FrontendNotification> notifications;
+    store->GetUnackedFrontendNotifications(tid, notifications);
+
+    if (notifications.size() > 0) {
+	for (auto notification : notifications) {
+	    Debug("Sending NOTIFY-FRONTEND to frontend %s:", notification.address.c_str());
+	    NotifyFrontendMessage msg;
+	    for (auto v : notification.values) {
+		string key = v.first;
+		Version value = v.second;
+		Timestamp timestamp = value.GetTimestamp();
+		Debug("%s, %lu", key.c_str(), timestamp);
+		ReadReply * reply = msg.add_replies();
+		reply->set_key(key);
+		value.Serialize(reply);
+	    }
+	    msg.set_txnid(tid);
+	    stringstream ss(notification.address);
+	    string hostname;
+	    getline(ss, hostname, ':');
+	    string port;
+	    getline(ss, port, ':');
+	    transport.SendMessage(this, hostname, port, msg);
+	}
+	transport.Timer(10, [=]() {
+		sendNotification(tid);
+	    });
     }
 }
 
@@ -225,6 +266,18 @@ Server::ReplicaUpcall(opnum_t opnum,
             }
         }
         break;
+    case strongstore::proto::Request::UNSUBSCRIBE:
+        {
+            Debug("Handling UNSUBSCRIBE");
+            string address = request.unsubscribe().address();
+            set<string> keys;
+            for (int i = 0; i < request.unsubscribe().keys_size(); i++) {
+                Debug("%s", request.unsubscribe().keys(i).c_str());
+                keys.insert(request.unsubscribe().keys(i));
+            }
+            store->Unsubscribe(keys, address);
+        }
+        break;
     default:
         Panic("Unrecognized operation.");
     }
@@ -259,10 +312,11 @@ main(int argc, char **argv)
     unsigned int myShard=0, maxShard=1, nKeys=1;
     const char *configPath = NULL;
     const char *keyPath = NULL;
+    unsigned int batchSize = 256;
 
     // Parse arguments
     int opt;
-    while ((opt = getopt(argc, argv, "c:i:m:e:s:f:n:N:k:")) != -1) {
+    while ((opt = getopt(argc, argv, "c:i:m:e:s:f:n:N:k:B:")) != -1) {
         switch (opt) {
         case 'c':
             configPath = optarg;
@@ -312,6 +366,17 @@ main(int argc, char **argv)
             break;
         }
 
+        case 'B':
+        {
+            char *strtolPtr;
+            batchSize = strtoul(optarg, &strtolPtr, 10);
+            if ((*optarg == '\0') || (*strtolPtr != '\0') || (batchSize <= 0))
+            {
+                fprintf(stderr, "option -B requires a numeric arg\n");
+            }
+            break;
+        }
+
         case 'f':   // Load keys from file
         {
             keyPath = optarg;
@@ -348,8 +413,8 @@ main(int argc, char **argv)
     TCPTransport transport(0.0, 0.0, 0);
 
     //strongstore::Server server = strongstore::Server();
-    strongstore::Server server;
-    replication::VRReplica replica(config, index, &transport, 1, &server);
+    strongstore::Server server(config);
+    replication::VRReplica replica(config, index, &transport, batchSize, &server);
     
     if (keyPath) {
         string key;

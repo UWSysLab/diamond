@@ -120,11 +120,15 @@ class GameFrame(gtk.Frame):
             self.toolBar.hide()
         
         self.userView.columns_autosize()
-                
-        ReactiveManager.add(self.drawScreen)
+        
+        self.sendCurrentMoveStartTime = 0
+        self.showMoveEndTime = 0
+        
+        ReactiveManager.reactive_txn(self.drawScreen)
+
     
     def destroy(self):
-        ReactiveManager.remove(self.drawScreen)
+        ReactiveManager.reactive_stop(self.drawScreen)
         gtk.Frame.destroy(self)
     
     def drawScreen(self):
@@ -132,6 +136,29 @@ class GameFrame(gtk.Frame):
         self.drawBoard()
         self.drawUserList()
         self.drawUI()
+        self.handleGameOver()
+        
+        self.cacheHack()
+        self.showMoveEndTime = datetime.datetime.now()
+        if self.showMoveEndTime != 0 and self.sendCurrentMoveStartTime != 0:
+            timeMillis = (self.showMoveEndTime.second - self.sendCurrentMoveStartTime.second) * 1000.0 + (self.showMoveEndTime.microsecond - self.sendCurrentMoveStartTime.microsecond) / 1000.0
+            print("click send move -> finish showing update latency: " + repr(timeMillis))
+            self.sendCurrentMoveStartTime = 0
+        
+    def cacheHack(self):
+        self.currentGame.onboardX.Members()
+        self.currentGame.onboardY.Members()
+        self.currentGame.onboardLetters.Members()
+        self.currentGame.onboardLetterScores.Members()
+        self.currentGame.bag.letterScores.Members()
+        self.currentGame.bag.letterStrs.Members()
+        empty = DBoolean()
+        DBoolean.Map(empty, "game:" + self.currentGameId + ":board:empty")
+        empty.Value()
+    
+    def handleGameOver(self):
+        if self.currentGame.isComplete():
+            gobject.idle_add(self.createGameOverPopup)
         
     def drawBoard(self):
         for tile in self.board.tiles.values():
@@ -162,14 +189,20 @@ class GameFrame(gtk.Frame):
         currentPlayerName = self.currentGame.getCurrentPlayer().getUsername()
         started = self.currentGame.started.Value()
         thisPlayerName = self.player.getUsername()
-        if currentPlayerName == thisPlayerName:
-            self.board.activate()
+        if currentPlayerName == thisPlayerName and not self.currentGame.complete.Value():
+            for x in range(0, 15):
+                for y in range(0, 15):
+                    gameTile = self.board.get(x, y)
+                    if (not gameTile.letterPresent.Value()) or (gameTile.getLetter(), x, y) in self.currentGame.getOnboardMove().getTiles():
+                        gameTile.activate()
+                    else:
+                        gameTile.deactivate()
         else:
             self.board.deactivate()
-        gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName)
+        gobject.idle_add(self.drawUIHelper, started, thisPlayerName, currentPlayerName, self.currentGame.complete.Value())
     
     # runs in UI thread
-    def drawUIHelper(self, started, thisPlayerName, currentPlayerName):
+    def drawUIHelper(self, started, thisPlayerName, currentPlayerName, gameComplete):
         if started:
             self.startButton.hide()
             self.saveButton.set_sensitive(True)
@@ -180,7 +213,7 @@ class GameFrame(gtk.Frame):
             self.mainwindow.setCurrentTurn(self.currentGameId, isPlayerTurn)
             self.wasPlayerTurn = isPlayerTurn
         
-        if isPlayerTurn:
+        if isPlayerTurn and not gameComplete:
             self.okButton.set_sensitive(True)
             self.passButton.set_sensitive(True)
             if self.hideTradeButton == False:
@@ -426,7 +459,7 @@ class GameFrame(gtk.Frame):
         
         self.okButton.connect("clicked", self.sendCurrentMove)
         self.passButton.connect("clicked", self.askPass)
-        self.tradeButton.connect("clicked", self.tradeLetters)
+        self.tradeButton.connect("clicked", self.tradeLettersBackground)
         self.cancelButton.connect("clicked", self.clearCurrentMoveBackground)
         self.shuffleButton.connect('clicked', self.shuffleLetters_cb)
         
@@ -533,7 +566,7 @@ class GameFrame(gtk.Frame):
     
     # Trade letters in for new letters
     def tradeLettersBackground(self, button):
-        ReactiveManager.runInBackground(self.tradeLetters, button)
+        ReactiveManager.txn_execute(self.tradeLetters, button)
         
     def tradeLetters(self, button):
         '''
@@ -541,9 +574,7 @@ class GameFrame(gtk.Frame):
         
         @param button: Button that was clicked
         '''  
-        
-        DObject.TransactionBegin()
-        
+                
         l = []
         for letter in self.letterBox.get_children():
             if isinstance(letter, GameLetter):
@@ -552,28 +583,21 @@ class GameFrame(gtk.Frame):
                     letter.set_active(False)
                 
         if len(l) > 0:
-            print "DEBUG TRADELETTERS"
             self.clearCurrentMove()
-            print "player letters: " + repr(self.player.getLetters())
             self.player.removeLetters( l )
-            print "list l is: " + repr(l)
             letters = self.currentGame.getLetters( self.player.getNumberOfLettersNeeded() )
-            print "list letters is: " + repr(letters)
             self.player.addLetters( letters )
             self.currentGame.returnLetters( l )
-            print "player letters: " + repr(self.player.getLetters())
 
             self.currentGame.resetPassCount()
             self.doGameTurn()
         else:
             self.error(util.ErrorMessage(_("Please Click on the Letters you wish to trade")))
-            
-        DObject.TransactionCommit()
         
     
     # Start the game
     def startGame(self, button):
-        ReactiveManager.runInBackground(self.startGameHelper, button)
+        ReactiveManager.txn_execute(self.startGameHelper, button)
     
     def startGameHelper(self, button):
         '''
@@ -582,15 +606,12 @@ class GameFrame(gtk.Frame):
         @param gameId: Game ID
         @param client: ScrabbleServer Protocol
         '''
-        DObject.TransactionBegin()
         if self.username != self.currentGame.getCreator():
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_CREATOR])))
-            DObject.TransactionCommit()
             return
         
         if (self.currentGame.isStarted()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([GAME_ALREADY_STARTED])))
-            DObject.TransactionCommit()
             return
 
         self.currentGame.start()
@@ -605,7 +626,6 @@ class GameFrame(gtk.Frame):
 
         #TODO
         self.doGameTurn()
-        DObject.TransactionCommit()
         #TODO
         #self.refreshGameList()
         
@@ -627,8 +647,8 @@ class GameFrame(gtk.Frame):
         
         Notify the user and then disable the buttons
         '''
-        self.leaveGameHelper()
-        gobject.idle_add(self.createGameOverPopup)
+        # Set the game to be complete
+        self.currentGame.setComplete()
     
     def createGameOverPopup(self):
         p = gtkutil.Popup( title=self.currentGameId, text=_('Game over'))
@@ -667,19 +687,14 @@ class GameFrame(gtk.Frame):
         #TODO: verify that this is correct
         #TODO: put in transaction
         
-        ReactiveManager.runInBackground(self.leaveGameHelper)
+        ReactiveManager.txn_execute(self.leaveGameHelper)
         #self.showLetters([])
     
     def leaveGameHelper(self):
-        DObject.TransactionBegin()
-        gameSet = DStringSet()
-        DStringSet.Map(gameSet, "user:" + self.player.getUsername() + ":games")
-        gameSet.Remove(self.currentGameId)
         self.clearCurrentMove()
         self.doGameTurn()
         self.currentGame.playerLeave(self.player)
         self.player.reset()
-        DObject.TransactionCommit()
     
     # Game state management methods added by Niel
     def addLetter(self, letter):
@@ -713,10 +728,9 @@ class GameFrame(gtk.Frame):
         self.currentGame.removeFromOnboard( tile.getLetter(), x, y )
         
     def swapTiles(self, gTileA, gTileB):
-        ReactiveManager.runInBackground(self.swapTilesHelper, gTileA, gTileB)
+        ReactiveManager.txn_execute(self.swapTilesHelper, gTileA, gTileB)
         
     def swapTilesHelper(self, gTileA, gTileB):
-        DObject.TransactionBegin()
         letterA = gTileA.getLetter()
         letterB = gTileB.getLetter()
         if letterA == None:
@@ -730,13 +744,11 @@ class GameFrame(gtk.Frame):
 
         gTileA.putLetter(letterB)
         self.registerMove(gTileA, gTileA.x, gTileA.y)
-        DObject.TransactionCommit()
     
     def swapTileAndLetter(self, gTile, gLetter):
-        ReactiveManager.runInBackground(self.swapTileAndLetterHelper, gTile, gLetter)
+        ReactiveManager.txn_execute(self.swapTileAndLetterHelper, gTile, gLetter)
         
     def swapTileAndLetterHelper(self, gTile, gLetter):
-        DObject.TransactionBegin()
         origLetterLetter = gLetter.getLetter()
         origTileLetter = gTile.getLetter()
         
@@ -753,14 +765,14 @@ class GameFrame(gtk.Frame):
         
             gTile.putLetter(origLetterLetter)
             self.registerMove(gTile, gTile.x, gTile.y)
-        DObject.TransactionCommit()
         
     def putTileOnPlaceholder(self, gTile):
-        DObject.TransactionBegin()
+        ReactiveManager.txn_execute(self.putTileOnPlaceholderHelper, gTile)
+        
+    def putTileOnPlaceholderHelper(self, gTile):
         self.removeMove(gTile, gTile.x, gTile.y)
         self.addLetter(gTile.getLetter())
         gTile.clear()
-        DObject.TransactionCommit()
     
     
     def getNumOnBoardMoves(self):
@@ -787,12 +799,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to clear letters put on board
     def clearCurrentMoveBackground(self, event=None):
-        ReactiveManager.runInBackground(self.clearCurrentMoveBackgroundHelper)
-    
-    def clearCurrentMoveBackgroundHelper(self):
-        DObject.TransactionBegin()
-        self.clearCurrentMove()
-        DObject.TransactionCommit()
+        ReactiveManager.txn_execute(self.clearCurrentMove)
         
     def clearCurrentMove(self):
         '''
@@ -814,7 +821,7 @@ class GameFrame(gtk.Frame):
     
     # Callback to send current move
     def sendCurrentMove(self, event = None):
-        ReactiveManager.runInBackground(self.sendCurrentMoveHelper, event)
+        ReactiveManager.txn_execute(self.sendCurrentMoveHelper, event)
         
     def sendCurrentMoveHelper(self, event = None):
         '''
@@ -823,16 +830,14 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        DObject.TransactionBegin()
+        self.sendCurrentMoveStartTime = datetime.datetime.now()
         
         if (self.isCurrentTurn() == False):
             gobject.idle_add(self.error, util.ErrorMessage(_("Its not your turn")))
-            DObject.TransactionCommit()
             return
         
         if (not self.currentGame.getOnboardMove().isValid()):
             gobject.idle_add(self.error, util.ErrorMessage(_("Move is invalid")))
-            DObject.TransactionCommit()
             return
         
         # Make sure the board has a letter in the center or one of the tiles in this move does
@@ -843,7 +848,6 @@ class GameFrame(gtk.Frame):
                     center = True
             if not center:
                 gobject.idle_add(self.error, util.ErrorMessage(_("Move must cover center tile.")))
-                DObject.TransactionCommit()
                 return
     
         try:
@@ -853,8 +857,6 @@ class GameFrame(gtk.Frame):
             #self.okButton.set_sensitive(False)
         except exceptions.MoveException, inst:
             gobject.idle_add(self.error, util.ErrorMessage(inst.message))
-            
-        DObject.TransactionCommit()
     
     # Player send move to game
     def gameSendMove(self, gameId, onboard, moves):
@@ -915,7 +917,6 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() )
             
             #self.gameOver(game)
-            self.currentGame.setComplete()
             self.gameOver()
             return
 
@@ -1011,19 +1012,16 @@ class GameFrame(gtk.Frame):
         @param event:
         '''
         
-        ReactiveManager.runInBackground(self.passMoveHelper)
+        ReactiveManager.txn_execute(self.passMoveHelper)
     
     def passMoveHelper(self):
-        DObject.TransactionBegin()
         self.clearCurrentMove()
         
         if not self.player == self.currentGame.getCurrentPlayer():
-            DObject.TransactionCommit()
             return
         
         if (not self.currentGame.isInProgress()):
             gobject.idle_add(self.error, util.ErrorMessage(ServerMessage([NOT_IN_PROGRESS]) ))
-            DObject.TransactionCommit()
             return
         
         try:
@@ -1039,10 +1037,7 @@ class GameFrame(gtk.Frame):
                     player.addScore( letter.getScore() * -1 )
                 
             #self.gameOver(self.currentGame)
-            self.currentGame.setComplete()
             self.gameOver()
-        
-        DObject.TransactionCommit()
     
     def getMoves(self):
         '''
@@ -1279,20 +1274,16 @@ class GameFrame(gtk.Frame):
         
         self.showError(data)
         
-        ReactiveManager.runInBackground(self.errorHelper)
+        ReactiveManager.txn_execute(self.errorHelper)
     
     def errorHelper(self):
-        committed = 0
-        while not committed:
-            DObject.TransactionBegin()
-            if self.isCurrentTurn():
-                gobject.idle_add(self.okButton.set_sensitive, True)
-            
-            o = manager.OptionManager()
-            
-            if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
-                self.clearCurrentMove()
-            committed = DObject.TransactionCommit()
+        if self.isCurrentTurn():
+            gobject.idle_add(self.okButton.set_sensitive, True)
+        
+        o = manager.OptionManager()
+        
+        if o.get_default_bool_option( OPTION_CLEAR_ON_ERROR, True ):
+            self.clearCurrentMove()
     
     def info(self, log):
         '''

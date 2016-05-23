@@ -37,6 +37,8 @@
 #include "vr-proto.pb.h"
 #include <unordered_map>
 
+#define RETRY_WAIT 100
+
 namespace replication {
 
 class VRClient : public Client
@@ -53,23 +55,25 @@ public:
                                 continuation_t continuation);
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
-
+    virtual void ReceiveError(int error);
 protected:
     uint64_t lastReqId;
 
     struct PendingRequest
     {
         string request;
+	bool unlogged = false;
         continuation_t continuation;
 	inline PendingRequest() { };
-        inline PendingRequest(string request, continuation_t continuation)
-            : request(request), continuation(continuation) { };
+        inline PendingRequest(string request, bool unlogged, continuation_t continuation)
+            : request(request), unlogged(unlogged), continuation(continuation) { };
     };
 
     std::unordered_map<uint64_t, PendingRequest> pendingRequests;
-
+    int leader = 0;
     void HandleReply(const TransportAddress &remote,
                      const proto::ReplyMessage &msg);
+    void SendRequest(int reqid);
 };
 } // namespace replication
 

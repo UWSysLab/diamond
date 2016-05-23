@@ -7,7 +7,7 @@ import redis
 import subprocess
 import sys
 
-SRC_HOST = "diamond-client-a1o6"
+SRC_HOST = "diamond-client"
 WORKING_DIR = "~/"
 
 COPY_CMD = "rsync " + SRC_HOST + ":diamond-src/"
@@ -22,7 +22,7 @@ outputFiles = []
 
 def copyFiles(binary, binaryDir, configPrefix):
     copyBinary(binary, binaryDir)
-    copyConfigFiles(configPrefix)
+    #copyConfigFiles(configPrefix)
 
 def copyBinary(binary, binaryDir):
     os.system(COPY_CMD + binaryDir + "/" + binary + " " + WORKING_DIR)
@@ -56,6 +56,17 @@ def runProcesses(getCommandFunc, numClients, configPrefix, outputPrefix):
         process.wait()
 
     sys.stderr.write("Finished running clients\n")
+
+    success = True
+    for process in processes:
+        if process.returncode:
+            success = False
+    if not success:
+        sys.stderr.write("Error: some clients returned nonzero return codes\n")
+        import time
+        while True:
+            time.sleep(1) # make sure we notice that clients failed
+
 
 def processOutput(processOutputFunc):
     for outputFileName in outputFiles:

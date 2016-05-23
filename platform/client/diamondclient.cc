@@ -206,11 +206,13 @@ DiamondClient::Get(const string &key, string &value)
     if (promise.GetReply() == REPLY_OK) {
         Debug("Adding [%s] with ts %lu to the read set", key.c_str(), promise.GetValue(key).GetTimestamp());
         txn.AddReadSet(key, promise.GetValue(key).GetInterval());
-        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
-            !txn.HasTimestamp()) {
-            txn.SetTimestamp(promise.GetValue(key).GetTimestamp());
+        if (!txn.HasTimestamp()) {
+            txn.SetTimestamp(promise.GetValue(key).GetInterval().End());
             Debug("Setting ts to %lu", txn.GetTimestamp());
         }
+    } else if (promise.GetReply() == REPLY_NOT_FOUND) {
+        Debug("Adding [%s] (not found) to the read set", key.c_str());
+        txn.AddReadSet(key, Interval(0));
     }
 
     value = promise.GetValues()[key].GetValue();
@@ -219,7 +221,7 @@ DiamondClient::Get(const string &key, string &value)
 }
 
 int
-DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
+DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
 {
     if (txnid == 0) {
         Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
@@ -259,9 +261,8 @@ DiamondClient::MultiGet(const vector<string> &keys, map<string, string> &values)
             values[value.first] = value.second.GetValue();
         }
 
-        if (((txn.IsolationMode() == READ_ONLY) || (txn.IsolationMode() == SNAPSHOT_ISOLATION)) &&
-            !txn.HasTimestamp()) {
-            txn.SetTimestamp((values.begin())->second.GetTimestamp());
+        if (!txn.HasTimestamp()) {
+            txn.SetTimestamp((values.begin())->second.GetInterval().End());
             Debug("Setting ts to %lu", txn.GetTimestamp());
         }
     }
@@ -366,6 +367,14 @@ DiamondClient::processNotification(Timestamp timestamp, uint64_t reactive_id) {
 void
 DiamondClient::NotificationInit(std::function<void (void)> callback) {
     client->NotificationInit(callback);
+}
+
+void
+DiamondClient::Deregister(uint64_t reactive_id)
+{
+    Promise p;
+    client->Deregister(reactive_id, &p);
+    p.GetReply();
 }
 
 } // namespace diamond

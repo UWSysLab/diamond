@@ -35,6 +35,7 @@
 #include "lib/transport.h"
 #include "replication/client.h"
 #include "vr-proto.pb.h"
+#include "includes/error.h"
 
 namespace replication {
 
@@ -56,15 +57,9 @@ VRClient::Invoke(const string &request,
 {
     ++lastReqId;
     pendingRequests[lastReqId] = PendingRequest(request,
-					    continuation);
-    proto::RequestMessage reqMsg;
-    reqMsg.mutable_req()->set_op(pendingRequests[lastReqId].request);
-    reqMsg.mutable_req()->set_clientid(clientid);
-    reqMsg.mutable_req()->set_clientreqid(lastReqId);
-    
-    Debug("SENDING REQUEST: %lu %lu", clientid, lastReqId);
-    // Only send to replica 0, works if there are no view changes
-    transport->SendMessageToReplica(this, 0, reqMsg);
+						false,
+						continuation);
+    SendRequest(lastReqId);
 }
 
 void
@@ -73,16 +68,30 @@ VRClient::InvokeUnlogged(int replicaIdx,
                          continuation_t continuation)
 {
     ++lastReqId;
-    pendingRequests[lastReqId] = PendingRequest(request, continuation);
+    pendingRequests[lastReqId] = PendingRequest(request,
+						true,
+						continuation);
 
     proto::UnloggedRequestMessage reqMsg;
     reqMsg.mutable_req()->set_op(pendingRequests[lastReqId].request);
     reqMsg.mutable_req()->set_clientid(clientid);
     reqMsg.mutable_req()->set_clientreqid(lastReqId);
+    Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, lastReqId);
     
-    transport->SendMessageToReplica(this, replicaIdx, reqMsg);
+    transport->SendMessageToReplica(this, leader, reqMsg);
 }
 
+void
+VRClient::SendRequest(int reqid) {
+    
+    proto::RequestMessage reqMsg;
+    reqMsg.mutable_req()->set_op(pendingRequests[reqid].request);
+    reqMsg.mutable_req()->set_clientid(clientid);
+    reqMsg.mutable_req()->set_clientreqid(reqid);
+    
+    Debug("SENDING REQUEST: %lu %lu", clientid, reqid);
+    transport->SendMessageToReplica(this, leader, reqMsg);
+}   
 void
 VRClient::ReceiveMessage(const TransportAddress &remote,
                          const string &type,
@@ -108,10 +117,42 @@ VRClient::HandleReply(const TransportAddress &remote,
         Warning("Received reply when no request was pending");
         return;
     }
-    
-    Debug("Client received reply: %lu", reqId);
 
-    pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
-    pendingRequests.erase(reqId);
+    if (msg.has_status() && msg.status() == REPLY_RETRY) {
+	transport->Timer(RETRY_WAIT, [=]() {
+		SendRequest(reqId);
+	    });
+    } else if (msg.has_reply()) {    
+	Debug("Client received reply: %lu", reqId);
+
+	pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
+	pendingRequests.erase(reqId);
+    }
+}
+
+void
+VRClient::ReceiveError(int error)
+{
+    // only works for one failure :)
+    if (leader == 0) {
+	leader = 1;
+
+	for (auto r : pendingRequests) {
+	    if (r.second.unlogged) {
+		transport->Timer(RETRY_WAIT, [=]() {
+			proto::UnloggedRequestMessage reqMsg;
+			reqMsg.mutable_req()->set_op(r.second.request);
+			reqMsg.mutable_req()->set_clientid(clientid);
+			reqMsg.mutable_req()->set_clientreqid(r.first);
+		Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, r.first);
+		transport->SendMessageToReplica(this, leader, reqMsg);
+		    });
+	    } else {
+		transport->Timer(RETRY_WAIT, [=]() {
+			SendRequest(r.first);
+		    });
+	    }
+	}
+    }
 }
 } // namespace replication

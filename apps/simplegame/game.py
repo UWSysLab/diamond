@@ -14,6 +14,7 @@ def main():
     args = parser.parse_args()
 
     DiamondInit(args.config_prefix, 0, 1);
+    ReactiveManager.start()
 
     myName = args.name
 
@@ -58,10 +59,11 @@ def takeTurn(players, scores, move, name, incr):
 def displayGame(players, scores, move, myName):
     for i in range(players.Size()):
         print "Player: " + players.Value(i) + " score: " + repr(scores.Value(i))
-    currentPlayer = players.Value(move.Value() % players.Size())
-    if currentPlayer == myName:
-        print "It's your turn! Enter your move:"
-    else:
-        print "It's " + currentPlayer + "'s turn"
+    if players.Size() > 0:
+        currentPlayer = players.Value(move.Value() % players.Size())
+        if currentPlayer == myName:
+            print "It's your turn! Enter your move:"
+        else:
+            print "It's " + currentPlayer + "'s turn"
 
 if __name__ == "__main__": main()

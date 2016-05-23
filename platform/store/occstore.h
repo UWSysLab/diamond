@@ -45,6 +45,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <list>
+#include <mutex>
 
 namespace strongstore {
 
@@ -70,7 +71,10 @@ public:
     void Load(const std::string &key, const std::string &value, const Timestamp &timestamp);
 
     void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values);
-    void GetFrontendNotifications(const Timestamp &timestamp, const uint64_t tid, std::vector<FrontendNotification> &notifications);
+    void Unsubscribe(const std::set<std::string> &keys, const std::string &address);
+    void AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid);
+    void AckFrontendNotification(const uint64_t tid, const std::string &address);
+    void GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications);
 
 private:
     // Data store.
@@ -81,6 +85,9 @@ private:
     std::unordered_map<uint64_t, Transaction> committed;
     std::unordered_map<string, int> pReads, pWrites, pIncrements;
     Timestamp last_committed = 0;
+
+    std::unordered_map<std::string, std::unordered_map<uint64_t, FrontendNotification> > unackedFrontendNotifications; // map frontend address to (txn_id, FrontendNotification) pair
+    std::mutex ufnMutex; // mutex for the map above
 
     void getPreparedOps(std::unordered_set<std::string> &reads, std::unordered_set<std::string> &writes, std::unordered_set<std::string> &increments);
     Timestamp getPreparedUpdate(const std::string &key);

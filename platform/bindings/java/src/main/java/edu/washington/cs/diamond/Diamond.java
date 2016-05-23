@@ -220,6 +220,7 @@ public class Diamond {
 
         public static native void TransactionBegin();
         public static native int TransactionCommit();
+        public static native void BeginRO();
         public static native void BeginReactive(long reactiveId);
         public static native long GetNextNotification(boolean blocking);
         //public static native void TransactionRollback();
@@ -381,5 +382,16 @@ public class Diamond {
         public native void Clear();
         public native int Size();
     }
+
+   public static class DBoolean extends DObject {
+      static { Loader.load(); }
+      public DBoolean() { allocate(); }
+      public DBoolean(boolean b, String key) { allocate(b, key); }
+      private native void allocate();
+      private native void allocate(boolean b, @StdString String key);
+
+      public native boolean Value();
+      public native void Set(boolean b);
+   }
 
 }

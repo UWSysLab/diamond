@@ -1,0 +1,4 @@
+benchmarks/build
+simplegame/cpp/build
+tapir-benchmarks/build
+test-apps/cpp-reactive-test/build

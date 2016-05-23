@@ -86,17 +86,16 @@ Client::MultiGet(const uint64_t tid,
     Debug("Sending MULTIGET [%lu keys] at %lu", keys.size(), timestamp);
 
     // Fill out protobuf
-    GetMessage msg;
-    msg.set_clientid(client_id);
-    for (auto key : keys) {
-        msg.add_keys(key);
-    }
-    msg.set_txnid(tid);
-    msg.set_msgid(msgid++);
-    msg.set_timestamp(timestamp);
-
     // Send message
     transport->Timer(0, [=]() {
+            GetMessage msg;
+            msg.set_clientid(client_id);
+            for (auto key : keys) {
+                msg.add_keys(key);
+            }
+            msg.set_txnid(tid);
+            msg.set_timestamp(timestamp);
+            msg.set_msgid(msgid++);
             if (transport->SendMessageToReplica(this, 0, msg)) {
                 if (promise != NULL)
                     waiting[msg.msgid()] = promise;
@@ -150,23 +149,23 @@ Client::Commit(const uint64_t tid,
     }
     
     // If eventual consistency, do no checks and don't wait for a response
-    if (txn.IsolationMode() == EVENTUAL) {
-        if (promise != NULL) {
-            promise->Reply(REPLY_OK);
-        }
-        promise = NULL;
-    }
+    //if (txn.IsolationMode() == EVENTUAL) {
+    //    if (promise != NULL) {
+    //        promise->Reply(REPLY_OK);
+    //    }
+    //    promise = NULL;
+    //}
     
     Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());
     
-    CommitMessage msg;
-    msg.set_txnid(tid);
-    txn.Serialize(msg.mutable_txn());
-    msg.set_msgid(msgid++);
-    msg.set_clientid(client_id);
 
     // Send messages
     transport->Timer(0, [=]() {
+            CommitMessage msg;
+            msg.set_txnid(tid);
+            txn.Serialize(msg.mutable_txn());
+            msg.set_clientid(client_id);
+            msg.set_msgid(msgid++);
             if (transport->SendMessageToReplica(this, 0, msg)) {
 		if (promise != NULL)
 		    waiting[msg.msgid()] = promise;
@@ -182,16 +181,16 @@ Client::Abort(const uint64_t tid,
 {
     Debug("Sending ABORT");
 
-    AbortMessage msg;
-    msg.set_txnid(tid);
-    msg.set_msgid(msgid++);
-    msg.set_clientid(client_id);
 
     // Send messages
     transport->Timer(0, [=]() {
+            AbortMessage msg;
+            msg.set_txnid(tid);
+            msg.set_clientid(client_id);
+            msg.set_msgid(msgid++);
             if (transport->SendMessageToReplica(this, 0, msg)) {
-		if (promise != NULL) 
-		    waiting[msg.msgid()] = promise;
+                if (promise != NULL) 
+                    waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
                 promise->Reply(REPLY_NETWORK_FAILURE);
             }
@@ -211,6 +210,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
     static AbortReply abortReply;
     static Notification notification;
     static RegisterReply regReply;
+    static DeregisterReply deregReply;
 
     if (type == getReply.GetTypeName()) {
         // Handle Get
@@ -218,15 +218,16 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(getReply.msgid());
 
         if (it != waiting.end()) {
-	    Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
+            Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
             map<string, Version> ret;
             int status = getReply.status(); 
             if (status == REPLY_OK) {
                 for (int i = 0; i < getReply.replies_size(); i++) {
-		    string key = getReply.replies(i).key();
-		    Version v = Version(getReply.replies(i));
-		    ret[key] = v;
-		    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
+                    string key = getReply.replies(i).key();
+                    Version v = Version(getReply.replies(i));
+                    ret[key] = v;
+                    ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
+                    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);
@@ -255,6 +256,10 @@ Client::ReceiveMessage(const TransportAddress &remote,
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
+
+        // Ack notification
+        ReplyToNotification(reactive_id, timestamp);
+
         if (timestamp > last_timestamp[reactive_id]) {
             last_timestamp[reactive_id] = timestamp;
             map<string, Version> cache_entries;
@@ -270,12 +275,13 @@ Client::ReceiveMessage(const TransportAddress &remote,
             }
 
             notification_lock.lock();
-            if (reactive_promise != NULL) {
-                notification_lock.unlock();
-                reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
+            if (reactive_promise != NULL) { // Directly signal reactive thread if it's waiting on a notification
+                Promise * old_reactive_promise = reactive_promise;
                 reactive_promise = NULL;
+                notification_lock.unlock();
+                old_reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
             }
-            else {
+            else { // Otherwise, put the notification in the "pending notifications" queue
                 pending_notifications.push(notification);
                 notification_lock.unlock();
             }
@@ -290,6 +296,15 @@ Client::ReceiveMessage(const TransportAddress &remote,
         if (it != waiting.end() && it->second != NULL) {
 	    Debug("Received REGISTER response [%u] %i", regReply.msgid(), regReply.status());
             it->second->Reply(regReply.status());
+            waiting.erase(it);
+        }
+    } else if (type == deregReply.GetTypeName()) {
+        deregReply.ParseFromString(data);
+        auto it = waiting.find(deregReply.msgid());
+
+        if (it != waiting.end() && it->second != NULL) {
+	    Debug("Received DEREGISTER response [%u] %i", deregReply.msgid(), deregReply.status());
+            it->second->Reply(deregReply.status());
             waiting.erase(it);
         }
     }
@@ -333,18 +348,36 @@ Client::Register(const uint64_t reactive_id,
     for (auto &key : keys) {
         Debug("Registering key: %s", key.c_str());
     }
-
-    RegisterMessage msg;
-    msg.set_clientid(client_id);
-    for (auto &key : keys) {
-        msg.add_keys(key);
-    }
-    msg.set_reactiveid(reactive_id);
-    msg.set_msgid(msgid++);
-    msg.set_timestamp(timestamp);
-
+    
     // Send message
     transport->Timer(0, [=]() {
+            RegisterMessage msg;
+            msg.set_clientid(client_id);
+            for (auto &key : keys) {
+                msg.add_keys(key);
+            }
+            msg.set_reactiveid(reactive_id);
+            msg.set_timestamp(timestamp);
+            msg.set_msgid(msgid++);
+            if (transport->SendMessageToReplica(this, 0, msg)) {
+                if (promise != NULL)
+                    waiting[msg.msgid()] = promise;
+            } else if (promise != NULL) {
+                promise->Reply(REPLY_NETWORK_FAILURE);
+            }
+        });
+}
+
+void
+Client::Deregister(const uint64_t reactive_id,
+                   Promise *promise) {
+    Debug("Sending DEREGISTER for reactive_id %lu", reactive_id);
+    // Send message
+    transport->Timer(0, [=]() {
+            DeregisterMessage msg;
+            msg.set_clientid(client_id);
+            msg.set_reactiveid(reactive_id);
+            msg.set_msgid(msgid++);
             if (transport->SendMessageToReplica(this, 0, msg)) {
                 if (promise != NULL)
                     waiting[msg.msgid()] = promise;
@@ -366,14 +399,13 @@ Client::ReplyToNotification(const uint64_t reactive_id,
                             const Timestamp timestamp) {
     Debug("Sending NOTIFICATION_REPLY for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
 
-    NotificationReply msg;
-    msg.set_clientid(client_id);
-    msg.set_reactiveid(reactive_id);
-    msg.set_msgid(msgid++);
-    msg.set_timestamp(timestamp);
-
     // Send message
     transport->Timer(0, [=]() {
+            NotificationReply msg;
+            msg.set_clientid(client_id);
+            msg.set_reactiveid(reactive_id);
+            msg.set_timestamp(timestamp);
+            msg.set_msgid(msgid++);
 	    transport->SendMessageToReplica(this, 0, msg);
 	});
 }

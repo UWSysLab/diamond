@@ -1,2 +1,11 @@
-bin/
-.settings/
+*.iml
+.gradle
+/local.properties
+/.idea/workspace.xml
+/.idea/libraries
+.DS_Store
+/build
+/captures
+.idea
+/app/build
+import-summary.txt

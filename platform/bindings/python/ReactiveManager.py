@@ -42,20 +42,27 @@ def run():
             DObject.TransactionCommit()
             reactive_id = DObject.GetNextNotification(False)
 
-def add(func, *args):
+def reactive_txn(func, *args):
     reactive_id = generateId()
     idFuncMap[reactive_id] = func
     funcIdMap[func] = reactive_id
     funcArgMap[func] = args
+    runInBackground(reactive_txn_helper, reactive_id, func, *args)
+
+def reactive_txn_helper(reactive_id, func, *args):
     DObject.BeginReactive(reactive_id)
     func(*args)
     DObject.TransactionCommit()
 
-def remove(func):
+def reactive_stop(func):
     reactive_id = funcIdMap[func]
     del idFuncMap[reactive_id]
     del funcIdMap[func]
     del funcArgMap[func]
+    runInBackground(reactive_stop_helper, reactive_id)
+
+def reactive_stop_helper(reactive_id):
+    DObject.Deregister(reactive_id)
 
 def txn_execute(func, *args):
     runInBackground(txn_execute_helper, func, *args)

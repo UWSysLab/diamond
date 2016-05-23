@@ -5,6 +5,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 
 add_executable(client client.cc)
 add_executable(publisher publisher.cc)
+add_executable(unsubscribetestclient unsubscribetestclient.cc)
+add_executable(unsubscribetestpublisher unsubscribetestpublisher.cc)
+add_executable(deregistertestclient deregistertestclient.cc)
 
 find_package(Boost REQUIRED COMPONENTS program_options)
 
@@ -14,3 +17,9 @@ target_link_libraries(client "${PROJECT_SOURCE_DIR}/../../../platform/build/libd
 target_link_libraries(client ${Boost_LIBRARIES})
 target_link_libraries(publisher "${PROJECT_SOURCE_DIR}/../../../platform/build/libdiamond.so")
 target_link_libraries(publisher ${Boost_LIBRARIES})
+target_link_libraries(unsubscribetestclient "${PROJECT_SOURCE_DIR}/../../../platform/build/libdiamond.so")
+target_link_libraries(unsubscribetestclient ${Boost_LIBRARIES})
+target_link_libraries(unsubscribetestpublisher "${PROJECT_SOURCE_DIR}/../../../platform/build/libdiamond.so")
+target_link_libraries(unsubscribetestpublisher ${Boost_LIBRARIES})
+target_link_libraries(deregistertestclient "${PROJECT_SOURCE_DIR}/../../../platform/build/libdiamond.so")
+target_link_libraries(deregistertestclient ${Boost_LIBRARIES})

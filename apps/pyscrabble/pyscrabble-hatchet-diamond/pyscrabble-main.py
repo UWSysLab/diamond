@@ -28,7 +28,8 @@ import gobject
 if __name__ == '__main__':
     
     gobject.threads_init()
-    DiamondInit("../../../platform/test/niel.frontend", 1, 0)
+    DiamondInit("../../../platform/test/niel.frontend0", 1, 0)
+    ReactiveManager.start()
     
     dist.ensure_config_dir( dist.CONFIG_DIR )
     

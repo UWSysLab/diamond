@@ -7,10 +7,16 @@ import re
 import time
 import sys
 
-WORKING_DIR = "/home/aen11"
-BUILD_DIR = "../platform/build"
-
-debug = True
+if "DIAMOND_WORKING_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_WORKING_DIR is not set")
+    print("(It should point to the working directory you want to use on the server host machines)")
+    sys.exit()
+if "DIAMOND_SRC_DIR" not in os.environ:
+    print("Error: environment variable DIAMOND_SRC_DIR is not set")
+    print("(It should point to the location of the diamond-src repo on this machine)")
+    sys.exit()
+WORKING_DIR = os.environ["DIAMOND_WORKING_DIR"]
+BUILD_DIR = os.environ["DIAMOND_SRC_DIR"] + "/platform/build"
 
 parser = argparse.ArgumentParser(description='Launch servers.')
 parser.add_argument('action', choices=['start', 'kill'], help='the action to take')
@@ -19,6 +25,8 @@ parser.add_argument('--shards', type=int, help='number of backend shards')
 parser.add_argument('--frontends', type=int, help='number of frontend servers')
 parser.add_argument('--keys', help='a file containing keys to load')
 parser.add_argument('--numkeys', type=int, help='number of keys to load from file')
+parser.add_argument('--batch', type=int, default=1, help='batch size for backend servers')
+parser.add_argument('--debug', action='store_true', help='enable debug logging')
 args = parser.parse_args()
 
 if args.keys == None and args.numkeys != None or args.keys != None and args.numkeys == None:
@@ -48,7 +56,7 @@ if keyPath != None:
 
 setVarsCmd = "LD_LIBRARY_PATH=" + repr(WORKING_DIR)
 debugCmd = ""
-if debug:
+if args.debug:
     debugCmd = "DEBUG=all"
 
 # find number of shards
@@ -88,7 +96,7 @@ if numFrontends > totalNumFrontends:
 print("Running command for %d shards (%d config files detected)" % (numShards, totalNumShards));
 print("Running command for %d frontends (%d config files detected)" % (numFrontends, totalNumFrontends));
 if args.action == 'start':
-    if debug:
+    if args.debug:
         print("Enabling debug output")
     print("Starting servers...")
 elif args.action == 'kill':
@@ -100,10 +108,11 @@ for frontendNum in range(0, numFrontends):
     remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend" + repr(frontendNum) + ".config"
     frontendConfig = open(frontendConfigPath, 'r')
     for line in frontendConfig:
-        match = re.match("replica\s+([\w\.-]+):(\d)", line)
+        match = re.match("replica\s+([\w\.-]+):(\d+)", line)
         if match:
             hostname = match.group(1)
             remoteFrontendOutputPath = WORKING_DIR + "/output.frontend." + repr(frontendNum) + ".txt"
+            print("Handling frontend %d" % frontendNum)
             if args.action == 'start':
                 os.system("rsync " + frontendConfigPath + " " + hostname + ":" + remoteFrontendConfigPath)
                 os.system("rsync " + frontendExecutablePath + " " + hostname + ":" + remoteFrontendExecutablePath)
@@ -126,10 +135,11 @@ for shardNum in range(0, numShards):
     backendConfig = open(backendConfigPath, 'r')
     replicaNum = 0
     for line in backendConfig:
-        match = re.match("replica\s+([\w\.-]+):(\d)", line)
+        match = re.match("replica\s+([\w\.-]+):(\d+)", line)
         if match:
             hostname = match.group(1)
             remoteBackendOutputPath = WORKING_DIR + "/output.backend." + repr(shardNum) + "." + repr(replicaNum) + ".txt"
+            print("Handling replica %d in shard %d" % (replicaNum, shardNum))
             if args.action == 'start':
                 os.system("rsync " + backendConfigPath + " " + hostname + ":" + remoteBackendConfigPath)
                 os.system("rsync " + backendExecutablePath + " " + hostname + ":" + remoteBackendExecutablePath)
@@ -137,7 +147,7 @@ for shardNum in range(0, numShards):
                 if keyPath != None:
                     os.system("rsync " + keyPath + " " + hostname + ":" + remoteKeyPath)
                     keyArgs = " -k " + repr(numKeys) + " -f " + remoteKeyPath
-                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
+                os.system("ssh -f " + hostname + " '" + debugCmd + " " + setVarsCmd + " " + remoteBackendExecutablePath + " -c " + remoteBackendConfigPath + " -i " + repr(replicaNum) + " -B " + repr(args.batch) + keyArgs + " > " + remoteBackendOutputPath + " 2>&1'");
             elif args.action == 'kill':
                 os.system("ssh " + hostname + " 'pkill -9 -f " + remoteBackendConfigPath + "'");
             replicaNum = replicaNum + 1
@@ -147,10 +157,11 @@ for shardNum in range(0, numShards):
 tssConfig = open(tssConfigPath, 'r')
 replicaNum = 0
 for line in tssConfig:
-    match = re.match("replica\s+([\w\.-]+):(\d)", line)
+    match = re.match("replica\s+([\w\.-]+):(\d+)", line)
     if match:
         hostname = match.group(1)
         remoteTssOutputPath = WORKING_DIR + "/output.tss." + repr(replicaNum) + ".txt"
+        print("Handling TSS replica %s" % replicaNum)
         if args.action == 'start':
             os.system("rsync " + tssConfigPath + " " + hostname + ":" + remoteTssConfigPath)
             os.system("rsync " + tssExecutablePath + " " + hostname + ":" + remoteTssExecutablePath)

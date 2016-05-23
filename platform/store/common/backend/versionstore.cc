@@ -76,6 +76,9 @@ VersionedKVStore::Get(const string &key, Version &value)
 bool
 VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 {
+    if (t == MAX_TIMESTAMP) {
+        return Get(key, value);
+    }
     if (inStore(key)) {
         set<Version>::iterator it;
         if (getValue(key, t, it) && it->GetInterval().End() >= t) {
@@ -112,12 +115,17 @@ VersionedKVStore::Put(const string &key, const Version &v)
 {
     // Key does not exist. Create a list and an entry.
     if (store.find(key) != store.end()) {
-        set<Version>::iterator it = --(store[key].end());
-        if (v.GetInterval().Start() < it->GetInterval().End()) {
-            Version v1 = *it;
-            store[key].erase(it);
-            v1.SetEnd(v.GetInterval().Start());
-            store[key].insert(v1);
+        if (v.GetTimestamp() == 0) {
+            store.erase(key);
+        }
+        else {
+            set<Version>::iterator it = --(store[key].end());
+            if (v.GetInterval().Start() < it->GetInterval().End()) {
+                Version v1 = *it;
+                store[key].erase(it);
+                v1.SetEnd(v.GetInterval().Start());
+                store[key].insert(v1);
+            }
         }
     }
     store[key].insert(v);
@@ -186,7 +194,13 @@ void
 VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
-        addressKeyMap[address].insert(*it);
+    }
+}
+
+void
+VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address) {
+    for (auto it = keys.begin(); it != keys.end(); it++) {
+        keyAddressMap[*it].erase(address);
     }
 }
 

@@ -31,7 +31,7 @@
 #include "replication/common/replica.h"
 #include "replication/replica.h"
 #include "vr-proto.pb.h"
-
+#include "includes/error.h"
 #include "lib/assert.h"
 #include "lib/configuration.h"
 #include "lib/message.h"
@@ -403,11 +403,23 @@ VRReplica::HandleRequest(const TransportAddress &remote,
     
     if (status != STATUS_NORMAL) {
         RNotice("Ignoring request due to abnormal status");
+        ReplyMessage reply;
+	reply.set_status(REPLY_RETRY);
+        reply.set_view(this->view);
+        reply.set_opnum(this->lastOp);
+        reply.set_clientreqid(msg.req().clientreqid());
+        transport->SendMessage(this, remote, reply);
         return;
     }
 
     if (!AmLeader()) {
         RDebug("Ignoring request because I'm not the leader");
+        ReplyMessage reply;
+	reply.set_status(REPLY_RETRY);
+        reply.set_view(this->view);
+        reply.set_opnum(this->lastOp);
+        reply.set_clientreqid(msg.req().clientreqid());
+        transport->SendMessage(this, remote, reply);
         return;        
     }
 

@@ -194,10 +194,11 @@ ShardClient::GetCallback(callback_t callback, const string &request_str, const s
     map<string, Version> ret;
 
     if (reply.status() == REPLY_OK) {
-	for (int i = 0; i < reply.replies_size(); i++) {
-	    ReadReply rep = reply.replies(i);
-	    ret[rep.key()] = Version(rep);
-	}
+        for (int i = 0; i < reply.replies_size(); i++) {
+            ReadReply rep = reply.replies(i);
+            ret[rep.key()] = Version(rep);
+            ASSERT(ret[rep.key()].GetInterval().End() != MAX_TIMESTAMP);
+        }
     }
     w->Reply(reply.status(), ret);
     callback(w);
@@ -305,6 +306,61 @@ ShardClient::SubscribeCallback(callback_t callback,
     Promise *w = new Promise();
     w->Reply(reply.status(), values);
     Debug("[shard %i] Received SUBSCRIBE callback [%d]", shard, reply.status());
+    callback(w);
+}
+
+/*
+ * Unubscribe to the given keys in the backend partition. If the set
+ * of keys is empty, returns immediately.
+ */
+void
+ShardClient::Unsubscribe(const set<string> &keys,
+                         const TransportAddress &myAddress,
+		         callback_t callback) {
+    if (keys.size() == 0) {
+        Debug("[shared %i] UNSUBSCRIBE set is empty", shard);
+        Promise *promise = new Promise();
+	promise->Reply(REPLY_OK, 0);
+        callback(promise);
+	return;
+    }
+
+    Debug("[shard %i] Sending UNSUBSCRIBE", shard);
+
+    // create request
+    string request_str;
+    Request request;
+    request.set_op(Request::UNSUBSCRIBE);
+    request.set_txnid(0);
+    string address(myAddress.getHostname() + ":" + myAddress.getPort());
+    request.mutable_unsubscribe()->set_address(address);
+    
+    for (auto &i : keys) {
+        request.mutable_unsubscribe()->add_keys(i);
+    }
+    request.SerializeToString(&request_str);
+
+    transport->Timer(0, [=]() {
+            client->Invoke(request_str,
+                           bind(&ShardClient::UnsubscribeCallback,
+                                this,
+				callback,
+                                placeholders::_1,
+                                placeholders::_2));
+        });
+}
+
+void
+ShardClient::UnsubscribeCallback(callback_t callback,
+			         const string &request_str,
+			         const string &reply_str) {
+    Reply reply;
+    reply.ParseFromString(reply_str);
+    ASSERT(reply.status() == REPLY_OK);
+
+    Promise *w = new Promise();
+    w->Reply(reply.status());
+    Debug("[shard %i] Received UNSUBSCRIBE callback [%d]", shard, reply.status());
     callback(w);
 }
 

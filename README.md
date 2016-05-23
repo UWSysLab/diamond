@@ -107,28 +107,71 @@ add the following line to your bashrc file:
 		$ cd platform/bindings/java
 		$ mvn package -DskipTests
 
-### Running a test Android app
-The project DiamondAndroidTest in `apps/test-apps` is an Eclipse project containing a simple Diamond test app for Android.
-The following instructions describe how to set up and run the app. Replace $DIAMOND_SRC with the path to the base Diamond
-source directory and $ANDROID_SDK with the path to the Android SDK folder. These instructions have been tested on Mac and Linux
-using an Android SDK with Android 5.1.1 (API level 22) installed.
+### Running an Android app in Android Studio
+The project DiamondAndroidTest in `apps/test-apps` is an Android Studio project
+containing a simple Diamond test app for Android.  The following instructions
+describe how to set up and run the app. Replace `$DIAMOND_SRC` with the path to
+the base Diamond source directory. These instructions have been tested on
+Ubuntu 14.04 using an Android SDK with Android 6.0 (API level 23) installed.
 
-1. Run the script "build-diamond-android.sh" to build the Java bindings and copy all required shared libraries into the project folder:
+1. Run the script `copy-dependencies-android-studio.sh` to copy all required shared libraries into the project folder:
 
         $ cd scripts/build-scripts
-        $ ./build-diamond-android.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
+        $ ./build-diamond-android-eclipse.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
+
+2. In Android Studio, import the DiamondAndroidTest project:
+
+    1. Go to File -> New -> Import Project...
+    2. Select `$DIAMOND_SRC/apps/test-apps/DiamondAndroidTest` as the root directory and click Finish.
+
+3. Add the Diamond libraries to the project:
+
+    1. Click the Project button on the left-hand border of the window to view the Project pane.
+    2. Select the Project view in the drop-down menu at the top of the pane.
+    3. Navigate to the `app/src/main/libs` directory.
+    4. Right-click on each library in the folder and select "Add As Library..."
+
+4. Run the project as an Android application:
+
+    1. Either click the green Run button in the toolbar or select Run -> Run 'app' on the menu.
+
+### Running an Android app in Eclipse
+Most of the Android apps in this repository have been moved over to Android
+Studio at this point, but a few older apps may still be Eclipse projects (see
+the README in the `apps` directory for details). Here we provide our old
+instructions on getting an Android app running with Eclipse.
+
+Google no longer supports developing Android apps in Eclipse. The link to the
+Eclipse Android Development Tools plugin is no longer on the official Android
+website, although it can be found in a mirror of the old version
+(https://stuff.mit.edu/afs/sipb/project/android/docs/sdk/installing/installing-adt.html).
+Also, the process of compiling and running Android apps seems to be
+significantly less flaky in Android Studio than in Eclipse. For these reasons,
+we recommend using Android Studio to develop Diamond Android apps.
+
+When reading these instructions, replace
+`DiamondAndroidTest` with the name of your Eclipse project, and replace
+`$DIAMOND_SRC` with the path to the base Diamond source directory and
+`$ANDROID_SDK` with the path to the Android SDK folder. These instructions have
+been tested on Mac and Linux using an Android SDK with Android 5.1.1 (API level
+22) installed.
+
+1. Run the script `copy-dependencies-android-eclipse.sh` to copy all required shared libraries into the project folder:
+
+        $ cd scripts/build-scripts
+        $ ./copy-dependencies-android-eclipse.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
 
 2. In Eclipse, import the DiamondAndroidTest project:
 
     1. Go to File -> Import -> General -> Existing Projects into Workspace.
-    2. Select $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest as the root directory and click Finish.
+    2. Select `$DIAMOND_SRC/apps/test-apps/DiamondAndroidTest` as the root directory and click Finish.
 
 3. Add the Android support v7 appcompat library to the project:
 
     1. Go to File -> Import -> General -> Existing Projects into Workspace.
-    2. Select $ANDROID_SDK/extras/android/support/v7/appcompat as the root directory and click Finish.
+    2. Select `$ANDROID_SDK/extras/android/support/v7/appcompat` as the root directory and click Finish.
     3. Right click on android-support-v7-appcompat in the Package Explorer, then go to Android, and select Android 5.1.1 as the build target.
-    4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat_v7.
+    4. Go to Project -> Properties -> Android. Under Library, select Add, then select appcompat\_v7.
 
 4. Go to Window (or Eclipse on Mac) -> Preferences -> Android -> Build, and uncheck the option "Force error when external jars contain native libraries."
 

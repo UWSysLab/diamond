@@ -16,6 +16,7 @@ class FrontendNotification {
 public:
     std::string address;
     std::unordered_map<std::string, Version> values;
+    uint64_t txn_id;
     // Timestamps will be filled in VersionedKVStore::GetFrontendNotifications()
     // The rest of the Version objects will be filled in OCCStore::fillCacheEntries()
 };

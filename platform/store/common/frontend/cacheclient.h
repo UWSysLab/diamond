@@ -92,6 +92,9 @@ public:
                   const std::set<std::string> &keys,
                   Promise *promise = NULL);
 
+    void Deregister(const uint64_t reactive_id,
+                    Promise *promise = NULL);
+
     void Subscribe(const std::set<std::string> &keys,
                    const TransportAddress &address,
                    Promise *promise = NULL);
