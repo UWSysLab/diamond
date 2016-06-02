@@ -113,6 +113,7 @@ private:
     void AbortCallback(const std::string &, const std::string &);
     void SubscribeCallback(callback_t callback, const std::string &, const std::string &);
     void UnsubscribeCallback(callback_t callback, const std::string &, const std::string &);
+    void PublicationCallback(callback_t callback, const Timestamp &, const std::vector<std::string> &);
 
     /* Helper Functions for starting and finishing requests */
     void StartRequest();

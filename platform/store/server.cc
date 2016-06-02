@@ -164,16 +164,16 @@ Server::HandleCommit(const Request &request)
 }
 
 void
-Server::SendNotification(const uint64_t tid,
-			 const Timestamp timestamp) {
+Server::Publish(const uint64_t tid,
+		const Timestamp timestamp) {
     map<TCPTransportAddress, set<string>> notifications;
     store->GetNotifications(tid,
 			    timestamp,
 			    notifications);
 
     for (auto &n : notifications) {
-	Debug("Sending NOTIFY-FRONTEND to frontend %s",
-	      n.remote.getHostname().c_str());
+	Debug("Publishing to frontend %s",
+	      n.first.getHostname().c_str());
 	PublishMessage msg;
 	for (auto &v : n.second) {
 	    msg.add_keys(v);
@@ -191,7 +191,7 @@ Server::SendNotification(const uint64_t tid,
     // this transaction, then keep looping
     if (notifications.size() > 0) {
 	transport.Timer(10, [=]() {
-		sendNotification(tid, timestamp);
+		Publish(tid, timestamp);
 	    });
     }
 

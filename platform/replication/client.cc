@@ -41,8 +41,9 @@ namespace replication {
 
 VRClient::VRClient(const ReplicaConfig &config,
                    Transport *transport,
+		   publish_handler_t publications,
                    uint64_t clientid)
-    : Client(config, transport, clientid)
+    : Client(config, transport, publications, clientid)
 {
     lastReqId = 0;
 }
@@ -56,9 +57,8 @@ VRClient::Invoke(const string &request,
                  continuation_t continuation)
 {
     ++lastReqId;
-    pendingRequests[lastReqId] = PendingRequest(request,
-						false,
-						continuation);
+    pendingRequests[lastReqId] =
+	PendingRequest(request, false, continuation);
     SendRequest(lastReqId);
 }
 
@@ -68,9 +68,8 @@ VRClient::InvokeUnlogged(int replicaIdx,
                          continuation_t continuation)
 {
     ++lastReqId;
-    pendingRequests[lastReqId] = PendingRequest(request,
-						true,
-						continuation);
+    pendingRequests[lastReqId] =
+	PendingRequest(request, true, continuation);
 
     proto::UnloggedRequestMessage reqMsg;
     reqMsg.mutable_req()->set_op(pendingRequests[lastReqId].request);
@@ -98,10 +97,14 @@ VRClient::ReceiveMessage(const TransportAddress &remote,
                          const string &data)
 {
     static proto::ReplyMessage reply;
+    static strongstore::proto::PublishMessage publish;
         
     if (type == reply.GetTypeName()) {
         reply.ParseFromString(data);
         HandleReply(remote, reply);
+    } else if (type == publish.GetTypeName()) {
+	publish.ParseFromString(data);
+	HandlePublish(remote, publish);
     } else {
         Client::ReceiveMessage(remote, type, data);
     }
@@ -128,6 +131,17 @@ VRClient::HandleReply(const TransportAddress &remote,
 	pendingRequests[reqId].continuation(pendingRequests[reqId].request, msg.reply());
 	pendingRequests.erase(reqId);
     }
+}
+
+void
+    VRClient::HandlePublish(const TransportAddress &remote,
+			    const strongstore::proto::PublishMessage &msg)
+{
+    vector<string> keys;
+    for (int i = 0; i < msg.keys_size(); i++) {
+	keys.push_back(msg.keys(i));
+    }
+    publications(msg.timestamp(), keys);
 }
 
 void
