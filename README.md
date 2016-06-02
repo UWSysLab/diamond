@@ -117,7 +117,7 @@ Ubuntu 14.04 using an Android SDK with Android 6.0 (API level 23) installed.
 1. Run the script `copy-dependencies-android-studio.sh` to copy all required shared libraries into the project folder:
 
         $ cd scripts/build-scripts
-        $ ./build-diamond-android-eclipse.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
+        $ ./copy-dependencies-android-studio.sh $DIAMOND_SRC $DIAMOND_SRC/apps/test-apps/DiamondAndroidTest
 
 2. In Android Studio, import the DiamondAndroidTest project:
 

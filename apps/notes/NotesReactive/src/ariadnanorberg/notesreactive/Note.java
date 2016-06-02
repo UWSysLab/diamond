@@ -2,23 +2,15 @@ package ariadnanorberg.notesreactive;
 
 public class Note {
 
-    private String id;
     private String title;
     private String content;
 
-    Note(String noteId, String noteTitle, String noteContent) {
-        id = noteId;
+    Note(String noteTitle, String noteContent) {
         title = noteTitle;
         content = noteContent;
 
     }
 
-    public String getId() {
-        return id;
-    }
-    public void setId(String id) {
-        this.id = id;
-    }
     public String getTitle() {
         return title;
     }
