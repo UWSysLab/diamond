@@ -174,7 +174,9 @@ VersionedKVStore::GetLastRead(const string &key, Timestamp &lastRead)
  * Get the latest read for the write valid at timestamp t
  */
 bool
-VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key,
+			      const Timestamp &t,
+			      Timestamp &lastRead)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
@@ -191,21 +193,26 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 }
 
 void
-VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
+VersionedKVStore::Subscribe(const set<string> &keys, const string &address)
+{
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].insert(address);
     }
 }
 
 void
-VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address) {
+VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address)
+{
+
     for (auto it = keys.begin(); it != keys.end(); it++) {
         keyAddressMap[*it].erase(address);
     }
 }
 
 void
-VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications) {
+VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp,
+					   const std::set<std::string> &keys,
+					   std::vector<FrontendNotification> &notifications) {
     std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
     for (auto &key : keys) {
         for (auto &address : keyAddressMap[key]) {
