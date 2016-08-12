@@ -44,8 +44,9 @@ namespace replication {
 class VRClient : public Client
 {
 public:
-    VRClient(const Configuration &config,
+    VRClient(const ReplicaConfig &config,
              Transport *transport,
+	     publish_handler_t publications,
              uint64_t clientid = 0);
     virtual ~VRClient();
     virtual void Invoke(const string &request,

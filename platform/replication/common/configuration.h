@@ -44,26 +44,27 @@ using std::string;
 
 namespace replication {
 
-class Configuration : transport::Configuration
+class ReplicaConfig : public transport::Configuration
 {
 public:
-    Configuration(const Configuration &c);
-    Configuration(int n, int f, std::vector<HostAddress> hosts);
-    Configuration(std::ifstream &file);
-    virtual ~Configuration();
-    HostAddress replica(int idx) const;
+    ReplicaConfig(const ReplicaConfig &c);
+    ReplicaConfig(int n, int f, std::vector<transport::HostAddress> hosts);
+    ReplicaConfig(std::ifstream &file);
+    virtual ~ReplicaConfig();
+    transport::HostAddress replica(int idx) const;
     int GetLeaderIndex(view_t view) const;
     int QuorumSize() const;
     int FastQuorumSize() const;
-    bool operator==(const Configuration &other) const;
-    inline bool operator!= (const Configuration &other) const {
+    bool operator==(const ReplicaConfig &other) const;
+    inline bool operator!= (const ReplicaConfig &other) const {
         return !(*this == other);
     }
     
 public:
+
     int f;                      // number of failures tolerated
 };
 
 }      // namespace replication
 
-#endif  /* _LIB_CONFIGURATION_H_ */
+#endif  /* _REPLICATION_CONFIGURATION_H_ */

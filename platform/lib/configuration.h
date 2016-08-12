@@ -69,7 +69,7 @@ public:
 public:
     int n;                      // number of hosts
 
-private:
+protected:
     std::vector<HostAddress> hosts;
 };
 

@@ -82,6 +82,29 @@ public:
         
         return SendMessageInternal(src, kv->second, m);
     }
+
+    virtual bool
+    SendMessageToAll(TransportReceiver *src, const Message &m)
+    {
+        const transport::Configuration *cfg = configurations[src];
+        ASSERT(cfg != NULL);
+
+        if (!hostAddressesInitialized) {
+            LookupAddresses();
+        }
+
+	const ADDR &srcAddr = dynamic_cast<const ADDR &>(src->GetAddress());
+	for (auto & kv2 : hostAddresses[cfg]) {
+	    if (srcAddr == kv2.second) {
+		continue;
+	    }
+	    if (!SendMessageInternal(src, kv2.second, m)) {
+		return false;
+	    }
+	}
+	return true;
+    }
+
     virtual int Timer(uint64_t ms, timer_callback_t cb) = 0;
     virtual bool CancelTimer(int id) = 0;
     virtual void CancelAllTimers() = 0;

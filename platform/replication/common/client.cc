@@ -37,9 +37,11 @@
 
 namespace replication {
     
-Client::Client(const Configuration &config, Transport *transport,
+Client::Client(const ReplicaConfig &config,
+	       Transport *transport,
+	       publish_handler_t publications,
                uint64_t clientid)
-    : config(config), transport(transport)
+    : config(config), transport(transport), publications(publications)
 {
     this->clientid = clientid;
 
@@ -66,8 +68,9 @@ void
 Client::ReceiveMessage(const TransportAddress &remote,
                        const string &type, const string &data)
 {
-    Panic("Received unexpected message type: %s",
-          type.c_str());
+   Panic("Received unexpected message type: %s",
+         type.c_str());
+    
 }
 
 void

@@ -47,7 +47,7 @@ ShardClient::ShardClient(const string &configPath,
         fprintf(stderr, "unable to read configuration file: %s\n",
                 configPath.c_str());
     }
-    transport::Configuration config(configStream);
+    replication::ReplicaConfig config(configStream);
 
     client = new replication::VRClient(config, transport);
 
@@ -182,7 +182,9 @@ ShardClient::Abort(const uint64_t tid)
 
 /* Callback from a shard replica on get operation completion. */
 void
-ShardClient::GetCallback(callback_t callback, const string &request_str, const string &reply_str)
+ShardClient::GetCallback(callback_t callback,
+			 const string &request_str,
+			 const string &reply_str)
 {
     /* Replies back from a shard. */
     Reply reply;
@@ -206,7 +208,9 @@ ShardClient::GetCallback(callback_t callback, const string &request_str, const s
 
 /* Callback from a shard replica on prepare operation completion. */
 void
-ShardClient::PrepareCallback(callback_t callback, const string &request_str, const string &reply_str)
+ShardClient::PrepareCallback(callback_t callback,
+			     const string &request_str,
+			     const string &reply_str)
 {
     Reply reply;
 

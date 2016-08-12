@@ -48,7 +48,7 @@ namespace replication {
 
 using namespace proto;
     
-VRReplica::VRReplica(Configuration config, int myIdx,
+VRReplica::VRReplica(ReplicaConfig config, int myIdx,
                      Transport *transport, unsigned int batchSize,
                      AppReplica *app)
     : Replica(config, myIdx, transport, app),
@@ -185,7 +185,7 @@ VRReplica::SendPrepareOKs(opnum_t oldLastOp)
         RDebug("Sending PREPAREOK " FMT_VIEWSTAMP " for new uncommitted operation",
                reply.view(), reply.opnum());
     
-        if (!(transport->SendMessageToReplica(this,
+        if (!(transport->SendMessageToHost(this,
                                               configuration.GetLeaderIndex(view),
                                               reply))) {
             RWarning("Failed to send PrepareOK message to leader");
@@ -463,7 +463,7 @@ VRReplica::HandleRequest(const TransportAddress &remote,
     // Leader Upcall
     bool replicate = false;
     string res;
-    LeaderUpcall(lastCommitted, msg.req().op(), replicate, res);
+    LeaderUpcall(lastCommitted, msg.req().op(), remote, replicate, res);
     ClientTableEntry &cte =
         clientTable[msg.req().clientid()];
 
@@ -568,7 +568,7 @@ VRReplica::HandlePrepare(const TransportAddress &remote,
         reply.set_view(msg.view());
         reply.set_opnum(msg.opnum());
         reply.set_replicaidx(myIdx);
-        if (!(transport->SendMessageToReplica(this,
+        if (!(transport->SendMessageToHost(this,
                                               configuration.GetLeaderIndex(view),
                                               reply))) {
             RWarning("Failed to send PrepareOK message to leader");
@@ -602,7 +602,7 @@ VRReplica::HandlePrepare(const TransportAddress &remote,
     reply.set_opnum(msg.opnum());
     reply.set_replicaidx(myIdx);
     
-    if (!(transport->SendMessageToReplica(this,
+    if (!(transport->SendMessageToHost(this,
                                           configuration.GetLeaderIndex(view),
                                           reply))) {
         RWarning("Failed to send PrepareOK message to leader");
@@ -872,7 +872,7 @@ VRReplica::HandleStartViewChange(const TransportAddress &remote,
             log.Dump(minCommitted,
                      dvc.mutable_entries());
 
-            if (!(transport->SendMessageToReplica(this, leader, dvc))) {
+            if (!(transport->SendMessageToHost(this, leader, dvc))) {
                 RWarning("Failed to send DoViewChange message to leader of new view");
             }
         }

@@ -22,12 +22,10 @@ def getStatsForType(txnType, timeRangeSeconds, startTimes, endTimes, results, ty
     sumTimesSeconds = sumTimes / 1000.0
     numSuccessful = numTxns - numAborts
     meanTime = 0
-    abortRate = 1.0
     if numSuccessful > 0:
         meanTime = float(sumTimesSeconds) / numSuccessful
-    if numTxns > 0:
-        abortRate = float(numAborts) / numTxns
     meanThroughput = float(numSuccessful) / timeRangeSeconds
+    abortRate = float(numAborts) / numTxns
     return (meanThroughput, meanTime, abortRate, numTxns, numSuccessful)
     
 
@@ -108,13 +106,9 @@ for i in range(0, len(startTimes)):
 
 sumTimesSeconds = sumTimes / 1000.0
 numSuccessful = numTxns - numAborts
+meanTime = float(sumTimesSeconds) / numSuccessful
 meanThroughput = float(numSuccessful) / timeRangeSeconds
-meanTime = 0
-abortRate = 1.0
-if numSuccessful > 0:
-    meanTime = float(sumTimesSeconds) / numSuccessful
-if numTxns > 0:
-    abortRate = float(numAborts) / numTxns
+abortRate = float(numAborts) / numTxns
 
 print("Type\tthroughput\tlatency\tabort-rate\tnum-txns\tnum-successful")
 print("Overall\t%f\t%f\t%f\t%d\t%d" % (meanThroughput, meanTime, abortRate, numTxns, numSuccessful))

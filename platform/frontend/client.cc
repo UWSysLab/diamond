@@ -33,10 +33,10 @@ Client::Client(const string &hostname, const string &port, Transport *transport,
 	       uint64_t client_id) :
     transport(transport), client_id(client_id)
 { 
-    transport::ReplicaAddress frontendAddress(hostname, port);
-    vector<transport::ReplicaAddress> addresses;
+    transport::HostAddress frontendAddress(hostname, port);
+    vector<transport::HostAddress> addresses;
     addresses.push_back(frontendAddress);
-    init(new transport::Configuration(1, 0, addresses));
+    init(new transport::Configuration(addresses));
 }
 
 void
@@ -55,13 +55,13 @@ Client::~Client()
 void
 Client::Begin(const uint64_t tid)
 {
-    Debug("BEGIN [%lu]", tid);
+    Debug("BEGIN [%llu]", tid);
 }
 
 void
 Client::BeginRO(const uint64_t tid, const Timestamp &timestamp)
 {
-    Debug("BEGIN READ-ONLY [%lu]", tid);
+    Debug("BEGIN READ-ONLY [%llu]", tid);
 }
 
 void
@@ -83,7 +83,7 @@ Client::MultiGet(const uint64_t tid,
                  const Timestamp &timestamp,
                  Promise *promise)
 {
-    Debug("Sending MULTIGET [%lu keys] at %lu", keys.size(), timestamp);
+    Debug("Sending MULTIGET [%u keys] at %llu", keys.size(), timestamp);
 
     // Fill out protobuf
     // Send message
@@ -96,7 +96,7 @@ Client::MultiGet(const uint64_t tid,
             msg.set_txnid(tid);
             msg.set_timestamp(timestamp);
             msg.set_msgid(msgid++);
-            if (transport->SendMessageToReplica(this, 0, msg)) {
+            if (transport->SendMessageToHost(this, 0, msg)) {
                 if (promise != NULL)
                     waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
@@ -156,7 +156,7 @@ Client::Commit(const uint64_t tid,
     //    promise = NULL;
     //}
     
-    Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());
+    Debug("Sending COMMIT (mode=%i, t=%llu", txn.IsolationMode(), txn.GetTimestamp());
     
 
     // Send messages
@@ -166,7 +166,7 @@ Client::Commit(const uint64_t tid,
             txn.Serialize(msg.mutable_txn());
             msg.set_clientid(client_id);
             msg.set_msgid(msgid++);
-            if (transport->SendMessageToReplica(this, 0, msg)) {
+            if (transport->SendMessageToHost(this, 0, msg)) {
 		if (promise != NULL)
 		    waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
@@ -188,7 +188,7 @@ Client::Abort(const uint64_t tid,
             msg.set_txnid(tid);
             msg.set_clientid(client_id);
             msg.set_msgid(msgid++);
-            if (transport->SendMessageToReplica(this, 0, msg)) {
+            if (transport->SendMessageToHost(this, 0, msg)) {
                 if (promise != NULL) 
                     waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
@@ -227,7 +227,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
                     Version v = Version(getReply.replies(i));
                     ret[key] = v;
                     ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
-                    Debug("Received Get timestamp %s %lu", key.c_str(), v.GetInterval().End());
+                    Debug("Received Get timestamp %s %llu", key.c_str(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);
@@ -255,7 +255,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
         notification.ParseFromString(data);
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
-        Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)", reactive_id, timestamp);
+        Debug("Received NOTIFICATION (reactive_id %llu, timestamp %llu)", reactive_id, timestamp);
 
         // Ack notification
         ReplyToNotification(reactive_id, timestamp);
@@ -287,7 +287,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
             }
         }
         else {
-            Debug("Notification is stale (timestamp %lu, last_timestamp %lu)", timestamp, last_timestamp[reactive_id]);
+            Debug("Notification is stale (timestamp %llu, last_timestamp %llu)", timestamp, last_timestamp[reactive_id]);
         }
     } else if (type == regReply.GetTypeName()) {
         regReply.ParseFromString(data);
@@ -344,7 +344,7 @@ Client::Register(const uint64_t reactive_id,
                  const Timestamp timestamp,
                  const std::set<std::string> &keys,
                  Promise *promise) {
-    Debug("Sending REGISTER for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+    Debug("Sending REGISTER for reactive_id %llu at timestamp %llu", reactive_id, timestamp);
     for (auto &key : keys) {
         Debug("Registering key: %s", key.c_str());
     }
@@ -359,7 +359,7 @@ Client::Register(const uint64_t reactive_id,
             msg.set_reactiveid(reactive_id);
             msg.set_timestamp(timestamp);
             msg.set_msgid(msgid++);
-            if (transport->SendMessageToReplica(this, 0, msg)) {
+            if (transport->SendMessageToHost(this, 0, msg)) {
                 if (promise != NULL)
                     waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
@@ -371,14 +371,14 @@ Client::Register(const uint64_t reactive_id,
 void
 Client::Deregister(const uint64_t reactive_id,
                    Promise *promise) {
-    Debug("Sending DEREGISTER for reactive_id %lu", reactive_id);
+    Debug("Sending DEREGISTER for reactive_id %llu", reactive_id);
     // Send message
     transport->Timer(0, [=]() {
             DeregisterMessage msg;
             msg.set_clientid(client_id);
             msg.set_reactiveid(reactive_id);
             msg.set_msgid(msgid++);
-            if (transport->SendMessageToReplica(this, 0, msg)) {
+            if (transport->SendMessageToHost(this, 0, msg)) {
                 if (promise != NULL)
                     waiting[msg.msgid()] = promise;
             } else if (promise != NULL) {
@@ -397,7 +397,7 @@ Client::Subscribe(const std::set<std::string> &keys,
 void
 Client::ReplyToNotification(const uint64_t reactive_id,
                             const Timestamp timestamp) {
-    Debug("Sending NOTIFICATION_REPLY for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+    Debug("Sending NOTIFICATION_REPLY for reactive_id %llu at timestamp %llu", reactive_id, timestamp);
 
     // Send message
     transport->Timer(0, [=]() {
@@ -406,7 +406,7 @@ Client::ReplyToNotification(const uint64_t reactive_id,
             msg.set_reactiveid(reactive_id);
             msg.set_timestamp(timestamp);
             msg.set_msgid(msgid++);
-	    transport->SendMessageToReplica(this, 0, msg);
+	    transport->SendMessageToHost(this, 0, msg);
 	});
 }
 
