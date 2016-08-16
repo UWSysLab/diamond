@@ -47,16 +47,11 @@ public:
     virtual ~AsyncClient() { };
 
     // Get the value corresponding to key (valid at given timestamp).
-    virtual void Get(const uint64_t tid,
-                     const std::string &key,
-		     callback_t callback,
-                     const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
-
     virtual void MultiGet(const uint64_t tid,
                           const std::vector<std::string> &key,
 			  callback_t callback,
                           const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
-
+    
     // Prepare the transaction.
     virtual void Prepare(const uint64_t tid,
                          callback_t callback,

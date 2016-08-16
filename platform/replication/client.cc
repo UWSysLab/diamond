@@ -41,9 +41,9 @@ namespace replication {
 
 VRClient::VRClient(const ReplicaConfig &config,
                    Transport *transport,
-		   publish_handler_t publications,
+		   //publish_handler_t publications,
                    uint64_t clientid)
-    : Client(config, transport, publications, clientid)
+    : Client(config, transport, clientid)
 {
     lastReqId = 0;
 }
@@ -97,14 +97,14 @@ VRClient::ReceiveMessage(const TransportAddress &remote,
                          const string &data)
 {
     static proto::ReplyMessage reply;
-    static strongstore::proto::PublishMessage publish;
+    //static strongstore::proto::PublishMessage publish;
         
     if (type == reply.GetTypeName()) {
         reply.ParseFromString(data);
         HandleReply(remote, reply);
-    } else if (type == publish.GetTypeName()) {
-	publish.ParseFromString(data);
-	HandlePublish(remote, publish);
+    // } else if (type == publish.GetTypeName()) {
+    // 	publish.ParseFromString(data);
+    // 	HandlePublish(remote, publish);
     } else {
         Client::ReceiveMessage(remote, type, data);
     }
@@ -133,16 +133,16 @@ VRClient::HandleReply(const TransportAddress &remote,
     }
 }
 
-void
-    VRClient::HandlePublish(const TransportAddress &remote,
-			    const strongstore::proto::PublishMessage &msg)
-{
-    vector<string> keys;
-    for (int i = 0; i < msg.keys_size(); i++) {
-	keys.push_back(msg.keys(i));
-    }
-    publications(msg.timestamp(), keys);
-}
+// void
+//     VRClient::HandlePublish(const TransportAddress &remote,
+// 			    const strongstore::proto::PublishMessage &msg)
+// {
+//     vector<string> keys;
+//     for (int i = 0; i < msg.keys_size(); i++) {
+// 	keys.push_back(msg.keys(i));
+//     }
+//     publications(msg.timestamp(), keys);
+// }
 
 void
 VRClient::ReceiveError(int error)

@@ -85,24 +85,13 @@ Client::~Client()
 }
 
 void
-Client::Get(const uint64_t tid,
-	    const string &key,
-	    callback_t callback,
-	    const Timestamp &timestamp)
-{
-    // Contact the appropriate shard to get the value.
-    int i = key_to_shard(key, nshards);
-    cclient[i]->Get(tid, key, callback, timestamp);
-}
-
-void
 Client::MultiGet(const uint64_t tid,
 		 const vector<string> &keys,
                  callback_t callback,
                  const Timestamp &timestamp)
 {
     map<int, vector<string>> participants;
-
+    
     for (auto &key : keys) {
         int i = key_to_shard(key, nshards);
         participants[i].push_back(key);
