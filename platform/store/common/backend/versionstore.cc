@@ -198,10 +198,10 @@ VersionedKVStore::Subscribe(const TCPTransportAddress &remote,
 			    const set<string> &keys)
 {
     for (auto &key : keys) {
-	if (subscribers[key].count(remote) == 0 ||
-	    subscribers[key][remote] < timestamp) {	    
-	    subscribers[key][remote] = timestamp;
-	}
+        if (subscribers[key].count(remote) == 0 ||
+            subscribers[key][remote] < timestamp) {	    
+            subscribers[key][remote] = timestamp;
+        }
     }
 }
 
@@ -210,7 +210,7 @@ VersionedKVStore::Unsubscribe(const TCPTransportAddress &remote,
 			      const set<string> &keys)
 {
     for (auto &key : keys) {
-	subscribers[key].erase(remote);
+        subscribers[key].erase(remote);
     }
 }
 
@@ -220,9 +220,9 @@ VersionedKVStore::Publish(const Timestamp &timestamp,
 			  map<TCPTransportAddress, set<string>> &notifications) {
     for (auto &key : keys) {
         for (auto &address : subscribers[key]) {
-	    if (timestamp > address.second) {
-		notifications[address.first].insert(key);
-	    }
+            if (timestamp > address.second) {
+                notifications[address.first].insert(key);
+            }
         }
     }
 }

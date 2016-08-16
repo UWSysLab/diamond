@@ -217,8 +217,7 @@ UDPTransport::Register(TransportReceiver *receiver,
     ASSERT(hostIdx < config.n);
     struct sockaddr_in sin;
 
-    const transport::Configuration *canonicalConfig =
-        RegisterConfiguration(receiver, config, hostIdx);
+    RegisterConfiguration(receiver, config, hostIdx);
 
     // Create socket
     int fd;
