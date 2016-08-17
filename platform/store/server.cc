@@ -98,6 +98,8 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1,
     case strongstore::proto::Request::ACK:
         HandleAck((const TCPTransportAddress &)remote,
                   request, str2);
+        replicate = false;
+        break;
     default:
         Panic("Unrecognized operation.");
     }
@@ -255,10 +257,10 @@ Server::HandleAck(const TCPTransportAddress &remote,
 	set<string> keys;
 	
 	for (int i = 0; i < request.ack().keys_size(); i++) {
-	    Debug("Received NOTIFY-FRONTEND-ACK from %s for key %lu at ts %lu",
-              remote.getHostname().c_str(),
-              request.ack().keys(i),
-              request.ack().timestamp());
+	    Debug("Received NOTIFY-FRONTEND-ACK from %s for key %s at ts %lu",
+                  remote.getHostname().c_str(),
+                  request.ack().keys(i).c_str(),
+                  request.ack().timestamp());
 	    keys.insert(request.ack().keys(i));
 	}
 	store->AckPending(remote, request.ack().timestamp(), keys);

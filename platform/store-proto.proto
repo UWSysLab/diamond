@@ -30,8 +30,7 @@ message UnsubscribeMessage {
     repeated string keys = 2;
 }
 
-
-message AckMessage {
+message PublishMessage {
     required uint64 timestamp = 1;
     repeated string keys = 2;
 }
@@ -54,7 +53,7 @@ message Request {
      optional AbortMessage abort = 6;
      optional SubscribeMessage subscribe = 7;
      optional UnsubscribeMessage unsubscribe = 8;
-     optional AckMessage ack = 9;
+     optional PublishMessage ack = 9;
 }
 
 message Reply {
@@ -63,7 +62,3 @@ message Reply {
      optional uint64 timestamp = 3;
 }
 
-message PublishMessage {
-    required uint64 timestamp = 1;
-    repeated string keys = 2;
-}

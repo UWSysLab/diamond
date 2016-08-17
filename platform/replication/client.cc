@@ -35,15 +35,16 @@
 #include "lib/transport.h"
 #include "replication/client.h"
 #include "vr-proto.pb.h"
+#include "store-proto.pb.h"
 #include "includes/error.h"
 
 namespace replication {
 
 VRClient::VRClient(const ReplicaConfig &config,
                    Transport *transport,
-		   //publish_handler_t publications,
-                   uint64_t clientid)
-    : Client(config, transport, clientid)
+		   publish_handler_t publications,
+                   const uint64_t clientid)
+    : Client(config, transport, clientid), publications(publications)
 {
     lastReqId = 0;
 }
@@ -63,7 +64,7 @@ VRClient::Invoke(const string &request,
 }
 
 void
-VRClient::InvokeUnlogged(int replicaIdx,
+VRClient::InvokeUnlogged(const int replicaIdx,
                          const string &request,
                          continuation_t continuation)
 {
@@ -81,7 +82,7 @@ VRClient::InvokeUnlogged(int replicaIdx,
 }
 
 void
-VRClient::SendRequest(int reqid) {
+VRClient::SendRequest(const int reqid) {
     
     proto::RequestMessage reqMsg;
     reqMsg.mutable_req()->set_op(pendingRequests[reqid].request);
@@ -97,14 +98,14 @@ VRClient::ReceiveMessage(const TransportAddress &remote,
                          const string &data)
 {
     static proto::ReplyMessage reply;
-    //static strongstore::proto::PublishMessage publish;
+    static strongstore::proto::PublishMessage publish;
         
     if (type == reply.GetTypeName()) {
         reply.ParseFromString(data);
         HandleReply(remote, reply);
-    // } else if (type == publish.GetTypeName()) {
-    // 	publish.ParseFromString(data);
-    // 	HandlePublish(remote, publish);
+    } else if (type == publish.GetTypeName()) {
+    	publish.ParseFromString(data);
+    	HandlePublish(remote, publish);
     } else {
         Client::ReceiveMessage(remote, type, data);
     }
@@ -133,19 +134,26 @@ VRClient::HandleReply(const TransportAddress &remote,
     }
 }
 
-// void
-//     VRClient::HandlePublish(const TransportAddress &remote,
-// 			    const strongstore::proto::PublishMessage &msg)
-// {
-//     vector<string> keys;
-//     for (int i = 0; i < msg.keys_size(); i++) {
-// 	keys.push_back(msg.keys(i));
-//     }
-//     publications(msg.timestamp(), keys);
-// }
+void
+VRClient::HandlePublish(const TransportAddress &remote,
+                        const strongstore::proto::PublishMessage &msg)
+{
+    std::vector<string> keys;
+    for (int i = 0; i < msg.keys_size(); i++) {
+	keys.push_back(msg.keys(i));
+    }
+    publications(msg.timestamp(), keys);
+
+    string request_str;
+    strongstore::proto::Request request;
+    request.set_op(strongstore::proto::Request::ACK);
+    *(request.mutable_ack()) = msg;
+    request.SerializeToString(&request_str);
+    Invoke(request_str, [] (const string &str1, const string &str2) {});
+}
 
 void
-VRClient::ReceiveError(int error)
+VRClient::ReceiveError(const int error)
 {
     // only works for one failure :)
     if (leader == 0) {

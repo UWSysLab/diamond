@@ -38,8 +38,11 @@ using namespace std;
 using namespace proto;
 
 ShardClient::ShardClient(const string &configPath,
-                       Transport *transport, uint64_t client_id, int
-                       shard, int closestReplica)
+                         Transport *transport,
+                         const uint64_t client_id,
+                         const int shard,
+                         const int closestReplica,
+                         replication::publish_handler_t publish)
     : transport(transport), client_id(client_id), shard(shard)
 { 
     ifstream configStream(configPath);
@@ -49,7 +52,7 @@ ShardClient::ShardClient(const string &configPath,
     }
     replication::ReplicaConfig config(configStream);
 
-    client = new replication::VRClient(config, transport);
+    client = new replication::VRClient(config, transport, publish);
 
     if (closestReplica == -1) {
 	replica = client_id % config.n;

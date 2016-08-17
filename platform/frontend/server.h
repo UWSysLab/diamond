@@ -47,7 +47,10 @@ namespace frontend {
 class Server : public TransportReceiver
 {
 public:
-    Server(Transport *transport, strongstore::Client *client);
+    Server(const string &configPath,
+           const int nShards,
+           const int closestReplica,
+           Transport *transport);
     virtual ~Server();
     
 protected:
@@ -64,8 +67,8 @@ protected:
                         const RegisterMessage &msg);
     void HandleDeregister(const TransportAddress &remote,
                           const DeregisterMessage &msg);
-    void HandleNotifyFrontend(const TransportAddress &remote,
-                              const NotifyFrontendMessage &msg);
+    void HandlePublish(const Timestamp &timestamp,
+                       const std::vector<string> &keys);
     void HandleNotificationReply(const TransportAddress &remote,
                                  const NotificationReply &msg);
     

@@ -39,9 +39,8 @@ namespace replication {
     
 Client::Client(const ReplicaConfig &config,
 	       Transport *transport,
-	       //publish_handler_t publications,
-               uint64_t clientid)
-    : config(config), transport(transport)//, publications(publications)
+	       const uint64_t clientid)
+    : config(config), transport(transport)
 {
     this->clientid = clientid;
 

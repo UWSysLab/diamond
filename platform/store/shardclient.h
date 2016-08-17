@@ -57,9 +57,10 @@ public:
     ShardClient(
         const std::string &configPath, 
         Transport *transport,
-        uint64_t client_id,
-        int shard,
-        int closestReplica);
+        const uint64_t client_id,
+        const int shard,
+        const int closestReplica,
+        replication::publish_handler_t publish);
     ~ShardClient();
     
     // Get the value corresponding to key (valid at given timestamp).

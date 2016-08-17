@@ -35,46 +35,58 @@
 #include "replication/common/client.h"
 #include "replication/common/configuration.h"
 #include "vr-proto.pb.h"
+#include "store-proto.pb.h"
 #include <unordered_map>
+#include <vector>
 
 #define RETRY_WAIT 100
 
 namespace replication {
+
+typedef std::function<void (const Timestamp &, const std::vector<string> &)> publish_handler_t;
 
 class VRClient : public Client
 {
 public:
     VRClient(const ReplicaConfig &config,
              Transport *transport,
-	     //publish_handler_t publications,
-             uint64_t clientid = 0);
+	     publish_handler_t publications,
+             const uint64_t clientid = 0);
     virtual ~VRClient();
     virtual void Invoke(const string &request,
                         continuation_t continuation);
-    virtual void InvokeUnlogged(int replicaIdx,
+    virtual void InvokeUnlogged(const int replicaIdx,
                                 const string &request,
                                 continuation_t continuation);
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
-    virtual void ReceiveError(int error);
+    virtual void ReceiveError(const int error);
 protected:
     uint64_t lastReqId;
+    publish_handler_t publications;
 
     struct PendingRequest
     {
         string request;
 	bool unlogged = false;
         continuation_t continuation;
+        
 	inline PendingRequest() { };
-        inline PendingRequest(string request, bool unlogged, continuation_t continuation)
-            : request(request), unlogged(unlogged), continuation(continuation) { };
+        inline PendingRequest(string request,
+                              bool unlogged,
+                              continuation_t continuation)
+            : request(request),
+              unlogged(unlogged),
+              continuation(continuation) { };
     };
 
     std::unordered_map<uint64_t, PendingRequest> pendingRequests;
     int leader = 0;
     void HandleReply(const TransportAddress &remote,
                      const proto::ReplyMessage &msg);
-    void SendRequest(int reqid);
+    void HandlePublish(const TransportAddress &remote,
+                       const strongstore::proto::PublishMessage &msg);
+    void SendRequest(const int reqid);
 };
 } // namespace replication
 

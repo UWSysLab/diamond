@@ -39,9 +39,21 @@ namespace frontend {
 using namespace proto;
 using namespace std;
 
-Server::Server(Transport *transport, strongstore::Client *client)
-    : transport(transport), store(client)
+Server::Server(const string &configPath,
+               const int nShards,
+               const int closestReplica,
+               Transport *transport)
+    : transport(transport)
 {
+    store = new strongstore::Client(configPath,
+                                    nShards,
+                                    closestReplica,
+                                    transport,
+                                    bind(&Server::HandlePublish,
+                                         this,
+                                         placeholders::_1,
+                                         placeholders::_2));
+
 }
 
 Server::~Server()
@@ -58,7 +70,6 @@ Server::ReceiveMessage(const TransportAddress &remote,
     static AbortMessage abort;
     static RegisterMessage reg;
     static DeregisterMessage deregister;
-    static NotifyFrontendMessage notify;
     static NotificationReply reply;
 
     if (type == get.GetTypeName()) {
@@ -76,9 +87,6 @@ Server::ReceiveMessage(const TransportAddress &remote,
     } else if (type == deregister.GetTypeName()) {
         deregister.ParseFromString(data);
         HandleDeregister(remote, deregister);
-    } else if (type == notify.GetTypeName()) {
-        notify.ParseFromString(data);
-        HandleNotifyFrontend(remote, notify);
     } else if (type == reply.GetTypeName()) {
         reply.ParseFromString(data);
         HandleNotificationReply(remote, reply);
@@ -102,7 +110,8 @@ Server::HandleNotificationReply(const TransportAddress &remote,
 }
 
 void
-Server::UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp) {
+Server::UpdateCache(const ReactiveTransaction &rt,
+                    const Timestamp timestamp) {
     vector<string> multiGetKeys;
     for (auto key : rt.keys) {
         if (cachedValues.find(key) == cachedValues.end()
@@ -114,19 +123,16 @@ Server::UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp) {
     }
 
     callback_t cb =
-    std::bind(&Server::UpdateCacheCallback,
-          this,
-          rt.client_id,
-          rt.reactive_id,
-          timestamp,
-          placeholders::_1);
+        std::bind(&Server::UpdateCacheCallback,
+                  this,
+                  rt.client_id,
+                  rt.reactive_id,
+                  timestamp,
+                  placeholders::_1);
 
     if (multiGetKeys.size() > 1) {
         store->MultiGet(0, multiGetKeys, cb,
                 timestamp);
-    } else if (multiGetKeys.size() > 0) {
-        store->Get(0, multiGetKeys[0], cb,
-               timestamp);
     } else {
         Promise *p = new Promise();
         p->Reply(REPLY_OK);
@@ -140,21 +146,13 @@ Server::UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp) {
  * value for the key.
  */
 void
-Server::HandleNotifyFrontend(const TransportAddress &remote,
-                             const NotifyFrontendMessage &msg) {
-    Debug("Handling NOTIFY-FRONTEND");
-    for (int i = 0; i < msg.replies_size(); i++) { // update cache with packaged values
-        std::string key = msg.replies(i).key();
-        Version value(msg.replies(i));
-        cachedValues[key] = value;
-    }
-
-    for (int i = 0; i < msg.replies_size(); i++) { // trigger notifications
-        std::string key = msg.replies(i).key();
-        Version value(msg.replies(i));
-        Timestamp timestamp = value.GetTimestamp();
-        for (auto it = listeners[key].begin(); it != listeners[key].end(); it++) {
-            ReactiveTransaction &rt = transactions[*it];
+Server::HandlePublish(const Timestamp &timestamp,
+                      const vector<string> &keys)
+{
+    Debug("Handling PUBLISH");
+    for (auto key : keys) { // trigger notifications
+        for (auto listener : listeners[key]) {
+            ReactiveTransaction &rt = transactions[listener];
             if (rt.next_timestamp < timestamp) {
                 // update cache
                 UpdateCache(rt, timestamp);
@@ -162,11 +160,6 @@ Server::HandleNotifyFrontend(const TransportAddress &remote,
             }
         }
     }
-
-    NotifyFrontendAck ack;
-    ack.set_txnid(msg.txnid());
-    // USE something else as the front-end id
-    transport->SendMessage(this, remote, ack);
 }
 
 void
@@ -403,8 +396,8 @@ Server::HandleGet(const TransportAddress &remote,
         store->MultiGet(msg.txnid(), keys, cb,
 			msg.timestamp());
     } else {
-        store->Get(msg.txnid(), keys[0], cb,
-		   msg.timestamp());
+        store->MultiGet(msg.txnid(), keys, cb,
+                        msg.timestamp());
     }
 }
     
@@ -555,12 +548,11 @@ main(int argc, char **argv)
 
     TCPTransport transport(0.0, 0.0, 0);
 
-    strongstore::Client *client =
-	new strongstore::Client(backendConfig, maxShard,
-				closestReplica, &transport);
-
     diamond::frontend::Server server =
-	diamond::frontend::Server(&transport, client);
+	diamond::frontend::Server(backendConfig,
+                                  maxShard,
+                                  closestReplica,
+                                  &transport);
 
     // The server's transport for handling incoming connections
     transport.Register(&server, config, 0);

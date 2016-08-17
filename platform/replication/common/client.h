@@ -48,12 +48,10 @@ class Client : public TransportReceiver
 public:
     typedef std::function<void (const string &, const string &)> continuation_t;
     typedef std::function<void (const string &)> timeout_continuation_t;
-//    typedef std::function<void (const Timestamp &, const vector<string> &)> publish_handler_t;
 
     Client(const ReplicaConfig &config,
 	   Transport *transport,
-//	   publish_handler_t publications,
-	   uint64_t clientid = 0);
+	   const uint64_t clientid = 0);
     virtual ~Client();
     virtual void Invoke(const string &request,
                         continuation_t continuation) = 0;
@@ -67,7 +65,6 @@ public:
 protected:
     ReplicaConfig config;
     Transport *transport;
-    //  publish_handler_t publications;
     uint64_t clientid;
 };
 

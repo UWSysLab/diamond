@@ -36,8 +36,11 @@ using namespace std;
 
 namespace strongstore {
 
-Client::Client(string configPath, int nShards,
-	       int closestReplica, Transport *transport)
+Client::Client(const string configPath,
+               const int nShards,
+	       const int closestReplica,
+               Transport *transport,
+               replication::publish_handler_t publications)
     : transport(transport)
 {
     // Initialize all state here;
@@ -62,7 +65,7 @@ Client::Client(string configPath, int nShards,
 		tssConfigPath.c_str());
     }
     replication::ReplicaConfig tssConfig(tssConfigStream);
-    tss = new replication::VRClient(tssConfig, transport);
+    tss = new replication::VRClient(tssConfig, transport, publications);
     
     /* Start a client for each shard. */
     for (int i = 0; i < nShards; i++) {
@@ -70,7 +73,8 @@ Client::Client(string configPath, int nShards,
         cclient[i] = new ShardClient(shardConfigPath,
 				     transport,
 				     client_id, i,
-				     closestReplica);
+				     closestReplica,
+                                     publications);
     }
 
     Debug("Diamond Store client [%lu] created!", client_id);

@@ -53,7 +53,11 @@ namespace strongstore {
 class Client : public AsyncClient
 {
 public:
-    Client(string configPath, int nshards, int closestReplica, Transport *transport);
+    Client(const string configPath,
+           const int nshards,
+           const int closestReplica,
+           Transport *transport,
+           replication::publish_handler_t publications);
     ~Client();
 
     // Get the value corresponding to key (valid at given timestamp).
@@ -126,7 +130,7 @@ private:
 
     // Transport used by paxos client proxies.
     Transport *transport;
-    
+
     // Caching client for each shard.
     std::vector<ShardClient *> cclient;
 
