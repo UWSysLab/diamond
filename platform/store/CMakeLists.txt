@@ -14,6 +14,7 @@ set(SRC_DIAMOND_STORE_SERVER
     ${SRC_DIAMOND_STORE_COMMON_SERVER}
     ${DIAMOND_SOURCE_DIR}/store/server.cc
     ${DIAMOND_SOURCE_DIR}/store/occstore.cc
+    ${DIAMOND_SOURCE_DIR}/store/pubstore.cc
     PARENT_SCOPE)
 
 set(SRC_DIAMOND_STORE_COMMON

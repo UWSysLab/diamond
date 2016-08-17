@@ -7,6 +7,8 @@
  *
  **********************************************************************/
 
+#include <stdint.h>
+
 #ifndef _STORE_TIMESTAMP_H_
 #define _STORE_TIMESTAMP_H_
 

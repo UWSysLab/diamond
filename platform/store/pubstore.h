@@ -53,16 +53,16 @@ public:
     ~PubStore();
 
     void Subscribe(const TCPTransportAddress &remote,
-		   const Timestamp timestamp,
-		   const std::set<std::string> &keys);
+                   const Timestamp timestamp,
+                   const std::set<std::string> &keys);
     void Unsubscribe(const TCPTransportAddress &remote,
-		     const std::set<std::string> &keys);
-    void Publish(const uint64_t txn_id,
-		 const Timestamp timestamp,
-		 map<TCPTransportAddress, std::set<std::string>> notifications);
+                     const std::set<std::string> &keys);
+    void Publish(const uint64_t tid,
+                 const Timestamp timestamp,
+                 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
     void AckPending(const TCPTransportAddress &remote,
-		    const Timestamp timestamp,
-		    const std::set<string> &keys);
+                    const Timestamp timestamp,
+                    const std::set<string> &keys);
 
 };
 

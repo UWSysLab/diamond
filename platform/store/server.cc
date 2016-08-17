@@ -40,28 +40,30 @@ using namespace std;
 namespace strongstore {
 
 using namespace proto;
+TCPTransport transport(0.0, 0.0, 0);
 
-Server::Server()
+Server::Server(const replication::ReplicaConfig &config,
+               int index, int batchSize)
 {
-    store = new strongstore::OCCStore();
-
+    store = new strongstore::PubStore();
+    replica = new replication::VRReplica(config, index, &transport, batchSize, this);
 }
 
 Server::~Server()
 {
     delete store;
+    delete replica;
 }
     
 void
 Server::LeaderUpcall(opnum_t opnum, const string &str1,
-		     const TransportAddress &remote,
-		     bool &replicate, string &str2)
+                     const TransportAddress &remote,
+                     bool &replicate, string &str2)
 {
     Debug("Received LeaderUpcall: %lu %s", opnum, str1.c_str());
 
     Request request;
     Reply reply;
-    int status;
     
     request.ParseFromString(str1);
 
@@ -71,38 +73,39 @@ Server::LeaderUpcall(opnum_t opnum, const string &str1,
         replicate = false;
         break;
     case strongstore::proto::Request::PREPARE:
-	replicate = HandlePrepare(request, str2);
-	if (replicate) str2 = str1;
+        replicate = HandlePrepare(request, str2);
+        if (replicate) str2 = str1;
         break;
     case strongstore::proto::Request::COMMIT:
-	HandleCommit(request);
+        HandleCommit(request);
         replicate = true;
-	str2 = str1
+        str2 = str1;
         break;
     case strongstore::proto::Request::ABORT:
         replicate = true;
         str2 = str1;
         break;
     case strongstore::proto::Request::SUBSCRIBE:
-	HandleSubscribe((TCPTransportAddress &)remote,
-			request, str2);
+        HandleSubscribe((TCPTransportAddress &)remote,
+                        request, str2);
         replicate = false;
         break;
     case strongstore::proto::Request::UNSUBSCRIBE:
-	HandleUnsubscribe((TCPTransportAddress &)remote,
-			  request, str2);
+        HandleUnsubscribe((TCPTransportAddress &)remote,
+                          request, str2);
         replicate = false;
         break;
     case strongstore::proto::Request::ACK:
-	HandleAck((TCPTransportAddress &)remote,
-		  request, str2);
+        HandleAck((const TCPTransportAddress &)remote,
+                  request, str2);
     default:
         Panic("Unrecognized operation.");
     }
 }
 
 void
-Server::HandleGet(const Request &request, string &str2)
+Server::HandleGet(const Request &request,
+                  string &str2)
 {
     Version val;
     int status;
@@ -130,7 +133,8 @@ Server::HandleGet(const Request &request, string &str2)
 }
 
 bool
-Server::HandlePrepare(const Request &request, string &str2)
+Server::HandlePrepare(const Request &request,
+                      string &str2)
 {
     Transaction txn = Transaction(request.prepare().txn());
     int status = store->Prepare(request.txnid(),
@@ -150,49 +154,50 @@ void
 Server::HandleCommit(const Request &request)
 {
     if (request.commit().has_txn()) {
-	store->Commit(request.txnid(),
-		      request.commit().timestamp(),
-		      Transaction(request.commit().txn()));
+        store->Commit(request.txnid(),
+                      request.commit().timestamp(),
+                      Transaction(request.commit().txn()));
     } else {
-	store->Commit(request.txnid(),
-		      request.commit().timestamp());
+        store->Commit(request.txnid(),
+                      request.commit().timestamp());
     }
     // Add frontend notifications for this txn to the queue
     transport.Timer(0, [=]() {
-	    sendNotification(request.txnid(), request.commit().timestamp());
+            Publish(request.txnid(),
+                    request.commit().timestamp());
 	});
 }
 
 void
 Server::Publish(const uint64_t tid,
-		const Timestamp timestamp) {
+                const Timestamp timestamp) {
     map<TCPTransportAddress, set<string>> notifications;
-    store->GetNotifications(tid,
-			    timestamp,
-			    notifications);
+    store->Publish(tid,
+                   timestamp,
+                   notifications);
 
     for (auto &n : notifications) {
-	Debug("Publishing to frontend %s",
-	      n.first.getHostname().c_str());
-	PublishMessage msg;
-	for (auto &v : n.second) {
-	    msg.add_keys(v);
-	}
-	msg.set_timestamp(timestamp);
-	transport.Timer(0, [=]() {
-		transport.SendMessage(this,
-				      n.first,
-				      msg);	
-	    });
+        Debug("Publishing to frontend %s",
+              n.first.getHostname().c_str());
+        PublishMessage msg;
+        for (auto &v : n.second) {
+            msg.add_keys(v);
+        }
+        msg.set_timestamp(timestamp);
+        transport.Timer(0, [=]() {
+                transport.SendMessage(replica,
+                                      n.first,
+                                      msg);	
+            });
 
     }
 
     // if we still have notifications to send for
     // this transaction, then keep looping
     if (notifications.size() > 0) {
-	transport.Timer(10, [=]() {
-		Publish(tid, timestamp);
-	    });
+        transport.Timer(10, [=]() {
+                Publish(tid, timestamp);
+            });
     }
 
 
@@ -200,31 +205,30 @@ Server::Publish(const uint64_t tid,
 
 void
 Server::HandleSubscribe(const TCPTransportAddress &remote,
-			const Request &request,
-			string &str2)
+                        const Request &request,
+                        string &str2)
 {
     Debug("Handling SUBSCRIBE");
     if (request.subscribe().keys_size() > 0) {
-	set<string> keys;
+        set<string> keys;
     
-	for (int i = 0; i < request.subscribe().keys_size(); i++) {
-	    Debug("%s", request.subscribe().keys(i).c_str());
-	    keys.insert(request.subscribe().keys(i));
-	}
+        for (int i = 0; i < request.subscribe().keys_size(); i++) {
+            Debug("%s", request.subscribe().keys(i).c_str());
+            keys.insert(request.subscribe().keys(i));
+        }
 
-	store->Subscribe(remote, request.subscribe().timestamp(), keys);
+        store->Subscribe(remote, request.subscribe().timestamp(), keys);
     }
 
     Reply rep;
     rep.set_status(REPLY_OK);
-    str2 = rep.SerializeToString();
-
+    rep.SerializeToString(&str2);
 }
 
 void
 Server::HandleUnsubscribe(const TCPTransportAddress &remote,
-			  const Request &request,
-			  string &str2)
+                          const Request &request,
+                          string &str2)
 {
     Debug("Handling UNSUBSCRIBE");
     if (request.unsubscribe().keys_size() > 0) {
@@ -239,22 +243,22 @@ Server::HandleUnsubscribe(const TCPTransportAddress &remote,
 
     Reply rep;
     rep.set_status(REPLY_OK);
-    str2 = rep.SerializeToString();
-
+    rep.SerializeToString(&str2);
 }
 
 void
 Server::HandleAck(const TCPTransportAddress &remote,
-		  const Request, string &str2)
+                  const Request &request,
+                  string &str2)
 {
     if (request.ack().keys_size() > 0) {
 	set<string> keys;
 	
 	for (int i = 0; i < request.ack().keys_size(); i++) {
 	    Debug("Received NOTIFY-FRONTEND-ACK from %s for key %lu at ts %lu",
-		  remote.hostname().c_str(),
-		  request.ack().keys(i),
-		  request.ack().timestamp());
+              remote.getHostname().c_str(),
+              request.ack().keys(i),
+              request.ack().timestamp());
 	    keys.insert(request.ack().keys(i));
 	}
 	store->AckPending(remote, request.ack().timestamp(), keys);
@@ -262,7 +266,7 @@ Server::HandleAck(const TCPTransportAddress &remote,
 
     Reply rep;
     rep.set_status(REPLY_OK);
-    str2 = rep.SerializeToString();
+    rep.SerializeToString(&str2);
 }
 
     
@@ -276,8 +280,8 @@ Server::HandleAck(const TCPTransportAddress &remote,
  */
 void
 Server::ReplicaUpcall(opnum_t opnum,
-		      const string &str1,
-		      string &str2)
+                      const string &str1,
+                      string &str2)
 {
     Debug("Received Upcall: %lu %s", opnum, str1.c_str());
     Request request;
@@ -319,7 +323,8 @@ Server::ReplicaUpcall(opnum_t opnum,
 }
 
 void
-Server::UnloggedUpcall(const string &str1, string &str2)
+Server::UnloggedUpcall(const string &str1,
+                       string &str2)
 {
     Request request;
     Reply reply;
@@ -327,15 +332,23 @@ Server::UnloggedUpcall(const string &str1, string &str2)
 
     ASSERT(request.op() == strongstore::proto::Request::GET);
 
-    ExecuteGet(request, str2);
+    HandleGet(request, str2);
  }
 
 void
-Server::Load(const string &key, const string &value, const Timestamp timestamp)
+Server::Load(const string &key,
+             const string &value,
+             const Timestamp timestamp)
 {
     store->Load(key, value, timestamp);
 }
 
+void
+Server::Run()
+{
+    transport.Run();
+}
+    
 } // namespace strongstore
 
 int
@@ -443,11 +456,7 @@ main(int argc, char **argv)
                 "only %d replicas defined\n", index, config.n);
     }
 
-    TCPTransport transport(0.0, 0.0, 0);
-
-    //strongstore::Server server = strongstore::Server();
-    strongstore::Server server(config);
-    replication::VRReplica replica(config, index, &transport, batchSize, &server);
+    strongstore::Server server(config, index, batchSize);
     
     if (keyPath) {
         string key;
@@ -473,8 +482,6 @@ main(int argc, char **argv)
         }
         in.close();
     }
-
-    transport.Run();
 
     return 0;
 }

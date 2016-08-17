@@ -216,8 +216,8 @@ VersionedKVStore::Unsubscribe(const TCPTransportAddress &remote,
 
 void
 VersionedKVStore::Publish(const Timestamp &timestamp,
-			  const set<string> &keys,
-			  map<TCPTransportAddress, set<string>> &notifications) {
+                          const set<string> &keys,
+                          map<TCPTransportAddress, set<string>> &notifications) {
     for (auto &key : keys) {
         for (auto &address : subscribers[key]) {
             if (timestamp > address.second) {

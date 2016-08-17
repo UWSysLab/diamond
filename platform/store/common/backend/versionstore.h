@@ -53,36 +53,35 @@ public:
     virtual ~VersionedKVStore();
 
     bool Get(const std::string &key,
-	     Version &value);
+             Version &value);
     bool Get(const std::string &key,
-	     const Timestamp &t,
-	     Version &value);
+             const Timestamp &t,
+             Version &value);
     bool GetRange(const std::string &key,
-		  const Timestamp &t,
-		  Interval &range);
+                  const Timestamp &t,
+                  Interval &range);
     bool GetLastRead(const std::string &key,
-		     Timestamp &readTime);
+                     Timestamp &readTime);
     bool GetLastRead(const std::string &key,
-		     const Timestamp &t,
-		     Timestamp &readTime);
+                     const Timestamp &t,
+                     Timestamp &readTime);
     void Put(const std::string &key,
-	     const std::string &value,
-	     const Timestamp &t);
+             const std::string &value,
+             const Timestamp &t);
     void Put(const std::string &key,
-	     const Version &v);
+             const Version &v);
     void CommitGet(const std::string &key,
-		   const Timestamp &readTime,
-		   const Timestamp &commit);
+                   const Timestamp &readTime,
+                   const Timestamp &commit);
     void Remove(const std::string &key);
-
     void Subscribe(const TCPTransportAddress &remote,
-		   const Timestamp timestamp,
-		   const std::set<std::string> &keys);
+                   const Timestamp timestamp,
+                   const std::set<std::string> &keys);
     void Unsubscribe(const TCPTransportAddress &remote,
-		     const std::set<std::string> &keys);
+                     const std::set<std::string> &keys);
     void Publish(const Timestamp &timestamp,
-		 const std::set<std::string> &keys,
-		 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
+                 const std::set<std::string> &keys,
+                 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
     
     
 protected:

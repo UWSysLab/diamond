@@ -36,7 +36,7 @@ using namespace std;
 
 namespace strongstore {
 
-PubStore::PubStore() : { }
+PubStore::PubStore() { }
 PubStore::~PubStore() { }
 
 
@@ -57,8 +57,8 @@ PubStore::Unsubscribe(const TCPTransportAddress &remote,
 
 void
 PubStore::Publish(const uint64_t tid,
-		  const Timestamp timestamp
-		  map<TCPTransportAddress, set<string>> &notifications)
+                  const Timestamp timestamp,
+                  map<TCPTransportAddress, set<string>> &notifications)
 {
     Transaction t;
     // Get transaction
@@ -69,20 +69,21 @@ PubStore::Publish(const uint64_t tid,
     }
 
     // get set of keys that changed
-    set<string> keys = t.GetWriteSet();
-    for (auto &inc : t.GetIncrementSet()) {
+    set<string> keys;
+    for (auto &w : t.GetWriteSet())
+        keys.insert(w.first);
+    for (auto &inc : t.GetIncrementSet())
         keys.insert(inc.first);
-    }
 
     // get notifications that need to be sent
-    store.GetNotifications(tid, keys, notifications);
+    store.Publish(tid, keys, notifications);
 }
 
 void
 PubStore::AckPending(const TCPTransportAddress &remote,
 		     const Timestamp timestamp,
 		     const set<string> &keys) {
-    store.subscribe(remote, timestamp, keys);
+    store.Subscribe(remote, timestamp, keys);
 }
     
 } // namespace strongstore

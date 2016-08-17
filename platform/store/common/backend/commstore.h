@@ -38,11 +38,10 @@
 
 class CommutativeStore : public VersionedKVStore
 {
-
 public:
     CommutativeStore() { };
     ~CommutativeStore() { };
-
+    
     void Increment(const std::string &key, const int inc, const Timestamp &t);
 };
 

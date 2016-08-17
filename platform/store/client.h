@@ -64,7 +64,7 @@ public:
 
     void MultiGet(const uint64_t tid,
                   const std::vector<std::string> &key,
-    		  callback_t callback,
+                  callback_t callback,
                   const Timestamp &timestamp = MAX_TIMESTAMP);
     
     // Prepare the transaction.
@@ -74,7 +74,7 @@ public:
 
     // Callback based async call
     void Commit(const uint64_t tid,
-		callback_t callback,
+                callback_t callback,
                 const Transaction &txn);
 
     void Abort(const uint64_t tid);

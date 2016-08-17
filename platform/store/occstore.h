@@ -57,26 +57,26 @@ public:
 
     // Overriding from TxnStore.
     int Get(const uint64_t tid,
-	    const std::string &key,
-	    Version &value,
-	    const Timestamp &timestamp = MAX_TIMESTAMP);
+            const std::string &key,
+            Version &value,
+            const Timestamp &timestamp = MAX_TIMESTAMP);
 
     // check whether we can commit this transaction (and lock the read/write set)
     int Prepare(const uint64_t tid,
-		const Transaction &txn);
+                const Transaction &txn);
 
     // commit the transaction
     void Commit(const uint64_t tid,
-		const Timestamp &timestamp,
-		const Transaction &txn = Transaction());
+                const Timestamp &timestamp,
+                const Transaction &txn = Transaction());
 
     // abort a running transaction
     void Abort(const uint64_t tid);
 
     void Load(const std::string &key,
-	      const std::string &value,
-	      const Timestamp &timestamp);
-
+              const std::string &value,
+              const Timestamp &timestamp);
+    
 protected:
     // Data store.
     CommutativeStore store;

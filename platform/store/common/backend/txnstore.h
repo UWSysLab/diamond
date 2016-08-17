@@ -36,10 +36,15 @@
 
 #include "lib/assert.h"
 #include "lib/message.h"
+#include "lib/tcptransport.h"
 #include "store/common/transaction.h"
 #include "store/common/timestamp.h"
 #include "store/common/version.h"
 #include "store/common/notification.h"
+
+#include <map>
+#include <string>
+#include <set>
 
 namespace strongstore {
     
@@ -50,26 +55,26 @@ public:
     TxnStore() { };
     virtual ~TxnStore() { };
 
-    virtual int Get(const uint64_t tid, const std::string &key, Version &value,
+    virtual int Get(const uint64_t tid,
+                    const std::string &key,
+                    Version &value,
                     const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
 
     // check whether we can commit this transaction (and lock the read/write set)
-    virtual int Prepare(const uint64_t tid, const Transaction &txn) = 0;
+    virtual int Prepare(const uint64_t tid,
+                        const Transaction &txn) = 0;
 
     // commit the transaction
-    virtual void Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn = Transaction()) = 0;
+    virtual void Commit(const uint64_t tid,
+                        const Timestamp &timestamp,
+                        const Transaction &txn = Transaction()) = 0;
 
     // abort a running transaction
     virtual void Abort(const uint64_t tid) = 0;
 
-    virtual void Load(const std::string &key, const std::string &value, const Timestamp &timestamp) = 0;
-
-    virtual void Subscribe(const std::set<std::string> &keys, const std::string &address, std::map<std::string, Version> &values) = 0;
-    virtual void Unsubscribe(const std::set<std::string> &keys, const std::string &address) = 0;
-    virtual void AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid) = 0;
-    virtual void AckFrontendNotification(const uint64_t tid, const std::string &address) = 0;
-    virtual void GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications) = 0;
-    
+    virtual void Load(const std::string &key,
+                      const std::string &value,
+                      const Timestamp &timestamp) = 0;
 };
 }
 #endif /* _TXN_STORE_H_ */

@@ -35,7 +35,7 @@
 
 #include "lib/tcptransport.h"
 #include "replication/replica.h"
-#include "store/occstore.h"
+#include "store/pubstore.h"
 #include "common-proto.pb.h"
 #include "store-proto.pb.h"
 #include "notification-proto.pb.h"
@@ -47,7 +47,8 @@ namespace strongstore {
 class Server : public replication::AppReplica
 {
 public:
-    Server();
+    Server(const replication::ReplicaConfig &config,
+           int index, int batchSize);
     virtual ~Server();
 
     virtual void LeaderUpcall(opnum_t opnum,
@@ -63,25 +64,26 @@ public:
     void Load(const string &key,
 	      const string &value,
 	      const Timestamp timestamp);
+    void Run();
 private:
-    TxnStore *store;
-    Timeout * sendNotificationTimeout;
-
-    void HandleGet(proto::Request request,
-		   string &str2);
-    bool HandlePrepare(proto::Request request,
-		       string &str2);
-    void HandleCommit(proto::Request request);
-    void HandleSubscribe(TCPTransportAddress &remote,
-			 proto::Request request,
-			 string &str2);
-    void HandleUnsubscribe(TCPTransportAddress &remote,
-			   proto::Request request,
-			   string &str2);
-    void HandleAck(TCPTransport &remote,
-		   proto::Request request,
-		   string &str2);
-    void SendNotification(uint64_t tid);
+    PubStore *store;
+    replication::VRReplica *replica;
+    
+    void HandleGet(const proto::Request &request,
+                   string &str2);
+    bool HandlePrepare(const proto::Request &request,
+                       string &str2);
+    void HandleCommit(const proto::Request &request);
+    void HandleSubscribe(const TCPTransportAddress &remote,
+                         const proto::Request &request,
+                         string &str2);
+    void HandleUnsubscribe(const TCPTransportAddress &remote,
+                           const proto::Request &request,
+                           string &str2);
+    void HandleAck(const TCPTransportAddress &remote,
+                   const proto::Request &request,
+                   string &str2);
+    void Publish(const uint64_t tid, const Timestamp timestamp);
 };
 
 } // namespace strongstore
