@@ -485,5 +485,6 @@ main(int argc, char **argv)
         in.close();
     }
 
+    server.Run();
     return 0;
 }
