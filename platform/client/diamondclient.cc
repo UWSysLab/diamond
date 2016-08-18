@@ -175,7 +175,7 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         Timestamp timestamp = MAX_TIMESTAMP;
         auto it = timestamp_map.find(reactive_id);
         if (it != timestamp_map.end()) {
-            timestamp = *it;
+            timestamp = it->second;
         }
 
         Debug("Diamondclient::BEGIN_REACTIVE transaction for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
