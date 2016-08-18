@@ -179,8 +179,8 @@ Server::Publish(const uint64_t tid,
                    notifications);
 
     for (auto &n : notifications) {
-        Debug("Publishing to frontend %s",
-              n.first.getHostname().c_str());
+        Debug("Publishing to frontend %s at ts %lu",
+              n.first.getHostname().c_str(), timestamp);
         PublishMessage msg;
         for (auto &v : n.second) {
             msg.add_keys(v);
@@ -197,7 +197,7 @@ Server::Publish(const uint64_t tid,
     // if we still have notifications to send for
     // this transaction, then keep looping
     if (notifications.size() > 0) {
-        transport.Timer(10, [=]() {
+        transport.Timer(100, [=]() {
                 Publish(tid, timestamp);
             });
     }
