@@ -306,17 +306,18 @@ Server::SubscribeCallback(const TransportAddress *remote,
                 timestamp = keyTimestamp;
             }
         }
-        ReactiveTransaction &rt = transactions[rt.frontend_index];
-        rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
-        rt.reactive_id = msg.reactiveid();
-        rt.client_id = msg.clientid();
-        rt.last_timestamp = msg.timestamp();
-        rt.next_timestamp = timestamp;
-        rt.keys = regSet;
-        rt.client = remote->clone();
+        ReactiveTransaction *rt =
+            new ReactiveTransaction(getFrontendIndex(msg.clientid(),
+                                                     msg.reactiveid()),
+                                    msg.reactiveid(),
+                                    msg.clientid(),
+                                    regSet);
+        rt->last_timestamp = msg.timestamp();
+        rt->next_timestamp = timestamp;
+        transactions[rt.frontend_index] = rt;
         
         for (auto key : rt.keys) {
-            listeners[key].insert(rt.frontend_index);
+            listeners[key].insert(rt->frontend_index);
         }
 
         RegisterReply reply;
@@ -324,7 +325,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
         reply.set_msgid(msg.msgid());
 
         transport->Timer(1, [=]() {
-            SendNotification(rt.client_id, rt.reactive_id, rt.next_timestamp);
+            SendNotification(rt->client_id, rt->reactive_id, rt->next_timestamp);
         });
         transport->SendMessage(this, *remote, reply);
         delete remote;
@@ -347,11 +348,11 @@ Server::HandleDeregister(const TransportAddress &remote,
         reply.set_status(REPLY_NOT_FOUND);
     }
     else {
-        ReactiveTransaction rt = transactions[frontendIndex];
+        ReactiveTransaction *rt = transactions[frontendIndex];
 
         // unsubscribe to keys that no other reactive transaction is listening to
         set<string> unsubscribeSet;
-        for (const string &key : rt.keys) {
+        for (const string &key : rt->keys) {
             if (listeners[key].size() == 1 && listeners[key].count(frontendIndex)) {
                 unsubscribeSet.insert(key);
             }
@@ -365,7 +366,7 @@ Server::HandleDeregister(const TransportAddress &remote,
 
         // delete ReactiveTransaction object from transactions map
         transactions.erase(frontendIndex);
-
+        delete rt;
         reply.set_status(REPLY_OK);
     }
 

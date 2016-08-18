@@ -13,12 +13,21 @@
 
 class ReactiveTransaction {
  public:
-   ReactiveTransaction() { };
-   ~ReactiveTransaction() { delete client; };
+    ReactiveTransaction(const uint64_t frontend_index,
+                        const uint64_t reactive_id,
+                        const uint64_t client_id,
+                        const std::set<std::string &keys,
+                        TransportAddress *client) :
+        frontend_index(frontend_index),
+        reactive_id(reactive_id),
+        client_id(client_id),
+        keys(keys)
+        { this.client = client->clone()};
+    ~ReactiveTransaction() { delete client; };
    
-    uint64_t frontend_index; // ((client_id << 32) | reactive_id)
-    uint64_t reactive_id;
-    uint64_t client_id;
+    const uint64_t frontend_index; // ((client_id << 32) | reactive_id)
+    const uint64_t reactive_id;
+    const uint64_t client_id;
     Timestamp next_timestamp;
     Timestamp last_timestamp;
     std::set<std::string> keys;
