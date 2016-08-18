@@ -347,9 +347,9 @@ Client::key_to_shard(const string &key, const uint64_t nshards)
 }
 
 void
-Client::Subscribe(const set<string> &keys,
-                  const TransportAddress &address,
-		  callback_t callback) {
+Client::Subscribe(const Timestamp &timestamp,
+                  const set<string> &keys,
+                  callback_t callback) {
     map<int, set<string> > participants;
 
     for (auto &key : keys) {
@@ -370,15 +370,16 @@ Client::Subscribe(const set<string> &keys,
                              promises,
                              placeholders::_1);
         for (auto &p : participants) {
-            cclient[p.first]->Subscribe(p.second, address, cb);
+            cclient[p.first]->Subscribe(timestamp,
+                                        p.second,
+                                        cb);
         }
     }
 }
 
 void
 Client::Unsubscribe(const set<string> &keys,
-                  const TransportAddress &address,
-		  callback_t callback) {
+                    callback_t callback) {
     map<int, set<string> > participants;
 
     for (auto &key : keys) {
@@ -399,7 +400,7 @@ Client::Unsubscribe(const set<string> &keys,
                              promises,
                              placeholders::_1);
         for (auto &p : participants) {
-            cclient[p.first]->Unsubscribe(p.second, address, cb);
+            cclient[p.first]->Unsubscribe(p.second, cb);
         }
     }
 }

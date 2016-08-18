@@ -85,13 +85,12 @@ public:
     
     std::vector<int> Stats();
 
-    void Subscribe(const std::set<std::string> &keys,
-                   const TransportAddress &address,
+    void Subscribe(const Timestamp &timestamp,
+                   const std::set<std::string> &keys,
                    callback_t callback);
 
     void Unsubscribe(const std::set<std::string> &keys,
-                   const TransportAddress &address,
-                   callback_t callback);
+                     callback_t callback);
 
 private:
     // Callback functions

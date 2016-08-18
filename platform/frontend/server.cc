@@ -258,8 +258,11 @@ Server::HandleRegister(const TransportAddress &remote,
           msg,
           placeholders::_1);
 
-    store->Subscribe(subscribeSet, GetAddress(), cb);
-    store->Unsubscribe(unsubscribeSet, GetAddress(), [](Promise *p) {delete p;});
+    store->Subscribe(msg.timestamp(),
+                     subscribeSet,
+                     cb);
+    store->Unsubscribe(unsubscribeSet,
+                       [](Promise *p) {delete p;});
 }
 
 void
@@ -356,7 +359,7 @@ Server::HandleDeregister(const TransportAddress &remote,
                 unsubscribeSet.insert(key);
             }
         }
-        store->Unsubscribe(unsubscribeSet, GetAddress(), [](Promise *p) {delete p;});
+        store->Unsubscribe(unsubscribeSet, [](Promise *p) {delete p;});
 
         // remove this reactive transaction from the listener set of each key
         for (const string &key : rt.keys) {

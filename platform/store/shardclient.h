@@ -87,12 +87,11 @@ public:
     // Abort all Get(s) and Put(s) since Begin().
     void Abort(const uint64_t tid);
 
-    void Subscribe(const std::set<std::string> &keys,
-                   const TransportAddress &myAddress,
+    void Subscribe(const Timestamp &timestamp,
+                   const std::set<std::string> &keys,
                    callback_t callback);
 
     void Unsubscribe(const std::set<std::string> &keys,
-                     const TransportAddress &myAddress,
                      callback_t callback);
 private:
     Transport *transport; // Transport layer.

@@ -260,8 +260,8 @@ ShardClient::AbortCallback(const string &request_str, const string &reply_str)
  * of keys is empty, returns immediately with timestamp 0.
  */
 void
-ShardClient::Subscribe(const set<string> &keys,
-                       const TransportAddress &myAddress,
+ShardClient::Subscribe(const Timestamp &timestamp,
+                       const set<string> &keys,
 		       callback_t callback) {
     if (keys.size() == 0) {
         Debug("[shared %i] SUBSCRIBE set is empty", shard);
@@ -277,9 +277,7 @@ ShardClient::Subscribe(const set<string> &keys,
     string request_str;
     Request request;
     request.set_op(Request::SUBSCRIBE);
-    request.set_txnid(0);
-    string address(myAddress.getHostname() + ":" + myAddress.getPort());
-    request.mutable_subscribe()->set_address(address);
+    request.mutable_subscribe()->set_timestamp(timestamp);
     
     for (auto &i : keys) {
         request.mutable_subscribe()->add_keys(i);
@@ -322,8 +320,7 @@ ShardClient::SubscribeCallback(callback_t callback,
  */
 void
 ShardClient::Unsubscribe(const set<string> &keys,
-                         const TransportAddress &myAddress,
-		         callback_t callback) {
+                         callback_t callback) {
     if (keys.size() == 0) {
         Debug("[shared %i] UNSUBSCRIBE set is empty", shard);
         Promise *promise = new Promise();
@@ -338,9 +335,6 @@ ShardClient::Unsubscribe(const set<string> &keys,
     string request_str;
     Request request;
     request.set_op(Request::UNSUBSCRIBE);
-    request.set_txnid(0);
-    string address(myAddress.getHostname() + ":" + myAddress.getPort());
-    request.mutable_unsubscribe()->set_address(address);
     
     for (auto &i : keys) {
         request.mutable_unsubscribe()->add_keys(i);

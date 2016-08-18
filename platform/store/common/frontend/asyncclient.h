@@ -65,13 +65,12 @@ public:
     // Abort all Get(s) and Put(s) since Begin().
     virtual void Abort(const uint64_t tid) = 0;
     
-    virtual void Subscribe(const std::set<std::string> &keys,
-                           const TransportAddress &myAddress,
+    virtual void Subscribe(const Timestamp &timestamp,
+                           const std::set<std::string> &keys,
                            callback_t callback) = 0;
 
     virtual void Unsubscribe(const std::set<std::string> &keys,
-                           const TransportAddress &myAddress,
-                           callback_t callback) = 0;
+                             callback_t callback) = 0;
 
 };
 
