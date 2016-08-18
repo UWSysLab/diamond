@@ -306,8 +306,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
                 timestamp = keyTimestamp;
             }
         }
-
-        ReactiveTransaction rt;
+        ReactiveTransaction &rt = transactions[rt.frontend_index]
         rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
         rt.reactive_id = msg.reactiveid();
         rt.client_id = msg.clientid();
@@ -315,11 +314,9 @@ Server::SubscribeCallback(const TransportAddress *remote,
         rt.next_timestamp = timestamp;
         rt.keys = regSet;
         rt.client = remote->clone();
-
-        transactions[rt.frontend_index] = rt;
         
-        for (auto it = rt.keys.begin(); it != rt.keys.end(); it++) {
-            listeners[*it].insert(rt.frontend_index);
+        for (auto key : keys) {
+            listeners[key].insert(rt.frontend_index);
         }
 
         RegisterReply reply;
