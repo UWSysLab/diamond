@@ -306,7 +306,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
                 timestamp = keyTimestamp;
             }
         }
-        ReactiveTransaction &rt = transactions[rt.frontend_index]
+        ReactiveTransaction &rt = transactions[rt.frontend_index];
         rt.frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
         rt.reactive_id = msg.reactiveid();
         rt.client_id = msg.clientid();
