@@ -172,7 +172,7 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid = ++txnid_counter;
         txnid_lock.unlock();
        
-        Timestamp timestamp = last_notification_ts;
+        Timestamp timestamp = MAX_TIMESTAMP;
         if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
             timestamp = timestamp_map[reactive_id];
         }
