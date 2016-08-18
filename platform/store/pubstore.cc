@@ -83,7 +83,7 @@ void
 PubStore::AckPending(const TCPTransportAddress &remote,
 		     const Timestamp timestamp,
 		     const set<string> &keys) {
-    store.Subscribe(remote, timestamp, keys);
+    store.Subscribe(remote, timestamp+1, keys);
 }
     
 } // namespace strongstore

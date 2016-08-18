@@ -221,6 +221,7 @@ VersionedKVStore::Publish(const Timestamp &timestamp,
     for (auto &key : keys) {
         for (auto &address : subscribers[key]) {
             if (timestamp > address.second) {
+                Debug("timestamp %lu and subscription %lu", timestamp, address.second);
                 notifications[address.first].insert(key);
             }
         }

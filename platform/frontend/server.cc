@@ -104,9 +104,14 @@ Server::getFrontendIndex(uint64_t client_id, uint64_t reactive_id) {
 void
 Server::HandleNotificationReply(const TransportAddress &remote,
                                 const NotificationReply &msg) {
-    Debug("Handling NOTIFICATION-REPLY for client_id %lu, reactive_id %lu", msg.clientid(), msg.reactiveid());
+    Debug("Handling NOTIFICATION-REPLY for client_id %lu, reactive_id %lu, timestamp %lu",
+          msg.clientid(),
+          msg.reactiveid(),
+          msg.timestamp());
     uint64_t frontend_index = getFrontendIndex(msg.clientid(), msg.reactiveid());
-    transactions[frontend_index]->last_timestamp = msg.timestamp();
+    if (msg.timestamp() > transactions[frontend_index]->last_timestamp) {
+        transactions[frontend_index]->last_timestamp = msg.timestamp();
+    }
 }
 
 void
@@ -149,7 +154,7 @@ void
 Server::HandlePublish(const Timestamp &timestamp,
                       const vector<string> &keys)
 {
-    Debug("Handling PUBLISH");
+    Debug("Handling PUBLISH at timestamp %lu", timestamp);
     for (auto key : keys) { // trigger notifications
         for (auto listener : listeners[key]) {
             ReactiveTransaction *rt = transactions[listener];
@@ -285,7 +290,10 @@ Server::SubscribeCallback(const TransportAddress *remote,
             if (cachedValues.find(pair.first) == cachedValues.end()
                 || pair.second.GetTimestamp() > cachedValues[pair.first].GetTimestamp()
                 || pair.second.GetInterval().End() > cachedValues[pair.first].GetInterval().End()) { // TODO: is this right?
-                Debug("Got cache entry %s (%lu, %lu) from subscribe", pair.first.c_str(), pair.second.GetInterval().Start(), pair.second.GetInterval().End());
+                Debug("Got cache entry %s (%lu, %lu) from subscribe",
+                      pair.first.c_str(),
+                      pair.second.GetInterval().Start(),
+                      pair.second.GetInterval().End());
                 cachedValues[pair.first] = pair.second;
             }
         }

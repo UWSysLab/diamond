@@ -179,8 +179,8 @@ Server::Publish(const uint64_t tid,
                    notifications);
 
     for (auto &n : notifications) {
-        Debug("Publishing to frontend %s at ts %lu",
-              n.first.getHostname().c_str(), timestamp);
+        Debug("Publishing to frontend %s at ts %lu notifications %u",
+              n.first.getHostname().c_str(), timestamp, notifications.size());
         PublishMessage msg;
         for (auto &v : n.second) {
             msg.add_keys(v);

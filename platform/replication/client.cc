@@ -148,6 +148,7 @@ VRClient::HandlePublish(const TransportAddress &remote,
     strongstore::proto::Request request;
     request.set_op(strongstore::proto::Request::ACK);
     *(request.mutable_ack()) = msg;
+    Debug("Client acking timestamp %lu", request.ack().timestamp());
     request.SerializeToString(&request_str);
     Invoke(request_str, [] (const string &str1, const string &str2) {});
 }

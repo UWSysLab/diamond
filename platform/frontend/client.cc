@@ -255,7 +255,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
         notification.ParseFromString(data);
         uint64_t reactive_id = notification.reactiveid();
         Timestamp timestamp = notification.timestamp();
-        Debug("Received NOTIFICATION (reactive_id %llu, timestamp %llu)", reactive_id, timestamp);
+        Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)",
+              reactive_id, timestamp);
 
         // Ack notification
         ReplyToNotification(reactive_id, timestamp);

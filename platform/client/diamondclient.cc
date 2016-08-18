@@ -173,8 +173,9 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid_lock.unlock();
        
         Timestamp timestamp = MAX_TIMESTAMP;
-        if (timestamp_map.find(reactive_id) != timestamp_map.end()) {
-            timestamp = timestamp_map[reactive_id];
+        auto it = timestamp_map.find(reactive_id);
+        if (it != timestamp_map.end()) {
+            timestamp = *it;
         }
 
         Debug("Diamondclient::BEGIN_REACTIVE transaction for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
@@ -365,8 +366,12 @@ DiamondClient::GetNextNotification(bool blocking)
 
 void
 DiamondClient::processNotification(Timestamp timestamp, uint64_t reactive_id) {
-    timestamp_map[reactive_id] = timestamp;
-    last_notification_ts = timestamp;
+    if (timestamp > timestamp_map[reactive_id]) {
+        timestamp_map[reactive_id] = timestamp;
+    }
+    if (timestamp > last_notification_ts) {
+        last_notification_ts = timestamp;
+    }
 }
 
 void
