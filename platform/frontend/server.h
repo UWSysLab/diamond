@@ -82,7 +82,7 @@ private:
 
     uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
     void SendNotification(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
-    void UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp);
+    void UpdateCache(const ReactiveTransaction *rt, const Timestamp timestamp);
 
     // callbacks
     void GetCallback(const TransportAddress *remote,
