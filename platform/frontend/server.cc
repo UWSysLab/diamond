@@ -315,7 +315,7 @@ Server::SubscribeCallback(const TransportAddress *remote,
         rt.keys = regSet;
         rt.client = remote->clone();
         
-        for (auto key : keys) {
+        for (auto key : rt.keys) {
             listeners[key].insert(rt.frontend_index);
         }
 
