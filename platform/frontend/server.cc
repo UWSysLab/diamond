@@ -259,13 +259,18 @@ Server::HandleRegister(const TransportAddress &remote,
                   rt,
                   placeholders::_1);
 
-    store->Subscribe(msg.reactiveid(),
-                     subscribeSet,
-                     msg.timestamp(),
-                     cb);
-    store->Unsubscribe(msg.reactiveid(),
-                       unsubscribeSet,
-                       [] (Promise &promise) { });
+    if (subscribeSet.size() > 0) {
+        store->Subscribe(msg.reactiveid(),
+                         subscribeSet,
+                         msg.timestamp(),
+                         cb);
+    }
+
+    if (unsubscribeSet.size() > 0) {
+        store->Unsubscribe(msg.reactiveid(),
+                           unsubscribeSet,
+                           [] (Promise &promise) { });
+    }
 
     
 }
