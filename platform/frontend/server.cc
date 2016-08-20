@@ -252,18 +252,22 @@ Server::HandleRegister(const TransportAddress &remote,
         rt->last_timestamp = msg.timestamp();
         rt->next_timestamp = msg.timestamp();
     }
-
-    callback_t cb =
+    
+    if (subscribeSet.size() > 0) {
+        callback_t cb =
         std::bind(&Server::SubscribeCallback,
                   this,
                   rt,
                   placeholders::_1);
 
-    if (subscribeSet.size() > 0) {
         store->Subscribe(msg.reactiveid(),
                          subscribeSet,
                          msg.timestamp(),
                          cb);
+    } else {
+        Promise p;
+        p.Reply(REPLY_OK);
+        SubscribeCallback(rt, p);
     }
 
     if (unsubscribeSet.size() > 0) {
