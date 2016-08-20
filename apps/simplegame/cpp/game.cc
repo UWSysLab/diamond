@@ -43,6 +43,8 @@ int main(int argc, char ** argv) {
     DObject::Map(score, "100game:score");
     DObject::Map(currentMove, "100game:move");
 
+    cout << "Hello, " << myName << "\n";
+
     // Add user to the game
     execute_txn([myName] () {
         if (players.Index(myName) == -1) {
@@ -55,6 +57,8 @@ int main(int argc, char ** argv) {
             exit(1);
         }
     });
+
+    cout << "Hello, " << myName << "\n";
 
     // Set up our reactive print outs
     uint64_t reactive_id = reactive_txn([myName] () {
@@ -69,6 +73,8 @@ int main(int argc, char ** argv) {
                 cout << " It's " << cp << "'s turn. \n";
         }
     });
+
+    cout << "Hello, " << myName << "\n";
 
     // Cycle on user input
     while (1) {

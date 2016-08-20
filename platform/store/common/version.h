@@ -46,7 +46,7 @@ public:
     friend bool operator< (const Version &v1, const Version &v2) {
         return v1.valid.Start() < v2.valid.Start();
     };
-    void Serialize(ReadReply *msg);
+    void Serialize(ReadReply *msg) const;
     void Deserialize(ReadReply *msg);
 };
 

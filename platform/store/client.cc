@@ -162,28 +162,28 @@ Client::PrepareInternal(const uint64_t tid,
     uint64_t *ts = new uint64_t();
     *ts = 0;
     callback_t cb =
-	bind(&Client::PrepareCallback,
-	     this, callback,
-	     participants.size(),
-	     results, ts,
-	     placeholders::_1);
+        bind(&Client::PrepareCallback,
+             this, callback,
+             participants.size(),
+             results, ts,
+             placeholders::_1);
 
     for (auto &p : participants) {
         Debug("Sending prepare to shard [%d]", p.first);
-	cclient[p.first]->Prepare(tid, cb,
-				  p.second);
+        cclient[p.first]->Prepare(tid, cb,
+                                  p.second);
     }
 
     // In the meantime ... go get a timestamp for OCC
     transport->Timer(0, [=]() {
             Debug("Sending request to TimeStampServer");
-	    function<void (const string &, const string &)> cb =
-		bind(&Client::tssCallback,
-		     this, callback,
-		     participants.size(),
-		     results, ts,
-		     placeholders::_1,
-		     placeholders::_2);
+            function<void (const string &, const string &)> cb =
+                bind(&Client::tssCallback,
+                     this, callback,
+                     participants.size(),
+                     results, ts,
+                     placeholders::_1,
+                     placeholders::_2);
             tss->Invoke("", cb);});
 }
 
@@ -201,8 +201,8 @@ Client::tssCallback(callback_t callback,
     p.Reply(REPLY_OK);
     *ts = stol(reply, NULL, 10);
     PrepareCallback(callback,
-		    total,
-		    results,
+                    total,
+                    results,
                     ts,
                     p);
 }
@@ -261,29 +261,30 @@ Client::Commit(const uint64_t tid,
 
 void
 Client::PrepareCallback(callback_t callback,
-			size_t total,
-			vector<int> *results,
-			uint64_t *ts,
-			Promise &promise)
+                        size_t total,
+                        vector<int> *results,
+                        uint64_t *ts,
+                        bool isTSS,
+                        Promise &promise)
 {
     results->push_back(promise.GetReply());
     Debug("Prepare callback size %lu", results->size()); 
     // check whether we're done
     if (results->size() == total && *ts > 0) {
-	int ret = REPLY_OK;
-	for (auto &r : *results) {
-	    // check what the reply was
-	    if (r != REPLY_OK) {
-		ret = r;
-	    }
-	}
+        int ret = REPLY_OK;
+        for (auto &r : *results) {
+            // check what the reply was
+            if (r != REPLY_OK) {
+                ret = r;
+            }
+        }
 
-	Promise pp;
-	pp.Reply(ret, *ts);
-	delete results;
-	delete ts;
-	// call commit callback
-	callback(pp);
+        Promise pp;
+        pp.Reply(ret, *ts);
+        delete results;
+        delete ts;
+        // call commit callback
+        callback(pp);
     }
 
 }

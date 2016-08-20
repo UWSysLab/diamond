@@ -111,11 +111,13 @@ CacheClient::MultiGet(const uint64_t tid,
     if (!cachingEnabled) {
         txnclient->MultiGet(tid, keysToRead, timestamp, promise);
         return;
-    }
+    } 
 
     Promise p(GET_TIMEOUT);
     Promise *pp = (promise != NULL) ? promise : &p;
-    
+
+    txnclient->MultiGet(tid, keysToRead, timestamp, pp);
+
     if (pp->GetReply() == REPLY_OK){
         map<string, Version> values = pp->GetValues();
         

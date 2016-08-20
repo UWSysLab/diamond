@@ -85,7 +85,7 @@ private:
                               uint64_t reactive_id);
     void SendNotification(const ReactiveTransaction *rt,
                           const Timestamp timestamp,
-                          const map<string, Version> &values);
+                          const std::map<std::string, Version> &values);
     void NotificationGetCallback(const ReactiveTransaction *rt,
                                  const Timestamp timestamp,
                                  Promise &promise);
@@ -96,7 +96,7 @@ private:
     void CommitCallback(const TransportAddress *remote,
                         const proto::CommitMessage msg,
                         Promise &promise);
-    void SubscribeCallback(const ReactiveTransaction *rt,
+    void SubscribeCallback(ReactiveTransaction *rt,
                            Promise &promise);
 };
 

@@ -225,7 +225,7 @@ AsyncCacheClient::CommitCallback(callback_t callback,
     prepared.erase(tid);
             
     if (promise.GetReply() == REPLY_OK) {
-        for (auto &write : txn.GetWriteSet()) {
+        for (auto &write : t.GetWriteSet()) {
     	    Debug("Adding write [%s] with ts %lu to the cache",
                   write.first.c_str(),
                   promise.GetTimestamp());
@@ -234,7 +234,7 @@ AsyncCacheClient::CommitCallback(callback_t callback,
                       promise.GetTimestamp());
         }
     } else if (promise.GetReply() == REPLY_FAIL) {
-        for (auto &read : txn.GetReadSet()) {
+        for (auto &read : t.GetReadSet()) {
             Debug("Removing stale [%s] from the cache",
                   read.first.c_str());
             cache.Remove(read.first);

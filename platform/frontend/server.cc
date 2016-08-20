@@ -179,7 +179,7 @@ Server::SendNotification(const ReactiveTransaction *rt,
         notification.set_timestamp(timestamp);
 
         for (auto &v : values) {
-            string &key = v.first;
+            const string &key = v.first;
             const Version &value = v.second;
             Debug("Packing entry %s (%lu, %lu)",
                   key.c_str(),
@@ -243,15 +243,14 @@ Server::HandleRegister(const TransportAddress &remote,
             }
         }
     } else {
-        rt = new ReactiveTransaction();
-        rt->frontend_index = frontendIndex;
-        rt->reactive_id = msg.reactiveid();
-        rt->client_id = msg.clientid();
+        rt = new ReactiveTransaction(frontendIndex,
+                                     msg.reactiveid(),
+                                     msg.clientid(),
+                                     regSet,
+                                     remote.clone());
+        
         rt->last_timestamp = msg.timestamp();
         rt->next_timestamp = msg.timestamp();
-        rt->keys = regSet;
-        rt->client_hostname = remote.getHostname();
-        rt->client_port = remote.getPort();
     }
 
     callback_t cb =
@@ -260,9 +259,10 @@ Server::HandleRegister(const TransportAddress &remote,
                   rt,
                   placeholders::_1);
 
-    store->Subscribe(msg.timestamp(),
+    store->Subscribe(msg.reactiveid(),
                      subscribeSet,
-        );
+                     msg.timestamp(),
+                     cb);
     store->Unsubscribe(msg.reactiveid(),
                        unsubscribeSet,
                        [] (Promise &promise) { });
@@ -271,14 +271,14 @@ Server::HandleRegister(const TransportAddress &remote,
 }
 
 void
-Server::SubscribeCallback(const ReactiveTransaction *rt,
+Server::SubscribeCallback(ReactiveTransaction *rt,
                           Promise &promise)
 {
     if (promise.GetReply() == REPLY_OK) {
-        transactions[rt.frontend_index] = rt;
+        transactions[rt->frontend_index] = rt;
 
-        for (auto &key : rt.keys) {
-            listeners[key].insert(rt.frontend_index);
+        for (auto &key : rt->keys) {
+            listeners[key].insert(rt->frontend_index);
         }
 
         // do a multiget and send the first notification
