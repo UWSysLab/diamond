@@ -68,6 +68,7 @@ Client::BeginRO(const uint64_t tid,
 void
 Client::SetNotify(notification_handler_t notify)
 {
+    Debug("Setting notification handler");
     hasNotificationHandler = true;
     this->notify = notify;
 }
@@ -266,6 +267,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
         }
         
         if (hasNotificationHandler) {
+            Debug("Calling notification handler\n");
             notify(reactive_id, timestamp, values);
         }
                 
