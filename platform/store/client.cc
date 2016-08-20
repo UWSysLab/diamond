@@ -92,6 +92,7 @@ Client::~Client()
 
 void
 Client::SetPublish(publish_handler_t publish) {
+    Debug("Set message handler");
     for (auto client : cclient) {
         client->SetPublish(publish);
     }

@@ -55,6 +55,7 @@ VRClient::~VRClient()
 void
 VRClient::SetMessageHandler(message_handler_t handler)
 {
+    Debug("Set Message Handler");
     hasHandler = true;
     this->handler = handler;
 }

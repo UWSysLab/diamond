@@ -373,6 +373,7 @@ ShardClient::HandlePublish(publish_handler_t publish,
     
 void
 ShardClient::SetPublish(publish_handler_t publish) {
+    Debug("Set message handler");
     client->SetMessageHandler(bind(&ShardClient::HandlePublish,
                                    this,
                                    publish,
