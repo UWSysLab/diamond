@@ -414,6 +414,9 @@ DiamondClient::Notify(function<void (void)> callback,
                       const uint64_t reactive_id,
                       const Timestamp timestamp,
                       const map<string, Version> &values) {
+    Debug("Received notification for reactive transaction %lu at ts %lu\n",
+          reactive_id,
+          timestamp);
     lock_guard<mutex> l(lock);
     if (timestamp > timestamp_map[reactive_id]) {
         timestamp_map[reactive_id] = timestamp;
@@ -425,6 +428,7 @@ DiamondClient::Notify(function<void (void)> callback,
         pending.push(reactive_id);
         cv.notify_all();
     }
+    callback();
 }
 
 void
