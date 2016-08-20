@@ -249,7 +249,7 @@ Server::HandleRegister(const TransportAddress &remote,
                                      regSet,
                                      remote.clone());
         
-        rt->last_timestamp = msg.timestamp();
+        rt->last_timestamp = 0;
         rt->next_timestamp = msg.timestamp();
     }
     
