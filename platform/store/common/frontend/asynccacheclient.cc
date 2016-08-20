@@ -123,6 +123,7 @@ void
 AsyncCacheClient::GetCallback(callback_t callback,
                               Promise &promise)
 {
+    Debug("GET Callback");
     if (promise.GetReply() == REPLY_OK) {
         cache_lock.lock();
         // Make sure that we've capped the validity range
@@ -176,11 +177,12 @@ AsyncCacheClient::Prepare(const uint64_t tid,
 void
 AsyncCacheClient::PrepareCallback(callback_t callback,
                                   const uint64_t tid,
-                                  const Transaction &txn,
+                                  const Transaction txn,
                                   Promise &promise)
 {
     //save the transactions for later
     if (promise.GetReply() == REPLY_OK) {
+        Debug("PREPARE Callback caching transaction for later");
         cache_lock.lock();
         if (prepared.find(tid) == prepared.end()) {
             prepared[tid] = txn;
@@ -214,7 +216,7 @@ AsyncCacheClient::Commit(const uint64_t tid,
 void
 AsyncCacheClient::CommitCallback(callback_t callback,
                                  const uint64_t tid,
-                                 const Transaction &txn,
+                                 const Transaction txn,
                                  Promise &promise)
 {
     // update the cache

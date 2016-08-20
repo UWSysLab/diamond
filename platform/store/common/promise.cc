@@ -100,6 +100,17 @@ Promise::Reply(int r,
 }
 
 void
+Promise::Reply(int r,
+               Timestamp t,
+               map<string, Version> &v)
+{
+    lock_guard<mutex> l(lock);
+    timestamp = t;
+    values = v;
+    ReplyInternal(r);
+}
+
+void
 Promise::Reply(int r, Timestamp t,
                map<string,
                Version> &v,

@@ -115,11 +115,11 @@ protected:
                      Promise &promise);
     void PrepareCallback(callback_t callback,
                          const uint64_t tid,
-                         const Transaction &txn,
+                         const Transaction txn,
                          Promise &promise);
     void CommitCallback(callback_t callback,
                         const uint64_t tid,
-                        const Transaction &txn,
+                        const Transaction txn,
                         Promise &promise);
     void AbortCallback(callback_t callback,
                        const uint64_t tid,

@@ -236,7 +236,11 @@ ShardClient::GenericCallback(callback_t callback,
     }
 
     Promise w;
-    w.Reply(reply.status(), values);
+    if (reply.has_timestamp()) {
+        w.Reply(reply.status(), reply.timestamp(), values);
+    } else {
+        w.Reply(reply.status(), values);
+    }
     Debug("[shard %i] Received SUBSCRIBE callback [%d]",
           shard, reply.status());
     callback(w);

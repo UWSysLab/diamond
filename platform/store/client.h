@@ -97,9 +97,10 @@ private:
                           std::map<std::string, Version> *values,
                           Promise &promise);
     void PrepareCallback(callback_t callback,
-                         size_t total,
+                         const size_t total,
 			 std::vector<int> *results,
-                         uint64_t *ts,
+                         const uint64_t *ts,
+                         const bool isTSS,
 			 Promise &promise);
     void tssCallback(callback_t callback,
                      size_t total,

@@ -165,7 +165,7 @@ Client::PrepareInternal(const uint64_t tid,
         bind(&Client::PrepareCallback,
              this, callback,
              participants.size(),
-             results, ts,
+             results, ts, false,
              placeholders::_1);
 
     for (auto &p : participants) {
@@ -204,6 +204,7 @@ Client::tssCallback(callback_t callback,
                     total,
                     results,
                     ts,
+                    true,
                     p);
 }
 		
@@ -261,13 +262,13 @@ Client::Commit(const uint64_t tid,
 
 void
 Client::PrepareCallback(callback_t callback,
-                        size_t total,
+                        const size_t total,
                         vector<int> *results,
-                        uint64_t *ts,
-                        bool isTSS,
+                        const uint64_t *ts,
+                        const bool isTSS,
                         Promise &promise)
 {
-    results->push_back(promise.GetReply());
+    if (!isTSS) results->push_back(promise.GetReply());
     Debug("Prepare callback size %lu", results->size()); 
     // check whether we're done
     if (results->size() == total && *ts > 0) {
