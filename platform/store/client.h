@@ -56,56 +56,61 @@ public:
     Client(const string configPath,
            const int nshards,
            const int closestReplica,
-           Transport *transport,
-           replication::publish_handler_t publications);
+           Transport *transport);
     ~Client();
 
-    // Get the value corresponding to key (valid at given timestamp).
-    void Get(const uint64_t tid,
-             const std::string &key,
-             callback_t callback,
-             const Timestamp &timestamp = MAX_TIMESTAMP);
-
-    void MultiGet(const uint64_t tid,
-                  const std::vector<std::string> &key,
-                  callback_t callback,
-                  const Timestamp &timestamp = MAX_TIMESTAMP);
-    
-    // Prepare the transaction.
-    void Prepare(const uint64_t tid,
-                 callback_t callback,
-                 const Transaction &txn = Transaction()) { };
+    virtual void MultiGet(const uint64_t tid,
+                          const std::set<std::string> &keys,
+                          callback_t callback,
+                          const Timestamp timestamp = MAX_TIMESTAMP);
 
     // Callback based async call
-    void Commit(const uint64_t tid,
-                callback_t callback,
-                const Transaction &txn);
+    virtual void Commit(const uint64_t tid,
+                        callback_t callback,
+                        const Transaction &txn);
 
-    void Abort(const uint64_t tid);
+    virtual void Abort(const uint64_t tid,
+                       callback_t callback);
     
     std::vector<int> Stats();
 
-    void Subscribe(const Timestamp &timestamp,
-                   const std::set<std::string> &keys,
-                   callback_t callback);
+    virtual void Subscribe(const uint64_t reactive_id,
+                           const std::set<std::string> &keys,
+                           const Timestamp timestamp,
+                           callback_t callback);
 
-    void Unsubscribe(const std::set<std::string> &keys,
+    virtual void Unsubscribe(const uint64_t reactive_id,
+                             const std::set<std::string> &keys,
+                             callback_t callback);
+
+    virtual void Ack(const uint64_t reactive_id,
+                     const std::set<std::string> &keys,
+                     const Timestamp timestamp,
                      callback_t callback);
 
+    virtual void SetPublish(publish_handler_t publish);
 private:
     // Callback functions
-    void MultiGetCallback(callback_t callback, size_t total,
-			  std::vector<Promise *> *promises, Promise *promise);
-    void PrepareCallback(callback_t callback, size_t total,
-			 std::vector<Promise *> *promises, uint64_t *ts,
-			 Promise *promise);
-    void tssCallback(callback_t callback, size_t total,
-		     std::vector<Promise *> *promises, uint64_t *ts,
-		     const string &request, const string &reply);
+    void MultiGetCallback(callback_t callback,
+                          size_t total,
+			  std::vector<int> *results,
+                          std::map<std::string, Version> *values,
+                          Promise &promise);
+    void PrepareCallback(callback_t callback,
+                         size_t total,
+			 std::vector<int> *results,
+                         uint64_t *ts,
+			 Promise &promise);
+    void tssCallback(callback_t callback,
+                     size_t total,
+		     std::vector<int> *results,
+                     uint64_t *ts,
+		     const string &request,
+                     const string &reply);
     void CommitCallback(uint64_t tid,
 			callback_t callback,
 			std::map<int, Transaction> participants,
-			Promise *promise);
+			Promise &promise);
     // local Abort function
     void AbortInternal(const uint64_t tid,
 		       const std::map<int, Transaction> &participants);
@@ -116,7 +121,8 @@ private:
 			 callback_t callback);
 
     // Sharding logic: Given key, generates a number b/w 0 to nshards-1
-    uint64_t key_to_shard(const std::string &key, const uint64_t nshards);
+    uint64_t key_to_shard(const std::string &key,
+                          const uint64_t nshards);
 
     // Unique ID for this client.
     uint64_t client_id;
@@ -131,7 +137,7 @@ private:
     Transport *transport;
 
     // Caching client for each shard.
-    std::vector<ShardClient *> cclient;
+    std::vector<AsyncClient *> cclient;
 
     // Timestamp server shard.
     replication::VRClient *tss; 

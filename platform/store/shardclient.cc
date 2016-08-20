@@ -41,8 +41,7 @@ ShardClient::ShardClient(const string &configPath,
                          Transport *transport,
                          const uint64_t client_id,
                          const int shard,
-                         const int closestReplica,
-                         replication::publish_handler_t publish)
+                         const int closestReplica)
     : transport(transport), client_id(client_id), shard(shard)
 { 
     ifstream configStream(configPath);
@@ -52,7 +51,7 @@ ShardClient::ShardClient(const string &configPath,
     }
     replication::ReplicaConfig config(configStream);
 
-    client = new replication::VRClient(config, transport, publish);
+    client = new replication::VRClient(config, transport);
 
     if (closestReplica == -1) {
 	replica = client_id % config.n;
@@ -66,21 +65,11 @@ ShardClient::~ShardClient()
     delete client;
 }
 
-/* Sends BEGIN to a single shard indexed by i. */
-void
-ShardClient::Get(const uint64_t tid,
-		 const string &key,
-		 callback_t callback,
-		 const Timestamp &timestamp)
-{
-    MultiGet(tid, vector<string>({key}), callback, timestamp);
-}
-
 void
 ShardClient::MultiGet(const uint64_t tid,
-		      const vector<string> &keys,
+		      const set<string> &keys,
 		      callback_t callback,
-                      const Timestamp &timestamp)
+                      const Timestamp timestamp)
 {
     // Send the GET operation to appropriate shard.
     Debug("[shard %i] Sending %lu GETS", shard, keys.size());
@@ -153,7 +142,7 @@ ShardClient::Commit(const uint64_t tid,
 
     transport->Timer(0, [=]() {
         client->Invoke(request_str,
-            bind(&ShardClient::CommitCallback,
+            bind(&ShardClient::GenericCallback,
 		 this,
 		 callback,
 		 placeholders::_1,
@@ -163,7 +152,8 @@ ShardClient::Commit(const uint64_t tid,
 
 /* Aborts the ongoing transaction. */
 void
-ShardClient::Abort(const uint64_t tid)
+ShardClient::Abort(const uint64_t tid,
+                   callback_t callback)
 {
     Debug("[shard %i] Sending ABORT: %lu", shard, tid);
     
@@ -176,8 +166,9 @@ ShardClient::Abort(const uint64_t tid)
 
     transport->Timer(0, [=]() {
 	    client->Invoke(request_str,
-			   bind(&ShardClient::AbortCallback,
+			   bind(&ShardClient::GenericCallback,
 				this,
+                                callback,
 				placeholders::_1,
 				placeholders::_2));
     });
@@ -195,7 +186,7 @@ ShardClient::GetCallback(callback_t callback,
 
     Debug("[shard %i] Received GET callback [%d]",
 	  shard, reply.status());
-    Promise *w = new Promise();
+    Promise w;
     map<string, Version> ret;
 
     if (reply.status() == REPLY_OK) {
@@ -205,7 +196,7 @@ ShardClient::GetCallback(callback_t callback,
             ASSERT(ret[rep.key()].GetInterval().End() != MAX_TIMESTAMP);
         }
     }
-    w->Reply(reply.status(), ret);
+    w.Reply(reply.status(), ret);
     callback(w);
 }
 
@@ -221,52 +212,49 @@ ShardClient::PrepareCallback(callback_t callback,
     Debug("[shard %i] Received PREPARE callback [%d]",
 	  shard, reply.status());
 
-    Promise *w = new Promise();
+    Promise w;
     if (reply.has_timestamp()) {
-	w->Reply(reply.status(), reply.timestamp());
+	w.Reply(reply.status(), reply.timestamp());
     } else {
-	w->Reply(reply.status(), Timestamp());
+	w.Reply(reply.status(), Timestamp());
     }
     callback(w);
 }
 
-/* Callback from a shard replica on commit operation completion. */
 void
-ShardClient::CommitCallback(callback_t callback, const string &request_str, const string &reply_str)
-{
-    // COMMITs always succeed.
-    Reply reply;
-    reply.ParseFromString(reply_str);
-    ASSERT(reply.status() == REPLY_OK);
-    Debug("[shard %i] Received COMMIT2 callback [%d]",
-	  shard, reply.status());
-}
-
-/* Callback from a shard replica on abort operation completion. */
-void
-ShardClient::AbortCallback(const string &request_str, const string &reply_str)
-{
-    // ABORTs always succeed.
+ShardClient::GenericCallback(callback_t callback,
+			       const string &request_str,
+			       const string &reply_str) {
     Reply reply;
     reply.ParseFromString(reply_str);
     ASSERT(reply.status() == REPLY_OK);
 
-    Debug("[shard %i] Received ABORT callback [%d]",
-	  shard, reply.status());
-}
+    map<string, Version> values;
+    for (int i = 0; i < reply.replies_size(); i++) {
+        ReadReply rep = reply.replies(i);
+        values[rep.key()] = Version(rep);
+    }
 
+    Promise w;
+    w.Reply(reply.status(), values);
+    Debug("[shard %i] Received SUBSCRIBE callback [%d]",
+          shard, reply.status());
+    callback(w);
+}
+    
 /*
  * Subscribe to the given keys in the backend partition. If the set
  * of keys is empty, returns immediately with timestamp 0.
  */
 void
-ShardClient::Subscribe(const Timestamp &timestamp,
+ShardClient::Subscribe(const uint64_t reactive_id,
                        const set<string> &keys,
-		       callback_t callback) {
+		       const Timestamp timestamp,
+                       callback_t callback) {
     if (keys.size() == 0) {
         Debug("[shared %i] SUBSCRIBE set is empty", shard);
-        Promise *promise = new Promise();
-	promise->Reply(REPLY_OK, 0);
+        Promise promise;
+	promise.Reply(REPLY_OK, 0);
         callback(promise);
 	return;
     }
@@ -286,7 +274,7 @@ ShardClient::Subscribe(const Timestamp &timestamp,
 
     transport->Timer(0, [=]() {
             client->Invoke(request_str,
-                           bind(&ShardClient::SubscribeCallback,
+                           bind(&ShardClient::GenericCallback,
                                 this,
 				callback,
                                 placeholders::_1,
@@ -294,37 +282,20 @@ ShardClient::Subscribe(const Timestamp &timestamp,
         });
 }
 
-void
-ShardClient::SubscribeCallback(callback_t callback,
-			       const string &request_str,
-			       const string &reply_str) {
-    Reply reply;
-    reply.ParseFromString(reply_str);
-    ASSERT(reply.status() == REPLY_OK);
-
-    map<string, Version> values;
-    for (int i = 0; i < reply.replies_size(); i++) {
-        ReadReply rep = reply.replies(i);
-        values[rep.key()] = Version(rep);
-    }
-
-    Promise *w = new Promise();
-    w->Reply(reply.status(), values);
-    Debug("[shard %i] Received SUBSCRIBE callback [%d]", shard, reply.status());
-    callback(w);
-}
 
 /*
  * Unubscribe to the given keys in the backend partition. If the set
  * of keys is empty, returns immediately.
  */
 void
-ShardClient::Unsubscribe(const set<string> &keys,
-                         callback_t callback) {
+ShardClient::Unsubscribe(const uint64_t reactive_id,
+                         const set<string> &keys,
+                         callback_t callback)
+{
     if (keys.size() == 0) {
         Debug("[shared %i] UNSUBSCRIBE set is empty", shard);
-        Promise *promise = new Promise();
-	promise->Reply(REPLY_OK, 0);
+        Promise promise;
+	promise.Reply(REPLY_OK, 0);
         callback(promise);
 	return;
     }
@@ -343,7 +314,7 @@ ShardClient::Unsubscribe(const set<string> &keys,
 
     transport->Timer(0, [=]() {
             client->Invoke(request_str,
-                           bind(&ShardClient::UnsubscribeCallback,
+                           bind(&ShardClient::GenericCallback,
                                 this,
 				callback,
                                 placeholders::_1,
@@ -352,17 +323,56 @@ ShardClient::Unsubscribe(const set<string> &keys,
 }
 
 void
-ShardClient::UnsubscribeCallback(callback_t callback,
-			         const string &request_str,
-			         const string &reply_str) {
-    Reply reply;
-    reply.ParseFromString(reply_str);
-    ASSERT(reply.status() == REPLY_OK);
+ShardClient::Ack(const uint64_t reactive_id,
+                 const std::set<std::string> &keys,
+                 const Timestamp timestamp,
+                 callback_t callback)
+{
+    string request_str;
+    strongstore::proto::Request request;
 
-    Promise *w = new Promise();
-    w->Reply(reply.status());
-    Debug("[shard %i] Received UNSUBSCRIBE callback [%d]", shard, reply.status());
-    callback(w);
+    request.set_op(Request::ACK);
+    for (auto &key : keys) {
+        request.mutable_ack()->add_keys(key);
+    }
+    request.mutable_ack()->set_timestamp(timestamp);
+    Debug("Client acking timestamp %lu", timestamp);
+    request.SerializeToString(&request_str);
+
+    transport->Timer(0, [=]() {
+            client->Invoke(request_str,
+                           bind(&ShardClient::GenericCallback,
+                                this,
+				callback,
+                                placeholders::_1,
+                                placeholders::_2));
+        });
+
 }
 
+void
+ShardClient::HandlePublish(publish_handler_t publish,
+                           const string &type,
+                           const string &data)
+{
+    strongstore::proto::PublishMessage msg;
+    ASSERT(type == msg.GetTypeName());
+    
+    msg.ParseFromString(data);
+    std::set<string> keys;
+    for (int i = 0; i < msg.keys_size(); i++) {
+	keys.insert(msg.keys(i));
+    }
+    const Timestamp timestamp = msg.timestamp();
+    publish(timestamp, keys);
+}
+    
+void
+ShardClient::SetPublish(publish_handler_t publish) {
+    client->SetMessageHandler(bind(&ShardClient::HandlePublish,
+                                   this,
+                                   publish,
+                                   placeholders::_1,
+                                   placeholders::_2));
+}
 } // namespace strongstore

@@ -43,14 +43,11 @@
 
 namespace replication {
 
-typedef std::function<void (const Timestamp &, const std::vector<string> &)> publish_handler_t;
-
 class VRClient : public Client
 {
 public:
     VRClient(const ReplicaConfig &config,
              Transport *transport,
-	     publish_handler_t publications,
              const uint64_t clientid = 0);
     virtual ~VRClient();
     virtual void Invoke(const string &request,
@@ -61,9 +58,11 @@ public:
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
     virtual void ReceiveError(const int error);
+    virtual void SetMessageHandler(message_handler_t handler);
 protected:
     uint64_t lastReqId;
-    publish_handler_t publications;
+    bool hasHandler = false;
+    message_handler_t handler;
 
     struct PendingRequest
     {

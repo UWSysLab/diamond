@@ -49,9 +49,10 @@ DiamondClient::DiamondClient(string configPath)
     initState();
 
     /* Start a client for the front-end. */
-    frontend::Client *frontendclient = new frontend::Client(configPath + ".config",
-                                                            &transport,
-                                                            client_id);
+    frontend::Client *frontendclient =
+        new frontend::Client(configPath + ".config",
+                             &transport,
+                             client_id);
 
     startTransport(frontendclient);
 }
@@ -62,10 +63,11 @@ DiamondClient::DiamondClient(const string &hostname, const string &port)
     initState();
 
     /* Start a client for the front-end. */
-    frontend::Client *frontendclient = new frontend::Client(hostname,
-                                                            port,
-                                                            &transport,
-                                                            client_id);
+    frontend::Client *frontendclient =
+        new frontend::Client(hostname,
+                             port,
+                             &transport,
+                             client_id);
     startTransport(frontendclient);
 }
 
@@ -89,10 +91,13 @@ DiamondClient::initState() {
 /* Constructor helper method that does everything after creating the frontend::Client */
 void
 DiamondClient::startTransport(frontend::Client *frontendclient) {
-    client = new ReactiveClient(frontendclient);
-
+    client = new CacheClient(frontendclient);
+                           
     /* Run the transport in a new thread. */
-    pthread_create(&clientTransport, NULL, &DiamondClient::startHelper, (void *)this);
+    pthread_create(&clientTransport,
+                   NULL,
+                   &DiamondClient::startHelper,
+                   (void *)this);
 
     Debug("Diamond Store client [%lu] created!", client_id);
 
@@ -178,7 +183,9 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
             timestamp = it->second;
         }
 
-        Debug("Diamondclient::BEGIN_REACTIVE transaction for reactive_id %lu at timestamp %lu", reactive_id, timestamp);
+        Debug("Diamondclient::BEGIN_REACTIVE transaction \
+               for reactive_id %lu at timestamp %lu",
+              reactive_id, timestamp);
 
         txn = Transaction(READ_ONLY, timestamp, reactive_id);
         client->BeginRO(txnid);
@@ -190,7 +197,8 @@ int
 DiamondClient::Get(const string &key, string &value)
 {
     if (txnid == 0) {
-        Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a GET outside a transaction. \
+               YOU ARE A BAD PERSON!!");
     }
     
     Debug("GET [%lu] %s", txnid, key.c_str());
@@ -207,10 +215,12 @@ DiamondClient::Get(const string &key, string &value)
 
     Promise promise(GET_TIMEOUT);
     // Otherwise, do the GET
-    client->Get(txnid, key, txn.GetTimestamp(), &promise);
+    client->MultiGet(txnid, set<string>({key}),
+                     txn.GetTimestamp(), &promise);
     
     if (promise.GetReply() == REPLY_OK) {
-        Debug("Adding [%s] with ts %lu to the read set", key.c_str(), promise.GetValue(key).GetTimestamp());
+        Debug("Adding [%s] with ts %lu to the read set",
+              key.c_str(), promise.GetValue(key).GetTimestamp());
         txn.AddReadSet(key, promise.GetValue(key).GetInterval());
         if (!txn.HasTimestamp()) {
             txn.SetTimestamp(promise.GetValue(key).GetInterval().End());
@@ -221,16 +231,18 @@ DiamondClient::Get(const string &key, string &value)
         txn.AddReadSet(key, Interval(0));
     }
 
-    value = promise.GetValues()[key].GetValue();
+    value = promise.GetValue(key).GetValue();
 
     return promise.GetReply();
 }
 
 int
-DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
+DiamondClient::MultiGet(const set<string> &keys,
+                        map<string, string> &values)
 {
     if (txnid == 0) {
-        Panic("Doing a GET outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a GET outside a transaction. \
+               YOU ARE A BAD PERSON!!");
     }
 
     Debug("MULTIGET [%lu] %lu", txnid, keys.size());
@@ -241,12 +253,12 @@ DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
     }
 
     // create a list of keys to get
-    vector<string> keysToRead;
+    set<string> keysToRead;
     for (auto key : keys) {
         auto it = txn.GetWriteSet().find(key); 
         // Read your own writes, check the write set first.
         if (it == txn.GetWriteSet().end()) {
-            keysToRead.push_back(key);
+            keysToRead.insert(key);
         } else {
             values[key] = it->second;
         }
@@ -262,7 +274,9 @@ DiamondClient::MultiGet(const set<string> &keys, map<string, string> &values)
     if (promise.GetReply() == REPLY_OK){
         std::map<string, Version> values = promise.GetValues();
         for (auto &value : values) {
-            Debug("Adding [%s] with ts %lu to the read set", value.first.c_str(), value.second.GetTimestamp());
+            Debug("Adding [%s] with ts %lu to the read set",
+                  value.first.c_str(),
+                  value.second.GetTimestamp());
             txn.AddReadSet(value.first, value.second.GetInterval());
             values[value.first] = value.second.GetValue();
         }
@@ -318,7 +332,8 @@ bool
 DiamondClient::Commit()
 {
     if (txnid == 0) {
-        Panic("Doing a COMMIT outside a transaction. YOU ARE A BAD PERSON!!");
+        Panic("Doing a COMMIT outside a transaction. \
+               YOU ARE A BAD PERSON!!");
     }
 
     Debug("COMMIT [%lu]", txnid);
@@ -326,10 +341,36 @@ DiamondClient::Commit()
     Promise promise(COMMIT_TIMEOUT);
 
     client->Commit(txnid, txn, &promise);
-    int status = promise.GetReply();
+    int reply = promise.GetReply();
+
+    if (txn.IsReactive()) {
+        if (reply != REPLY_OK) {
+            Panic("Reactive transaction failed to commit");
+        }
+
+        set<string> regset = txn.GetRegSet();
+        uint64_t reactive_id = txn.GetReactiveId();
+        Timestamp timestamp = txn.GetTimestamp();
+
+        // Register reactive transaction if it is new or if its
+        // registration set has changed
+        if (regMap.find(reactive_id) == regMap.end() ||
+            regMap[reactive_id] != regset) {
+            Promise rp(COMMIT_TIMEOUT);
+            client->Subscribe(reactive_id, regset, timestamp, &rp);
+            int reply = rp.GetReply();
+            if (reply == REPLY_OK) {
+                regMap[reactive_id] = regset;
+            }
+            else {
+                //TODO: implement registration retry
+                Panic("Registration error: %d", reply);
+            }
+        }
+    }
     txnid = 0;
     txn = Transaction();
-    return status == REPLY_OK;
+    return reply == REPLY_OK;
 }
 
 /* Aborts the ongoing transaction. */
@@ -354,37 +395,55 @@ DiamondClient::Abort()
 uint64_t
 DiamondClient::GetNextNotification(bool blocking)
 {
-    Promise p;
-    client->GetNextNotification(blocking, &p);
-    uint64_t reactive_id = p.GetReactiveId();
-    if (reactive_id != NO_NOTIFICATION) {
-        Timestamp timestamp = p.GetTimestamp();
-        processNotification(timestamp, reactive_id);
+    unique_lock<mutex> l(lock);
+
+    while (pending.size() == 0) {
+        if (blocking) {
+            cv.wait(l);
+        } else {
+            return 0;
+        }
     }
-    return reactive_id;
+    uint64_t next = pending.front();
+    pending.pop();
+    return next;
 }
 
 void
-DiamondClient::processNotification(Timestamp timestamp, uint64_t reactive_id) {
+DiamondClient::Notify(function<void (void)> callback,
+                      const uint64_t reactive_id,
+                      const Timestamp timestamp,
+                      const map<string, Version> &values) {
+    lock_guard<mutex> l(lock);
     if (timestamp > timestamp_map[reactive_id]) {
         timestamp_map[reactive_id] = timestamp;
-    }
-    if (timestamp > last_notification_ts) {
-        last_notification_ts = timestamp;
+
+        if (timestamp > last_notification_ts) {
+            last_notification_ts = timestamp;
+        }
+
+        pending.push(reactive_id);
+        cv.notify_all();
     }
 }
 
 void
-DiamondClient::NotificationInit(std::function<void (void)> callback) {
-    client->NotificationInit(callback);
-}
-
-void
-DiamondClient::Deregister(uint64_t reactive_id)
+DiamondClient::Unsubscribe(uint64_t reactive_id)
 {
     Promise p;
-    client->Deregister(reactive_id, &p);
+    client->Unsubscribe(reactive_id, regMap[reactive_id], &p);
     p.GetReply();
 }
 
+void
+DiamondClient::NotificationInit(function<void (void)> callback)
+{
+    client->SetNotify(bind(&DiamondClient::Notify,
+                           this,
+                           callback,
+                           placeholders::_1,
+                           placeholders::_2,
+                           placeholders::_3));
+}
+        
 } // namespace diamond

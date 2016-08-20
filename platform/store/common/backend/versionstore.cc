@@ -44,7 +44,9 @@ VersionedKVStore::inStore(const string &key)
 }
 
 bool
-VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
+VersionedKVStore::getValue(const string &key,
+                           const Timestamp &t,
+                           set<Version>::iterator &it)
 {
     Version v(t);
     it = store[key].upper_bound(v);
@@ -61,7 +63,8 @@ VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::
 /* Returns the most recent value and timestamp for given key.
  * Error if key does not exist. */
 bool
-VersionedKVStore::Get(const string &key, Version &value)
+VersionedKVStore::Get(const string &key,
+                      Version &value)
 {
     // check for existence of key in store
     if (inStore(key)) {
@@ -74,7 +77,9 @@ VersionedKVStore::Get(const string &key, Version &value)
 /* Returns the value valid at given timestamp.
  * Error if key did not exist at the timestamp. */
 bool
-VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
+VersionedKVStore::Get(const string &key,
+                      const Timestamp &t,
+                      Version &value)
 {
     if (t == MAX_TIMESTAMP) {
         return Get(key, value);
@@ -90,7 +95,8 @@ VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 }
 
 bool
-VersionedKVStore::GetRange(const string &key, const Timestamp &t,
+VersionedKVStore::GetRange(const string &key,
+                           const Timestamp &t,
 			   Interval &range)
 {
     if (inStore(key)) {
@@ -190,40 +196,4 @@ VersionedKVStore::GetLastRead(const string &key,
 	}
     }
     return false;	
-}
-
-void
-VersionedKVStore::Subscribe(const TCPTransportAddress &remote,
-			    const Timestamp timestamp,
-			    const set<string> &keys)
-{
-    for (auto &key : keys) {
-        if (subscribers[key].count(remote) == 0 ||
-            subscribers[key][remote] < timestamp) {	    
-            subscribers[key][remote] = timestamp;
-        }
-    }
-}
-
-void
-VersionedKVStore::Unsubscribe(const TCPTransportAddress &remote,
-			      const set<string> &keys)
-{
-    for (auto &key : keys) {
-        subscribers[key].erase(remote);
-    }
-}
-
-void
-VersionedKVStore::Publish(const Timestamp &timestamp,
-                          const set<string> &keys,
-                          map<TCPTransportAddress, set<string>> &notifications) {
-    for (auto &key : keys) {
-        for (auto &address : subscribers[key]) {
-            if (timestamp > address.second) {
-                Debug("timestamp %lu and subscription %lu", timestamp, address.second);
-                notifications[address.first].insert(key);
-            }
-        }
-    }
 }

@@ -153,8 +153,8 @@ target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ev
     ${SRC_DIAMOND_REPLICATION_SERVER})
   target_link_libraries(tss ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
-  # Add python bindings for Linux and Mac OSX
-  add_subdirectory(bindings/python)
+# Add python bindings for Linux and Mac OSX
+#add_subdirectory(bindings/python)
  
   # Set up testing infrastructure
   enable_testing()

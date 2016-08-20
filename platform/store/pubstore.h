@@ -60,10 +60,6 @@ public:
     void Publish(const uint64_t tid,
                  const Timestamp timestamp,
                  std::map<TCPTransportAddress, std::set<std::string>> &notifications);
-    void AckPending(const TCPTransportAddress &remote,
-                    const Timestamp timestamp,
-                    const std::set<string> &keys);
-
 };
 
 } // namespace strongstore

@@ -31,6 +31,7 @@
  **********************************************************************/
 
 #include "client.h"
+#include "store/common/frontend/asynccacheclient.h"
 
 using namespace std;
 
@@ -39,8 +40,7 @@ namespace strongstore {
 Client::Client(const string configPath,
                const int nShards,
 	       const int closestReplica,
-               Transport *transport,
-               replication::publish_handler_t publications)
+               Transport *transport)
     : transport(transport)
 {
     // Initialize all state here;
@@ -65,16 +65,18 @@ Client::Client(const string configPath,
 		tssConfigPath.c_str());
     }
     replication::ReplicaConfig tssConfig(tssConfigStream);
-    tss = new replication::VRClient(tssConfig, transport, publications);
+    tss = new replication::VRClient(tssConfig, transport);
     
     /* Start a client for each shard. */
     for (int i = 0; i < nShards; i++) {
-        string shardConfigPath = configPath + to_string(i) + ".config";
-        cclient[i] = new ShardClient(shardConfigPath,
-				     transport,
-				     client_id, i,
-				     closestReplica,
-                                     publications);
+        string shardConfigPath =
+            configPath + to_string(i) + ".config";
+        ShardClient *sclient =
+            new ShardClient(shardConfigPath,
+                            transport,
+                            client_id, i,
+                            closestReplica);
+        cclient[i] = new AsyncCacheClient(sclient);
     }
 
     Debug("Diamond Store client [%lu] created!", client_id);
@@ -89,23 +91,33 @@ Client::~Client()
 }
 
 void
+Client::SetPublish(publish_handler_t publish) {
+    for (auto client : cclient) {
+        client->SetPublish(publish);
+    }
+}
+    
+void
 Client::MultiGet(const uint64_t tid,
-		 const vector<string> &keys,
+		 const set<string> &keys,
                  callback_t callback,
-                 const Timestamp &timestamp)
+                 const Timestamp timestamp)
 {
-    map<int, vector<string>> participants;
+    map<int, set<string>> participants;
     
     for (auto &key : keys) {
         int i = key_to_shard(key, nshards);
-        participants[i].push_back(key);
+        participants[i].insert(key);
     }
 
-    vector<Promise *> *promises = new vector<Promise *>();
+    vector<int> *results = new vector<int>();
+    map<string, Version> *values = new map<string, Version>();
     callback_t cb = bind(&Client::MultiGetCallback,
-			 this, callback,
+			 this,
+                         callback,
 			 participants.size(),
-			 promises,
+			 results,
+                         values,
 			 placeholders::_1);
     for (auto &p : participants) {
         // Send the GET operation to appropriate shard.
@@ -117,26 +129,24 @@ Client::MultiGet(const uint64_t tid,
 void
 Client::MultiGetCallback(callback_t callback,
 			 size_t total,
-			 vector<Promise *> *promises,
-			 Promise *promise)
+			 vector<int> *results,
+                         map<string, Version> *values,
+			 Promise &promise)
 {
-    promises->push_back(promise);
     Debug("MultiGetCall back"); 
-    if (promises->size() == total) {
-	map<string, Version> values;
-	int r = REPLY_OK;
-	for (auto p : *promises) {
-	    if (p->GetReply() != REPLY_OK) {
-		r = p->GetReply();
-	    }
-	    for (auto &v : p->GetValues()) {
-		values[v.first] = v.second;
-	    }
-	    delete p;
-	}
-	delete promises;
-	Promise *pp = new Promise();
-	pp->Reply(r, values);
+    int ret = promise.GetReply();
+    results->push_back(ret);
+    if (ret == REPLY_OK) {
+        for (auto &v : promise.GetValues()) {
+            (*values)[v.first] = v.second;
+        }
+    }
+                              
+    if (results->size() == total) {
+	Promise pp;
+	pp.Reply(REPLY_OK, *values);
+        delete results;
+        delete values;
 	callback(pp);
     }
 }
@@ -148,14 +158,14 @@ Client::PrepareInternal(const uint64_t tid,
 {
     // 1. Send commit-prepare to all shards.
     Debug("PREPARE Transaction");
-    vector<Promise *> *promises = new vector<Promise *>();
+    vector<int> *results = new vector<int>();
     uint64_t *ts = new uint64_t();
     *ts = 0;
     callback_t cb =
 	bind(&Client::PrepareCallback,
 	     this, callback,
 	     participants.size(),
-	     promises, ts,
+	     results, ts,
 	     placeholders::_1);
 
     for (auto &p : participants) {
@@ -171,7 +181,7 @@ Client::PrepareInternal(const uint64_t tid,
 		bind(&Client::tssCallback,
 		     this, callback,
 		     participants.size(),
-		     promises, ts,
+		     results, ts,
 		     placeholders::_1,
 		     placeholders::_2);
             tss->Invoke("", cb);});
@@ -180,18 +190,21 @@ Client::PrepareInternal(const uint64_t tid,
 void
 Client::tssCallback(callback_t callback,
 		    size_t total,
-		    vector<Promise *> *promises,
+		    vector<int> *results,
 		    uint64_t *ts,
 		    const string &request,
 		    const string &reply)
 {
     Debug("tsscallback back"); 
 
+    Promise p;
+    p.Reply(REPLY_OK);
     *ts = stol(reply, NULL, 10);
     PrepareCallback(callback,
 		    total,
-		    promises, ts,
-		    NULL);
+		    results,
+                    ts,
+                    p);
 }
 		
 /* Attempts to commit the ongoing transaction. */
@@ -236,7 +249,7 @@ Client::Commit(const uint64_t tid,
     }
 
     // Do two phase commit for linearizable and SI
-    function<void (Promise *)> cb =
+    callback_t cb =
 	bind(&Client::CommitCallback,
 	     this,
 	     tid,
@@ -249,29 +262,25 @@ Client::Commit(const uint64_t tid,
 void
 Client::PrepareCallback(callback_t callback,
 			size_t total,
-			vector<Promise *> *promises,
+			vector<int> *results,
 			uint64_t *ts,
-			Promise *promise)
+			Promise &promise)
 {
-    Debug("Prepare callback"); 
-    if (promise != NULL) {
-	promises->push_back(promise);
-    }
-    Debug("Prepare callback size %lu", promises->size()); 
+    results->push_back(promise.GetReply());
+    Debug("Prepare callback size %lu", results->size()); 
     // check whether we're done
-    if (promises->size() == total && *ts > 0) {
-	int r = REPLY_OK;
-	for (auto p : *promises) {
+    if (results->size() == total && *ts > 0) {
+	int ret = REPLY_OK;
+	for (auto &r : *results) {
 	    // check what the reply was
-	    if (p->GetReply() != REPLY_OK) {
-		r = p->GetReply();
+	    if (r != REPLY_OK) {
+		ret = r;
 	    }
-	    delete p;
 	}
 
-	Promise *pp = new Promise();
-	pp->Reply(r, *ts);
-	delete promises;
+	Promise pp;
+	pp.Reply(ret, *ts);
+	delete results;
 	delete ts;
 	// call commit callback
 	callback(pp);
@@ -283,19 +292,19 @@ void
 Client::CommitCallback(uint64_t tid,
 		       callback_t callback,
 		       map<int, Transaction> participants,
-		       Promise *promise) {
+		       Promise &promise) {
 
-    if (promise->GetReply() == REPLY_OK) {
+    if (promise.GetReply() == REPLY_OK) {
 	// Send commits
 	Debug("COMMIT Transaction at [%lu]",
-	      promise->GetTimestamp());
+	      promise.GetTimestamp());
 	for (auto &p : participants) {
 	    Transaction &txn2 = p.second;
 	    if (txn2.IsolationMode() == LINEARIZABLE ||
 		txn2.IsolationMode() == SNAPSHOT_ISOLATION) {
 		Debug("Sending commit to shard [%d]",
 		      p.first);
-		txn2.SetTimestamp(promise->GetTimestamp());
+		txn2.SetTimestamp(promise.GetTimestamp());
 		cclient[p.first]->Commit(tid, NULL, txn2);
 	    }
 	}
@@ -311,17 +320,18 @@ Client::AbortInternal(const uint64_t tid,
     for (auto &p : participants) {
 	if (p.second.IsolationMode() == LINEARIZABLE ||
 	    p.second.IsolationMode() == SNAPSHOT_ISOLATION) {
-	    cclient[p.first]->Abort(tid);
+	    cclient[p.first]->Abort(tid, [] (Promise &promise) {});
 	}
     }
 }    
 
 /* Aborts the ongoing transaction. */
 void
-Client::Abort(const uint64_t tid)
+Client::Abort(const uint64_t tid,
+              callback_t callback)
 {
     // Ignore external abort calls at this level
-    Debug("ABORT Transaction");
+    Panic("ABORT Transaction");
 }
 
     
@@ -347,8 +357,9 @@ Client::key_to_shard(const string &key, const uint64_t nshards)
 }
 
 void
-Client::Subscribe(const Timestamp &timestamp,
+Client::Subscribe(const uint64_t reactive_id,
                   const set<string> &keys,
+                  const Timestamp timestamp,
                   callback_t callback) {
     map<int, set<string> > participants;
 
@@ -357,28 +368,19 @@ Client::Subscribe(const Timestamp &timestamp,
         participants[i].insert(key);
     }
 
-    if (participants.size() == 0) {
-        Promise *w = new Promise();
-        w->Reply(REPLY_OK);
-        callback(w);
-    }
-    else {
-        vector<Promise *> *promises = new vector<Promise *>();
-        callback_t cb = bind(&Client::MultiGetCallback,
-                             this, callback,
-                             participants.size(),
-                             promises,
-                             placeholders::_1);
-        for (auto &p : participants) {
-            cclient[p.first]->Subscribe(timestamp,
-                                        p.second,
-                                        cb);
-        }
+    ASSERT(participants.size() > 0);
+
+    for (auto &p : participants) {
+        cclient[p.first]->Subscribe(reactive_id,
+                                    p.second,
+                                    timestamp,
+                                    callback);
     }
 }
 
 void
-Client::Unsubscribe(const set<string> &keys,
+Client::Unsubscribe(const uint64_t reactive_id,
+                    const set<string> &keys,
                     callback_t callback) {
     map<int, set<string> > participants;
 
@@ -387,22 +389,37 @@ Client::Unsubscribe(const set<string> &keys,
         participants[i].insert(key);
     }
 
-    if (participants.size() == 0) {
-        Promise *w = new Promise();
-        w->Reply(REPLY_OK);
-        callback(w);
-    }
-    else {
-        vector<Promise *> *promises = new vector<Promise *>();
-        callback_t cb = bind(&Client::MultiGetCallback,
-                             this, callback,
-                             participants.size(),
-                             promises,
-                             placeholders::_1);
-        for (auto &p : participants) {
-            cclient[p.first]->Unsubscribe(p.second, cb);
-        }
+    ASSERT(participants.size() > 0);
+
+    for (auto &p : participants) {
+        cclient[p.first]->Unsubscribe(reactive_id,
+                                      p.second,
+                                      callback);
     }
 }
+
+void
+Client::Ack(const uint64_t reactive_id,
+            const std::set<std::string> &keys,
+            const Timestamp timestamp,
+            callback_t callback)
+{
+    map<int, set<string> > participants;
+
+    for (auto &key : keys) {
+        int i = key_to_shard(key, nshards);
+        participants[i].insert(key);
+    }
+
+    ASSERT(participants.size() > 0);
+    
+    for (auto &p : participants) {
+        cclient[p.first]->Ack(reactive_id,
+                              p.second,
+                              timestamp,
+                              callback);
+    }
+}
+    
 
 } // namespace strongstore

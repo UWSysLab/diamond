@@ -59,28 +59,23 @@ Client::Begin(const uint64_t tid)
 }
 
 void
-Client::BeginRO(const uint64_t tid, const Timestamp &timestamp)
+Client::BeginRO(const uint64_t tid,
+                const Timestamp timestamp)
 {
     Debug("BEGIN READ-ONLY [%llu]", tid);
 }
 
 void
-Client::Get(const uint64_t tid,
-            const string &key,
-            const Timestamp &timestamp,
-            Promise *promise)
+Client::SetNotify(notification_handler_t notify)
 {
-    Debug("Sending GET [%s]", key.c_str());
-
-    vector<string> keys;
-    keys.push_back(key);
-    MultiGet(tid, keys, timestamp, promise);
+    hasNotificationHandler = true;
+    this->notify = notify;
 }
-
+    
 void
 Client::MultiGet(const uint64_t tid,
-                 const vector<string> &keys,
-                 const Timestamp &timestamp,
+                 const set<string> &keys,
+                 const Timestamp timestamp,
                  Promise *promise)
 {
     Debug("Sending MULTIGET [%u keys] at %llu", keys.size(), timestamp);
@@ -218,7 +213,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(getReply.msgid());
 
         if (it != waiting.end()) {
-            Debug("Received GET response [%u] %i", getReply.msgid(), getReply.status());
+            Debug("Received GET response [%u] %i",
+                  getReply.msgid(), getReply.status());
             map<string, Version> ret;
             int status = getReply.status(); 
             if (status == REPLY_OK) {
@@ -227,7 +223,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
                     Version v = Version(getReply.replies(i));
                     ret[key] = v;
                     ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
-                    Debug("Received Get timestamp %s %llu", key.c_str(), v.GetInterval().End());
+                    Debug("Received Get timestamp %s %llu",
+                          key.c_str(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);
@@ -238,8 +235,10 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(commitReply.msgid());
 
         if (it != waiting.end() && it->second != NULL) {
-	    Debug("Received COMMIT response [%u] %i", commitReply.msgid(), commitReply.status());
-            it->second->Reply(commitReply.status(), commitReply.timestamp());
+	    Debug("Received COMMIT response [%u] %i",
+                  commitReply.msgid(), commitReply.status());
+            it->second->Reply(commitReply.status(),
+                              commitReply.timestamp());
             waiting.erase(it);
         }
     } else if (type == abortReply.GetTypeName()) {
@@ -247,7 +246,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(abortReply.msgid());
 
         if (it != waiting.end() && it->second != NULL) {
-	    Debug("Received ABORT response [%u]", abortReply.msgid());
+	    Debug("Received ABORT response [%u]",
+                  abortReply.msgid());
             it->second->Reply(abortReply.status());
             waiting.erase(it);
         }
@@ -258,44 +258,26 @@ Client::ReceiveMessage(const TransportAddress &remote,
         Debug("Received NOTIFICATION (reactive_id %lu, timestamp %lu)",
               reactive_id, timestamp);
 
+        map<string, Version> values;
+        for (int i = 0; i < notification.replies_size(); i++) {
+            string key = notification.replies(i).key();
+            Version value(notification.replies(i));
+            values[key] = value;
+        }
+        
+        if (hasNotificationHandler) {
+            notify(reactive_id, timestamp, values);
+        }
+                
         // Ack notification
-        ReplyToNotification(reactive_id, timestamp);
-
-        if (timestamp > last_timestamp[reactive_id]) {
-            last_timestamp[reactive_id] = timestamp;
-            map<string, Version> cache_entries;
-            for (int i = 0; i < notification.replies_size(); i++) {
-                string key = notification.replies(i).key();
-                Version value(notification.replies(i));
-                cache_entries[key] = value;
-            }
-
-            // Let client know that a notification has arrived (for clients who call GetNextNotification in non-blocking mode)
-            if (callback_registered) {
-                notification_callback();
-            }
-
-            notification_lock.lock();
-            if (reactive_promise != NULL) { // Directly signal reactive thread if it's waiting on a notification
-                Promise * old_reactive_promise = reactive_promise;
-                reactive_promise = NULL;
-                notification_lock.unlock();
-                old_reactive_promise->Reply(REPLY_OK, timestamp, cache_entries, reactive_id);
-            }
-            else { // Otherwise, put the notification in the "pending notifications" queue
-                pending_notifications.push(notification);
-                notification_lock.unlock();
-            }
-        }
-        else {
-            Debug("Notification is stale (timestamp %llu, last_timestamp %llu)", timestamp, last_timestamp[reactive_id]);
-        }
+        Ack(reactive_id, set<string>(), timestamp);
     } else if (type == regReply.GetTypeName()) {
         regReply.ParseFromString(data);
         auto it = waiting.find(regReply.msgid());
 
         if (it != waiting.end() && it->second != NULL) {
-	    Debug("Received REGISTER response [%u] %i", regReply.msgid(), regReply.status());
+	    Debug("Received REGISTER response [%u] %i",
+                  regReply.msgid(), regReply.status());
             it->second->Reply(regReply.status());
             waiting.erase(it);
         }
@@ -304,7 +286,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
         auto it = waiting.find(deregReply.msgid());
 
         if (it != waiting.end() && it->second != NULL) {
-	    Debug("Received DEREGISTER response [%u] %i", deregReply.msgid(), deregReply.status());
+	    Debug("Received DEREGISTER response [%u] %i",
+                  deregReply.msgid(), deregReply.status());
             it->second->Reply(deregReply.status());
             waiting.erase(it);
         }
@@ -312,40 +295,12 @@ Client::ReceiveMessage(const TransportAddress &remote,
 }
 
 void
-Client::GetNextNotification(bool blocking, Promise *promise) {
-    notification_lock.lock();
-    if (reactive_promise != NULL) {
-        Panic("Error: GetNextNotification called from multiple threads");
-    }
-    if (!pending_notifications.empty()) {
-        Notification notification = pending_notifications.front();
-        pending_notifications.pop();
-        notification_lock.unlock();
-        map<string, Version> cache_entries;
-        for (int i = 0; i < notification.replies_size(); i++) {
-            string key = notification.replies(i).key();
-            Version value(notification.replies(i));
-            cache_entries[key] = value;
-        }
-        promise->Reply(REPLY_OK, notification.timestamp(), cache_entries, notification.reactiveid());
-    }
-    else if (!blocking) {
-        notification_lock.unlock();
-        map<string, Version> dummyMap;
-        promise->Reply(REPLY_OK, 0, dummyMap, NO_NOTIFICATION);
-    }
-    else {
-        reactive_promise = promise;
-        notification_lock.unlock();
-    }
-}
-
-void
-Client::Register(const uint64_t reactive_id,
-                 const Timestamp timestamp,
-                 const std::set<std::string> &keys,
-                 Promise *promise) {
-    Debug("Sending REGISTER for reactive_id %llu at timestamp %llu", reactive_id, timestamp);
+Client::Subscribe(const uint64_t reactive_id,
+                  const std::set<std::string> &keys,
+                  const Timestamp timestamp,
+                  Promise *promise) {
+    Debug("Sending REGISTER for reactive_id %llu at timestamp %llu",
+          reactive_id, timestamp);
     for (auto &key : keys) {
         Debug("Registering key: %s", key.c_str());
     }
@@ -370,8 +325,9 @@ Client::Register(const uint64_t reactive_id,
 }
 
 void
-Client::Deregister(const uint64_t reactive_id,
-                   Promise *promise) {
+Client::Unsubscribe(const uint64_t reactive_id,
+                    const set<string> &keys,
+                    Promise *promise) {
     Debug("Sending DEREGISTER for reactive_id %llu", reactive_id);
     // Send message
     transport->Timer(0, [=]() {
@@ -389,16 +345,14 @@ Client::Deregister(const uint64_t reactive_id,
 }
 
 void
-Client::Subscribe(const std::set<std::string> &keys,
-                  const TransportAddress &address,
-                  Promise *promise) {
-    Panic("Subscribe not implemented for this client");
-}
-
-void
-Client::ReplyToNotification(const uint64_t reactive_id,
-                            const Timestamp timestamp) {
-    Debug("Sending NOTIFICATION_REPLY for reactive_id %llu at timestamp %llu", reactive_id, timestamp);
+Client::Ack(const uint64_t reactive_id,
+            const set<string> &keys,
+            const Timestamp timestamp,
+            Promise *promise)
+{
+    Debug("Sending ACK for reactive_id \
+           %llu at timestamp %llu",
+          reactive_id, timestamp);
 
     // Send message
     transport->Timer(0, [=]() {
@@ -409,12 +363,6 @@ Client::ReplyToNotification(const uint64_t reactive_id,
             msg.set_msgid(msgid++);
 	    transport->SendMessageToHost(this, 0, msg);
 	});
-}
-
-void
-Client::NotificationInit(std::function<void (void)> callback) {
-    notification_callback = callback;
-    callback_registered = true;
 }
 
 } // namespace frontend

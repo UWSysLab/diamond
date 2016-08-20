@@ -257,13 +257,14 @@ Server::HandleAck(const TCPTransportAddress &remote,
 	set<string> keys;
 	
 	for (int i = 0; i < request.ack().keys_size(); i++) {
-	    Debug("Received NOTIFY-FRONTEND-ACK from %s for key %s at ts %lu",
+	    Debug("Received NOTIFY-FRONTEND-ACK \
+                   from %s for key %s at ts %lu",
                   remote.getHostname().c_str(),
                   request.ack().keys(i).c_str(),
                   request.ack().timestamp());
 	    keys.insert(request.ack().keys(i));
 	}
-	store->AckPending(remote, request.ack().timestamp(), keys);
+	store->Subscribe(remote, request.ack().timestamp(), keys);
     }
 
     Reply rep;

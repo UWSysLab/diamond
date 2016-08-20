@@ -39,7 +39,6 @@
 #include "frontend/client.h"
 #include "store/common/frontend/client.h"
 #include "store/common/frontend/cacheclient.h"
-#include "store/common/frontend/reactiveclient.h"
 #include "store/common/notification.h"
 
 #include <condition_variable>
@@ -70,12 +69,15 @@ public:
 
     void BeginReactive(uint64_t reactive_id);
     uint64_t GetNextNotification(bool blocking);
-    void NotificationInit(std::function<void (void)> callback);
-    void Deregister(uint64_t reactive_id);
+    void Unsubscribe(uint64_t reactive_id);
 
     void SetIsolationLevel(int isolationLevel);
     void SetCaching(bool cachingEnabled);
-
+    void Notify(std::function<void (void)> callback,
+                const uint64_t reactive_id,
+                const Timestamp timestamp,
+                const std::map<std::string, Version> &values);
+    void NotificationInit(std::function<void (void)> callback);
 private:    
     /* Private helper functions. */
     void run_client(); // Runs the transport event loop.
@@ -94,9 +96,6 @@ private:
     // its lock
     std::mutex txnid_lock;
     
-    // Ongoing transaction ID.
-    std::map<std::thread::id, uint64_t> ongoing;
-
     // Transport used by storage client proxies.
     TCPTransport transport;
     
@@ -106,15 +105,22 @@ private:
     // Caching client for the store
     CacheClient *client;
 
-    // Reactive helper methods
-    void processNotification(Timestamp timestamp, uint64_t reactive_id);
-
-    // Reactive state 
-    std::map<uint64_t, Timestamp> timestamp_map; // Reactive ID <-> timestamp map
-    Timestamp last_notification_ts; // Timestamp at which the last notification was received
-
     // Transaction isolation level
     int isolationLevel = LINEARIZABLE;
+
+    // reactive_id to registration set map
+    std::unordered_map<uint64_t, std::set<std::string> > regMap; 
+    
+    // map reactive_id to timestamp of last notification received
+    std::map<uint64_t, Timestamp> timestamp_map;
+    // Timestamp at which the last notification was received
+    Timestamp last_notification_ts; 
+
+    // Notification client state
+    std::queue<uint64_t> pending;
+    std::mutex lock;
+    std::condition_variable cv;
+
 };
 
 } // namespace diamond

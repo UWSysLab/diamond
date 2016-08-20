@@ -78,12 +78,5 @@ PubStore::Publish(const uint64_t tid,
     // get notifications that need to be sent
     store.Publish(tid, keys, notifications);
 }
-
-void
-PubStore::AckPending(const TCPTransportAddress &remote,
-		     const Timestamp timestamp,
-		     const set<string> &keys) {
-    store.Subscribe(remote, timestamp, keys);
-}
     
 } // namespace strongstore

@@ -41,6 +41,8 @@
 
 #include <functional>
 
+typedef std::function<void (const string &type,
+                            const string &data)> message_handler_t;
 namespace replication {
 
 class Client : public TransportReceiver
@@ -61,7 +63,8 @@ public:
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type,
                                 const string &data) = 0;
-    virtual void ReceiveError(int error) = 0;    
+    virtual void ReceiveError(int error) = 0;
+    virtual void SetMessageHandler(message_handler_t handler) = 0;
 protected:
     ReplicaConfig config;
     Transport *transport;

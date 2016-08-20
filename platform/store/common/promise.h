@@ -72,13 +72,10 @@ public:
     // block on this until response comes back
     bool GetDone();
     int GetReply();
-    Timestamp GetTimestamp();
-    //Timestamp GetTimestamp();
-    Version & GetValue(const std::string &key);
-    std::map<std::string, Version> & GetValues();
-    uint64_t GetReactiveId();
+    const Timestamp GetTimestamp();
+    const Version & GetValue(const std::string &key);
+    const std::map<std::string, Version> & GetValues();
+    const uint64_t GetReactiveId();
 };
-
-typedef std::function<void (Promise *)> callback_t;
 
 #endif /* _PROMISE_H_ */

@@ -34,13 +34,10 @@
 
 #include "lib/assert.h"
 #include "lib/message.h"
-#include "lib/tcptransport.h"
 #include "store/common/timestamp.h"
 #include "store/common/version.h"
-#include "store/common/notification.h"
 
 #include <set>
-#include <map>
 #include <map>
 #include <fstream>
 #include <iostream>
@@ -73,17 +70,7 @@ public:
     void CommitGet(const std::string &key,
                    const Timestamp &readTime,
                    const Timestamp &commit);
-    void Remove(const std::string &key);
-    void Subscribe(const TCPTransportAddress &remote,
-                   const Timestamp timestamp,
-                   const std::set<std::string> &keys);
-    void Unsubscribe(const TCPTransportAddress &remote,
-                     const std::set<std::string> &keys);
-    void Publish(const Timestamp &timestamp,
-                 const std::set<std::string> &keys,
-                 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
-    
-    
+    void Remove(const std::string &key);    
 protected:
 
     /* Global store which keeps key -> (timestamp, value) list. */
@@ -92,8 +79,6 @@ protected:
     bool getValue(const std::string &key,
 		  const Timestamp &t,
 		  std::set<Version>::iterator &it);
-
-    std::map<std::string, std::map<TCPTransportAddress, Timestamp>> subscribers; // indexed by key
 };
 
 #endif  /* _VERSIONED_KV_STORE_H_ */
