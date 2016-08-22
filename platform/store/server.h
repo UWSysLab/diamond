@@ -35,7 +35,7 @@
 
 #include "lib/tcptransport.h"
 #include "replication/replica.h"
-#include "store/occstore.h"
+#include "store/pubstore.h"
 #include "common-proto.pb.h"
 #include "store-proto.pb.h"
 #include "notification-proto.pb.h"
@@ -44,33 +44,46 @@
 
 namespace strongstore {
 
-class Server : public replication::AppReplica, public TransportReceiver
+class Server : public replication::AppReplica
 {
 public:
-    Server(transport::Configuration &transportConfig);
+    Server(const replication::ReplicaConfig &config,
+           int index, int batchSize);
     virtual ~Server();
 
-    virtual void LeaderUpcall(opnum_t opnum, const string &str1, bool &replicate, string &str2);
-    virtual void ReplicaUpcall(opnum_t opnum, const string &str1, string &str2);
-    virtual void UnloggedUpcall(const string &str1, string &str2);
-    void Load(const string &key, const string &value, const Timestamp timestamp);
-
-    virtual void ReceiveMessage(const TransportAddress &remote,
-                                const string &type, const string &data);
-    virtual void ReceiveError(int error);
-
+    virtual void LeaderUpcall(opnum_t opnum,
+			      const string &str1,
+			      const TransportAddress &remote,
+			      bool &replicate,
+			      string &str2);
+    virtual void ReplicaUpcall(opnum_t opnum,
+			       const string &str1,
+			       string &str2);
+    virtual void UnloggedUpcall(const string &str1,
+				string &str2);
+    void Load(const string &key,
+	      const string &value,
+	      const Timestamp timestamp);
+    void Run();
 private:
-    TxnStore *store;
-
-    TCPTransport transport;
-    std::thread *transportThread;
-
-    Timeout * sendNotificationTimeout;
-
-    void ExecuteGet(proto::Request, string &str2);
-
-    void sendNotification(uint64_t tid);
-    void runTransport();
+    PubStore *store;
+    replication::VRReplica *replica;
+    
+    void HandleGet(const proto::Request &request,
+                   string &str2);
+    bool HandlePrepare(const proto::Request &request,
+                       string &str2);
+    void HandleCommit(const proto::Request &request);
+    void HandleSubscribe(const TCPTransportAddress &remote,
+                         const proto::Request &request,
+                         string &str2);
+    void HandleUnsubscribe(const TCPTransportAddress &remote,
+                           const proto::Request &request,
+                           string &str2);
+    void HandleAck(const TCPTransportAddress &remote,
+                   const proto::Request &request,
+                   string &str2);
+    void Publish(const uint64_t tid, const Timestamp timestamp);
 };
 
 } // namespace strongstore

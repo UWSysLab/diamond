@@ -44,7 +44,9 @@ VersionedKVStore::inStore(const string &key)
 }
 
 bool
-VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::iterator &it)
+VersionedKVStore::getValue(const string &key,
+                           const Timestamp &t,
+                           set<Version>::iterator &it)
 {
     Version v(t);
     it = store[key].upper_bound(v);
@@ -61,7 +63,8 @@ VersionedKVStore::getValue(const string &key, const Timestamp &t, set<Version>::
 /* Returns the most recent value and timestamp for given key.
  * Error if key does not exist. */
 bool
-VersionedKVStore::Get(const string &key, Version &value)
+VersionedKVStore::Get(const string &key,
+                      Version &value)
 {
     // check for existence of key in store
     if (inStore(key)) {
@@ -74,7 +77,9 @@ VersionedKVStore::Get(const string &key, Version &value)
 /* Returns the value valid at given timestamp.
  * Error if key did not exist at the timestamp. */
 bool
-VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
+VersionedKVStore::Get(const string &key,
+                      const Timestamp &t,
+                      Version &value)
 {
     if (t == MAX_TIMESTAMP) {
         return Get(key, value);
@@ -90,7 +95,8 @@ VersionedKVStore::Get(const string &key, const Timestamp &t, Version &value)
 }
 
 bool
-VersionedKVStore::GetRange(const string &key, const Timestamp &t,
+VersionedKVStore::GetRange(const string &key,
+                           const Timestamp &t,
 			   Interval &range)
 {
     if (inStore(key)) {
@@ -174,7 +180,9 @@ VersionedKVStore::GetLastRead(const string &key, Timestamp &lastRead)
  * Get the latest read for the write valid at timestamp t
  */
 bool
-VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key,
+			      const Timestamp &t,
+			      Timestamp &lastRead)
 {
     if (inStore(key)) {
         set<Version>::iterator it;
@@ -188,32 +196,4 @@ VersionedKVStore::GetLastRead(const string &key, const Timestamp &t, Timestamp &
 	}
     }
     return false;	
-}
-
-void
-VersionedKVStore::Subscribe(const set<string> &keys, const string &address) {
-    for (auto it = keys.begin(); it != keys.end(); it++) {
-        keyAddressMap[*it].insert(address);
-    }
-}
-
-void
-VersionedKVStore::Unsubscribe(const set<string> &keys, const string &address) {
-    for (auto it = keys.begin(); it != keys.end(); it++) {
-        keyAddressMap[*it].erase(address);
-    }
-}
-
-void
-VersionedKVStore::GetFrontendNotifications(const Timestamp &timestamp, const std::set<std::string> &keys, std::vector<FrontendNotification> &notifications) {
-    std::unordered_map< std::string, FrontendNotification > addressNotificationMap;
-    for (auto &key : keys) {
-        for (auto &address : keyAddressMap[key]) {
-            addressNotificationMap[address].address = address;
-            addressNotificationMap[address].values[key] = Version(timestamp);
-        }
-    }
-    for (auto it = addressNotificationMap.begin(); it != addressNotificationMap.end(); it++) {
-        notifications.push_back(it->second);
-    }
 }

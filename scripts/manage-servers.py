@@ -108,7 +108,7 @@ for frontendNum in range(0, numFrontends):
     remoteFrontendConfigPath = WORKING_DIR + "/diamond.frontend" + repr(frontendNum) + ".config"
     frontendConfig = open(frontendConfigPath, 'r')
     for line in frontendConfig:
-        match = re.match("replica\s+([\w\.-]+):(\d+)", line)
+        match = re.match("host\s+([\w\.-]+):(\d+)", line)
         if match:
             hostname = match.group(1)
             remoteFrontendOutputPath = WORKING_DIR + "/output.frontend." + repr(frontendNum) + ".txt"
@@ -135,7 +135,7 @@ for shardNum in range(0, numShards):
     backendConfig = open(backendConfigPath, 'r')
     replicaNum = 0
     for line in backendConfig:
-        match = re.match("replica\s+([\w\.-]+):(\d+)", line)
+        match = re.match("host\s+([\w\.-]+):(\d+)", line)
         if match:
             hostname = match.group(1)
             remoteBackendOutputPath = WORKING_DIR + "/output.backend." + repr(shardNum) + "." + repr(replicaNum) + ".txt"
@@ -157,7 +157,7 @@ for shardNum in range(0, numShards):
 tssConfig = open(tssConfigPath, 'r')
 replicaNum = 0
 for line in tssConfig:
-    match = re.match("replica\s+([\w\.-]+):(\d+)", line)
+    match = re.match("host\s+([\w\.-]+):(\d+)", line)
     if match:
         hostname = match.group(1)
         remoteTssOutputPath = WORKING_DIR + "/output.tss." + repr(replicaNum) + ".txt"

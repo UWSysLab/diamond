@@ -1,8 +1,9 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * client.cc:
- *   interface to replication client stubs
+ * configuration.h:
+ *   Representation of a replica group configuration, i.e. the number
+ *   and list of replicas in the group
  *
  * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
  *
@@ -28,54 +29,42 @@
  *
  **********************************************************************/
 
-#include "replication/common/client.h"
-#include "request.pb.h"
-#include "lib/message.h"
-#include "lib/transport.h"
+#ifndef _REPLICATION_CONFIGURATION_H_
+#define _REPLICATION_CONFIGURATION_H_
 
-#include <random>
+#include "lib/configuration.h"
+#include "replication/common/viewstamp.h"
+
+#include <fstream>
+#include <stdbool.h>
+#include <string>
+#include <vector>
+
+using std::string;
 
 namespace replication {
-    
-Client::Client(const ReplicaConfig &config,
-	       Transport *transport,
-	       const uint64_t clientid)
-    : config(config), transport(transport)
-{
-    this->clientid = clientid;
 
-    // Randomly generate a client ID
-    // This is surely not the fastest way to get a random 64-bit int,
-    // but it should be fine for this purpose.
-    while (this->clientid == 0) {
-        std::random_device rd;
-        std::mt19937_64 gen(rd());
-        std::uniform_int_distribution<uint64_t> dis;
-        this->clientid = dis(gen);
-        Debug("VRClient ID: %lu", this->clientid);
+class ReplicaConfig : public transport::Configuration
+{
+public:
+    ReplicaConfig(const ReplicaConfig &c);
+    ReplicaConfig(int n, int f, std::vector<transport::HostAddress> hosts);
+    ReplicaConfig(std::ifstream &file);
+    virtual ~ReplicaConfig();
+    transport::HostAddress replica(int idx) const;
+    int GetLeaderIndex(view_t view) const;
+    int QuorumSize() const;
+    int FastQuorumSize() const;
+    bool operator==(const ReplicaConfig &other) const;
+    inline bool operator!= (const ReplicaConfig &other) const {
+        return !(*this == other);
     }
-
-    transport->Register(this, config, -1);
-}
-
-Client::~Client()
-{
-
-}
     
-void
-Client::ReceiveMessage(const TransportAddress &remote,
-                       const string &type, const string &data)
-{
-   Panic("Received unexpected message type: %s",
-         type.c_str());
-    
-}
+public:
 
-void
-Client::ReceiveError(int error)
-{
-    Panic("Received unexpected error");
-}
+    int f;                      // number of failures tolerated
+};
 
-} // namespace replication
+}      // namespace replication
+
+#endif  /* _REPLICATION_CONFIGURATION_H_ */

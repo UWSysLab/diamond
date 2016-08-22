@@ -1,7 +1,7 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * udptransport.cc:
+ * tcptransport.cc:
  *   message-passing network interface that uses TCP message delivery
  *   and libasync
  *
@@ -98,7 +98,7 @@ bool operator<(const TCPTransportAddress &a, const TCPTransportAddress &b)
 }
 
 TCPTransportAddress
-TCPTransport::LookupAddress(const transport::ReplicaAddress &addr)
+TCPTransport::LookupAddress(const transport::HostAddress &addr)
 {
         int res;
         struct addrinfo hints;
@@ -126,7 +126,7 @@ TCPTransportAddress
 TCPTransport::LookupAddress(const transport::Configuration &config,
                             int idx)
 {
-    const transport::ReplicaAddress &addr = config.replica(idx);
+    const transport::HostAddress &addr = config.host(idx);
     return LookupAddress(addr);
 }
 
@@ -224,7 +224,7 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
     info->transport = this;
     info->acceptFd = 0;
     info->receiver = src;
-    info->replicaIdx = -1;
+    info->hostIdx = -1;
     info->acceptEvent = NULL;
     
     tcpListeners.push_back(info);
@@ -239,7 +239,7 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
                                    (struct sockaddr *)&(dst.addr),
                                    sizeof(dst.addr)) < 0) {
 	bufferevent_free(bev);
-        Warning("Failed to connect to server via TCP");
+        Warning("Failed to connect to host via TCP");
         return;
     }
     if (bufferevent_enable(bev, EV_READ|EV_WRITE) < 0) {
@@ -256,17 +256,15 @@ TCPTransport::ConnectTCP(TransportReceiver *src, const TCPTransportAddress &dst)
 void
 TCPTransport::Register(TransportReceiver *receiver,
                        const transport::Configuration &config,
-                       int replicaIdx)
+                       int hostIdx)
 {
-    ASSERT(replicaIdx < config.n);
+    ASSERT(hostIdx < config.n);
     struct sockaddr_in sin;
-
-    //const transport::Configuration *canonicalConfig =
-    RegisterConfiguration(receiver, config, replicaIdx);
+    RegisterConfiguration(receiver, config, hostIdx);
 
     // Clients don't need to accept TCP connections
-    if (replicaIdx == -1) {
-	return;
+    if (hostIdx < 0) {
+        return;
     }
     
     // Create socket
@@ -294,10 +292,10 @@ TCPTransport::Register(TransportReceiver *receiver,
         PWarning("Failed to set TCP_NODELAY on TCP listening socket");
     }
 
-    // Registering a replica. Bind socket to the designated
+    // Registering a host. Bind socket to the designated
     // host/port
-    const string &host = config.replica(replicaIdx).host;
-    const string &port = config.replica(replicaIdx).port;
+    const string &host = config.host(hostIdx).host;
+    const string &port = config.host(hostIdx).port;
     BindToPort(fd, host, port);
     
     // Listen for connections
@@ -310,7 +308,7 @@ TCPTransport::Register(TransportReceiver *receiver,
     info->transport = this;
     info->acceptFd = fd;
     info->receiver = receiver;
-    info->replicaIdx = replicaIdx;
+    info->hostIdx = hostIdx;
     info->acceptEvent = event_new(libeventBase, fd,
                                   EV_READ | EV_PERSIST,
                                   TCPAcceptCallback, (void *)info);
@@ -335,8 +333,7 @@ TCPTransport::Register(TransportReceiver *receiver,
 bool
 TCPTransport::SendMessageInternal(TransportReceiver *src,
                                   const TCPTransportAddress &dst,
-                                  const Message &m,
-                                  bool multicast)
+                                  const Message &m)
 {
     auto kv = tcpOutgoing.find(dst);
     // See if we have a connection open
@@ -358,7 +355,7 @@ TCPTransport::SendMessageInternal(TransportReceiver *src,
                        sizeof(totalLen) +
                        sizeof(uint32_t));
 
-    Debug("Sending %ld byte %s message to server over TCP",
+    Debug("Sending %d byte %s message to host over TCP",
           totalLen, type.c_str());
     
     char buf[totalLen];
@@ -405,86 +402,6 @@ void
 TCPTransport::Stop()
 {
     event_base_loopbreak(libeventBase);
-}
-
-int
-TCPTransport::Timer(uint64_t ms, timer_callback_t cb)
-{
-    std::lock_guard<std::mutex> lck(mtx);
-    
-    TCPTransportTimerInfo *info = new TCPTransportTimerInfo();
-
-    struct timeval tv;
-    tv.tv_sec = ms/1000;
-    tv.tv_usec = (ms % 1000) * 1000;
-    
-    ++lastTimerId;
-    
-    info->transport = this;
-    info->id = lastTimerId;
-    info->cb = cb;
-    info->ev = event_new(libeventBase, -1, 0,
-                         TimerCallback, info);
-
-    timers[info->id] = info;
-    
-    event_add(info->ev, &tv);
-    
-    return info->id;
-}
-
-bool
-TCPTransport::CancelTimer(int id)
-{
-    std::lock_guard<std::mutex> lck(mtx);
-    TCPTransportTimerInfo *info = timers[id];
-
-    if (info == NULL) {
-        return false;
-    }
-
-    timers.erase(info->id);
-    event_del(info->ev);
-    event_free(info->ev);
-    delete info;
-    
-    return true;
-}
-
-void
-TCPTransport::CancelAllTimers()
-{
-    while (!timers.empty()) {
-        auto kv = timers.begin();
-        CancelTimer(kv->first);
-    }
-}
-
-void
-TCPTransport::OnTimer(TCPTransportTimerInfo *info)
-{
-    {
-	    std::lock_guard<std::mutex> lck(mtx);
-	    
-	    timers.erase(info->id);
-	    event_del(info->ev);
-	    event_free(info->ev);
-    }
-    
-    info->cb();
-
-    delete info;
-}
-
-void
-TCPTransport::TimerCallback(evutil_socket_t fd, short what, void *arg)
-{
-    TCPTransport::TCPTransportTimerInfo *info =
-        (TCPTransport::TCPTransportTimerInfo *)arg;
-
-    ASSERT(what & EV_TIMEOUT);
-
-    info->transport->OnTimer(info);
 }
 
 void
@@ -559,11 +476,11 @@ TCPTransport::TCPAcceptCallback(evutil_socket_t fd, short what, void *arg)
         }
 
         info->connectionEvents.push_back(bev);
-	TCPTransportAddress client = TCPTransportAddress(sin);
-	transport->tcpOutgoing[client] = bev;
-	transport->tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,client));
+        TCPTransportAddress client = TCPTransportAddress(sin);
+        transport->tcpOutgoing[client] = bev;
+        transport->tcpAddresses.insert(pair<struct bufferevent*, TCPTransportAddress>(bev,client));
         Debug("Opened incoming TCP connection from %s:%d",
-               inet_ntoa(sin.sin_addr), htons(sin.sin_port));
+              inet_ntoa(sin.sin_addr), htons(sin.sin_port));
     } 
 }
 
@@ -595,11 +512,11 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
         ASSERT(totalSize < 1073741826);
     
         if (evbuffer_get_length(evbuf) < totalSize) {
-            Debug("Don't have %ld bytes for a message yet, only %ld",
+            Debug("Don't have %d bytes for a message yet, only %d",
                   totalSize, evbuffer_get_length(evbuf));
             return;
         }
-        Debug("Receiving %ld byte message", totalSize);
+        Debug("Receiving %d byte message", totalSize);
 
         char buf[totalSize];
         size_t copied = evbuffer_remove(evbuf, buf, totalSize);
@@ -631,6 +548,87 @@ TCPTransport::TCPReadableCallback(struct bufferevent *bev, void *arg)
         info->receiver->ReceiveMessage(addr->second, msgType, msg);
         Debug("Done processing large %s message", msgType.c_str());
     }
+}
+
+int
+TCPTransport::Timer(uint64_t ms, timer_callback_t cb)
+{
+    std::lock_guard<std::mutex> lck (mtx);
+
+    TCPTransportTimerInfo *info = new TCPTransportTimerInfo();
+
+    struct timeval tv;
+    tv.tv_sec = ms/1000;
+    tv.tv_usec = (ms % 1000) * 1000;
+    
+    ++lastTimerId;
+    
+    info->transport = this;
+    info->id = lastTimerId;
+    info->cb = cb;
+    info->ev = event_new(libeventBase, -1, 0,
+                         TimerCallback, info);
+
+    if (info->ev == NULL) {
+        Debug("Error creating new Timer event : %d", lastTimerId);
+    }
+
+    timers[info->id] = info;
+    
+    int ret = event_add(info->ev, &tv);
+    if (ret != 0) {
+        Debug("Error adding new Timer event to eventbase %d", lastTimerId);
+    }
+    
+    return info->id;
+}
+
+bool
+TCPTransport::CancelTimer(int id)
+{
+    std::lock_guard<std::mutex> lck (mtx);
+
+    TCPTransportTimerInfo *info = timers[id];
+
+    if (info == NULL) {
+        return false;
+    }
+
+    event_del(info->ev);
+    event_free(info->ev);
+    
+    timers.erase(info->id);
+
+
+    delete info;
+    
+    return true;
+}
+
+void
+TCPTransport::CancelAllTimers()
+{
+    Debug("Cancelling all Timers");
+    while (!timers.empty()) {
+        auto kv = timers.begin();
+        CancelTimer(kv->first);
+    }
+}
+
+void
+TCPTransport::OnTimer(TCPTransportTimerInfo *info)
+{
+    {
+        std::lock_guard<std::mutex> lck (mtx);
+
+        timers.erase(info->id);
+        event_del(info->ev);
+        event_free(info->ev);
+    }
+
+    info->cb();
+
+    delete info;
 }
 
 void
@@ -678,9 +676,9 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
     TCPTransportAddress addr = it->second;
     
     if (what & BEV_EVENT_CONNECTED) {
-        Debug("Established outgoing TCP connection to server");
+        Debug("Established outgoing TCP connection to host");
     } else if (what & BEV_EVENT_ERROR) {
-        Warning("Error on outgoing TCP connection to server: %s",
+        Warning("Error on outgoing TCP connection to host: %s",
                 evutil_socket_error_to_string(EVUTIL_SOCKET_ERROR()));
         bufferevent_free(bev);
         auto it2 = transport->tcpOutgoing.find(addr);
@@ -691,7 +689,7 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         }
         return;
     } else if (what & BEV_EVENT_EOF) {
-        Warning("EOF on outgoing TCP connection to server");
+        Warning("EOF on outgoing TCP connection to host");
         bufferevent_free(bev);
         auto it2 = transport->tcpOutgoing.find(addr);
         transport->tcpOutgoing.erase(it2);
@@ -703,13 +701,13 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
     }
 }
 
-bool
-TCPTransport::SendMessage(TransportReceiver *src,
-                          const std::string &hostname,
-                          const std::string &port,
-                          const Message &m) {
-        // NOTE: this code will only work as long as ReplicaAddress stays a plain old data
-        // struct that just wraps a (hostname, port) pair
-        TCPTransportAddress out = LookupAddress(transport::ReplicaAddress(hostname, port));
-        return SendMessageInternal(src, out, m);
+void
+TCPTransport::TimerCallback(evutil_socket_t fd, short what, void *arg)
+{
+    TCPTransportTimerInfo *info =
+        (TCPTransportTimerInfo *)arg;
+
+    ASSERT(what & EV_TIMEOUT);
+
+    info->transport->OnTimer(info);
 }

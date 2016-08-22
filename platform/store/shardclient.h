@@ -44,10 +44,6 @@
 #include "store/common/transaction.h"
 #include "store-proto.pb.h"
 
-#include <string>
-#include <mutex>
-#include <condition_variable>
-
 namespace strongstore {
 
 class ShardClient : public AsyncClient
@@ -57,42 +53,47 @@ public:
     ShardClient(
         const std::string &configPath, 
         Transport *transport,
-        uint64_t client_id,
-        int shard,
-        int closestReplica);
+        const uint64_t client_id,
+        const int shard,
+        const int closestReplica);
     ~ShardClient();
     
     // Get the value corresponding to key (valid at given timestamp).
-    void Get(const uint64_t tid,
-             const std::string &key,
-	     callback_t callback,
-             const Timestamp &timestamp = MAX_TIMESTAMP);
-
-    void MultiGet(const uint64_t tid,
-                  const std::vector<std::string> &key,
-                  callback_t callback,
-                  const Timestamp &timestamp = MAX_TIMESTAMP);
+    virtual void MultiGet(const uint64_t tid,
+                          const std::set<std::string> &key,
+                          callback_t callback,
+                          const Timestamp timestamp = MAX_TIMESTAMP);
 
     // Prepare the transaction.
-    void Prepare(const uint64_t tid,
-                 callback_t callback,
-                 const Transaction &txn = Transaction());
+    virtual void Prepare(const uint64_t tid,
+                         callback_t callback,
+                         const Transaction &txn = Transaction());
 
     // Commit all Get(s) and Put(s) since Begin().
-    void Commit(const uint64_t tid,
-		callback_t callback,
-                const Transaction &txn = Transaction());
+    virtual void Commit(const uint64_t tid,
+                        callback_t callback,
+                        const Transaction &txn = Transaction());
     
     // Abort all Get(s) and Put(s) since Begin().
-    void Abort(const uint64_t tid);
+    virtual void Abort(const uint64_t tid,
+                       callback_t callback);
 
-    void Subscribe(const std::set<std::string> &keys,
-                   const TransportAddress &myAddress,
-                   callback_t callback);
+    virtual void Subscribe(const uint64_t reactive_id,
+                           const std::set<std::string> &keys,
+                           const Timestamp timestamp,
+                           callback_t callback);
 
-    void Unsubscribe(const std::set<std::string> &keys,
-                     const TransportAddress &myAddress,
+    virtual void Unsubscribe(const uint64_t reactive_id,
+                             const std::set<std::string> &keys,
+                             callback_t callback);
+
+    virtual void Ack(const uint64_t reactive_id,
+                     const std::set<std::string> &keys,
+                     const Timestamp timestamp,
                      callback_t callback);
+
+    virtual void SetPublish(publish_handler_t publish);
+
 private:
     Transport *transport; // Transport layer.
     uint64_t client_id; // Unique ID for this client.
@@ -100,20 +101,23 @@ private:
     int replica; // which replica to use for reads
 
     replication::VRClient *client; // Client proxy.
-    Promise *waiting; // waiting thread
-    Promise *blockingBegin; // block until finished 
 
     /* Timeout for Get requests, which only go to one replica. */
     void GetTimeout();
 
     /* Callbacks for hearing back from a shard for an operation. */
-    void GetCallback(callback_t callback, const std::string &, const std::string &);
-    void PrepareCallback(callback_t callback, const std::string &, const std::string &);
-    void CommitCallback(callback_t callback, const std::string &, const std::string &);
-    void AbortCallback(const std::string &, const std::string &);
-    void SubscribeCallback(callback_t callback, const std::string &, const std::string &);
-    void UnsubscribeCallback(callback_t callback, const std::string &, const std::string &);
-
+    void GetCallback(callback_t callback,
+                     const std::string &,
+                     const std::string &);
+    void PrepareCallback(callback_t callback,
+                         const std::string &,
+                         const std::string &);
+    void GenericCallback(callback_t callback,
+                         const std::string &,
+                         const std::string &);
+    void HandlePublish(publish_handler_t publish,
+                       const string &type,
+                       const string &data);
     /* Helper Functions for starting and finishing requests */
     void StartRequest();
     void WaitForResponse();

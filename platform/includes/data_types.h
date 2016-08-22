@@ -64,9 +64,6 @@ protected:
     int Pull();
     int Increment(int inc);
 
-private:
-    uint64_t _lockid = 0;
-    long _locked = 0;
 };
 
 class DString : public DObject 

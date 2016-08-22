@@ -107,11 +107,8 @@ SimulatedTransport::Register(TransportReceiver *receiver,
 bool
 SimulatedTransport::SendMessageInternal(TransportReceiver *src,
                                         const SimulatedTransportAddress &dstAddr,
-                                        const Message &m,
-                                        bool multicast)
+                                        const Message &m)
 {
-    ASSERT(!multicast);
-    
     int dst = dstAddr.addr;
     
     Message *msg = m.New();
@@ -171,12 +168,6 @@ SimulatedTransport::LookupAddress(const transport::Configuration &cfg,
     }
     
     Panic("No replica %d was registered", idx);
-}
-
-const SimulatedTransportAddress *
-SimulatedTransport::LookupMulticastAddress(const transport::Configuration *cfg)
-{
-    return NULL;
 }
 
 void

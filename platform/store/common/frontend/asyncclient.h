@@ -3,7 +3,7 @@
 /***********************************************************************
  *
  * store/common/frontend/asyncclient.h
- *   Client interface for a single asynchronous replicated shard.
+ *   Asynchronous storage client interface.
  *
  * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *                Naveen Kr. Sharma <nksharma@cs.washington.edu>
@@ -38,7 +38,10 @@
 #include "store/common/transaction.h"
 
 #include <string>
-#include <vector>
+#include <set>
+
+typedef std::function<void (Promise &)> callback_t;
+typedef std::function<void (const Timestamp, const std::set<string> &)> publish_handler_t;
 
 class AsyncClient
 {
@@ -46,21 +49,28 @@ public:
     AsyncClient() { };
     virtual ~AsyncClient() { };
 
-    // Get the value corresponding to key (valid at given timestamp).
-    virtual void Get(const uint64_t tid,
-                     const std::string &key,
-		     callback_t callback,
-                     const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
+    virtual void Begin(const uint64_t tid) { };
+    virtual void BeginRO(const uint64_t tid,
+                         const Timestamp timestamp = MAX_TIMESTAMP) { };
 
+    // Get the value corresponding to key (valid at given timestamp).
     virtual void MultiGet(const uint64_t tid,
-                          const std::vector<std::string> &key,
+                          const std::set<std::string> &key,
 			  callback_t callback,
-                          const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
+                          const Timestamp timestamp = MAX_TIMESTAMP) = 0;
+
+    // Set the value for the given key.
+    virtual void Put(const uint64_t tid,
+                     const std::string &key,
+                     const std::string &value,
+                     callback_t callback)
+        {Panic("Should not call this");};
 
     // Prepare the transaction.
     virtual void Prepare(const uint64_t tid,
                          callback_t callback,
-                         const Transaction &txn = Transaction()) = 0;
+                         const Transaction &txn = Transaction())
+        {Panic("Should not call this here");};
 
     // Commit all Get(s) and Put(s) since Begin().
     virtual void Commit(const uint64_t tid,
@@ -68,16 +78,25 @@ public:
                         const Transaction &txn = Transaction()) = 0;
 
     // Abort all Get(s) and Put(s) since Begin().
-    virtual void Abort(const uint64_t tid) = 0;
-    
-    virtual void Subscribe(const std::set<std::string> &keys,
-                           const TransportAddress &myAddress,
+    virtual void Abort(const uint64_t tid,
+                       callback_t callback) = 0;
+
+    // Subscribe to notifications
+    virtual void Subscribe(const uint64_t reactive_id,
+                           const std::set<std::string> &keys,
+                           const Timestamp timestamp,
                            callback_t callback) = 0;
 
-    virtual void Unsubscribe(const std::set<std::string> &keys,
-                           const TransportAddress &myAddress,
-                           callback_t callback) = 0;
+    virtual void Unsubscribe(const uint64_t reactive_id,
+                             const std::set<std::string> &keys,
+                             callback_t callback) = 0;
 
+    virtual void Ack(const uint64_t reactive_id,
+                     const std::set<std::string> &keys,
+                     const Timestamp timestamp,
+                     callback_t callback) = 0;
+
+    virtual void SetPublish(publish_handler_t publish) = 0;
 };
 
 #endif /* _ASYNC_CLIENT_H_ */

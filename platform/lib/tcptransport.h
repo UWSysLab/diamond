@@ -1,8 +1,8 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * udptransport.h:
- *   message-passing network interface that uses UDP message delivery
+ * tcptransport.h:
+ *   message-passing network interface that uses TCP message delivery
  *   and libasync
  *
  * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
@@ -74,11 +74,7 @@ public:
     virtual ~TCPTransport();
     void Register(TransportReceiver *receiver,
                   const transport::Configuration &config,
-                  int replicaIdx);
-    bool SendMessage(TransportReceiver *src,
-                     const std::string &hostname,
-                     const std::string &port,
-                     const Message &m);
+                  int serverIdx);
     void Run();
     void Stop();
     int Timer(uint64_t ms, timer_callback_t cb);
@@ -94,12 +90,13 @@ private:
         event *ev;
         int id;
     };
+
     struct TCPTransportTCPListener
     {
         TCPTransport *transport;
         TransportReceiver *receiver;
         int acceptFd;
-        int replicaIdx;
+        int hostIdx;
         event *acceptEvent;
         std::list<struct bufferevent *> connectionEvents;
     };
@@ -116,13 +113,13 @@ private:
     
     bool SendMessageInternal(TransportReceiver *src,
                              const TCPTransportAddress &dst,
-                             const Message &m, bool multicast = false);
+			     const Message &m);
 
     TCPTransportAddress
-    LookupAddress(const transport::ReplicaAddress &addr);
+    LookupAddress(const transport::HostAddress &addr);
     TCPTransportAddress
     LookupAddress(const transport::Configuration &cfg,
-                  int replicaIdx);
+                  int serverIdx);
     const TCPTransportAddress *
     LookupMulticastAddress(const transport::Configuration*config) { return NULL; };
 

@@ -34,15 +34,14 @@
 
 #include "lib/assert.h"
 #include "lib/message.h"
-#include "store/common/backend/versionstore.h"
+#include "store/common/backend/pubversionstore.h"
 
-class CommutativeStore : public VersionedKVStore
+class CommutativeStore : public PubVersionStore
 {
-
 public:
     CommutativeStore() { };
     ~CommutativeStore() { };
-
+    
     void Increment(const std::string &key, const int inc, const Timestamp &t);
 };
 

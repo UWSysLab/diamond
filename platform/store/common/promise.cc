@@ -81,7 +81,9 @@ Promise::Reply(int r, Timestamp t)
 }
 
 void
-Promise::Reply(int r, const string &k, const Version &v)
+Promise::Reply(int r,
+               const string &k,
+               const Version &v)
 {
     lock_guard<mutex> l(lock);
     values.insert(make_pair(k, v));
@@ -89,7 +91,8 @@ Promise::Reply(int r, const string &k, const Version &v)
 }
 
 void
-Promise::Reply(int r, map<string, Version> &v)
+Promise::Reply(int r,
+               map<string, Version> &v)
 {
     lock_guard<mutex> l(lock);
     values = v;
@@ -97,7 +100,21 @@ Promise::Reply(int r, map<string, Version> &v)
 }
 
 void
-Promise::Reply(int r, Timestamp t, map<string, Version> &v, uint64_t rid)
+Promise::Reply(int r,
+               Timestamp t,
+               map<string, Version> &v)
+{
+    lock_guard<mutex> l(lock);
+    timestamp = t;
+    values = v;
+    ReplyInternal(r);
+}
+
+void
+Promise::Reply(int r, Timestamp t,
+               map<string,
+               Version> &v,
+               uint64_t rid)
 {
     lock_guard<mutex> l(lock);
     values = v;
@@ -126,7 +143,7 @@ Promise::GetReply()
     return reply;
 }
 
-Timestamp
+const Timestamp
 Promise::GetTimestamp()
 {
     unique_lock<mutex> l(lock);
@@ -136,7 +153,7 @@ Promise::GetTimestamp()
     return timestamp;
 }
 
-Version &
+const Version &
 Promise::GetValue(const string &key)
 {
     unique_lock<mutex> l(lock);
@@ -146,7 +163,7 @@ Promise::GetValue(const string &key)
     return values[key];
 }
 
-map<string, Version> &
+const map<string, Version> &
 Promise::GetValues()
 {
     unique_lock<mutex> l(lock);
@@ -156,7 +173,7 @@ Promise::GetValues()
     return values;
 }
 
-uint64_t
+const uint64_t
 Promise::GetReactiveId()
 {
     unique_lock<mutex> l(lock);

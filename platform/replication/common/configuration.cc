@@ -1,13 +1,11 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
-// vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * store/common/frontend/reactiveclient.h:
- *   Single shard caching client implementation that supports reactive
- *   notifications.
+ * configuration.cc:
+ *   Representation of a replica group configuration, i.e. the number
+ *   and list of replicas in the group
  *
- * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
- *                Niel Lebeck <nl35@cs.washington.edu>
+ * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -31,34 +29,58 @@
  *
  **********************************************************************/
 
-#ifndef _REACTIVE_CLIENT_H_
-#define _REACTIVE_CLIENT_H_
+#include "lib/assert.h"
+#include "replication/common/configuration.h"
+#include "lib/message.h"
 
-#include "store/common/frontend/cacheclient.h"
-
+#include <iostream>
+#include <fstream>
 #include <string>
-#include <vector>
+#include <string.h>
 
-#include "store/common/notification.h"
+namespace replication {
 
-class ReactiveClient : public CacheClient {
+ReplicaConfig::ReplicaConfig(const ReplicaConfig &c)
+    : Configuration(c.hosts), f(c.f)
+{
+}
+    
+ReplicaConfig::ReplicaConfig(int n, int f,
+                             std::vector<transport::HostAddress> hosts)
+    : Configuration(hosts), f(f)
+{
+}
 
-public:
-    ReactiveClient(TxnClient *txnclient) : CacheClient(txnclient) {}
+ReplicaConfig::ReplicaConfig(std::ifstream &file)
+    : Configuration(file)
+{
+    if (n == 0) {
+        Panic("ReplicaConfig did not specify any hosts");
+    }
+    f = (n-1)/2;
+}
 
-    void Commit(const uint64_t tid,
-                const Transaction &txn = Transaction(),
-                Promise *promise = NULL);
+ReplicaConfig::~ReplicaConfig()
+{
+}
 
-    void GetNextNotification(bool blocking,
-                             Promise *promise = NULL);
+int
+ReplicaConfig::GetLeaderIndex(view_t view) const
+{
+    return (view % this->n);
+}
 
-    void NotificationInit(std::function<void (void)> callback);
+int
+ReplicaConfig::QuorumSize() const
+{
+    return f+1;
+}
 
-private:
-    std::unordered_map<uint64_t, std::set<std::string> > regMap; // reactive_id to registration set map
-    void processNotification(const std::map<std::string, Version> &values);
+int
+ReplicaConfig::FastQuorumSize() const
+{
+    return f + (f+1)/2 + 1;
+}
 
-};
 
-#endif /* _REACTIVE_CLIENT_H_ */
+} // namespace replication

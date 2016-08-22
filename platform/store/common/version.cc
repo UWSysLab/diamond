@@ -17,7 +17,7 @@ Version::Version(const ReadReply &msg) {
 }
 
 void
-Version::Serialize(ReadReply *msg) {
+Version::Serialize(ReadReply *msg) const {
     msg->set_value(value);
     msg->set_timestamp(valid.Start());
     msg->set_end(valid.End());

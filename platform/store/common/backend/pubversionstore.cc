@@ -1,10 +1,11 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
+// vim: set ts=4 sw=4:
 /***********************************************************************
  *
- * client.cc:
- *   interface to replication client stubs
+ * store/common/backend/versionstore.cc:
+ *   Timestamped version store
  *
- * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
+ * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,54 +29,46 @@
  *
  **********************************************************************/
 
-#include "replication/common/client.h"
-#include "request.pb.h"
-#include "lib/message.h"
-#include "lib/transport.h"
+#include "pubversionstore.h"
 
-#include <random>
+using namespace std;
 
-namespace replication {
+PubVersionStore::PubVersionStore() { }
     
-Client::Client(const ReplicaConfig &config,
-	       Transport *transport,
-	       const uint64_t clientid)
-    : config(config), transport(transport)
-{
-    this->clientid = clientid;
+PubVersionStore::~PubVersionStore() { }
 
-    // Randomly generate a client ID
-    // This is surely not the fastest way to get a random 64-bit int,
-    // but it should be fine for this purpose.
-    while (this->clientid == 0) {
-        std::random_device rd;
-        std::mt19937_64 gen(rd());
-        std::uniform_int_distribution<uint64_t> dis;
-        this->clientid = dis(gen);
-        Debug("VRClient ID: %lu", this->clientid);
+void
+PubVersionStore::Subscribe(const TCPTransportAddress &remote,
+			    const Timestamp timestamp,
+			    const set<string> &keys)
+{
+    for (auto &key : keys) {
+        if (subscribers[key].count(remote) == 0 ||
+            subscribers[key][remote] < timestamp) {	    
+            subscribers[key][remote] = timestamp;
+        }
     }
-
-    transport->Register(this, config, -1);
-}
-
-Client::~Client()
-{
-
-}
-    
-void
-Client::ReceiveMessage(const TransportAddress &remote,
-                       const string &type, const string &data)
-{
-   Panic("Received unexpected message type: %s",
-         type.c_str());
-    
 }
 
 void
-Client::ReceiveError(int error)
+PubVersionStore::Unsubscribe(const TCPTransportAddress &remote,
+			      const set<string> &keys)
 {
-    Panic("Received unexpected error");
+    for (auto &key : keys) {
+        subscribers[key].erase(remote);
+    }
 }
 
-} // namespace replication
+void
+PubVersionStore::Publish(const Timestamp &timestamp,
+                          const set<string> &keys,
+                          map<TCPTransportAddress, set<string>> &notifications) {
+    for (auto &key : keys) {
+        for (auto &address : subscribers[key]) {
+            if (timestamp > address.second) {
+                Debug("timestamp %lu and subscription %lu", timestamp, address.second);
+                notifications[address.first].insert(key);
+            }
+        }
+    }
+}

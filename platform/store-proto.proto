@@ -20,12 +20,16 @@ message AbortMessage {
 }
 
 message SubscribeMessage {
-    required string address = 1;
-    repeated string keys = 2;
+    required uint64 timestamp = 1;
+    repeated string keys = 3;
 }
 
 message UnsubscribeMessage {
-    required string address = 1;
+    repeated string keys = 1;
+}
+
+message PublishMessage {
+    required uint64 timestamp = 1;
     repeated string keys = 2;
 }
 
@@ -37,15 +41,17 @@ message Request {
           ABORT = 4;
           SUBSCRIBE = 5;
           UNSUBSCRIBE = 6;
+	  ACK = 7;
      }	
      required Operation op = 1;
-     required uint64 txnid = 2;
+     optional uint64 txnid = 2;
      optional GetMessage get = 3;
      optional PrepareMessage prepare = 4;
      optional CommitMessage commit = 5;
      optional AbortMessage abort = 6;
      optional SubscribeMessage subscribe = 7;
      optional UnsubscribeMessage unsubscribe = 8;
+     optional PublishMessage ack = 9;
 }
 
 message Reply {
@@ -53,3 +59,4 @@ message Reply {
      repeated ReadReply replies = 2;
      optional uint64 timestamp = 3;
 }
+

@@ -44,9 +44,6 @@
 #include "diamond-proto.pb.h"
 #include "notification-proto.pb.h"
 
-#include <string>
-#include <mutex>
-#include <condition_variable>
 #include <queue>
 
 namespace diamond {
@@ -67,17 +64,11 @@ public:
 
     void Begin(const uint64_t tid);
     void BeginRO(const uint64_t tid,
-                 const Timestamp &timestamp = MAX_TIMESTAMP);
+                 const Timestamp timestamp = MAX_TIMESTAMP);
     
-    // Get the value corresponding to key (valid at given timestamp).
-    void Get(const uint64_t tid,
-             const std::string &key,
-             const Timestamp &timestamp = MAX_TIMESTAMP,
-             Promise *promise = NULL);
-
     void MultiGet(const uint64_t tid,
-                  const std::vector<std::string> &key,
-                  const Timestamp &timestamp = MAX_TIMESTAMP,
+                  const std::set<std::string> &key,
+                  const Timestamp timestamp = MAX_TIMESTAMP,
                   Promise *promise = NULL);
 
     // Set the value for the given key.
@@ -102,23 +93,22 @@ public:
 
     void GetNextNotification(bool blocking,
                              Promise *promise = NULL);
-
-    void Register(const uint64_t reactive_id,
-                  const Timestamp timestamp,
-                  const std::set<std::string> &keys,
-                  Promise *promise = NULL);
-
-    void Deregister(const uint64_t reactive_id,
-                    Promise *promise = NULL);
-
-    void Subscribe(const std::set<std::string> &keys,
-                   const TransportAddress &address,
+    
+    void Subscribe(const uint64_t reactive_id,
+                   const std::set<std::string> &keys,
+                   const Timestamp timestamp,
                    Promise *promise = NULL);
 
-    void ReplyToNotification(const uint64_t reactive_id,
-                             const Timestamp timestamp);
+    void Unsubscribe(const uint64_t reactive_id,
+                     const std::set<std::string> &keys,
+                     Promise *promise = NULL);
 
-    void NotificationInit(std::function<void (void)> callback);
+    void Ack(const uint64_t reactive_id,
+             const std::set<std::string> &keys,
+             const Timestamp timestamp,
+             Promise *promise = NULL);
+
+    void SetNotify(notification_handler_t notify);
 
 private:
     transport::Configuration *config;
@@ -134,14 +124,9 @@ private:
     void ReceiveError(int error) { };
     void init(transport::Configuration *transportConfig); // constructor helper to cut down on duplicated code
 
-    // Notification client state
-    std::queue<Notification> pending_notifications;
-    std::map<uint64_t, Timestamp> last_timestamp; // map reactive_id to timestamp of last notification received
-    Promise * reactive_promise = NULL; // assuming only one thread will call GetNextNotification() at a time
-    std::mutex notification_lock; // the lock for both pieces of state above
-    std::function<void (void)> notification_callback; // a callback that will be called upon receiving a notification
-    bool callback_registered = false;
-
+    // a callback that will be called upon receiving a notification
+    notification_handler_t notify;
+    bool hasNotificationHandler = false;
 };
 
 } // namespace frontend

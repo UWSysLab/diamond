@@ -79,7 +79,7 @@ void DObject::NotificationInit(std::function<void (void)> callback) {
 }
 
 void DObject::Deregister(uint64_t reactive_id) {
-    store->Deregister(reactive_id);
+    store->Unsubscribe(reactive_id);
 }
 
 void

@@ -27,8 +27,11 @@ public:
     Version() : valid(), value("tmp") { };
     Version(const Timestamp commit) : valid(commit), value("tmp") { };
     Version(const std::string &val) : valid(), value(val) { };
-    Version(const Timestamp commit, const std::string &val) : valid(commit), value(val) { };
-    Version(const Timestamp commit, const std::string &val, const int op) : valid(commit), value(val), op(op) { };
+    Version(const Timestamp commit,
+	    const std::string &val) : valid(commit), value(val) { };
+    Version(const Timestamp commit,
+	    const std::string &val,
+	    const int op) : valid(commit), value(val), op(op) { };
     Version(const ReadReply &msg);
     
     std::string GetValue() const { return value; };
@@ -43,7 +46,7 @@ public:
     friend bool operator< (const Version &v1, const Version &v2) {
         return v1.valid.Start() < v2.valid.Start();
     };
-    void Serialize(ReadReply *msg);
+    void Serialize(ReadReply *msg) const;
     void Deserialize(ReadReply *msg);
 };
 

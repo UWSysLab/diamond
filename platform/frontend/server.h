@@ -47,7 +47,10 @@ namespace frontend {
 class Server : public TransportReceiver
 {
 public:
-    Server(Transport *transport, strongstore::Client *client);
+    Server(const string &configPath,
+           const int nShards,
+           const int closestReplica,
+           Transport *transport);
     virtual ~Server();
     
 protected:
@@ -64,38 +67,38 @@ protected:
                         const RegisterMessage &msg);
     void HandleDeregister(const TransportAddress &remote,
                           const DeregisterMessage &msg);
-    void HandleNotifyFrontend(const TransportAddress &remote,
-                              const NotifyFrontendMessage &msg);
+    void HandlePublish(const Timestamp timestamp,
+                       const std::set<std::string> &keys);
     void HandleNotificationReply(const TransportAddress &remote,
                                  const NotificationReply &msg);
     
 private:
     Transport *transport;
     strongstore::Client *store;
-
-    std::unordered_map<uint64_t, ReactiveTransaction> transactions; // map frontend index to data structure
-    std::unordered_map<std::string, std::set<uint64_t> > listeners; // map key to the frontend indices of the reactive transactions listening to it
-    std::unordered_map<std::string, Version> cachedValues; // map keys to their cached values
-
-    uint64_t getFrontendIndex(uint64_t client_id, uint64_t reactive_id);
-    void SendNotification(const uint64_t client_id, const uint64_t reactive_id, const Timestamp timestamp);
-    void UpdateCache(const ReactiveTransaction &rt, const Timestamp timestamp);
-
+    
+    // map frontend index to data structure
+    std::unordered_map<uint64_t, ReactiveTransaction *> transactions;
+    // map key to the frontend indices of the reactive transactions
+    // listening to it
+    std::unordered_map<std::string, std::set<uint64_t> > listeners; 
+    uint64_t getFrontendIndex(uint64_t client_id,
+                              uint64_t reactive_id);
+    void SendNotification(const ReactiveTransaction *rt,
+                          const Timestamp timestamp,
+                          const std::map<std::string, Version> &values);
+    void NotificationGetCallback(const ReactiveTransaction *rt,
+                                 const Timestamp timestamp,
+                                 Promise &promise);
     // callbacks
     void GetCallback(const TransportAddress *remote,
                      const proto::GetMessage msg,
-                     Promise *promise);
+                     Promise &promise);
     void CommitCallback(const TransportAddress *remote,
                         const proto::CommitMessage msg,
-                        Promise *promise);
-    void SubscribeCallback(const TransportAddress *remote,
-                           const RegisterMessage msg,
-                           Promise *promise);
-    void UpdateCacheCallback(const uint64_t client_id,
-                             const uint64_t reactive_id,
-                             const Timestamp next_timestamp,
-                             Promise *promise);
-
+                        Promise &promise);
+    void SubscribeCallback(ReactiveTransaction *rt,
+                           const Timestamp timestamp,
+                           Promise &promise);
 };
 
 } // namespace frontend

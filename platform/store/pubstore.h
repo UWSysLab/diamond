@@ -1,10 +1,12 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * client.cc:
- *   interface to replication client stubs
+ * store/strongstore/notifystore.h:
+ *   OCC Key-value store with support for notifications
  *
- * Copyright 2013 Dan R. K. Ports  <drkp@cs.washington.edu>
+ * Copyright 2013-2015 Irene Zhang <iyzhang@cs.washington.edu>
+ *                     Naveen Kr. Sharma <naveenks@cs.washington.edu>
+ *                     Dan R. K. Ports  <drkp@cs.washington.edu>
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,54 +30,38 @@
  *
  **********************************************************************/
 
-#include "replication/common/client.h"
-#include "request.pb.h"
+#ifndef _STRONG_PUB_STORE_H_
+#define _STRONG_PUB_STORE_H_
+
+#include "lib/assert.h"
 #include "lib/message.h"
-#include "lib/transport.h"
+#include "includes/error.h"
+#include "store/occstore.h"
 
-#include <random>
+#include <vector>
+#include <map>
+#include <unordered_set>
+#include <list>
+#include <mutex>
 
-namespace replication {
-    
-Client::Client(const ReplicaConfig &config,
-	       Transport *transport,
-	       const uint64_t clientid)
-    : config(config), transport(transport)
+namespace strongstore {
+
+class PubStore : public OCCStore
 {
-    this->clientid = clientid;
+public:
+    PubStore();
+    ~PubStore();
 
-    // Randomly generate a client ID
-    // This is surely not the fastest way to get a random 64-bit int,
-    // but it should be fine for this purpose.
-    while (this->clientid == 0) {
-        std::random_device rd;
-        std::mt19937_64 gen(rd());
-        std::uniform_int_distribution<uint64_t> dis;
-        this->clientid = dis(gen);
-        Debug("VRClient ID: %lu", this->clientid);
-    }
+    void Subscribe(const TCPTransportAddress &remote,
+                   const Timestamp timestamp,
+                   const std::set<std::string> &keys);
+    void Unsubscribe(const TCPTransportAddress &remote,
+                     const std::set<std::string> &keys);
+    void Publish(const uint64_t tid,
+                 const Timestamp timestamp,
+                 std::map<TCPTransportAddress, std::set<std::string>> &notifications);
+};
 
-    transport->Register(this, config, -1);
-}
+} // namespace strongstore
 
-Client::~Client()
-{
-
-}
-    
-void
-Client::ReceiveMessage(const TransportAddress &remote,
-                       const string &type, const string &data)
-{
-   Panic("Received unexpected message type: %s",
-         type.c_str());
-    
-}
-
-void
-Client::ReceiveError(int error)
-{
-    Panic("Received unexpected error");
-}
-
-} // namespace replication
+#endif /* _STRONG_PUB_STORE_H_ */

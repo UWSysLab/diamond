@@ -46,41 +46,42 @@ OCCStore::Get(const uint64_t tid,
 	      Version &value,
 	      const Timestamp &timestamp)
 {
-    Debug("[%lu] GET %s at %lu", tid,
-	  key.c_str(), timestamp);
+    Debug("[%lu] GET %s at %lu", tid, key.c_str(), timestamp);
     
     if (store.Get(key, timestamp, value)) {
-	// if the timestamp that we asked for is outside
-	// of the currently known bounds
-	Timestamp update = getPreparedUpdate(key);
-	if (timestamp > value.GetInterval().End()) {
-	    if (timestamp > last_committed &&
-		timestamp < update) {
-		ASSERT(update == MAX_TIMESTAMP);
-		// if there are no ongoing writes
-		// but we haven't committed any transactions
-		// past this timestamp, then we need to
-		// make sure that we don't commit a write later
-		store.CommitGet(key, timestamp, timestamp);
-		    value.SetEnd(timestamp);
-	    } else if (timestamp <= last_committed &&
-		       timestamp <= update) {
-		// safe to return
-		// because we'll never commit any versions
-		// past this timestamp
-		value.SetEnd(min(update, last_committed));
-	    } else if (timestamp > update) {
-		// there's an ongoing transaction at this timestamp
-		// but try again and it'll be done
-		return REPLY_RETRY;
-	    }
-	} else if (value.GetInterval().End() == MAX_TIMESTAMP) {
-	    // just cap it at the last transaction that we've seen
-	    value.SetEnd(min(update, last_committed));
-	}
-	Debug("[%lu] Returning %s=%s ending at %lu", tid,
-	      key.c_str(), value.GetValue().c_str(), value.GetInterval().End());
-	return REPLY_OK;
+        // if the timestamp that we asked for is outside of the
+        // currently known bounds
+        Timestamp update = getPreparedUpdate(key);
+        if (timestamp > value.GetInterval().End()) {
+            if (timestamp > last_committed &&
+                timestamp < update) {
+                ASSERT(update == MAX_TIMESTAMP);
+                // if there are no ongoing writes but we haven't
+                // committed any transactions past this timestamp,
+                // then we need to make sure that we don't commit a
+                // write later
+                store.CommitGet(key,
+                                timestamp,
+                                timestamp);
+                value.SetEnd(timestamp);
+            } else if (timestamp <= last_committed &&
+                       timestamp <= update) {
+                // safe to return because we'll never commit any
+                // versions past this timestamp
+                value.SetEnd(min(update, last_committed));
+            } else if (timestamp > update) {
+                // there's an ongoing transaction at this timestamp
+                // but try again and it'll be done
+                return REPLY_RETRY;
+            }
+        } else if (value.GetInterval().End() == MAX_TIMESTAMP) {
+            // just cap it at the last transaction that we've seen
+            value.SetEnd(min(update, last_committed));
+        }
+        Debug("[%lu] Returning %s=%s ending at %lu",
+              tid, key.c_str(), value.GetValue().c_str(),
+              value.GetInterval().End());
+        return REPLY_OK;
     } else {
         return REPLY_NOT_FOUND;
     }
@@ -372,96 +373,6 @@ OCCStore::getPreparedUpdate(const string &key)
         }
     }
     return ts;
-}
-
-void
-OCCStore::Subscribe(const set<string> &keys, const string &address, map<string, Version> &values)
-{
-    store.Subscribe(keys, address);
-    for (auto it = keys.begin(); it != keys.end(); it++) {
-        Version value(0, "");
-        value.SetEnd(0);
-        Get(0, *it, value, MAX_TIMESTAMP);
-        values[*it] = value;
-    }
-}
-
-void
-OCCStore::Unsubscribe(const set<string> &keys, const string &address)
-{
-    store.Unsubscribe(keys, address);
-}
-
-void
-OCCStore::AddFrontendNotifications(const Timestamp &timestamp, const uint64_t tid)
-{
-    Transaction t;
-    if (committed.find(tid) != committed.end()) {
-        t = committed[tid];
-    } else {
-        Panic("No transaction with tid %lu is committed", tid);
-    }
-
-    set<string> keys;
-    for (auto &write : t.GetWriteSet()) {
-        keys.insert(write.first);
-    }
-    for (auto &inc : t.GetIncrementSet()) {
-        keys.insert(inc.first);
-    }
-
-    std::vector<FrontendNotification> notifications;
-    store.GetFrontendNotifications(timestamp, keys, notifications);
-    for (FrontendNotification &n : notifications) {
-        n.txn_id = tid;
-    }
-    fillCacheEntries(t, notifications);
-
-    ufnMutex.lock();
-    for (FrontendNotification &n : notifications) {
-        unackedFrontendNotifications[n.address][n.txn_id] = n;
-    }
-    ufnMutex.unlock();
-}
-
-void
-OCCStore::AckFrontendNotification(const uint64_t tid, const std::string &address) {
-    ufnMutex.lock();
-    unackedFrontendNotifications[address].erase(tid);
-    ufnMutex.unlock();
-}
-
-void
-OCCStore::GetUnackedFrontendNotifications(const uint64_t tid, std::vector<FrontendNotification> &notifications) {
-    ufnMutex.lock();
-    for (auto &addrMapPair : unackedFrontendNotifications) {
-	auto it = addrMapPair.second.find(tid);
-	if (it != addrMapPair.second.end()) {
-            notifications.push_back(it->second);
-        }
-    }
-    ufnMutex.unlock();
-}
-
-void
-OCCStore::fillCacheEntries(const Transaction &txn, std::vector<FrontendNotification> &notifications)
-{
-    for (auto &n : notifications) {
-        vector<pair<string, Timestamp> > keys;
-        for (auto it = n.values.begin(); it != n.values.end(); it++) {
-            keys.push_back(pair<string, Timestamp>(it->first, it->second.GetTimestamp()));
-        }
-        for (auto it = keys.begin(); it != keys.end(); it++) {
-            string key = it->first;
-            Timestamp timestamp = it->second;
-            Version value;
-            int ret = Get(0, key, value, timestamp); //TODO: is txnid 0 fine, since Get ignores it?
-            if (ret != REPLY_OK) {
-                Panic("Cached value for %s at timestamp %lu not found", key.c_str(), value.GetTimestamp());
-            }
-            n.values[key] = value;
-        }
-    }
 }
     
 } // namespace strongstore

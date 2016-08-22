@@ -35,13 +35,14 @@
 #include "lib/transport.h"
 #include "replication/client.h"
 #include "vr-proto.pb.h"
+#include "store-proto.pb.h"
 #include "includes/error.h"
 
 namespace replication {
 
-VRClient::VRClient(const transport::Configuration &config,
+VRClient::VRClient(const ReplicaConfig &config,
                    Transport *transport,
-                   uint64_t clientid)
+                   const uint64_t clientid)
     : Client(config, transport, clientid)
 {
     lastReqId = 0;
@@ -52,25 +53,31 @@ VRClient::~VRClient()
 }
 
 void
+VRClient::SetMessageHandler(message_handler_t handler)
+{
+    Debug("Set Message Handler");
+    hasHandler = true;
+    this->handler = handler;
+}
+    
+void
 VRClient::Invoke(const string &request,
                  continuation_t continuation)
 {
     ++lastReqId;
-    pendingRequests[lastReqId] = PendingRequest(request,
-						false,
-						continuation);
+    pendingRequests[lastReqId] =
+	PendingRequest(request, false, continuation);
     SendRequest(lastReqId);
 }
 
 void
-VRClient::InvokeUnlogged(int replicaIdx,
+VRClient::InvokeUnlogged(const int replicaIdx,
                          const string &request,
                          continuation_t continuation)
 {
     ++lastReqId;
-    pendingRequests[lastReqId] = PendingRequest(request,
-						true,
-						continuation);
+    pendingRequests[lastReqId] =
+	PendingRequest(request, true, continuation);
 
     proto::UnloggedRequestMessage reqMsg;
     reqMsg.mutable_req()->set_op(pendingRequests[lastReqId].request);
@@ -78,11 +85,11 @@ VRClient::InvokeUnlogged(int replicaIdx,
     reqMsg.mutable_req()->set_clientreqid(lastReqId);
     Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, lastReqId);
     
-    transport->SendMessageToReplica(this, leader, reqMsg);
+    transport->SendMessageToHost(this, leader, reqMsg);
 }
 
 void
-VRClient::SendRequest(int reqid) {
+VRClient::SendRequest(const int reqid) {
     
     proto::RequestMessage reqMsg;
     reqMsg.mutable_req()->set_op(pendingRequests[reqid].request);
@@ -90,7 +97,7 @@ VRClient::SendRequest(int reqid) {
     reqMsg.mutable_req()->set_clientreqid(reqid);
     
     Debug("SENDING REQUEST: %lu %lu", clientid, reqid);
-    transport->SendMessageToReplica(this, leader, reqMsg);
+    transport->SendMessageToHost(this, leader, reqMsg);
 }   
 void
 VRClient::ReceiveMessage(const TransportAddress &remote,
@@ -98,10 +105,12 @@ VRClient::ReceiveMessage(const TransportAddress &remote,
                          const string &data)
 {
     static proto::ReplyMessage reply;
-        
+            
     if (type == reply.GetTypeName()) {
         reply.ParseFromString(data);
         HandleReply(remote, reply);
+    } else if (hasHandler) {
+        handler(type, data);
     } else {
         Client::ReceiveMessage(remote, type, data);
     }
@@ -131,7 +140,7 @@ VRClient::HandleReply(const TransportAddress &remote,
 }
 
 void
-VRClient::ReceiveError(int error)
+VRClient::ReceiveError(const int error)
 {
     // only works for one failure :)
     if (leader == 0) {
@@ -145,7 +154,7 @@ VRClient::ReceiveError(int error)
 			reqMsg.mutable_req()->set_clientid(clientid);
 			reqMsg.mutable_req()->set_clientreqid(r.first);
 		Debug("SENDING UNLOGGED REQUEST: %lu %lu", clientid, r.first);
-		transport->SendMessageToReplica(this, leader, reqMsg);
+		transport->SendMessageToHost(this, leader, reqMsg);
 		    });
 	    } else {
 		transport->Timer(RETRY_WAIT, [=]() {

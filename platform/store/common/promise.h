@@ -65,6 +65,7 @@ public:
     void Reply(int r, Timestamp t);
     void Reply(int r, const std::string &k, const Version &v);
     void Reply(int r, std::map<std::string, Version> &v);
+    void Reply(int r, Timestamp t, std::map<std::string, Version> &v);
     void Reply(int r, Timestamp t, std::map<std::string, Version> &v, uint64_t reactive_id);
     // Return configured timeout
     int GetTimeout();
@@ -72,13 +73,10 @@ public:
     // block on this until response comes back
     bool GetDone();
     int GetReply();
-    Timestamp GetTimestamp();
-    //Timestamp GetTimestamp();
-    Version & GetValue(const std::string &key);
-    std::map<std::string, Version> & GetValues();
-    uint64_t GetReactiveId();
+    const Timestamp GetTimestamp();
+    const Version & GetValue(const std::string &key);
+    const std::map<std::string, Version> & GetValues();
+    const uint64_t GetReactiveId();
 };
-
-typedef std::function<void (Promise *)> callback_t;
 
 #endif /* _PROMISE_H_ */

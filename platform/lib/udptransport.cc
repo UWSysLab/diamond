@@ -95,7 +95,7 @@ bool operator<(const UDPTransportAddress &a, const UDPTransportAddress &b)
 }
 
 UDPTransportAddress
-UDPTransport::LookupAddress(const transport::ReplicaAddress &addr)
+UDPTransport::LookupAddress(const transport::HostAddress &addr)
 {
     int res;
     struct addrinfo hints;
@@ -121,30 +121,8 @@ UDPTransportAddress
 UDPTransport::LookupAddress(const transport::Configuration &config,
                             int idx)
 {
-    const transport::ReplicaAddress &addr = config.replica(idx);
+    const transport::HostAddress &addr = config.host(idx);
     return LookupAddress(addr);
-}
-
-const UDPTransportAddress *
-UDPTransport::LookupMulticastAddress(const transport::Configuration
-                                     *config)
-{
-    if (!config->multicast()) {
-        // Configuration has no multicast address
-        return NULL;
-    }
-
-    if (multicastFds.find(config) != multicastFds.end()) {
-        // We are listening on this multicast address. Some
-        // implementations of MOM aren't OK with us both sending to
-        // and receiving from the same address, so don't look up the
-        // address.
-        return NULL;
-    }
-
-    UDPTransportAddress *addr =
-        new UDPTransportAddress(LookupAddress(*(config->multicast())));
-    return addr;
 }
 
 static void
@@ -189,25 +167,13 @@ BindToPort(int fd, const string &host, const string &port)
     }
 }
 
-UDPTransport::UDPTransport(double dropRate, double reorderRate,
-                           int dscp, event_base *evbase)
-    : dropRate(dropRate), reorderRate(reorderRate),
-      dscp(dscp)
+UDPTransport::UDPTransport(int dscp, event_base *evbase)
+    : dscp(dscp)
 {
 
     lastTimerId = 0;
     lastFragMsgId = 0;
 
-    uniformDist = std::uniform_real_distribution<double>(0.0,1.0);
-    randomEngine.seed(time(NULL));
-    reorderBuffer.valid = false;
-    if (dropRate > 0) {
-        Warning("Dropping packets with probability %g", dropRate);
-    }
-    if (reorderRate > 0) {
-        Warning("Reordering packets with probability %g", reorderRate);
-    }
-    
     // Set up libevent
     event_set_log_callback(LogCallback);
     event_set_fatal_callback(FatalCallback);
@@ -244,80 +210,14 @@ UDPTransport::~UDPTransport()
 }
 
 void
-UDPTransport::ListenOnMulticastPort(const transport::Configuration
-                                    *canonicalConfig)
-{
-    if (!canonicalConfig->multicast()) {
-        // No multicast address specified
-        return;
-    }
-
-    if (multicastFds.find(canonicalConfig) != multicastFds.end()) {
-        // We're already listening
-        return;    
-    }
-
-    int fd;
-    
-    // Create socket
-    if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        PPanic("Failed to create socket to listen for multicast");
-    }
-    
-    // Put it in non-blocking mode
-    if (fcntl(fd, F_SETFL, O_NONBLOCK, 1)) {
-        PWarning("Failed to set O_NONBLOCK on multicast socket");
-    }
-    
-    int n = 1;
-    if (setsockopt(fd, SOL_SOCKET,
-                   SO_REUSEADDR, (char *)&n, sizeof(n)) < 0) {
-        PWarning("Failed to set SO_REUSEADDR on multicast socket");
-    }
-
-    // Increase buffer size
-    n = SOCKET_BUF_SIZE;
-    if (setsockopt(fd, SOL_SOCKET,
-                   SO_RCVBUF, (char *)&n, sizeof(n)) < 0) {
-        PWarning("Failed to set SO_RCVBUF on socket");
-    }
-    if (setsockopt(fd, SOL_SOCKET,
-                   SO_SNDBUF, (char *)&n, sizeof(n)) < 0) {
-        PWarning("Failed to set SO_SNDBUF on socket");
-    }
-
-    
-    // Bind to the specified address
-    BindToPort(fd,
-               canonicalConfig->multicast()->host,
-               canonicalConfig->multicast()->port);
-    
-    // Set up a libevent callback
-    event *ev = event_new(libeventBase, fd,
-                          EV_READ | EV_PERSIST,
-                          SocketCallback, (void *)this);
-    event_add(ev, NULL);
-    listenerEvents.push_back(ev);
-
-    // Record the fd
-    multicastFds[canonicalConfig] = fd;
-    multicastConfigs[fd] = canonicalConfig;
-
-    Notice("Listening for multicast requests on %s:%s",
-           canonicalConfig->multicast()->host.c_str(),
-           canonicalConfig->multicast()->port.c_str());
-}
-
-void
 UDPTransport::Register(TransportReceiver *receiver,
                        const transport::Configuration &config,
-                       int replicaIdx)
+                       int hostIdx)
 {
-    ASSERT(replicaIdx < config.n);
+    ASSERT(hostIdx < config.n);
     struct sockaddr_in sin;
 
-    const transport::Configuration *canonicalConfig =
-        RegisterConfiguration(receiver, config, replicaIdx);
+    RegisterConfiguration(receiver, config, hostIdx);
 
     // Create socket
     int fd;
@@ -356,11 +256,11 @@ UDPTransport::Register(TransportReceiver *receiver,
         PWarning("Failed to set SO_SNDBUF on socket");
     }
     
-    if (replicaIdx != -1) {
-        // Registering a replica. Bind socket to the designated
+    if (hostIdx != -1) {
+        // Registering a host. Bind socket to the designated
         // host/port
-        const string &host = config.replica(replicaIdx).host;
-        const string &port = config.replica(replicaIdx).port;
+        const string &host = config.host(hostIdx).host;
+        const string &port = config.host(hostIdx).port;
         BindToPort(fd, host, port);
     } else {
         // Registering a client. Bind to any available host/port
@@ -386,14 +286,6 @@ UDPTransport::Register(TransportReceiver *receiver,
     fds[receiver] = fd;
 
     Debug("Listening on UDP port %hu", ntohs(sin.sin_port));
-
-    // If we are registering a replica, check whether we need to set
-    // up a socket to listen on the multicast port.
-    //
-    // Don't do this if we're registering a client.
-    if (replicaIdx != -1) {
-        ListenOnMulticastPort(canonicalConfig);
-    }
 }
 
 static size_t
@@ -429,8 +321,7 @@ SerializeMessage(const ::google::protobuf::Message &m, char **out)
 bool
 UDPTransport::SendMessageInternal(TransportReceiver *src,
                                   const UDPTransportAddress &dst,
-                                  const Message &m,
-                                  bool multicast)
+                                  const Message &m)
 {
     sockaddr_in sin = dynamic_cast<const UDPTransportAddress &>(dst).addr;
 
@@ -603,65 +494,9 @@ UDPTransport::OnReadable(int fd)
                 continue;
             }
         }
-        
-        // Dispatch
-        if (dropRate > 0.0) {
-            double roll = uniformDist(randomEngine);
-            if (roll < dropRate) {
-                Debug("Simulating packet drop of message type %s",
-                      msgType.c_str());
-                continue;
-            }
-        }
-
-        if (!reorderBuffer.valid && (reorderRate > 0.0)) {
-            double roll = uniformDist(randomEngine);
-            if (roll < reorderRate) {
-                Debug("Simulating reorder of message type %s",
-                      msgType.c_str());
-                ASSERT(!reorderBuffer.valid);
-                reorderBuffer.valid = true;
-                reorderBuffer.addr = new UDPTransportAddress(senderAddr);
-                reorderBuffer.message = msg;
-                reorderBuffer.msgType = msgType;
-                reorderBuffer.fd = fd;
-                continue;
-            }
-        }
-
-    deliver:
-        // Was this received on a multicast fd?
-        auto it = multicastConfigs.find(fd);
-        if (it != multicastConfigs.end()) {
-            // If so, deliver the message to all replicas for that
-            // config, *except* if that replica was the sender of the
-            // message.
-            const transport::Configuration *cfg = it->second;
-            for (auto &kv : replicaReceivers[cfg]) {
-                TransportReceiver *receiver = kv.second;
-                const UDPTransportAddress &raddr = 
-                    replicaAddresses[cfg].find(kv.first)->second;
-                // Don't deliver a message to the sending replica
-                if (raddr != senderAddr) {
-                    receiver->ReceiveMessage(senderAddr, msgType, msg);
-                }
-            }
-        } else {
-            TransportReceiver *receiver = receivers[fd];
-            receiver->ReceiveMessage(senderAddr, msgType, msg);
-        }
-
-        if (reorderBuffer.valid) {
-            reorderBuffer.valid = false;
-            msg = reorderBuffer.message;
-            msgType = reorderBuffer.msgType;
-            fd = reorderBuffer.fd;
-            senderAddr = *(reorderBuffer.addr);
-            delete reorderBuffer.addr;
-            Debug("Delivering reordered packet of type %s",
-                  msgType.c_str());
-            goto deliver;       // XXX I am a bad person for this.
-        }
+	// Dispatch
+	TransportReceiver *receiver = receivers[fd];
+	receiver->ReceiveMessage(senderAddr, msgType, msg);
     }
 }
 

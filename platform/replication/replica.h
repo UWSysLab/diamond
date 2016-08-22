@@ -31,7 +31,7 @@
 #ifndef _VR_REPLICA_H_
 #define _VR_REPLICA_H_
 
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
 #include "replication/common/log.h"
 #include "replication/common/replica.h"
 #include "replication/common/quorumset.h"
@@ -46,7 +46,7 @@ namespace replication {
 class VRReplica : public Replica
 {
 public:
-    VRReplica(transport::Configuration config, int myIdx,
+    VRReplica(ReplicaConfig config, int myIdx,
               Transport *transport, unsigned int batchSize,
               AppReplica *app);
     ~VRReplica();

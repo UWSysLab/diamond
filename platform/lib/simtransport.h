@@ -81,14 +81,11 @@ public:
 protected:
     bool SendMessageInternal(TransportReceiver *src,
                              const SimulatedTransportAddress &dstAddr,
-                             const Message &m,
-                             bool multicast);
+                             const Message &m);
     
     SimulatedTransportAddress
     LookupAddress(const transport::Configuration &cfg, int idx);
-    const SimulatedTransportAddress *
-    LookupMulticastAddress(const transport::Configuration *cfg);
-    
+          
 private:
     struct QueuedMessage {
         int dst;

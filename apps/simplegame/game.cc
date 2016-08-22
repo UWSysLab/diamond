@@ -6,21 +6,21 @@ diamond::DLong score;
 diamond::DCounter move;
 
 void addPlayer(std::string name) {
-   players.Append(name);
+    players.Append(name);
 }
 
 void takeTurn(std::string name, int inc) {
-   std::string currentPlayer = players[move % players.Size()];
-   if (currentPlayer == name) {
-      score += inc;
-      if (score == 100) {
-         cout << "You won!\n";
-      } else {
-         move++;
-      }
-   } else {
-      diamond::abort_txn();
-   }
+    std::string currentPlayer = players[move % players.Size()];
+    if (currentPlayer == name) {
+        score += inc;
+        if (score == 100) {
+            cout << "You won!\n";
+        } else {
+            move++;
+        }
+    } else {
+        diamond::abort_txn();
+    }
 }
 
 void displayGame(std::string myName) {

@@ -3,7 +3,7 @@
 /***********************************************************************
  *
  * store/common/frontend/txnclient.h
- *   Client interface for a single replicated shard.
+ *   Synchronous storage client interface
  *
  * Copyright 2015 Irene Zhang <iyzhang@cs.washington.edu>
  *                Naveen Kr. Sharma <nksharma@cs.washington.edu>
@@ -38,7 +38,7 @@
 #include "store/common/transaction.h"
 
 #include <string>
-#include <vector>
+#include <set>
 
 #define DEFAULT_TIMEOUT_MS 250
 #define DEFAULT_MULTICAST_TIMEOUT_MS 500
@@ -57,6 +57,8 @@
 #define ABORT_TIMEOUT 1000
 #define RETRY_TIMEOUT 500000
 
+typedef std::function<void (const uint64_t reactive_id, const Timestamp, const std::map<std::string, Version> &values)> notification_handler_t;
+
 class TxnClient
 {
 public:
@@ -64,19 +66,14 @@ public:
     virtual ~TxnClient() { };
 
     // Begin a transaction.
+    // Non-blocking
     virtual void Begin(const uint64_t tid) = 0;
     virtual void BeginRO(const uint64_t tid,
-                         const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
+                         const Timestamp timestamp = MAX_TIMESTAMP) = 0;
     
-    // Get the value corresponding to key (valid at given timestamp).
-    virtual void Get(const uint64_t tid,
-                     const std::string &key,
-                     const Timestamp &timestamp = MAX_TIMESTAMP,
-                     Promise *promise = NULL) = 0;
-
     virtual void MultiGet(const uint64_t tid,
-                          const std::vector<std::string> &key,
-                          const Timestamp &timestamp = MAX_TIMESTAMP,
+                          const std::set<std::string> &key,
+                          const Timestamp timestamp = MAX_TIMESTAMP,
                           Promise *promise = NULL) = 0;
 
     // Set the value for the given key.
@@ -99,25 +96,22 @@ public:
     virtual void Abort(const uint64_t tid,
                        Promise *promise = NULL) = 0;
 
-    virtual void GetNextNotification(bool blocking,
-                                     Promise *promise = NULL) = 0;
-
-    virtual void Register(const uint64_t reactive_id,
-                          const Timestamp timestamp,
-                          const std::set<std::string> &keys,
-                          Promise *promise = NULL) = 0;
-
-    virtual void Deregister(const uint64_t reactive_id,
-                            Promise *promise = NULL) = 0;
-
-    virtual void Subscribe(const std::set<std::string> &keys,
-                           const TransportAddress &myAddress,
+    // Subscribe to notifications
+    virtual void Subscribe(const uint64_t reactive_id,
+                           const std::set<std::string> &keys,
+                           const Timestamp timestamp,
                            Promise *promise = NULL) = 0;
 
-    virtual void ReplyToNotification(const uint64_t reactive_id,
-                                     const Timestamp timestamp) = 0;
+    virtual void Unsubscribe(const uint64_t reactive_id,
+                             const std::set<std::string> &keys,
+                             Promise *promise = NULL) = 0;
 
-    virtual void NotificationInit(std::function<void (void)> callback) = 0;
+    virtual void Ack(const uint64_t reactive_id,
+                     const std::set<std::string> &keys,
+                     const Timestamp timestamp,
+                     Promise *promise = NULL) = 0;
+
+    virtual void SetNotify(notification_handler_t notify) = 0; 
 };
 
 #endif /* _TXN_CLIENT_H_ */

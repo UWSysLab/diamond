@@ -1,9 +1,8 @@
 // -*- mode: c++; c-file-style: "k&r"; c-basic-offset: 4 -*-
 /***********************************************************************
  *
- * store/txnstore/lib/txnstore.h:
- *   Interface for a single node transactional store serving as a
- *   server-side backend
+ * store/pubstore.cc:
+ *   Key-value store with support for notifications
  *
  * Copyright 2013-2015 Irene Zhang <iyzhang@cs.washington.edu>
  *                     Naveen Kr. Sharma <naveenks@cs.washington.edu>
@@ -31,50 +30,53 @@
  *
  **********************************************************************/
 
-#ifndef _TXN_STORE_H_
-#define _TXN_STORE_H_
+#include "pubstore.h"
 
-#include "lib/assert.h"
-#include "lib/message.h"
-#include "lib/tcptransport.h"
-#include "store/common/transaction.h"
-#include "store/common/timestamp.h"
-#include "store/common/version.h"
-#include "store/common/notification.h"
-
-#include <map>
-#include <string>
-#include <set>
+using namespace std;
 
 namespace strongstore {
-    
-class TxnStore
+
+PubStore::PubStore() { }
+PubStore::~PubStore() { }
+
+
+void
+PubStore::Subscribe(const TCPTransportAddress &remote,
+		    const Timestamp timestamp,
+		    const set<string> &keys)
 {
-public:
-
-    TxnStore() { };
-    virtual ~TxnStore() { };
-
-    virtual int Get(const uint64_t tid,
-                    const std::string &key,
-                    Version &value,
-                    const Timestamp &timestamp = MAX_TIMESTAMP) = 0;
-
-    // check whether we can commit this transaction (and lock the read/write set)
-    virtual int Prepare(const uint64_t tid,
-                        const Transaction &txn) = 0;
-
-    // commit the transaction
-    virtual void Commit(const uint64_t tid,
-                        const Timestamp &timestamp,
-                        const Transaction &txn = Transaction()) = 0;
-
-    // abort a running transaction
-    virtual void Abort(const uint64_t tid) = 0;
-
-    virtual void Load(const std::string &key,
-                      const std::string &value,
-                      const Timestamp &timestamp) = 0;
-};
+    store.Subscribe(remote, timestamp, keys);
 }
-#endif /* _TXN_STORE_H_ */
+
+void
+PubStore::Unsubscribe(const TCPTransportAddress &remote,
+		      const set<string> &keys)
+{
+    store.Unsubscribe(remote, keys);
+}
+
+void
+PubStore::Publish(const uint64_t tid,
+                  const Timestamp timestamp,
+                  map<TCPTransportAddress, set<string>> &notifications)
+{
+    Transaction t;
+    // Get transaction
+    if (committed.find(tid) != committed.end()) {
+        t = committed[tid];
+    } else {
+        Panic("No transaction with tid %lu is committed", tid);
+    }
+
+    // get set of keys that changed
+    set<string> keys;
+    for (auto &w : t.GetWriteSet())
+        keys.insert(w.first);
+    for (auto &inc : t.GetIncrementSet())
+        keys.insert(inc.first);
+
+    // get notifications that need to be sent
+    store.Publish(tid, keys, notifications);
+}
+    
+} // namespace strongstore

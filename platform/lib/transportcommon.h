@@ -47,7 +47,7 @@ class TransportCommon : public Transport
 public:
     TransportCommon() 
     {
-        replicaAddressesInitialized = false;
+        hostAddressesInitialized = false;
     }
 
     virtual
@@ -63,24 +63,24 @@ public:
                 const Message &m)
     {
         const ADDR &dstAddr = dynamic_cast<const ADDR &>(dst);
-        return SendMessageInternal(src, dstAddr, m, false);
+        return SendMessageInternal(src, dstAddr, m);
     }
 
     virtual bool
-    SendMessageToReplica(TransportReceiver *src, int replicaIdx,
+    SendMessageToHost(TransportReceiver *src, int hostIdx,
                          const Message &m)
     {
         const transport::Configuration *cfg = configurations[src];
         ASSERT(cfg != NULL);
 
-        if (!replicaAddressesInitialized) {
+        if (!hostAddressesInitialized) {
             LookupAddresses();
         }
         
-        auto kv = replicaAddresses[cfg].find(replicaIdx);
-        ASSERT(kv != replicaAddresses[cfg].end());
+        auto kv = hostAddresses[cfg].find(hostIdx);
+        ASSERT(kv != hostAddresses[cfg].end());
         
-        return SendMessageInternal(src, kv->second, m, false);
+        return SendMessageInternal(src, kv->second, m);
     }
 
     virtual bool
@@ -89,56 +89,47 @@ public:
         const transport::Configuration *cfg = configurations[src];
         ASSERT(cfg != NULL);
 
-        if (!replicaAddressesInitialized) {
+        if (!hostAddressesInitialized) {
             LookupAddresses();
         }
 
-        auto kv = multicastAddresses.find(cfg);
-        if (kv != multicastAddresses.end()) {
-            // Send by multicast if we can
-            return SendMessageInternal(src, kv->second, m, true);
-        } else {
-            // ...or by individual messages to every replica if not
-	     for (auto & kv2 : replicaAddresses[cfg]) {
-		  if (src->HasAddress()) {
-		       const ADDR &srcAddr = dynamic_cast<const ADDR &>(src->GetAddress());
-		       if (srcAddr == kv2.second) {
-			    continue;
-		       }
-		  }
-		  if (!SendMessageInternal(src, kv2.second, m, false)) {
-		       return false;
-		  }
-	     }
-	     return true;	     
-        }
+	const ADDR &srcAddr = dynamic_cast<const ADDR &>(src->GetAddress());
+	for (auto & kv2 : hostAddresses[cfg]) {
+	    if (srcAddr == kv2.second) {
+		continue;
+	    }
+	    if (!SendMessageInternal(src, kv2.second, m)) {
+		return false;
+	    }
+	}
+	return true;
     }
-    
+
+    virtual int Timer(uint64_t ms, timer_callback_t cb) = 0;
+    virtual bool CancelTimer(int id) = 0;
+    virtual void CancelAllTimers() = 0;
+
 protected:
     virtual bool SendMessageInternal(TransportReceiver *src,
                                      const ADDR &dst,
-                                     const Message &m,
-                                     bool multicast = false) = 0;
+                                     const Message &m) = 0;
     virtual ADDR LookupAddress(const transport::Configuration &cfg,
-                               int replicaIdx) = 0;
-    virtual const ADDR *
-    LookupMulticastAddress(const transport::Configuration *cfg) = 0;
-
+                               int hostIdx) = 0;
+    
     std::unordered_map<transport::Configuration,
                        transport::Configuration *> canonicalConfigs;
     std::map<TransportReceiver *,
              transport::Configuration *> configurations;
     std::map<const transport::Configuration *,
-             std::map<int, ADDR> > replicaAddresses;
+             std::map<int, ADDR> > hostAddresses;
     std::map<const transport::Configuration *,
-             std::map<int, TransportReceiver *> > replicaReceivers;
-    std::map<const transport::Configuration *, ADDR> multicastAddresses;
-    bool replicaAddressesInitialized;
+             std::map<int, TransportReceiver *> > hostReceivers;
+    bool hostAddressesInitialized;
 
     virtual transport::Configuration *
     RegisterConfiguration(TransportReceiver *receiver,
                           const transport::Configuration &config,
-                          int replicaIdx)
+                          int hostIdx)
     {
         ASSERT(receiver != NULL);
 
@@ -146,8 +137,7 @@ protected:
         // pointer to the canonical copy; if not, create one. This
         // allows us to use that pointer as a key in various
         // structures. 
-        transport::Configuration *canonical
-            = canonicalConfigs[config];
+        transport::Configuration *canonical = canonicalConfigs[config];
         if (canonical == NULL) {
             canonical = new transport::Configuration(config);
             canonicalConfigs[config] = canonical;
@@ -156,15 +146,15 @@ protected:
         // Record configuration
         configurations.insert(std::make_pair(receiver, canonical));
 
-        // If this is a replica, record the receiver
-        if (replicaIdx != -1) {
-            replicaReceivers[canonical].insert(std::make_pair(replicaIdx,
-                                                              receiver));
+        // If this is a host, record the receiver
+        if (hostIdx != -1) {
+            hostReceivers[canonical].insert(std::make_pair(hostIdx,
+                                                             receiver));
         }
 
-        // Mark replicaAddreses as uninitalized so we'll look up
-        // replica addresses again the next time we send a message.
-        replicaAddressesInitialized = false;
+        // Mark hostAddreses as uninitalized so we'll look up
+        // host addresses again the next time we send a message.
+        hostAddressesInitialized = false;
 
         return canonical;
     }
@@ -173,9 +163,8 @@ protected:
     LookupAddresses()
     {
         // Clear any existing list of addresses
-        replicaAddresses.clear();
-        multicastAddresses.clear();
-
+        hostAddresses.clear();
+        
         // For every configuration, look up all addresses and cache
         // them.
         for (auto &kv : canonicalConfigs) {
@@ -183,21 +172,13 @@ protected:
 
             for (int i = 0; i < cfg->n; i++) {
                 const ADDR addr = LookupAddress(*cfg, i);
-                replicaAddresses[cfg].insert(std::make_pair(i, addr));
-            }
-
-            // And check if there's a multicast address
-            if (cfg->multicast()) {
-                const ADDR *addr = LookupMulticastAddress(cfg);
-                if (addr) {
-                    multicastAddresses.insert(std::make_pair(cfg, *addr));
-                    delete addr;
-                }
+                hostAddresses[cfg].insert(std::make_pair(i, addr));
             }
         }
         
-        replicaAddressesInitialized = true;
+        hostAddressesInitialized = true;
     }
+
 };
 
 #endif // _LIB_TRANSPORTCOMMON_H_

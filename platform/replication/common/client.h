@@ -33,13 +33,16 @@
 #ifndef _COMMON_CLIENT_H_
 #define _COMMON_CLIENT_H_
 
-#include "lib/configuration.h"
+#include "replication/common/configuration.h"
+#include "store/common/timestamp.h"
 #include "request.pb.h"
 #include "lib/transport.h"
 
 
 #include <functional>
 
+typedef std::function<void (const string &type,
+                            const string &data)> message_handler_t;
 namespace replication {
 
 class Client : public TransportReceiver
@@ -48,8 +51,9 @@ public:
     typedef std::function<void (const string &, const string &)> continuation_t;
     typedef std::function<void (const string &)> timeout_continuation_t;
 
-    Client(const transport::Configuration &config, Transport *transport,
-           uint64_t clientid = 0);
+    Client(const ReplicaConfig &config,
+	   Transport *transport,
+	   const uint64_t clientid = 0);
     virtual ~Client();
     virtual void Invoke(const string &request,
                         continuation_t continuation) = 0;
@@ -59,11 +63,11 @@ public:
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type,
                                 const string &data) = 0;
-    virtual void ReceiveError(int error) = 0;    
+    virtual void ReceiveError(int error) = 0;
+    virtual void SetMessageHandler(message_handler_t handler) = 0;
 protected:
-    transport::Configuration config;
+    ReplicaConfig config;
     Transport *transport;
-    
     uint64_t clientid;
 };
 
