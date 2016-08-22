@@ -65,6 +65,7 @@ AsyncCacheClient::SetCaching(bool cachingEnabled) {
 // update publications handler
 void
 AsyncCacheClient::SetPublish(publish_handler_t publish) {
+    Debug("Set message handler");
     client->SetPublish(publish);
 }
 

@@ -126,8 +126,6 @@ Server::HandleGet(const Request &request,
             val.Serialize(rep);
         } else {
             reply.set_status(status);
-            reply.SerializeToString(&str2);
-            return;
         }
     }
     reply.set_status(REPLY_OK);	
@@ -179,7 +177,7 @@ Server::Publish(const uint64_t tid,
                    notifications);
 
     for (auto &n : notifications) {
-        Debug("Publishing to frontend %s at ts %lu notifications %u",
+        Debug("Publishing to frontend %s at ts %lu notifications %lu",
               n.first.getHostname().c_str(), timestamp, notifications.size());
         PublishMessage msg;
         for (auto &v : n.second) {

@@ -267,7 +267,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
         }
         
         if (hasNotificationHandler) {
-            Debug("Calling notification handler\n");
+            Debug("Calling notification handler");
             notify(reactive_id, timestamp, values);
         }
                 

@@ -46,44 +46,42 @@ OCCStore::Get(const uint64_t tid,
 	      Version &value,
 	      const Timestamp &timestamp)
 {
-    Debug("[%lu] GET %s at %lu", tid,
-	  key.c_str(), timestamp);
+    Debug("[%lu] GET %s at %lu", tid, key.c_str(), timestamp);
     
     if (store.Get(key, timestamp, value)) {
-	// if the timestamp that we asked for is outside
-	// of the currently known bounds
-	Timestamp update = getPreparedUpdate(key);
-	if (timestamp > value.GetInterval().End()) {
-	    if (timestamp > last_committed &&
-		timestamp < update) {
-		ASSERT(update == MAX_TIMESTAMP);
-		// if there are no ongoing writes
-		// but we haven't committed any transactions
-		// past this timestamp, then we need to
-		// make sure that we don't commit a write later
-		store.CommitGet(key,
-				timestamp,
-				timestamp);
-		    value.SetEnd(timestamp);
-	    } else if (timestamp <= last_committed &&
-		       timestamp <= update) {
-		// safe to return
-		// because we'll never commit any versions
-		// past this timestamp
-		value.SetEnd(min(update, last_committed));
-	    } else if (timestamp > update) {
-		// there's an ongoing transaction at this timestamp
-		// but try again and it'll be done
-		return REPLY_RETRY;
-	    }
-	} else if (value.GetInterval().End() == MAX_TIMESTAMP) {
-	    // just cap it at the last transaction that we've seen
-	    value.SetEnd(min(update, last_committed));
-	}
-	Debug("[%lu] Returning %s=%s ending at %lu", tid,
-	      key.c_str(), value.GetValue().c_str(),
-	      value.GetInterval().End());
-	return REPLY_OK;
+        // if the timestamp that we asked for is outside of the
+        // currently known bounds
+        Timestamp update = getPreparedUpdate(key);
+        if (timestamp > value.GetInterval().End()) {
+            if (timestamp > last_committed &&
+                timestamp < update) {
+                ASSERT(update == MAX_TIMESTAMP);
+                // if there are no ongoing writes but we haven't
+                // committed any transactions past this timestamp,
+                // then we need to make sure that we don't commit a
+                // write later
+                store.CommitGet(key,
+                                timestamp,
+                                timestamp);
+                value.SetEnd(timestamp);
+            } else if (timestamp <= last_committed &&
+                       timestamp <= update) {
+                // safe to return because we'll never commit any
+                // versions past this timestamp
+                value.SetEnd(min(update, last_committed));
+            } else if (timestamp > update) {
+                // there's an ongoing transaction at this timestamp
+                // but try again and it'll be done
+                return REPLY_RETRY;
+            }
+        } else if (value.GetInterval().End() == MAX_TIMESTAMP) {
+            // just cap it at the last transaction that we've seen
+            value.SetEnd(min(update, last_committed));
+        }
+        Debug("[%lu] Returning %s=%s ending at %lu",
+              tid, key.c_str(), value.GetValue().c_str(),
+              value.GetInterval().End());
+        return REPLY_OK;
     } else {
         return REPLY_NOT_FOUND;
     }

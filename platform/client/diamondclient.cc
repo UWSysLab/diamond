@@ -92,7 +92,8 @@ DiamondClient::initState() {
 void
 DiamondClient::startTransport(frontend::Client *frontendclient) {
     client = new CacheClient(frontendclient);
-                           
+
+    NotificationInit([] () {});
     /* Run the transport in a new thread. */
     pthread_create(&clientTransport,
                    NULL,
@@ -177,7 +178,7 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid = ++txnid_counter;
         txnid_lock.unlock();
        
-        Timestamp timestamp = MAX_TIMESTAMP;
+        Timestamp timestamp = last_notification_ts;;
         auto it = timestamp_map.find(reactive_id);
         if (it != timestamp_map.end()) {
             timestamp = it->second;
@@ -222,10 +223,10 @@ DiamondClient::Get(const string &key, string &value)
         Debug("Adding [%s] with ts %lu to the read set",
               key.c_str(), promise.GetValue(key).GetTimestamp());
         txn.AddReadSet(key, promise.GetValue(key).GetInterval());
-        if (!txn.HasTimestamp()) {
-            txn.SetTimestamp(promise.GetValue(key).GetInterval().End());
-            Debug("Setting ts to %lu", txn.GetTimestamp());
-        }
+        // if (!txn.HasTimestamp()) {
+        //     txn.SetTimestamp(promise.GetValue(key).GetInterval().End());
+        //     Debug("Setting ts to %lu", txn.GetTimestamp());
+        // }
     } else if (promise.GetReply() == REPLY_NOT_FOUND) {
         Debug("Adding [%s] (not found) to the read set", key.c_str());
         txn.AddReadSet(key, Interval(0));
@@ -281,10 +282,10 @@ DiamondClient::MultiGet(const set<string> &keys,
             values[value.first] = value.second.GetValue();
         }
 
-        if (!txn.HasTimestamp()) {
-            txn.SetTimestamp((values.begin())->second.GetInterval().End());
-            Debug("Setting ts to %lu", txn.GetTimestamp());
-        }
+        // if (!txn.HasTimestamp()) {
+        //     txn.SetTimestamp((values.begin())->second.GetInterval().End());
+        //     Debug("Setting ts to %lu", txn.GetTimestamp());
+        // }
     }
     
     return promise.GetReply();
@@ -368,6 +369,12 @@ DiamondClient::Commit()
             }
         }
     }
+
+    // update the latest txn timestamp we know about
+    if (reply == REPLY_OK &&
+        promise.GetTimestamp() > last_notification_ts) {
+        last_notification_ts = promise.GetTimestamp();
+    }
     txnid = 0;
     txn = Transaction();
     return reply == REPLY_OK;
@@ -414,11 +421,12 @@ DiamondClient::Notify(function<void (void)> callback,
                       const uint64_t reactive_id,
                       const Timestamp timestamp,
                       const map<string, Version> &values) {
-    Debug("Received notification for reactive transaction %lu at ts %lu\n",
+    Debug("Received notification for reactive transaction %lu at ts %lu",
           reactive_id,
           timestamp);
     lock_guard<mutex> l(lock);
     if (timestamp > timestamp_map[reactive_id]) {
+        Debug("Invoking notification callback");
         timestamp_map[reactive_id] = timestamp;
 
         if (timestamp > last_notification_ts) {

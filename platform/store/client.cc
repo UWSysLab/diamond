@@ -76,7 +76,7 @@ Client::Client(const string configPath,
                             transport,
                             client_id, i,
                             closestReplica);
-        cclient[i] = new AsyncCacheClient(sclient);
+        cclient.push_back(new AsyncCacheClient(sclient));
     }
 
     Debug("Diamond Store client [%lu] created!", client_id);
@@ -92,8 +92,9 @@ Client::~Client()
 
 void
 Client::SetPublish(publish_handler_t publish) {
-    Debug("Set message handler");
+    Debug("Set message handler %u", cclient.size());
     for (auto client : cclient) {
+        Debug("Set message handler");
         client->SetPublish(publish);
     }
 }
@@ -114,12 +115,12 @@ Client::MultiGet(const uint64_t tid,
     vector<int> *results = new vector<int>();
     map<string, Version> *values = new map<string, Version>();
     callback_t cb = bind(&Client::MultiGetCallback,
-			 this,
+                         this,
                          callback,
-			 participants.size(),
-			 results,
+                         participants.size(),
+                         results,
                          values,
-			 placeholders::_1);
+                         placeholders::_1);
     for (auto &p : participants) {
         // Send the GET operation to appropriate shard.
 	cclient[p.first]->MultiGet(tid, p.second, 

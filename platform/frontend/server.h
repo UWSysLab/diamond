@@ -97,6 +97,7 @@ private:
                         const proto::CommitMessage msg,
                         Promise &promise);
     void SubscribeCallback(ReactiveTransaction *rt,
+                           const Timestamp timestamp,
                            Promise &promise);
 };
 

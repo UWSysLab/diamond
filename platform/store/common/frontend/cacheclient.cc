@@ -292,9 +292,15 @@ CacheClient::Notify(notification_handler_t notify,
                     const Timestamp timestamp,
                     const std::map<std::string, Version> &values)
 {
+    Debug("Cache notify");
     cache_lock.lock();
-    for (auto &v : values) {
-        // insert into cache
+    for (auto v : values) {
+        // insert into cache with unbounded timestamp because we know
+        // we'll get a notify update later
+        v.second.SetEnd(MAX_TIMESTAMP);
+        Debug("Inserting %s into cache with ts %lu",
+              v.second.GetValue().c_str(),
+              v.second.GetTimestamp());
         cache.Put(v.first, v.second);
     }
     cache_lock.unlock();
