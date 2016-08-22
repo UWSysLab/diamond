@@ -1,8 +1,3 @@
-## Downloading source
-Install git if you do not have it. Download the source from gitlab:
-
-    $ git clone git@gitlab.cs.washington.edu:syslab/diamond-src.git
-
 ## Building Diamond for x86
 
 You can compile Diamond on Mac OSX and Linux for x86 using the
