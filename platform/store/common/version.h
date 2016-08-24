@@ -48,7 +48,6 @@ public:
     };
     void Serialize(ReadReply *msg) const;
     void Deserialize(ReadReply *msg);
-    void CapEnd();
 };
 
 #endif /* _VERSION_H_ */
