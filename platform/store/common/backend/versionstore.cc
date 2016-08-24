@@ -59,17 +59,17 @@ VersionedKVStore::getValue(const string &key,
     return true;
 }
 
-
 /* Returns the most recent value and timestamp for given key.
  * Error if key does not exist. */
 bool
 VersionedKVStore::Get(const string &key,
                       Version &value)
 {
-    // check for existence of key in store
     if (inStore(key)) {
-        value = *(store[key].rbegin());
-        return true;
+        set<Version>::iterator it;
+        bool ret = getValue(key, MAX_TIMESTAMP, it);
+        value = *it;
+        return ret;
     }
     return false;
 }
@@ -110,7 +110,9 @@ VersionedKVStore::GetRange(const string &key,
 }
 
 void
-VersionedKVStore::Put(const string &key, const string &value, const Timestamp &t)
+VersionedKVStore::Put(const string &key,
+                      const string &value,
+                      const Timestamp &t)
 {
     // Key does not exist. Create a list and an entry.
     Put(key, Version(t, value));
@@ -120,21 +122,28 @@ void
 VersionedKVStore::Put(const string &key, const Version &v)
 {
     // Key does not exist. Create a list and an entry.
-    if (store.find(key) != store.end()) {
+    Version v2 = v;
+    if (inStore(key)) {
         if (v.GetTimestamp() == 0) {
+            Debug("Deleting key %s", key.c_str());
             store.erase(key);
-        }
-        else {
-            set<Version>::iterator it = --(store[key].end());
-            if (v.GetInterval().Start() < it->GetInterval().End()) {
+        } else {
+            set<Version>::iterator it;
+            if (getValue(key, v.GetInterval().Start(), it)) {
+                ASSERT(it->GetInterval().End() <= v.GetInterval().End());
+                // insert a middle version
                 Version v1 = *it;
-                store[key].erase(it);
                 v1.SetEnd(v.GetInterval().Start());
+                store[key].erase(it);
                 store[key].insert(v1);
+                if (v.GetInterval().End() > v1.GetInterval().End())
+                    v2.SetEnd(v1.GetInterval().End());
+            } else {
+                v2.SetEnd((store[key].begin())->GetInterval().Start());
             }
         }
     }
-    store[key].insert(v);
+    store[key].insert(v2);
 }
 
 /*
@@ -142,14 +151,16 @@ VersionedKVStore::Put(const string &key, const Version &v)
  * the version of the key that the txn read.
  */
 void
-VersionedKVStore::CommitGet(const string &key, const Timestamp &readTime, const Timestamp &commit)
+VersionedKVStore::CommitGet(const string &key,
+                            const Timestamp &readTime,
+                            const Timestamp &commit)
 {
     set<Version>::iterator it;
     if (getValue(key, readTime, it)) {
         if (commit < it->GetInterval().End()) {
             Version v1 = *it;
-            store[key].erase(it);
             v1.SetEnd(commit);
+            store[key].erase(it);
             store[key].insert(v1);
         }
     }
@@ -164,7 +175,8 @@ VersionedKVStore::Remove(const string &key) {
 }
 
 bool
-VersionedKVStore::GetLastRead(const string &key, Timestamp &lastRead)
+VersionedKVStore::GetLastRead(const string &key,
+                              Timestamp &lastRead)
 {
     if (inStore(key)) {
         Version v = *(store[key].rbegin());

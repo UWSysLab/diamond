@@ -413,7 +413,6 @@ Server::GetCallback(const TransportAddress *remote,
                   value.first.c_str(),
                   value.second.GetInterval().End());
             rep->set_key(value.first);
-            ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
             value.second.Serialize(rep);
         }
     }
