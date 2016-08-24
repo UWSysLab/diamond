@@ -30,4 +30,10 @@ Version::Deserialize(ReadReply *msg) {
     op = msg->op();
 }
 
+void
+Version::CapEnd() {
+    if (valid.End() == MAX_TIMESTAMP) {
+        valid.SetEnd(valid.Start());
+    }
+}
 #endif /* _VERSION_H_ */

@@ -241,7 +241,7 @@ ShardClient::GenericCallback(callback_t callback,
     } else {
         w.Reply(reply.status(), values);
     }
-    Debug("[shard %i] Received SUBSCRIBE callback [%d]",
+    Debug("[shard %i] Received generic callback [%d]",
           shard, reply.status());
     callback(w);
 }

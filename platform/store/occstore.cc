@@ -51,33 +51,33 @@ OCCStore::Get(const uint64_t tid,
     if (store.Get(key, timestamp, value)) {
         // if the timestamp that we asked for is outside of the
         // currently known bounds
-        Timestamp update = getPreparedUpdate(key);
-        if (timestamp > value.GetInterval().End()) {
-            if (timestamp > last_committed &&
-                timestamp < update) {
-                ASSERT(update == MAX_TIMESTAMP);
-                // if there are no ongoing writes but we haven't
-                // committed any transactions past this timestamp,
-                // then we need to make sure that we don't commit a
-                // write later
-                store.CommitGet(key,
-                                timestamp,
-                                timestamp);
-                value.SetEnd(timestamp);
-            } else if (timestamp <= last_committed &&
-                       timestamp <= update) {
-                // safe to return because we'll never commit any
-                // versions past this timestamp
-                value.SetEnd(min(update, last_committed));
-            } else if (timestamp > update) {
-                // there's an ongoing transaction at this timestamp
-                // but try again and it'll be done
-                return REPLY_RETRY;
-            }
-        } else if (value.GetInterval().End() == MAX_TIMESTAMP) {
-            // just cap it at the last transaction that we've seen
-            value.SetEnd(min(update, last_committed));
-        }
+        // Timestamp update = getPreparedUpdate(key);
+        // if (timestamp > value.GetInterval().End()) {
+        //     if (timestamp > last_committed &&
+        //         timestamp < update) {
+        //         ASSERT(update == MAX_TIMESTAMP);
+        //         // if there are no ongoing writes but we haven't
+        //         // committed any transactions past this timestamp,
+        //         // then we need to make sure that we don't commit a
+        //         // write later
+        //         store.CommitGet(key,
+        //                         timestamp,
+        //                         timestamp);
+        //         value.SetEnd(timestamp);
+        //     } else if (timestamp <= last_committed &&
+        //                timestamp <= update) {
+        //         // safe to return because we'll never commit any
+        //         // versions past this timestamp
+        //         value.SetEnd(min(update, last_committed));
+        //     } else if (timestamp > update) {
+        //         // there's an ongoing transaction at this timestamp
+        //         // but try again and it'll be done
+        //         return REPLY_RETRY;
+        //     }
+        // } else if (value.GetInterval().End() == MAX_TIMESTAMP) {
+        //     // just cap it at the last transaction that we've seen
+        //     value.SetEnd(min(update, last_committed));
+        // }
         Debug("[%lu] Returning %s=%s ending at %lu",
               tid, key.c_str(), value.GetValue().c_str(),
               value.GetInterval().End());
@@ -119,7 +119,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
             // If this key has been written since we read it, abort.
             if (cur.GetTimestamp() > valid.Start()) {
-                Debug("[%lu] ABORT LINEARIZABLE rw conflict key:%s %lu %lu",
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict "
+                      "key:%s %lu %lu",
                       tid, key.c_str(), cur.GetTimestamp(),
                       valid.Start());
             
@@ -130,7 +131,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             // If there is a pending write for this key, abort.
             if (pWrites.find(key) != pWrites.end() &&
                 pWrites[key] > 0) {
-                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s",
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ \
+                       prepared key:%s",
                       tid, read.first.c_str());
                 Abort(tid);
                 return REPLY_FAIL;
@@ -169,10 +171,13 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
         }
 	    
         if (txn.IsolationMode() == LINEARIZABLE) {
-            // If there is a pending read for this key, abort to stay linearizable.
+            // If there is a pending read for this key, abort to stay
+            // linearizable.
             if (pReads.find(key) != pReads.end() &&
                 pReads[key] > 0) {
-                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ prepared key:%s", tid,
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict \
+                        w/ prepared key:%s",
+                      tid,
                       key.c_str());
                 Abort(tid);
                 return REPLY_FAIL;
@@ -180,7 +185,9 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
             // if there is a read at a later timestamp
             if (store.GetLastRead(key, ts) && ts > last_committed) {
-                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s", tid,
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict \
+                       w/ previous read:%s",
+                      tid,
                       key.c_str());
                 Abort(tid);
                 return REPLY_FAIL;
@@ -190,7 +197,9 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             Version cur;
             if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
                 txn.GetReadSet().find(write.first) != txn.GetReadSet().end()) {
-                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s", tid,
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict \
+                       w/ prepared key:%s",
+                      tid,
                       key.c_str());
                 Abort(tid);
                 return REPLY_FAIL;
@@ -217,7 +226,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             // Check for pending reads
             if (pReads.find(key) != pReads.end() &&
                 pReads[key] > 0) {
-                Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ prepared key:%s",
+                Debug("[%lu] ABORT LINEARIZABLE ri conflict w/ \
+                       prepared key:%s",
                       tid,
                       key.c_str());
                 Abort(tid);
@@ -226,7 +236,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 
             // Check for timestamp reads
             if (store.GetLastRead(key, ts) && ts > last_committed) {
-                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ previous read:%s",
+                Debug("[%lu] ABORT LINEARIZABLE rw conflict w/ \
+                       previous read:%s",
                       tid,
                       key.c_str());
                 Abort(tid);
@@ -237,7 +248,8 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
             Version cur;
             if (store.Get(key, cur) && cur.GetTimestamp() > txn.GetTimestamp() &&
                 txn.GetReadSet().find(inc.first) != txn.GetReadSet().end()) {
-                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict w/ prepared key:%s",
+                Debug("[%lu] ABORT SNAPSHOT ISOLATION rw conflict \
+                       w/ prepared key:%s",
                       tid,
                       key.c_str());
                 Abort(tid);
@@ -264,7 +276,9 @@ OCCStore::Prepare(const uint64_t tid, const Transaction &txn)
 }
 
 void
-OCCStore::Commit(const uint64_t tid, const Timestamp &timestamp, const Transaction &txn)
+OCCStore::Commit(const uint64_t tid,
+                 const Timestamp &timestamp,
+                 const Transaction &txn)
 {
     if (committed.find(tid) == committed.end()) {
         Transaction t;

@@ -128,6 +128,7 @@ VRClient::HandleReply(const TransportAddress &remote,
     }
 
     if (msg.has_status() && msg.status() == REPLY_RETRY) {
+        Debug("Client received retry: %lu", reqId);
 	transport->Timer(RETRY_WAIT, [=]() {
 		SendRequest(reqId);
 	    });
