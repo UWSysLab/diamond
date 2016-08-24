@@ -123,12 +123,12 @@ CacheClient::MultiGet(const uint64_t tid,
         
         cache_lock.lock();
         for (auto &value : values) {
-            Version v = value.second;
             Debug("Adding [%s] with ts %lu to the cache",
                   value.first.c_str(),
-                  v.GetTimestamp());
-            v.CapEnd();
-            cache.Put(value.first, v);
+                  value.second.GetTimestamp());
+            ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
+            
+            cache.Put(value.first, value.second);
             keysRead[value.first] = value.second;
         }
         cache_lock.unlock();
@@ -206,12 +206,12 @@ CacheClient::Commit(const uint64_t tid,
     cache_lock.lock();
     if (pp->GetReply() == REPLY_OK) {
         for (auto &write : txn.GetWriteSet()) {
-            Version val = write.second;
     	    Debug("Adding write [%s] with ts %lu to the cache",
                   write.first.c_str(),
                   pp->GetTimestamp());
-            val.CapEnd();
-            cache.Put(write.first, val);
+            cache.Put(write.first,
+                      write.second,
+                      pp->GetTimestamp());
         }
 
     } else if (pp->GetReply() == REPLY_FAIL) {
