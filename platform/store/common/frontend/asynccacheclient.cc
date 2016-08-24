@@ -130,11 +130,13 @@ AsyncCacheClient::GetCallback(callback_t callback,
         // Make sure that we've capped the validity range
         
         for (auto &v : promise.GetValues()) {
+            Version val = v.second;
             Debug("Adding [%s] with ts %lu to the cache",
                   v.first.c_str(),
                   v.second.GetTimestamp());
-            ASSERT(v.second.GetInterval().End() != MAX_TIMESTAMP);
-            cache.Put(v.first, v.second);
+            //ASSERT(v.second.GetInterval().End() != MAX_TIMESTAMP);
+            val.CapEnd();
+            cache.Put(v.first, val);
         }
         cache_lock.unlock();
     }
@@ -225,7 +227,6 @@ AsyncCacheClient::CommitCallback(callback_t callback,
 
     auto it = prepared.find(tid);
     const Transaction &t = (it != prepared.end()) ? it->second : txn;
-    prepared.erase(tid);
             
     if (promise.GetReply() == REPLY_OK) {
         for (auto &write : t.GetWriteSet()) {
@@ -243,6 +244,7 @@ AsyncCacheClient::CommitCallback(callback_t callback,
             cache.Remove(read.first);
         }
     }
+    prepared.erase(tid);
     cache_lock.unlock();
     // for (auto &inc : t.GetIncrementSet()) {
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
