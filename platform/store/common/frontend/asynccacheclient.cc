@@ -221,29 +221,29 @@ AsyncCacheClient::CommitCallback(callback_t callback,
                                  Promise &promise)
 {
     // update the cache
-    cache_lock.lock();
+    // cache_lock.lock();
 
-    auto it = prepared.find(tid);
-    const Transaction &t = (it != prepared.end()) ? it->second : txn;
-    prepared.erase(tid);
+    // auto it = prepared.find(tid);
+    // const Transaction &t = (it != prepared.end()) ? it->second : txn;
             
-    if (promise.GetReply() == REPLY_OK) {
-        for (auto &write : t.GetWriteSet()) {
-    	    Debug("Adding write [%s] with ts %lu to the cache",
-                  write.first.c_str(),
-                  promise.GetTimestamp());
-            cache.Put(write.first,
-                      write.second,
-                      promise.GetTimestamp());
-        }
-    } else if (promise.GetReply() == REPLY_FAIL) {
-        for (auto &read : t.GetReadSet()) {
-            Debug("Removing stale [%s] from the cache",
-                  read.first.c_str());
-            cache.Remove(read.first);
-        }
-    }
-    cache_lock.unlock();
+    // if (promise.GetReply() == REPLY_OK) {
+    //     // for (auto &write : t.GetWriteSet()) {
+    // 	//     Debug("Adding write [%s] with ts %lu to the cache",
+    //     //           write.first.c_str(),
+    //     //           promise.GetTimestamp());
+    //     //     cache.Put(write.first,
+    //     //               write.second,
+    //     //               promise.GetTimestamp());
+    //     // }
+    // } else if (promise.GetReply() == REPLY_FAIL) {
+    //     for (auto &read : t.GetReadSet()) {
+    //         Debug("Removing stale [%s] from the cache",
+    //               read.first.c_str());
+    //         cache.Remove(read.first);
+    //     }
+    // }
+    // prepared.erase(tid);
+    // cache_lock.unlock();
     // for (auto &inc : t.GetIncrementSet()) {
     //     Debug("Removing [%s] from the cache", inc.first.c_str());
     //     cache.Remove(inc.first);
