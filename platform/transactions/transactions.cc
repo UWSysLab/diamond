@@ -9,14 +9,21 @@ namespace diamond {
         txnEventBase = event_base_new();
         evthread_make_base_notifiable(txnEventBase);
 
-        event * sigtermEvent = evsignal_new(txnEventBase, SIGTERM, signalCallback, this);
-        event * sigintEvent = evsignal_new(txnEventBase, SIGINT, signalCallback, this);
+        event * sigtermEvent = evsignal_new(txnEventBase,
+                                            SIGTERM,
+                                            signalCallback,
+                                            this);
+        event * sigintEvent = evsignal_new(txnEventBase,
+                                           SIGINT,
+                                           signalCallback,
+                                           this);
 
         evsignal_add(sigtermEvent, NULL);
         evsignal_add(sigintEvent, NULL);
 
         txnThread = new std::thread(&TxnManager::startHelper, this);
-        reactiveThread = new std::thread(&TxnManager::reactiveLoop, this);
+        reactiveThread = new std::thread(&TxnManager::reactiveLoop,
+                                         this);
     }
 
     uint64_t TxnManager::getNextReactiveTxn() {
@@ -40,13 +47,15 @@ namespace diamond {
         event_base_dispatch(txnEventBase);
     }
 
-    void TxnManager::signalCallback(evutil_socket_t fd, short what, void * arg) {
+    void TxnManager::signalCallback(evutil_socket_t fd,
+                                    short what, void * arg) {
         Debug("Transaction manager terminating on SIGTERM/SIGINT");
         TxnManager * txnManager = (TxnManager *)arg;
         event_base_loopbreak(txnManager->txnEventBase);
     }
 
-    int TxnManager::ExecuteTxn(txn_function_t func, txn_callback_t callback) {
+    int TxnManager::ExecuteTxn(txn_function_t func,
+                               txn_callback_t callback) {
         txn_info_t * info = new txn_info_t();
         info->func = func;
         info->callback = callback;
@@ -56,16 +65,18 @@ namespace diamond {
         return 0;
     }
 
-    void TxnManager::executeTxnCallback(evutil_socket_t fd, short what, void * arg) {
+    void TxnManager::executeTxnCallback(evutil_socket_t fd,
+                                        short what, void * arg) {
         txn_info_t * info = (txn_info_t *)arg;
         DObject::TransactionBegin();
         info->func();
-        int committed = DObject::TransactionCommit();
+        bool committed = DObject::TransactionCommit();
         info->callback(committed);
         delete info;
     }
 
-    //TODO: figure out how to handle duplicate registrations of the same function in C++
+    //TODO: figure out how to handle duplicate registrations of the
+    //same function in C++
     //TODO: recovery?
     uint64_t TxnManager::ReactiveTxn(txn_function_t func) {
         uint64_t reactive_id = generateId();
@@ -75,14 +86,16 @@ namespace diamond {
         reg_info_t * info = new reg_info_t();
         info->func = func;
         info->reactive_id = reactive_id;
-        event * ev = event_new(txnEventBase, -1, 0, registerCallback, info);
+        event * ev = event_new(txnEventBase, -1, 0,
+                               registerCallback, info);
         event_add(ev, NULL);
         event_active(ev, 0, 1);
 
         return reactive_id;
     }
 
-    void TxnManager::registerCallback(evutil_socket_t fd, short what, void * arg) {
+    void TxnManager::registerCallback(evutil_socket_t fd,
+                                      short what, void * arg) {
         reg_info_t * info = (reg_info_t *)arg;
         DObject::BeginReactive(info->reactive_id);
         info->func();
@@ -96,12 +109,14 @@ namespace diamond {
     void TxnManager::ReactiveStop(uint64_t reactive_id) {
         reg_info_t * info = new reg_info_t();
         info->reactive_id = reactive_id;
-        event * ev = event_new(txnEventBase, -1, 0, reactiveStopCallback, info);
+        event * ev = event_new(txnEventBase, -1, 0,
+                               reactiveStopCallback, info);
         event_add(ev, NULL);
         event_active(ev, 0, 1);
     }
 
-    void TxnManager::reactiveStopCallback(evutil_socket_t fd, short what, void * arg) {
+    void TxnManager::reactiveStopCallback(evutil_socket_t fd,
+                                          short what, void * arg) {
         reg_info_t * info = (reg_info_t *)arg;
         DObject::Deregister(info->reactive_id);
         delete info;

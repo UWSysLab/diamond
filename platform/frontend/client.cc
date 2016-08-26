@@ -134,12 +134,14 @@ Client::Commit(const uint64_t tid,
         // Run local checks
         Interval i(0);
         for (auto &read : txn.GetReadSet()) {
-            Intersect(i, read.second);
+            i = Intersect(i, read.second);
         }
         if (i.Start() <= i.End()) {
-            if (promise != NULL) promise->Reply(REPLY_OK, txn.GetTimestamp());
+            if (promise != NULL)
+                promise->Reply(REPLY_OK, i.Start());
         } else {
-            if (promise != NULL)  promise->Reply(REPLY_FAIL);
+            if (promise != NULL)
+                promise->Reply(REPLY_FAIL);
 	}
         return;
     }

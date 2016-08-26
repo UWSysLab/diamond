@@ -178,7 +178,7 @@ DiamondClient::BeginReactive(uint64_t reactive_id)
         txnid = ++txnid_counter;
         txnid_lock.unlock();
        
-        Timestamp timestamp = last_notification_ts;;
+        Timestamp timestamp = MAX_TIMESTAMP;
         auto it = timestamp_map.find(reactive_id);
         if (it != timestamp_map.end()) {
             timestamp = it->second;
@@ -303,7 +303,7 @@ DiamondClient::Put(const string &key, const string &value)
         Panic("Can't do a put in a read only transaction!");
     }
 
-    Debug("PUT [%lu] %s %s", txnid, key.c_str(), value.c_str());
+    Debug("PUT [%lu] %s (%s)", txnid, key.c_str(), value.c_str());
     
     // Update the write set.
     txn.AddWriteSet(key, value);
@@ -351,8 +351,9 @@ DiamondClient::Commit()
 
         set<string> regset = txn.GetRegSet();
         uint64_t reactive_id = txn.GetReactiveId();
-        Timestamp timestamp = txn.GetTimestamp();
+        Timestamp timestamp = promise.GetTimestamp();
 
+        Debug("Reactive commit id %lu ts %lu", reactive_id, timestamp); 
         // Register reactive transaction if it is new or if its
         // registration set has changed
         if (regMap.find(reactive_id) == regMap.end() ||
@@ -368,6 +369,9 @@ DiamondClient::Commit()
                 Panic("Registration error: %d", reply);
             }
         }
+        if (timestamp_map.find(reactive_id) == timestamp_map.end())
+            timestamp_map[reactive_id] = timestamp;
+        
     }
 
     // update the latest txn timestamp we know about

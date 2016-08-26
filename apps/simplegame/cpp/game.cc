@@ -10,14 +10,16 @@
 #include <includes/transactions.h>
 
 namespace po = boost::program_options;
+using namespace std;
+using namespace diamond;
 
-diamond::DStringList players;
-diamond::DLong score;
-diamond::DCounter move; 
+DStringList players;
+DLong score;
+DCounter turn; 
 
 int main(int argc, char ** argv) {
-    std::string configPrefix;
-    std::string myName;
+    string configPrefix;
+    string myName;
 
     // gather commandline options
     po::options_description desc("Allowed options");
@@ -33,81 +35,69 @@ int main(int argc, char ** argv) {
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     if (vm.count("help")) {
-        std::cout << desc << std::endl;
+        cout << desc << endl;
         return 1;
     }
     po::notify(vm);
 
     //set up diamond
-    diamond::DiamondInit(configPrefix, 1, 0);
-    diamond::StartTxnManager();
+    DiamondInit(configPrefix, 1, 0);
+    StartTxnManager();
 
     // Map game state
-    diamond::DObject::Map(players, "100game:players");
-    diamond::DObject::Map(score, "100game:score");
-    diamond::DObject::Map(move, "100game:move");
+    DObject::Map(players, "100game:players");
+    DObject::Map(score, "100game:score");
+    DObject::Map(turn, "100game:turn");
 
     // Add user to the game
-    diamond::execute_txn(
-        [myName] () {
-            if (players.Index(myName) == -1) {
-                players.Append(myName);
-            }},
+    execute_txn([myName] () {
+            if (players.Index(myName) == -1) players.Append(myName);
+        },
         // txn callback: If transaction fails, exit
-        [myName] (int committed) { 
-            if (committed) {
-                std::cout << "Welcome to the 100 game, " << myName << "!\n";	
-            } else {
-                std::cout << "Failed adding player to game\n";
-                exit(1);
-            }
+        [myName] (bool committed) { 
+            if (!committed) exit(1);
         });
 
-    // Set up our reactive print out
-    uint64_t reactive_id = diamond::reactive_txn(
-        [myName] () {
-        if (players.Size() > 0) {
-            std::cout << "======= Current Game Status =======\n";
-            std::cout << "Total = " << score.Value() << "\n";
-            std::cout << "Current players: ";
-            for (auto &p : players.Members())
-                std::cout << p << " ";
-            std::cout << "\n";
-
-            std::string cp = players[move.Value() % players.Size()];  
-            if (score.Value() >= 100)
-                std::cout << cp << " won! Game Over!\n";
-            else if (cp == myName)
-                std::cout << "Enter number between 1 and 10: \n";
-            else
-                std::cout << "It's " << cp << "'s turn. \n";
-            std::cout << "===================================\n";
-        }
-    });
+    // Set up our reactive display
+    uint64_t reactive_id =
+        reactive_txn([myName] () {
+                // Current player whose turn it is
+                string cp = players[turn.Value() % players.Size()];
+                if (score.Value() >= 100) {
+                    // if score over 100, game is over
+                    cout << cp << "won the 100 game!";
+                    exit(0);
+                }
+                // print out current store and players
+                cout << "Total: " << score.Value() << "; ";
+                cout << "Turn: " << cp << "; ";
+                cout << "Players: ";
+                for (auto &p : players.Members())
+                    cout << p << " ";
+                cout << endl;
+                // print out a prompt if it is my turn
+                if (cp == myName)
+                    cout << "Enter number between 1 and 10: " << endl;
+            });
 
     // Cycle on user input
     while (1) {
-        int inc = 0;
-        std::cin >> inc;
-        diamond::execute_txn(
-            [myName, inc] () {
-                // If it's the user's turn, make move
-                std::string cp = players[move.Value() % players.Size()];                
-                if (cp == myName && inc >= 1 && inc <= 10) {
-                    score += inc;
-                    if (score.Value() < 100) ++move;
-                } else {
-                    diamond::abort_txn();
-                }
-            },
-            // txn callback: If we can't make a move, just exit
-            [reactive_id] (int committed) {
-                if (!committed) {
-                    std::cout << "Taking turn failed\n";
-                    diamond::reactive_stop(reactive_id);
-                    exit(1);
-                }
-            });
+        int inc = 0; cin >> inc;
+        if (inc >= 1 && inc <= 10) {
+            execute_txn([myName, inc] () {
+                    // If it's the user's turn, make move
+                    if (players[turn.Value() % players.Size()] == myName) {
+                        score += inc;
+                        if (score.Value() < 100) ++turn;
+                    } else {
+                        abort_txn();
+                    }
+                },
+                // txn callback: If we can't make a move, just exit
+                [] (bool committed) {
+                    if (!committed) exit(1);
+                });
+        } else cout << "Invalid input";
     }
     return 0;
 }

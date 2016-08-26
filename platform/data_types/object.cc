@@ -48,7 +48,7 @@ DObject::TransactionBegin(void)
    store->Begin();
 }
 
-int
+bool
 DObject::TransactionCommit(void)
 {
    Debug("TRANSACTION COMMIT");

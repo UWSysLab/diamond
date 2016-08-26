@@ -38,7 +38,7 @@ public:
     static int MultiMap(std::vector<DObject *> &objects, std::vector<std::string> &keys);
     static int Map(DObject &addr, const std::string &key);
     static void TransactionBegin(void);
-    static int TransactionCommit(void);
+    static bool TransactionCommit(void);
     static void BeginRO(void);
     static void BeginReactive(uint64_t reactive_id);
     static uint64_t GetNextNotification(bool blocking);

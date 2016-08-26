@@ -11,7 +11,7 @@
 namespace diamond {
 
 typedef std::function<void (void)> txn_function_t;
-typedef std::function<void (int)> txn_callback_t;
+typedef std::function<void (bool)> txn_callback_t;
 
 typedef struct txn_info {
     txn_function_t func;
