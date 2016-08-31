@@ -128,7 +128,7 @@ Server::HandleGet(const Request &request,
             reply.set_status(status);
         }
     }
-    reply.set_status(REPLY_OK);	
+    reply.set_status(REPLY_OK); 
     reply.SerializeToString(&str2);
 }
 
@@ -138,15 +138,15 @@ Server::HandlePrepare(const Request &request,
 {
     Transaction txn = Transaction(request.prepare().txn());
     int status = store->Prepare(request.txnid(),
-				txn);
+                txn);
     Reply reply;
 
     if (status == REPLY_OK) {
-	return true;
+    return true;
     } else {
-	reply.set_status(status);
-	reply.SerializeToString(&str2);
-	return false;
+    reply.set_status(status);
+    reply.SerializeToString(&str2);
+    return false;
     }
 }
 
@@ -165,7 +165,7 @@ Server::HandleCommit(const Request &request)
     transport.Timer(0, [=]() {
             Publish(request.txnid(),
                     request.commit().timestamp());
-	});
+    });
 }
 
 void
@@ -187,7 +187,7 @@ Server::Publish(const uint64_t tid,
         transport.Timer(0, [=]() {
                 transport.SendMessage(replica,
                                       n.first,
-                                      msg);	
+                                      msg); 
             });
 
     }
@@ -232,13 +232,13 @@ Server::HandleUnsubscribe(const TCPTransportAddress &remote,
 {
     Debug("Handling UNSUBSCRIBE");
     if (request.unsubscribe().keys_size() > 0) {
-	set<string> keys;
-	
-	for (int i = 0; i < request.unsubscribe().keys_size(); i++) {
-	    Debug("%s", request.unsubscribe().keys(i).c_str());
-	    keys.insert(request.unsubscribe().keys(i));
-	}
-	store->Unsubscribe(remote, keys);
+    set<string> keys;
+    
+    for (int i = 0; i < request.unsubscribe().keys_size(); i++) {
+        Debug("%s", request.unsubscribe().keys(i).c_str());
+        keys.insert(request.unsubscribe().keys(i));
+    }
+    store->Unsubscribe(remote, keys);
     }
 
     Reply rep;
@@ -252,17 +252,17 @@ Server::HandleAck(const TCPTransportAddress &remote,
                   string &str2)
 {
     if (request.ack().keys_size() > 0) {
-	set<string> keys;
-	
-	for (int i = 0; i < request.ack().keys_size(); i++) {
-	    Debug("Received NOTIFY-FRONTEND-ACK \
+    set<string> keys;
+    
+    for (int i = 0; i < request.ack().keys_size(); i++) {
+        Debug("Received NOTIFY-FRONTEND-ACK \
                    from %s for key %s at ts %lu",
                   remote.getHostname().c_str(),
                   request.ack().keys(i).c_str(),
                   request.ack().timestamp());
-	    keys.insert(request.ack().keys(i));
-	}
-	store->Subscribe(remote, request.ack().timestamp(), keys);
+        keys.insert(request.ack().keys(i));
+    }
+    store->Subscribe(remote, request.ack().timestamp(), keys);
     }
 
     Reply rep;
@@ -299,14 +299,14 @@ Server::ReplicaUpcall(opnum_t opnum,
         store->Prepare(request.txnid(), Transaction(request.prepare().txn()));
         break;
     case strongstore::proto::Request::COMMIT:
-	if (request.commit().has_txn()) {
-	    store->Commit(request.txnid(),
-			  request.commit().timestamp(),
-			  Transaction(request.commit().txn()));
-	} else {
-	    store->Commit(request.txnid(),
-			  request.commit().timestamp());
-	}
+    if (request.commit().has_txn()) {
+        store->Commit(request.txnid(),
+              request.commit().timestamp(),
+              Transaction(request.commit().txn()));
+    } else {
+        store->Commit(request.txnid(),
+              request.commit().timestamp());
+    }
         reply.set_timestamp(request.commit().timestamp());
         break;
     case strongstore::proto::Request::ABORT:

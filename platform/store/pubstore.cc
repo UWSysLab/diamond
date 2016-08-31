@@ -42,8 +42,8 @@ PubStore::~PubStore() { }
 
 void
 PubStore::Subscribe(const TCPTransportAddress &remote,
-		    const Timestamp timestamp,
-		    const set<string> &keys)
+					const Timestamp timestamp,
+					const set<string> &keys)
 {
     store.Subscribe(remote, timestamp, keys);
 }
