@@ -24,8 +24,8 @@ class Version {
     std::string value;
     int op = WRITE;
 public:
-    Version() : valid(), value("tmp") { };
-    Version(const Timestamp commit) : valid(commit), value("tmp") { };
+    Version() : valid(), value("") { };
+    Version(const Timestamp commit) : valid(commit), value("") { };
     Version(const std::string &val) : valid(), value(val) { };
     Version(const Timestamp commit,
 	    const std::string &val) : valid(commit), value(val) { };

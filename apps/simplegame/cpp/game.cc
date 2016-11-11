@@ -19,13 +19,16 @@ DCounter turn;
 
 int main(int argc, char ** argv) {
     string configPrefix;
-    string myName;
+    string myName, key;
 
     // gather commandline options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help",
          "produce help message")
+        ("key",
+         po::value<std::string>(&key)->required(),
+         "game name")
         ("name",
          po::value<std::string>(&myName)->required(),
          "name to use in the game")
@@ -36,7 +39,7 @@ int main(int argc, char ** argv) {
     po::store(po::parse_command_line(argc, argv, desc), vm);
     if (vm.count("help")) {
         cout << desc << endl;
-        return 1;
+        exit(1);
     }
     po::notify(vm);
 
@@ -45,9 +48,9 @@ int main(int argc, char ** argv) {
     StartTxnManager();
 
     // Map game state
-    DObject::Map(players, "100game:players");
-    DObject::Map(score, "100game:score");
-    DObject::Map(turn, "100game:turn");
+    DObject::Map(players, key + "100game:players");
+    DObject::Map(score, key + "100game:score");
+    DObject::Map(turn, key + "100game:turn");
 
     // Add user to the game
     execute_txn([myName] () {
@@ -63,21 +66,22 @@ int main(int argc, char ** argv) {
         reactive_txn([myName] () {
                 // Current player whose turn it is
                 string cp = players[turn.Value() % players.Size()];
+                cout << endl << "====== 100 game ======" << endl;
                 if (score.Value() >= 100) {
                     // if score over 100, game is over
                     cout << cp << "won the 100 game!";
                     exit(0);
                 }
                 // print out current store and players
-                cout << "Total: " << score.Value() << "; ";
-                cout << "Turn: " << cp << "; ";
+                cout << "Total: " << score.Value() << endl;
+                cout << "Turn: " << cp << endl;
                 cout << "Players: ";
                 for (auto &p : players.Members())
                     cout << p << " ";
                 cout << endl;
                 // print out a prompt if it is my turn
                 if (cp == myName)
-                    cout << "Enter number between 1 and 10: " << endl;
+                    cout << "> Enter number between 1 and 10: " << flush;
             });
 
     // Cycle on user input
