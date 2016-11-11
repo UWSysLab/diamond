@@ -55,14 +55,14 @@ Client::~Client()
 void
 Client::Begin(const uint64_t tid)
 {
-    Debug("BEGIN [%llu]", tid);
+    Debug("BEGIN [%lu]", tid);
 }
 
 void
 Client::BeginRO(const uint64_t tid,
                 const Timestamp timestamp)
 {
-    Debug("BEGIN READ-ONLY [%llu]", tid);
+    Debug("BEGIN READ-ONLY [%lu]", tid);
 }
 
 void
@@ -79,7 +79,7 @@ Client::MultiGet(const uint64_t tid,
                  const Timestamp timestamp,
                  Promise *promise)
 {
-    Debug("Sending MULTIGET [%u keys] at %llu", keys.size(), timestamp);
+    Debug("Sending MULTIGET [%lu keys] at %lu", keys.size(), timestamp);
 
     // Fill out protobuf
     // Send message
@@ -154,7 +154,7 @@ Client::Commit(const uint64_t tid,
     //    promise = NULL;
     //}
     
-    Debug("Sending COMMIT (mode=%i, t=%llu", txn.IsolationMode(), txn.GetTimestamp());
+    Debug("Sending COMMIT (mode=%i, t=%lu", txn.IsolationMode(), txn.GetTimestamp());
     
 
     // Send messages
@@ -226,7 +226,7 @@ Client::ReceiveMessage(const TransportAddress &remote,
                     Version v = Version(getReply.replies(i));
                     ret[key] = v;
                     ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
-                    Debug("Received Get timestamp %s %llu",
+                    Debug("Received Get timestamp %s %lu",
                           key.c_str(), v.GetInterval().End());
                 }
             }
@@ -303,7 +303,7 @@ Client::Subscribe(const uint64_t reactive_id,
                   const std::set<std::string> &keys,
                   const Timestamp timestamp,
                   Promise *promise) {
-    Debug("Sending REGISTER for reactive_id %llu at timestamp %llu",
+    Debug("Sending REGISTER for reactive_id %lu at timestamp %lu",
           reactive_id, timestamp);
     for (auto &key : keys) {
         Debug("Registering key: %s", key.c_str());
@@ -332,7 +332,7 @@ void
 Client::Unsubscribe(const uint64_t reactive_id,
                     const set<string> &keys,
                     Promise *promise) {
-    Debug("Sending DEREGISTER for reactive_id %llu", reactive_id);
+    Debug("Sending DEREGISTER for reactive_id %lu", reactive_id);
     // Send message
     transport->Timer(0, [=]() {
             DeregisterMessage msg;
@@ -355,7 +355,7 @@ Client::Ack(const uint64_t reactive_id,
             Promise *promise)
 {
     Debug("Sending ACK for reactive_id \
-           %llu at timestamp %llu",
+           %lu at timestamp %lu",
           reactive_id, timestamp);
 
     // Send message
