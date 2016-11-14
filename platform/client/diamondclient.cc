@@ -35,13 +35,8 @@ namespace diamond {
 
 using namespace std;
 
-#if __MACH__
-uint64_t txnid = 0;
-Transaction txn;
-#else
 thread_local uint64_t txnid = 0;
 thread_local Transaction txn;
-#endif
     
 DiamondClient::DiamondClient(string configPath)
     : transport()

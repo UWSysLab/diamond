@@ -308,15 +308,15 @@ Server::SubscribeCallback(ReactiveTransaction *rt,
             listeners[key].insert(rt->frontend_index);
         }
 
-        // do a multiget and send the first notification
-        store->MultiGet(rt->reactive_id,
-                        rt->keys,
-                        bind(&Server::NotificationGetCallback,
-                             this,
-                             rt,
-                             timestamp,
-                             placeholders::_1),
-                        timestamp);
+        // // do a multiget and send the first notification
+        // store->MultiGet(rt->reactive_id,
+        //                 rt->keys,
+        //                 bind(&Server::NotificationGetCallback,
+        //                      this,
+        //                      rt,
+        //                      timestamp,
+        //                      placeholders::_1),
+        //                 timestamp);
     }
 }
 

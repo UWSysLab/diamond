@@ -13,8 +13,6 @@ namespace po = boost::program_options;
 using namespace std;
 using namespace diamond;
 
-DString shared;
-
 bool setup(int argc, char **argv, string &key) {
     string configPrefix;
     // gather commandline options
@@ -42,9 +40,10 @@ bool setup(int argc, char **argv, string &key) {
     return true;
 }
 
-
+DString shared;
 int main(int argc, char **argv) {
     string key;
+    
     if (!setup(argc, argv, key)) {
         exit(1);
     }
@@ -55,21 +54,16 @@ int main(int argc, char **argv) {
     // Set up our reactive display
     uint64_t reactive_id =
         reactive_txn([] () {
-                if (shared.Value() != "") {
-                    cout << endl << "current status: " << shared.Value() << endl;
-                }
-                cout << "set status: " << flush;
+                cout << endl << "current status: " << shared.Value();
+                cout << endl << "set status: " << flush;
             });
 
     // Cycle on user input
     while (1) {
-        string in = "";
-        cin >> in;
-        if (in != "") {
-            execute_txn([in] () {
-                    shared = in;
-                }, [] (bool committed) { if (!committed) exit(1);});
-        }
+        string in; cin >> in;
+        execute_txn([in] () {
+                shared = in;
+            }, [] (bool committed) { if (!committed) exit(1);});
     }
     return 0;
 }
