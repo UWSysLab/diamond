@@ -133,7 +133,7 @@ AsyncCacheClient::GetCallback(callback_t callback,
             Debug("Adding [%s] with ts %lu to the cache",
                   v.first.c_str(),
                   v.second.GetTimestamp());
-            ASSERT(v.second.GetInterval().End() != MAX_TIMESTAMP);
+            //ASSERT(v.second.GetInterval().End() != MAX_TIMESTAMP);
             cache.Put(v.first, v.second);
         }
         cache_lock.unlock();

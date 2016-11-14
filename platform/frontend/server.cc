@@ -413,7 +413,9 @@ Server::GetCallback(const TransportAddress *remote,
                   value.first.c_str(),
                   value.second.GetInterval().End());
             rep->set_key(value.first);
-            ASSERT(value.second.GetInterval().End() != MAX_TIMESTAMP);
+            if (value.second.GetInterval().End() == MAX_TIMESTAMP) {
+                value.second.GetInterval().SetEnd(latest_commit);
+            }
             value.second.Serialize(rep);
         }
     }
@@ -450,6 +452,9 @@ Server::CommitCallback(const TransportAddress *remote,
     reply.set_txnid(msg.txnid());
     reply.set_msgid(msg.msgid());
     reply.set_timestamp(promise.GetTimestamp());
+    if (promise.GetTimestamp() > latest_commit) {
+        latest_commit = promise.GetTimestamp();
+    }
     transport->Timer(0, [=]() {
 	    transport->SendMessage(this, *remote, reply);
 	    delete remote;

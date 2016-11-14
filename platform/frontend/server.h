@@ -75,6 +75,7 @@ protected:
 private:
     Transport *transport;
     strongstore::Client *store;
+    Timestamp latest_commit = 0;
     
     // map frontend index to data structure
     std::unordered_map<uint64_t, ReactiveTransaction *> transactions;
