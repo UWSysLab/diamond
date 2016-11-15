@@ -124,6 +124,8 @@ protected:
     void AbortCallback(callback_t callback,
                        const uint64_t tid,
                        Promise &promise);
+    void HandlePublish(const Timestamp timestamp,
+                       const std::set<std::string> &keys);
 };
 
 #endif /* _ASYNC_CACHE_CLIENT_H_ */

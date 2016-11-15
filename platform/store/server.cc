@@ -120,7 +120,7 @@ Server::HandleGet(const Request &request,
 
         if (status == REPLY_OK) {
             ReadReply *rep = reply.add_replies();
-            ASSERT(val.GetInterval().End() != MAX_TIMESTAMP);
+            //ASSERT(val.GetInterval().End() != MAX_TIMESTAMP);
 
             rep->set_key(key);
             val.Serialize(rep);

@@ -66,7 +66,22 @@ AsyncCacheClient::SetCaching(bool cachingEnabled) {
 void
 AsyncCacheClient::SetPublish(publish_handler_t publish) {
     Debug("Set message handler");
-    client->SetPublish(publish);
+    this->publish = publish;
+    client->SetPublish(bind(&AsyncCacheClient::HandlePublish,
+                            this,
+                            placeholders::_1,
+                            placeholders::_2));
+}
+
+void
+AsyncCacheClient::HandlePublish(const Timestamp timestamp,
+                                const set<string> &keys)
+{
+    for (auto &key : keys) {
+        // invalidate cache
+        cache.Remove(key);
+    }
+    publish(timestamp, keys);
 }
 
 void

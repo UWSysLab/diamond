@@ -193,7 +193,7 @@ ShardClient::GetCallback(callback_t callback,
         for (int i = 0; i < reply.replies_size(); i++) {
             ReadReply rep = reply.replies(i);
             ret[rep.key()] = Version(rep);
-            ASSERT(ret[rep.key()].GetInterval().End() != MAX_TIMESTAMP);
+            //ASSERT(ret[rep.key()].GetInterval().End() != MAX_TIMESTAMP);
         }
     }
     w.Reply(reply.status(), ret);

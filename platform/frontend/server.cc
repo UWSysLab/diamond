@@ -407,14 +407,15 @@ Server::GetCallback(const TransportAddress *remote,
     reply.set_status(promise.GetReply());
     reply.set_msgid(msg.msgid());
     if (promise.GetReply() == REPLY_OK) {
-        for (auto value : values) {
+        for (auto &value : values) {
             ReadReply *rep = reply.add_replies();
-            Debug("GET %s %lu",
+            Debug("GET %s %lu latest_commit=%lu",
                   value.first.c_str(),
-                  value.second.GetInterval().End());
+                  value.second.GetInterval().End(),
+                  latest_commit);
             rep->set_key(value.first);
             if (value.second.GetInterval().End() == MAX_TIMESTAMP) {
-                value.second.GetInterval().SetEnd(latest_commit);
+                value.second.SetEnd(latest_commit);
             }
             value.second.Serialize(rep);
         }
