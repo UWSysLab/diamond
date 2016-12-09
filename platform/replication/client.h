@@ -57,7 +57,8 @@ public:
                                 continuation_t continuation);
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data);
-    virtual void ReceiveError(const int error);
+    virtual void ReceiveError(const TransportAddress &remote,
+                              const int error);
     virtual void SetMessageHandler(message_handler_t handler);
 protected:
     uint64_t lastReqId;

@@ -140,7 +140,8 @@ VRClient::HandleReply(const TransportAddress &remote,
 }
 
 void
-VRClient::ReceiveError(const int error)
+VRClient::ReceiveError(const TransportAddress &remote,
+                       const int error)
 {
     // only works for one failure :)
     if (leader == 0) {

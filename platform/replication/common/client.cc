@@ -73,7 +73,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
 }
 
 void
-Client::ReceiveError(int error)
+Client::ReceiveError(const TransportAddress &remote,
+                     const int error)
 {
     Panic("Received unexpected error");
 }

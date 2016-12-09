@@ -226,8 +226,8 @@ Client::ReceiveMessage(const TransportAddress &remote,
                     Version v = Version(getReply.replies(i));
                     ret[key] = v;
                     ASSERT(v.GetInterval().End() != MAX_TIMESTAMP);
-                    Debug("Received Get timestamp %s %lu",
-                          key.c_str(), v.GetInterval().End());
+                    Debug("Received Get %s [%lu, %lu)",
+                          key.c_str(), v.GetInterval().Start(), v.GetInterval().End());
                 }
             }
             it->second->Reply(status, ret);

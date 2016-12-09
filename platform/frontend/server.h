@@ -56,7 +56,8 @@ public:
 protected:
     void ReceiveMessage(const TransportAddress &remote,
                         const std::string &type, const std::string &data);
-    void ReceiveError(int error) { };
+    void ReceiveError(const TransportAddress &remote,
+                      const int error);
     void HandleGet(const TransportAddress &remote,
                    const proto::GetMessage &msg);
     void HandleCommit(const TransportAddress &remote,
@@ -81,9 +82,11 @@ private:
     std::unordered_map<uint64_t, ReactiveTransaction *> transactions;
     // map key to the frontend indices of the reactive transactions
     // listening to it
-    std::unordered_map<std::string, std::set<uint64_t> > listeners; 
+    std::unordered_map<std::string, std::set<uint64_t> > listeners;
     uint64_t getFrontendIndex(uint64_t client_id,
                               uint64_t reactive_id);
+    uint64_t getReactiveId(uint64_t frontend_index);
+    void deregister(uint64_t frontendIndex);
     void SendNotification(const ReactiveTransaction *rt,
                           const Timestamp timestamp,
                           const std::map<std::string, Version> &values);

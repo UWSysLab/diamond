@@ -66,7 +66,8 @@ int main(int argc, char ** argv) {
         reactive_txn([myName] () {
                 // Current player whose turn it is
                 string cp = players[turn.Value() % players.Size()];
-                cout << endl << "====== 100 game ======" << endl;
+                cout << endl << "====== Welcome to 100 game, ";
+                cout << myName << " ======" << endl;
                 if (score.Value() >= 100) {
                     // if score over 100, game is over
                     cout << cp << "won the 100 game!";
@@ -101,7 +102,10 @@ int main(int argc, char ** argv) {
                 [] (bool committed) {
                     if (!committed) exit(1);
                 });
-        } else cout << "Invalid input";
+        } else {
+            cout << "Invalid input";
+            exit(1);
+        }
     }
     return 0;
 }

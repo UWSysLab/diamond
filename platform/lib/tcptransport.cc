@@ -440,6 +440,7 @@ TCPTransport::SignalCallback(evutil_socket_t fd, short what, void *arg)
     Debug("Terminating on SIGTERM/SIGINT");
     TCPTransport *transport = (TCPTransport *)arg;
     event_base_loopbreak(transport->libeventBase);
+    exit(0);
 }
 
 void
@@ -649,7 +650,7 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
-            info->receiver->ReceiveError(0);
+            info->receiver->ReceiveError(addr, 0);
         }
         return;
     } else if (what & BEV_EVENT_EOF) {
@@ -659,7 +660,7 @@ TCPTransport::TCPIncomingEventCallback(struct bufferevent *bev,
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
-            info->receiver->ReceiveError(0);
+            info->receiver->ReceiveError(addr, 0);
         }
         return;
     }
@@ -685,7 +686,7 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
-            info->receiver->ReceiveError(0);
+            info->receiver->ReceiveError(addr, 0);
         }
         return;
     } else if (what & BEV_EVENT_EOF) {
@@ -695,7 +696,7 @@ TCPTransport::TCPOutgoingEventCallback(struct bufferevent *bev,
         transport->tcpOutgoing.erase(it2);
         transport->tcpAddresses.erase(bev);
         if (info != NULL && info->receiver != NULL) {
-            info->receiver->ReceiveError(0);
+            info->receiver->ReceiveError(addr, 0);
         }
         return;
     }

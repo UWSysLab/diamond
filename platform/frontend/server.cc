@@ -103,6 +103,11 @@ Server::getFrontendIndex(uint64_t client_id,
     return ((client_id << 32) | reactive_id);
 }
 
+uint64_t
+Server::getReactiveId(uint64_t frontend_index) {
+    return (frontend_index << 32) >> 32;
+}
+
 void
 Server::HandleNotificationReply(const TransportAddress &remote,
                                 const NotificationReply &msg) {
@@ -297,6 +302,27 @@ Server::HandleRegister(const TransportAddress &remote,
 }
 
 void
+Server::ReceiveError(const TransportAddress &remote,
+                     const int error)
+{
+    set<uint64_t> registered;
+
+    // find all reactive transactions that this remote host is
+    // registered for
+    for (auto &rt: transactions) {
+        if (rt.second->client->getHostname() == remote.getHostname() &&
+            rt.second->client->getPort() == remote.getPort()) {
+            registered.insert(rt.first);
+        }
+    }
+
+    // remove them
+    for (auto &txn : registered) {
+        deregister(txn);
+    }
+}
+
+void
 Server::SubscribeCallback(ReactiveTransaction *rt,
                           const Timestamp timestamp,
                           Promise &promise)
@@ -320,6 +346,35 @@ Server::SubscribeCallback(ReactiveTransaction *rt,
     }
 }
 
+void
+Server::deregister(uint64_t frontendIndex) {
+    ReactiveTransaction *rt = transactions[frontendIndex];
+
+    // unsubscribe to keys that no other reactive transaction is
+    // listening to
+    set<string> unsubscribeSet;
+    for (const string &key : rt->keys) {
+        if (listeners[key].size() == 1 &&
+            listeners[key].count(frontendIndex)) {
+            unsubscribeSet.insert(key);
+        }
+    }
+    if (unsubscribeSet.size() > 0) {
+        store->Unsubscribe(getReactiveId(frontendIndex),
+                           unsubscribeSet,
+                           [] (Promise &promise) { });
+    }
+    // remove this reactive transaction from the listener set of
+    // each key
+    for (const string &key : rt->keys) {
+        listeners[key].erase(frontendIndex);
+    }
+
+    // delete ReactiveTransaction object from transactions map
+    transactions.erase(frontendIndex);
+    delete rt;
+}
+
 
 void
 Server::HandleDeregister(const TransportAddress &remote,
@@ -338,30 +393,7 @@ Server::HandleDeregister(const TransportAddress &remote,
               msg.clientid(), msg.reactiveid());
         reply.set_status(REPLY_NOT_FOUND);
     } else {
-        ReactiveTransaction *rt = transactions[frontendIndex];
-
-        // unsubscribe to keys that no other reactive transaction is
-        // listening to
-        set<string> unsubscribeSet;
-        for (const string &key : rt->keys) {
-            if (listeners[key].size() == 1 &&
-                listeners[key].count(frontendIndex)) {
-                unsubscribeSet.insert(key);
-            }
-        }
-        store->Unsubscribe(msg.reactiveid(),
-                           unsubscribeSet,
-                           [] (Promise &promise) { });
-
-        // remove this reactive transaction from the listener set of
-        // each key
-        for (const string &key : rt->keys) {
-            listeners[key].erase(frontendIndex);
-        }
-
-        // delete ReactiveTransaction object from transactions map
-        transactions.erase(frontendIndex);
-        delete rt;
+        deregister(frontendIndex);
         reply.set_status(REPLY_OK);
     }
 

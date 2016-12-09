@@ -56,7 +56,8 @@ public:
     virtual bool HasAddress();
     virtual void ReceiveMessage(const TransportAddress &remote,
                                 const string &type, const string &data) = 0;
-    virtual void ReceiveError(int error) = 0;
+    virtual void ReceiveError(const TransportAddress &remote,
+                              const int error) = 0;
 
 protected:
     bool hasAddress = false;

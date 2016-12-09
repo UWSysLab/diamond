@@ -76,7 +76,7 @@ PubStore::Publish(const uint64_t tid,
         keys.insert(inc.first);
 
     // get notifications that need to be sent
-    store.Publish(tid, keys, notifications);
+    store.Publish(timestamp, keys, notifications);
 }
     
 } // namespace strongstore
