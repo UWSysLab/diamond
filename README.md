@@ -58,6 +58,60 @@ To test the Java bindings, cd to the Java directory and type:
 
     $ mvn test
 
+## Running Diamond servers
+
+The instructions below describe how to run the Diamond servers.
+
+### Config files
+
+You'll need several config files: one for the timestamp server, one for each
+backend shard, and one for each frontend server. These config files all have
+a common prefix (our example will creatively use `prefix` as the prefix), and
+they should all be located in the same directory.
+
+Backend shard config files have names `prefix0.config`, `prefix1.config`, etc.
+Each config file has the following layout:
+
+    host <hostname>:<port>
+    host <hostname>:<port>
+    ...
+
+where each `host` line lists a replica's hostname and port.
+
+The TSS config file has the name `prefix.tss.config`. It has the same format
+as the backend shard config file.
+
+The frontend config files have names `prefix.frontend0.config`,
+`prefix.frontend1.config`, etc. They have the same format as the backend shard
+config file, but they only have one `host` entry.
+
+Example config files with the prefix `local` can be found in `platform/test`.
+These config files specify one frontend server, one backend shard with
+three replicas, and three timestamp server replicas, all running on localhost.
+
+### Running the servers
+
+The server executables can be found in the `platform/build` directory created
+during compilation. The backend storeserver and timestamp server executables
+each take two arguments: `-c` gives the config file to use and `-i` specifies
+the replica number. The frontend server also takes two arguments: `-c`
+specifies the config file and `-b`gives a config prefix used to find the
+backend storeservers and timestamp servers to connect to.
+
+Using the `local` config files mentioned above, the commands to start the servers
+from the `platform/build` directory would look like this:
+
+    $ ./storeserver -c ../test/local0.config -i 0
+    $ ./storeserver -c ../test/local0.config -i 1
+    $ ./storeserver -c ../test/local0.config -i 2
+    $ ./tss -c ../test/local.tss.config -i 0
+    $ ./tss -c ../test/local.tss.config -i 1
+    $ ./tss -c ../test/local.tss.config -i 2
+    $ ./frontserver -c ../test/local.frontend0.config -b ../test/local
+
+The file `README.md` in the `scripts` directory gives instructions for using
+a script that automates the process of starting and stopping servers on remote
+hosts using rsync and ssh.
 
 ## Cross-compiling Diamond for Android
 
