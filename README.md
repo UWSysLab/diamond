@@ -11,7 +11,7 @@ shared data updates.
 ## Building Diamond for x86
 
 You can compile Diamond on Mac OSX and Linux for x86 using the
-instructions below. Diamond has language binding for Java, Android,
+instructions below. Diamond has language bindings for Java, Android,
 Objective-C, Python and C++. In order to build the bindings in each
 case, you'll need to set up different things.
 
@@ -32,14 +32,17 @@ sufficient to build Diamond:
     $ apt-get install build-essential cmake maven libpython-dev libboost-dev libboost-python-dev libssl-dev libprotobuf-dev protobuf-compiler libevent-dev
 
 ### Building the source and language bindings
-To compile a shared object library and both the C++ and Python
-bindings:
+To compile a shared object library and the C++ bindings:
 
 	$ cd platform
 	$ mkdir build
 	$ cd build
 	$ cmake ..
 	$ make
+
+To compile the Python bindings, uncomment the line reading
+`add_subdirectory(bindings/python)` in `platform/CMakeLists.txt`, and then follow the
+instructions to compile the shared library and C++ bindings above.
 
 To run tests for the C++ and Python bindings type in the `build` directory:
 
@@ -48,17 +51,98 @@ To run tests for the C++ and Python bindings type in the `build` directory:
 After you have compiled the C++ shared library, you can compile the
 Java bindings for those libraries: 
 
-	$ cd platform/bindings/java
-    $ mvn package
+    $ cd platform/bindings/java
+    $ mvn package -DskipTests
 
 To test the Java bindings, cd to the Java directory and type:
 
-    $ mvn package -DskipTests
+    $ mvn test
 
+## Running Diamond servers
+
+The instructions below describe how to launch the Diamond servers and run a
+sample app that connects to them.
+
+### Config files
+
+You'll need several config files: one for the timestamp server, one for each
+backend shard, and one for each frontend server. These config files all have
+a common prefix (our example will creatively use `prefix` as the prefix), and
+they should all be located in the same directory.
+
+Backend shard config files have names `prefix0.config`, `prefix1.config`, etc.
+Each config file has the following layout:
+
+    host <hostname>:<port>
+    host <hostname>:<port>
+    ...
+
+where each `host` line lists a replica's hostname and port.
+
+The TSS config file has the name `prefix.tss.config`. It has the same format
+as the backend shard config file.
+
+The frontend config files have names `prefix.frontend0.config`,
+`prefix.frontend1.config`, etc. They have the same format as the backend shard
+config file, but they only have one `host` entry.
+
+Example config files with the prefix `local` can be found in `platform/test`.
+These config files specify one frontend server, one backend shard with
+three replicas, and three timestamp server replicas, all running on localhost.
+
+### Running the servers
+
+The server executables can be found in the `platform/build` directory created
+during compilation. The backend storeserver and timestamp server executables
+each take two arguments: `-c` gives the config file to use and `-i` specifies
+the replica number. The frontend server also takes two arguments: `-c`
+specifies the config file and `-b`gives a config prefix used to find the
+backend storeservers and timestamp servers to connect to.
+
+Using the `local` config files mentioned above, the commands to start the servers
+from the `platform/build` directory would look like this:
+
+    $ ./storeserver -c ../test/local0.config -i 0
+    $ ./storeserver -c ../test/local0.config -i 1
+    $ ./storeserver -c ../test/local0.config -i 2
+    $ ./tss -c ../test/local.tss.config -i 0
+    $ ./tss -c ../test/local.tss.config -i 1
+    $ ./tss -c ../test/local.tss.config -i 2
+    $ ./frontserver -c ../test/local.frontend0.config -b ../test/local
+
+The file `README.md` in the `scripts` directory gives instructions for using
+a script that automates the process of starting and stopping servers on remote
+hosts using rsync and SSH.
+
+### Testing the servers with a sample app
+
+To verify that your Diamond servers are working, you can run the 100 Game app
+mentioned in the paper. The 100 Game can be found in `apps/simplegame/cpp` (a
+Python version and an implementation built on Redis are also available in
+`apps/simplegame`). To build the app:
+
+    $ cd apps/simplegame/cpp
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+
+The 100 Game takes three arguments: `--config` specifies the config file
+of the frontend server to connect to (without the `.config` suffix),
+`--key` gives the shared key to use when playing with multiple players
+(i.e., the game name), and `--name` specifies the player name. To play
+the 100 Game using the `local` Diamond servers we created above:
+
+    $ ./game --config ../../../../platform/test/local.frontend0 --key MyGameName --name Player1
+
+You can create another process in a different terminal to allow another
+player to play:
+
+    $ ./game --config ../../../../platform/test/local.frontend0 --key MyGameName --name Player2
 
 ## Cross-compiling Diamond for Android
 
-In order to cross-compile for using Diamond on Android or iOS, you
+In order to cross-compile for using Diamond on Android, you
 need to download the compile tools. Create a `toolchains` directory in
 the `platform` directory of the Diamond source code and keep everything
 that you downloaded there.

@@ -91,10 +91,10 @@ endif()
 # Set up library dependencies for linking into the Diamond library
 
 if (ANDROID)
-add_library(diamond SHARED
-            ${SRC_DIAMOND_LIB}
-	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_TRANSACTIONS}
+  add_library(diamond SHARED
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_DATA_TYPES}
+        ${SRC_DIAMOND_TRANSACTIONS}
         ${SRC_DIAMOND_STORE_COMMON}
         ${SRC_DIAMOND_CLIENT}
         ${SRC_DIAMOND_FRONT_END_CLIENT}
@@ -105,111 +105,66 @@ add_library(diamond SHARED
         ${DIAMOND_SOURCE_DIR}/build/notification-proto.pb.cc)
   target_link_libraries(diamond -lprotobuf -levent_core -levent_pthreads -lgnustl_shared)
 else()
-add_library(diamond SHARED
-            ${SRC_DIAMOND_LIB}
-	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_TRANSACTIONS}
-	    ${SRC_DIAMOND_STORE_PROTO}
-	    ${HDR_DIAMOND_STORE_PROTO}
+  add_library(diamond SHARED
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_DATA_TYPES}
+        ${SRC_DIAMOND_TRANSACTIONS}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
         ${SRC_DIAMOND_STORE_COMMON}
         ${SRC_DIAMOND_CLIENT}
         ${SRC_DIAMOND_FRONT_END_CLIENT})
-target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} event_pthreads)
+  target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} event_pthreads)
 
   find_package (OpenSSL REQUIRED)
   include_directories(${OPENSSL_INCLUDE_DIR})
 
   # Set up the executable for the Diamond storage server
   add_executable(storeserver
-    ${SRC_DIAMOND_LIB}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-    ${SRC_DIAMOND_STORE_PROTO}
-    ${HDR_DIAMOND_STORE_PROTO}
-    ${SRC_DIAMOND_REPLICATION_SERVER}
-    ${SRC_DIAMOND_STORE_SERVER})
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
+        ${SRC_DIAMOND_REPLICATION_SERVER}
+        ${SRC_DIAMOND_STORE_SERVER})
   target_link_libraries(storeserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
   add_executable(frontserver
-    ${SRC_DIAMOND_LIB}
-	${SRC_DIAMOND_STORE_PROTO}
-	${HDR_DIAMOND_STORE_PROTO}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-	${SRC_DIAMOND_REPLICATION_CLIENT}
-    ${SRC_DIAMOND_STORE_CLIENT}
-    ${SRC_DIAMOND_STORE_COMMON}
-    ${SRC_DIAMOND_FRONT_END_SERVER})
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_REPLICATION_CLIENT}
+        ${SRC_DIAMOND_STORE_CLIENT}
+        ${SRC_DIAMOND_STORE_COMMON}
+        ${SRC_DIAMOND_FRONT_END_SERVER})
   target_link_libraries(frontserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
-
 
   # compile the timestamp server
   add_subdirectory(timeserver)
   add_executable(tss
-    ${SRC_DIAMOND_TIMESERVER}
-    ${SRC_DIAMOND_LIB}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-    ${SRC_DIAMOND_REPLICATION_SERVER})
+        ${SRC_DIAMOND_TIMESERVER}
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_REPLICATION_SERVER})
   target_link_libraries(tss ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
-# Add python bindings for Linux and Mac OSX
-#add_subdirectory(bindings/python)
+  # Add python bindings for Linux and Mac OSX
+  #add_subdirectory(bindings/python)
  
   # Set up testing infrastructure
   enable_testing()
 
-  # look for GTest
-  find_package(GTest)
-  if (NOT GTEST_FOUND)
-    INCLUDE(ExternalProject)
+  # Add tests
+  #add_subdirectory(test)
 
-    # Pull gtest from the web
-    ExternalProject_Add(
-        googletest
-        PREFIX ${PROJECT_BINARY_DIR}/gtest
-        URL http://googletest.googlecode.com/files/gtest-1.7.0.zip
-	UPDATE_COMMAND ""
-        INSTALL_COMMAND ""
-#        CMAKE_ARGS BUILD_SHARED_LIBS=ON
-        LOG_DOWNLOAD ON
-        LOG_CONFIGURE ON
-        LOG_BUILD ON)
+  # Build the terminal client
+  add_subdirectory(terminalclient)
 
-      # Specify include dir
-      ExternalProject_Get_Property(googletest source_dir)
-      set(GTEST_INCLUDE_DIRS ${source_dir}/include)
-      set(GTEST_ROOT ${source_dir})
-
-      # Library
-      ExternalProject_Get_Property(googletest binary_dir)
-      set(GTEST_LIBRARY_PATH ${binary_dir})
-
-      set(GTEST_LIBRARIES gtest)
-      set(GTEST_MAIN_LIBRARIES gtest_main)
-      set(GTEST_BOTH_LIBRARIES gtest gtest_main)
-   
-      add_library(${GTEST_LIBRARIES} UNKNOWN IMPORTED)
-      add_library(${GTEST_MAIN_LIBRARIES} UNKNOWN IMPORTED)
-
-      set_property(TARGET ${GTEST_LIBRARIES} PROPERTY IMPORTED_LOCATION
-        ${GTEST_LIBRARY_PATH}/libgtest.a )
-      set_property(TARGET ${GTEST_MAIN_LIBRARIES} PROPERTY IMPORTED_LOCATION
-        ${GTEST_LIBRARY_PATH}/libgtest_main.a )
-
-      add_dependencies(${GTEST_LIBRARIES} googletest)
-      add_dependencies(${GTEST_MAIN_LIBRARIES} googletest)
-    else()
-      set(GTEST_ROOT "/usr/src/")
-    endif()
-
-    include_directories(${GTEST_INCLUDE_DIRS})
-    # Add tests
-    #add_subdirectory(test)
-    # Build the terminal client
-    add_subdirectory(terminalclient)    
-
-    # Add Libevent
+  # Add Libevent
   find_package (LibEvent)
   if (LibEvent_FOUND)
     include_directories(${LIBEVENT_INCLUDE_DIR})

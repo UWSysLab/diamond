@@ -7,3 +7,5 @@
 /build
 /captures
 .idea
+/app/src/main/jniLibs
+/app/src/main/libs

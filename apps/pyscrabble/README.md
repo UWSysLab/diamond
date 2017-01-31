@@ -9,8 +9,6 @@ features (chat rooms, customization of various kinds, etc.) cut out.
 above as well as additional changes (mostly refactoring the tile/letter code)
 designed to make the Diamond port easier.
 * `pyscrabble-hatchet-diamond` is a complete Diamond port of `pyscrabble-hatchet`.
-* `pyscrabble-diamond-old` is Niel's original Diamond port of PyScrabble.
-It doesn't work with the latest versions of Diamond.
 
 If you want to do experiments or make comparisions between PyScrabble with and without
 Diamond, use `pyscrabble-hatchet` and `pyscrabble-hatchet-diamond` for a fair
