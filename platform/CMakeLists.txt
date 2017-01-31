@@ -157,7 +157,7 @@ target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ev
 #add_subdirectory(bindings/python)
  
   # Set up testing infrastructure
-  #enable_testing()
+  enable_testing()
 
     # Add tests
     #add_subdirectory(test)
