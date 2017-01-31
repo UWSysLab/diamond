@@ -113,9 +113,35 @@ The file `README.md` in the `scripts` directory gives instructions for using
 a script that automates the process of starting and stopping servers on remote
 hosts using rsync and SSH.
 
+### Testing the servers with a sample app
+
+To verify that your Diamond servers are working, you can run the 100 Game app
+mentioned in the paper. The 100 Game can be found in `apps/simplegame/cpp` (a
+Python version and an implementation built on Redis are also available in
+`apps/simplegame`). To build the app:
+
+    $ cd apps/simplegame/cpp
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+
+The 100 Game takes three arguments: `--config` specifies the config file
+of the frontend server to connect to (without the `.config` suffix),
+`--key` gives the shared key to use when playing with multiple players
+(i.e., the game name), and `--name` specifies the player name. To play
+the 100 Game using the `local` Diamond servers we created above:
+
+    $ ./game --config ../../../../platform/test/local.frontend0 --key MyGameName --name Player1
+
+You can create another process in a different terminal to allow another
+player to play:
+
+    $ ./game --config ../../../../platform/test/local.frontend0 --key MyGameName --name Player2
+
 ## Cross-compiling Diamond for Android
 
-In order to cross-compile for using Diamond on Android or iOS, you
+In order to cross-compile for using Diamond on Android, you
 need to download the compile tools. Create a `toolchains` directory in
 the `platform` directory of the Diamond source code and keep everything
 that you downloaded there.
