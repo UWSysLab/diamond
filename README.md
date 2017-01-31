@@ -111,7 +111,7 @@ from the `platform/build` directory would look like this:
 
 The file `README.md` in the `scripts` directory gives instructions for using
 a script that automates the process of starting and stopping servers on remote
-hosts using rsync and ssh.
+hosts using rsync and SSH.
 
 ## Cross-compiling Diamond for Android
 
