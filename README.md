@@ -60,7 +60,8 @@ To test the Java bindings, cd to the Java directory and type:
 
 ## Running Diamond servers
 
-The instructions below describe how to run the Diamond servers.
+The instructions below describe how to launch the Diamond servers and run a
+sample app that connects to them.
 
 ### Config files
 
