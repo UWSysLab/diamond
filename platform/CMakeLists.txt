@@ -91,10 +91,10 @@ endif()
 # Set up library dependencies for linking into the Diamond library
 
 if (ANDROID)
-add_library(diamond SHARED
-            ${SRC_DIAMOND_LIB}
-	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_TRANSACTIONS}
+  add_library(diamond SHARED
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_DATA_TYPES}
+        ${SRC_DIAMOND_TRANSACTIONS}
         ${SRC_DIAMOND_STORE_COMMON}
         ${SRC_DIAMOND_CLIENT}
         ${SRC_DIAMOND_FRONT_END_CLIENT}
@@ -105,66 +105,66 @@ add_library(diamond SHARED
         ${DIAMOND_SOURCE_DIR}/build/notification-proto.pb.cc)
   target_link_libraries(diamond -lprotobuf -levent_core -levent_pthreads -lgnustl_shared)
 else()
-add_library(diamond SHARED
-            ${SRC_DIAMOND_LIB}
-	    ${SRC_DIAMOND_DATA_TYPES}
-	    ${SRC_DIAMOND_TRANSACTIONS}
-	    ${SRC_DIAMOND_STORE_PROTO}
-	    ${HDR_DIAMOND_STORE_PROTO}
+  add_library(diamond SHARED
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_DATA_TYPES}
+        ${SRC_DIAMOND_TRANSACTIONS}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
         ${SRC_DIAMOND_STORE_COMMON}
         ${SRC_DIAMOND_CLIENT}
         ${SRC_DIAMOND_FRONT_END_CLIENT})
-target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} event_pthreads)
+  target_link_libraries(diamond ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} event_pthreads)
 
   find_package (OpenSSL REQUIRED)
   include_directories(${OPENSSL_INCLUDE_DIR})
 
   # Set up the executable for the Diamond storage server
   add_executable(storeserver
-    ${SRC_DIAMOND_LIB}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-    ${SRC_DIAMOND_STORE_PROTO}
-    ${HDR_DIAMOND_STORE_PROTO}
-    ${SRC_DIAMOND_REPLICATION_SERVER}
-    ${SRC_DIAMOND_STORE_SERVER})
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
+        ${SRC_DIAMOND_REPLICATION_SERVER}
+        ${SRC_DIAMOND_STORE_SERVER})
   target_link_libraries(storeserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
   add_executable(frontserver
-    ${SRC_DIAMOND_LIB}
-	${SRC_DIAMOND_STORE_PROTO}
-	${HDR_DIAMOND_STORE_PROTO}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-	${SRC_DIAMOND_REPLICATION_CLIENT}
-    ${SRC_DIAMOND_STORE_CLIENT}
-    ${SRC_DIAMOND_STORE_COMMON}
-    ${SRC_DIAMOND_FRONT_END_SERVER})
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_STORE_PROTO}
+        ${HDR_DIAMOND_STORE_PROTO}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_REPLICATION_CLIENT}
+        ${SRC_DIAMOND_STORE_CLIENT}
+        ${SRC_DIAMOND_STORE_COMMON}
+        ${SRC_DIAMOND_FRONT_END_SERVER})
   target_link_libraries(frontserver ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
-
 
   # compile the timestamp server
   add_subdirectory(timeserver)
   add_executable(tss
-    ${SRC_DIAMOND_TIMESERVER}
-    ${SRC_DIAMOND_LIB}
-    ${SRC_DIAMOND_REPLICATION_PROTO}
-    ${HDR_DIAMOND_REPLICATION_PROTO}
-    ${SRC_DIAMOND_REPLICATION_SERVER})
+        ${SRC_DIAMOND_TIMESERVER}
+        ${SRC_DIAMOND_LIB}
+        ${SRC_DIAMOND_REPLICATION_PROTO}
+        ${HDR_DIAMOND_REPLICATION_PROTO}
+        ${SRC_DIAMOND_REPLICATION_SERVER})
   target_link_libraries(tss ${PROTOBUF_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} event_pthreads)
 
-# Add python bindings for Linux and Mac OSX
-#add_subdirectory(bindings/python)
+  # Add python bindings for Linux and Mac OSX
+  #add_subdirectory(bindings/python)
  
   # Set up testing infrastructure
   enable_testing()
 
-    # Add tests
-    #add_subdirectory(test)
-    # Build the terminal client
-    add_subdirectory(terminalclient)    
+  # Add tests
+  #add_subdirectory(test)
 
-    # Add Libevent
+  # Build the terminal client
+  add_subdirectory(terminalclient)
+
+  # Add Libevent
   find_package (LibEvent)
   if (LibEvent_FOUND)
     include_directories(${LIBEVENT_INCLUDE_DIR})
