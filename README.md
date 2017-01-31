@@ -11,7 +11,7 @@ shared data updates.
 ## Building Diamond for x86
 
 You can compile Diamond on Mac OSX and Linux for x86 using the
-instructions below. Diamond has language binding for Java, Android,
+instructions below. Diamond has language bindings for Java, Android,
 Objective-C, Python and C++. In order to build the bindings in each
 case, you'll need to set up different things.
 
@@ -32,14 +32,17 @@ sufficient to build Diamond:
     $ apt-get install build-essential cmake maven libpython-dev libboost-dev libboost-python-dev libssl-dev libprotobuf-dev protobuf-compiler libevent-dev
 
 ### Building the source and language bindings
-To compile a shared object library and both the C++ and Python
-bindings:
+To compile a shared object library and the C++ bindings:
 
 	$ cd platform
 	$ mkdir build
 	$ cd build
 	$ cmake ..
 	$ make
+
+To compile the Python bindings, uncomment the line reading
+`add_subdirectory(bindings/python)` in `platform/CMakeLists.txt`, and then follow the
+instructions to compile the shared library and C++ bindings above.
 
 To run tests for the C++ and Python bindings type in the `build` directory:
 
@@ -48,12 +51,12 @@ To run tests for the C++ and Python bindings type in the `build` directory:
 After you have compiled the C++ shared library, you can compile the
 Java bindings for those libraries: 
 
-	$ cd platform/bindings/java
-    $ mvn package
+    $ cd platform/bindings/java
+    $ mvn package -DskipTests
 
 To test the Java bindings, cd to the Java directory and type:
 
-    $ mvn package -DskipTests
+    $ mvn test
 
 
 ## Cross-compiling Diamond for Android
