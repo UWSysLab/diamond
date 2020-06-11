@@ -74,12 +74,12 @@ int main(int argc, char ** argv) {
                     exit(0);
                 }
                 // print out current store and players
-                cout << "Total: " << score.Value() << endl;
-                cout << "Turn: " << cp << endl;
                 cout << "Players: ";
                 for (auto &p : players.Members())
                     cout << p << " ";
                 cout << endl;
+                cout << "Sum: " << score.Value() << endl;
+                cout << "Turn: " << cp << endl;
                 // print out a prompt if it is my turn
                 if (cp == myName)
                     cout << "> Enter number between 1 and 10: " << flush;
